@@ -24,6 +24,12 @@
 
 #include "pipe_frc.opt"
 
+      ! realistic pipes only: enter netcdf variable name and time name
+      type (ncforce) :: nc_pvol = ncforce(
+     &     vname=pipe_vol_name, tname=pipe_tim_name)
+      type (ncforce) :: nc_ptrc = ncforce(
+     &     vname=pipe_trc_name, tname=pipe_tim_name)       
+      
       ! Variables used in the evolution equations
       integer,public  :: pidx ! Pipe index for looping through pipes
       integer,public,allocatable,dimension(:,:) :: pipe_idx      ! pipe indices at grid points
@@ -32,15 +38,7 @@
       real   ,public, dimension(npip,N)         :: pipe_prf      ! Pipe vertical profile
       real,public,allocatable,dimension(:,:)    :: pipe_trc      ! Pipe tracer conc.
       real   ,public, dimension(npip)           :: pipe_vol      ! Pipe volume
-
-     ! Netcdf names
-      character(len=9)  :: pipe_flx_name = 'pipe_flux'  !! stored in the grid file
-      character(len=11) :: pipe_vol_name = 'pipe_volume'!! stored in a forcing file
-      character(len=11) :: pipe_trc_name = 'pipe_tracer'!! stored in a forcing file
-      character(len=9)  :: pipe_tim_name = 'pipe_time'  !! stored in a forcing file
-      character(len=5)  ::npipe_dim_name = 'npipe'      !! dimension name for number of pipes in file
-      character(len=8)  :: ntrc_dim_name = 'ntracers'   !! dimension name for number of tracers in file
-
+      
       logical :: init_pipe_done = .false.
 
       public set_pipe_frc
