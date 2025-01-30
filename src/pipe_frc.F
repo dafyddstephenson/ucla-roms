@@ -98,7 +98,7 @@
       implicit none
 
       ! local
-      integer :: ierr,ncid,v_id,i,j
+      integer :: ierr,ncid,varid,i,j
 
 
       if (p_analytical) then
@@ -107,8 +107,29 @@
 
       else
 
-        ! Read 'pipe_flux' from grid file (Pipe_idx & pipe_fraction in one value)
-        ierr=nf90_open(grdname, nf90_nowrite, ncid)
+         ! Make sure ncforce fields are initialised and configured
+         call set_frc_data(nc_pvol,pipe_vol) ! set pipe volume for all pipes at current time
+         call set_frc_data(nc_ptrc,var2d=pipe_trc) ! set pipe tracers conc. for all pipes at current time
+
+         
+!     Read 'pipe_flux' from grid file (Pipe_idx & pipe_fraction in one value)
+         ierr=nf90_open(grdname, nf90_nowrite, ncid)
+         ierr=nf90_inq_varid(ncid, pipe_flx_name, varid) ! Check grid file for location variable
+
+         if (ierr /= nf90_noerr) then ! If not found in grid file
+            ierr = nf90_close(ncid)  ! close the grid file and 
+            ierr = nf90_open(frcfile(nc_pvol%ifile), nf90_nowrite, ncid) ! open the pipe forcing file
+            ierr = nf90_inq_varid(ncid, pipe_flx_name, varid) ! check pipe forcing file instead
+            if (ierr /= nf90_noerr) then ! If not in either file, raise error:
+               call handle_ierr(ierr, 'init_pipe_frc:: '//
+     &          'pipe location variable (' // trim(pipe_flx_name) //
+     &          ') not found in grid (' // trim(grdname) //') '//
+     &          ' or pipe forcing (' // trim(frcfile(nc_pvol%ifile)) //
+     &          ') files')
+            end if
+         end if
+               
+         
         ! Temporarily store as pipe_fraction to avoid extra array,
         ! but value still pipe_idx + pipe_fraction
         call ncread(ncid,pipe_flx_name, pipe_fraction(i0:i1,j0:j1))
@@ -143,7 +164,7 @@
         allocate(nc_pvol%vdata(npip,1 ,2))
         allocate(nc_ptrc%vdata(npip,nt,2))
       endif
-
+      
       end subroutine init_arrays_pipes  !]
 ! ----------------------------------------------------------------------
       subroutine set_pipe_vert_prf  ![
