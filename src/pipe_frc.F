@@ -112,15 +112,15 @@
          
 !     Read 'pipe_flux' from grid file (Pipe_idx & pipe_fraction in one value)
          ierr=nf90_open(grdname, nf90_nowrite, ncid)
-         ierr=nf90_inq_varid(ncid, pipe_flx_name, varid) ! Check grid file for location variable
+         ierr=nf90_inq_varid(ncid, pipe_loc_name, varid) ! Check grid file for location variable
 
          if (ierr /= nf90_noerr) then ! If not found in grid file
             ierr = nf90_close(ncid)  ! close the grid file and 
             ierr = nf90_open(frcfile(nc_pvol%ifile), nf90_nowrite, ncid) ! open the pipe forcing file
-            ierr = nf90_inq_varid(ncid, pipe_flx_name, varid) ! check pipe forcing file instead
+            ierr = nf90_inq_varid(ncid, pipe_loc_name, varid) ! check pipe forcing file instead
             if (ierr /= nf90_noerr) then ! If not in either file, raise error:
                call handle_ierr(ierr, 'init_pipe_frc:: '//
-     &          'pipe location variable (' // trim(pipe_flx_name) //
+     &          'pipe location variable (' // trim(pipe_loc_name) //
      &          ') not found in grid (' // trim(grdname) //') '//
      &          ' or pipe forcing (' // trim(frcfile(nc_pvol%ifile)) //
      &          ') files')
@@ -130,7 +130,7 @@
          
         ! Temporarily store as pipe_fraction to avoid extra array,
         ! but value still pipe_idx + pipe_fraction
-        call ncread(ncid,pipe_flx_name, pipe_fraction(i0:i1,j0:j1))
+        call ncread(ncid,pipe_loc_name, pipe_fraction(i0:i1,j0:j1))
         if(ierr/=0) 
      &      call handle_ierr(ierr,'init_pipe_frc:: pipe not in file!')
 

@@ -6,7 +6,7 @@
       integer,public,parameter :: npip = 1                    ! number of pipes
 
       ! Netcdf names
-      character(len=9),  parameter :: pipe_flx_name = 'pipe_flux' !! stored in the grid file
+      character(len=13),  parameter :: pipe_loc_name = 'pipe_flux' !! stored in the grid file
       character(len=11), parameter :: pipe_vol_name = 'pipe_volume' !! stored in a forcing file
       character(len=11), parameter :: pipe_trc_name = 'pipe_tracer' !! stored in a forcing file
       character(len=9),  parameter :: pipe_tim_name = 'pipe_time' !! stored in a forcing file
