@@ -51,7 +51,10 @@
 #endif
 #ifdef NHY_FORCING
       use bgc_forces                  , only: nhy
-#endif      
+#endif
+#if defined ALK_SOURCE
+      use bgc_forces                  , only: alksource
+#endif
       use ocean_vars                  , only: Hz, z_r, z_w
       
 !     ----------------------------------------------------------------------
@@ -125,6 +128,9 @@
       integer                             :: printj = 4    ! j location
       integer                             :: printnode = 0 ! cpu
 
+#if defined ALK_SOURCE
+      integer :: alk_ind
+#endif
 
 ! ----------------------------------------------------------------------
       
@@ -176,7 +182,6 @@
       logical , dimension(nt)    , intent(inout) :: wrt_t, wrt_t_avg
       real    , dimension(nz)                    :: dummy_array
       integer :: marbl_settings_in, open_status, read_status, ierr
-      
       dummy_array(:)=1.0        ! Temporary measure until we can access an allocated Hz,z_w,z_r
       marbl_settings_in = 111
 
@@ -286,13 +291,21 @@
          
          t_tname(itot)=''
          wrt_t     (itot)=.false.
-         wrt_t_avg (itot)=.false.
+         wrt_t_avg (itot)=.true.
          t_ana_frc( itot)=1
 
       end do
       ! Read user file to determine which tracers to write out
-      call marbldrv_read_tracer_output_list(t_vname,wrt_t,wrt_t_avg)
-      
+      call marbldrv_read_tracer_output_list(t_vname,wrt_t)
+
+#if defined ALK_SOURCE
+      do idx=1,nt_marbl ! Loop over MARBL tracers...
+         if (trim(marbl_instance%tracer_metadata(idx)%short_name) == "ALK") then
+            alk_ind = idx
+         end if
+      end do
+#endif
+
 !     3. Determine surf flux forcing variables MARBL needs
 !     ---------------------------------------------------------
       
@@ -385,7 +398,7 @@
       
       end subroutine marbldrv_configure_tracers
 
-      subroutine marbldrv_read_tracer_output_list(t_vname,wrt_t,wrt_t_avg)
+      subroutine marbldrv_read_tracer_output_list(t_vname,wrt_t)
 
 !-----------------------------------------------------------------------
 !     SUBROUTINE: marbldrv_read_tracer_output_list
@@ -408,7 +421,6 @@
       character*42, dimension(nt), intent(inout) :: t_vname
       character(len=256)                         :: file_line
       logical , dimension(nt)    , intent(inout) :: wrt_t
-      logical , dimension(nt)    , intent(inout) :: wrt_t_avg      
       
       integer :: marbl_tracer_list, open_status, read_status,idx,ierr
       logical :: recognized_tracer, no_tracers_requested
@@ -457,7 +469,6 @@
                do idx=1,NT
                   if (trim(t_vname(idx)) == trim(file_line)) then
                      wrt_t(idx) =.true.
-                     wrt_t_avg(idx) =.true.
                      if (mynode==printnode) then
                         write(*,'(2A)'),
      &                       'REQUESTED MARBL TRACER OUTPUT: ' // trim(t_vname(idx))
@@ -481,7 +492,6 @@
          if (no_tracers_requested) then ! Write all of them to output
                
             wrt_t(:)=.true.
-            wrt_t_avg(:)=.true.
                
             if (mynode==0) then
                write(*,'(A)'), 'NO REQUESTED TRACERS FOUND IN ' //
@@ -1422,9 +1432,16 @@
      &                    trim(marbl_instance%tracer_metadata(m)%short_name)
                   end if
                end if
+
             end do ! m=1,nt_marbl
 
-            
+#if defined ALK_SOURCE
+            tracer_array(i,j,nz,nnew,alk_ind+(NT-nt_marbl)) =
+     &         tracer_array(i,j,nz,nnew,alk_ind+(NT-nt_marbl)) +
+     &         alksource(i,j)
+     &         *dt/Hz(i,j,nz)
+#endif
+
          end do   ! j=jstr,jend
       end do      ! i=istr,iend
 

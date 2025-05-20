@@ -43,6 +43,21 @@ CSDISTRIBUTE_RESHAPE  swrad_avgg(BLOCK_PATTERN,*) BLOCK_CLAUSE
 # endif
 #endif /* DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC */
 
+#if defined ALK_SOURCE
+! alkalinity source term at surface
+! ------- -------------
+      real,allocatable,dimension(:,:) :: alksource
+CSDISTRIBUTE_RESHAPE  alksource(BLOCK_PATTERN,*) BLOCK_CLAUSE
+# if defined ALKSOURCE_DATA || defined ALL_DATA
+# ifndef SET_SMTH
+#  undef ALKSOURCE_DATA
+# endif
+CSDISTRIBUTE_RESHAPE  alksourceg(BLOCK_PATTERN,*) BLOCK_CLAUSE
+      real :: alksource_cycle, alksource_time(2)
+      integer :: alksource_ncycle,  alksource_rec, italksource, ntalksource,
+     &           alksource_file_id, alksource_id,  alksource_tid
+# endif
+#endif /* ALK_SOURCE */
 
 #ifdef NHY_FORCING
 ! NHY flux
@@ -126,6 +141,10 @@ CSDISTRIBUTE_RESHAPE  irong(BLOCK_PATTERN,*) BLOCK_CLAUSE
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       allocate( swrad_avg(GLOBAL_2D_ARRAY) )  ! daily average short-wave rad
+#endif
+
+#if defined ALK_SOURCE
+      allocate( alksource(GLOBAL_2D_ARRAY) )
 #endif
 
 #ifdef NHY_FORCING

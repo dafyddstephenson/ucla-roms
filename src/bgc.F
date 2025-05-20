@@ -133,6 +133,11 @@
      
 #endif /* DAILYPAR_PHOTOINHIBITION */ 
 
+#ifdef ALK_SOURCE
+!      call set_frc_var_tile( istr, iend, jstr, jend, nc_alksource, alksource, interp_frc )
+      call set_frc_data(nc_alksource,alksource,'r')
+#endif /* ALK_SOURCE */
+
       end subroutine set_bgc_surf_frc  !]
 ! ----------------------------------------------------------------------
       subroutine wrt_bgc_tracers(avg)  ![
@@ -560,6 +565,10 @@
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       allocate( nc_swrad_avg%vdata( GLOBAL_2D_ARRAY,2) )
+#endif
+
+#if defined ALK_SOURCE
+      allocate( nc_alksource%vdata( GLOBAL_2D_ARRAY,2) )
 #endif
 
       end subroutine  init_arrays_bgc_frc !]
