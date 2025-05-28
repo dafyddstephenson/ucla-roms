@@ -74,8 +74,6 @@
       integer :: navg_ovars = 0                             ! number of samples in average
       character(len=99),public :: fname_rst                 ! restart filename needed by diagnostics
       integer,public           :: rec_rst=nrpf_rst          ! current file output record needed by diags
-      integer                :: prev_month
-      logical                :: write_another_step = .false.
 
       public :: wrt_his_ocean_vars
       public :: wrt_avg_ocean_vars
@@ -84,19 +82,6 @@
       public :: init_avg_arrays
 
       contains  !]
-!----------------------------------------------------------------------
-      subroutine init_restarts  ![
-
-      implicit none
-
-      integer,dimension(6)   :: date
-
-      if (wrt_file_rst .and. monthly_restarts) then
-          call sec2date(time,date)
-          prev_month = date(2)
-      endif
-
-      end subroutine init_restarts !]
 !----------------------------------------------------------------------
       subroutine init_avg_arrays  ![
       use scalars
@@ -275,15 +260,15 @@
         if (special) then
           blowup = .true.
         else
-          initial = .true.
+          initial = .true.           
         endif
       endif
 
 
       if (wrt_file_his.or.blowup) then
 
-        if (.not.present(special)) then
-         output_time_his = output_time_his + dt
+        if (.not.present(special)) then 
+         output_time_his = output_time_his + dt  
         endif
 
 
@@ -456,7 +441,7 @@
         if (mynode == 0) then
             write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')  ! confirm work completed
      &        'ocean_vars :: wrote averages, tdays =', tdays,
-     &        'step =', iic, 'rec =', rec_avg, '/', total_rec_avg  !
+     &        'step =', iic, 'rec =', rec_avg, '/', total_rec_avg  ! 
      &         MYID
         endif
       endif
@@ -470,69 +455,16 @@
       ! ocean_vars variables are calculated for t=n in timestep t=n
       ! (unlike u/v/etc which are calculated for t=n+1 in timestep t=n)
 
-      implicit none
-
-      ! local
-      real,save              :: output_time_rst=0                    ! time since last output
-      integer,dimension(6)   :: date
-      character(len=15)      :: datestr
-
-      if (wrt_file_rst) then
-
-      if (monthly_restarts) then
-          ! We need to save the last two timesteps of the month, so that when the new simulation
-          ! loads the restart file the first timestep it takes will be the first timestep of the
-          ! new month.
-          ! time + 2*dt here so that it looks two timesteps ahead to see if we're changing months.
-          call sec2date(time+2*dt,date)
-          if ((date(2) - prev_month) /= 0) then
-            call wrt_restart_file
-            write_another_step = .true.
-          endif
-
-          if (write_another_step) then
-            call wrt_restart_file
-            write_another_step = .false.
-          endif
-
-          prev_month = date(2)
-      else
-!     if (.not. first_step) output_time_rst = output_time_rst + dt   ! only start count after first timestep
-!     first_step=.false.                                             ! as first step the ocean_vars values are for t=0
-          output_time_rst = output_time_rst + dt
-
-          if (output_time_rst    >=output_period_rst
-#ifdef EXACT_RESTART
-     &        .or.
-     &        output_time_rst+dt >=output_period_rst         ! timestep before
-#endif
-     &        ) then
-             call wrt_restart_file
-             if (output_time_rst>=output_period_rst) then
-                 output_time_rst=0                             ! catch for exact restart to not
-             endif                                             ! reset the time
-          endif ! it output_time > output_period
-      endif ! monthly_restarts
-
-      endif ! wrt_file_rst
-
-      end subroutine wrt_rst_ocean_vars  !]
-!----------------------------------------------------------------------
-      subroutine wrt_restart_file  ![
-      ! write ocean_vars variables to output netcdf restart file
-      ! ocean_vars variables are calculated for t=n in timestep t=n
-      ! (unlike u/v/etc which are calculated for t=n+1 in timestep t=n)
-
       use mixing
       use eos_vars
       use work_mod
       use grid
-      use tracers
+      use tracers 
       use coupling
 #ifdef MARBL
 !     add MARBL saved state to restart to restart file
       use marbl_driver, only: marbldrv_write_ss_vars_to_rst
-#endif
+#endif       
       implicit none
 
       ! local
@@ -541,6 +473,19 @@
       real,save              :: output_time_rst=0                    ! time since last output
       logical,save           :: first_step=.true.
       integer                :: tile, ierr, i, j, k
+
+      if (wrt_file_rst) then
+
+!     if (.not. first_step) output_time_rst = output_time_rst + dt   ! only start count after first timestep
+!     first_step=.false.                                             ! as first step the ocean_vars values are for t=0
+      output_time_rst = output_time_rst + dt
+
+      if (output_time_rst    >=output_period_rst
+#ifdef EXACT_RESTART
+     &    .or.
+     &    output_time_rst+dt >=output_period_rst                     ! timestep before
+#endif
+     &                    ) then
 
 
         if (rec_rst==nrpf_rst) then
@@ -613,7 +558,7 @@
 
 #ifdef MARBL
         call marbldrv_write_ss_vars_to_rst(ncid,rec_rst)
-#endif
+#endif         
 
         ierr=nf90_close(ncid)
         if (mynode == 0) then
@@ -622,7 +567,14 @@
      &     'step =', iic, 'rec =', rec_rst, '/', total_rec_rst
         endif
 
-      end subroutine wrt_restart_file  !]
+        if (output_time_rst>=output_period_rst) then
+          output_time_rst=0                                          ! catch for exact restart to not
+        endif                                                        ! reset the time
+      endif
+
+      endif  ! <-- wrt_file_rst
+
+      end subroutine wrt_rst_ocean_vars  !]
 !----------------------------------------------------------------------
       subroutine create_file_ocean_vars(fname,avg)  ![
       implicit none
@@ -742,7 +694,7 @@
       if ( (wrt_R .and. .not. avg) .or. (wrt_avg_R .and. avg) ) then
         if (.not. avg) text_lname=vname(2,indxR)
         if (      avg) text_lname='averaged '/ /vname(2,indxR)
-        varid =
+        varid = 
      &   nccreate(ncid,vname(1,indxR),(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,n,0/))
         ierr = nf90_put_att(ncid,varid,'long_name',text_lname)
         ierr = nf90_put_att(ncid,varid,'units',vname(3,indxR))
@@ -750,7 +702,7 @@
       if ( (wrt_O .and. .not. avg) .or. (wrt_avg_O .and. avg) ) then    ! s-coordinate "omega" vertical velocity.
         if (.not. avg) text_lname=vname(2,indxO)
         if (      avg) text_lname='averaged '/ /vname(2,indxO)
-        varid =
+        varid = 
      &    nccreate(ncid,vname(1,indxO),(/dn_xr,dn_yr,dn_zw,dn_tm/),(/xi_rho,eta_rho,n+1,0/))
         ierr = nf90_put_att(ncid,varid,'long_name',text_lname)
         ierr = nf90_put_att(ncid,varid,'units',vname(3,indxO))
@@ -758,7 +710,7 @@
       if ( (wrt_W .and. .not. avg) .or. (wrt_avg_W .and. avg) ) then   ! true W-vertical velocity.
         if (.not. avg) text_lname=vname(2,indxW)
         if (      avg) text_lname='averaged '/ /vname(2,indxW)
-        varid =
+        varid = 
      &    nccreate(ncid,vname(1,indxW),(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,n,0/))
         ierr = nf90_put_att(ncid,varid,'long_name',text_lname)
         ierr = nf90_put_att(ncid,varid,'units',vname(3,indxW))
@@ -783,7 +735,7 @@
       if ( (wrt_Aks .and. .not. avg) .or. (wrt_avg_Aks .and. avg) ) then! vertical diffusion coefficient for salinity.
         if (.not. avg) text_lname=vname(2,indxAks)
         if (      avg) text_lname='averaged '/ /vname(2,indxAks)
-        varid =
+        varid = 
      &    nccreate(ncid,vname(1,indxAks),(/dn_xr,dn_yr,dn_zw,dn_tm/),(/xi_rho,eta_rho,N+1,0/))
         ierr = nf90_put_att(ncid,varid,'long_name',text_lname)
         ierr = nf90_put_att(ncid,varid,'units',vname(3,indxAks))
@@ -818,13 +770,13 @@
 #ifdef MARBL
 !     add MARBL saved state to restart to restart file
       use marbl_driver, only: marbldrv_create_ss_vars_in_rst
-#endif
+#endif       
       implicit none
 
       ! local
       integer :: ierr, varid, itrc
       character(len=7)  :: dn_aux = 'auxil'
-
+      
 ! Time-step number and time-record indices: (history file only, this
 ! may be needed in the event when a history record is used to restart
 ! the current model run);
@@ -849,7 +801,7 @@
       ierr = nf90_put_att(ncid,varid,'units',vname(3,indxVb))
 #ifdef MARBL
       call marbldrv_create_ss_vars_in_rst(ncid)
-#endif
+#endif      
 #ifdef SOLVE3D
       varid = nccreate(ncid,vname(1,indxU),(/dn_xu,dn_yr,dn_zr,dn_tm/),
      &                                     (/xi_u,eta_rho,N,0/),nf90_double)
@@ -907,7 +859,7 @@
       ierr = nf90_put_att(ncid,varid,'units',vname(3,indxHbbl))
 # endif
 
-      if (diag_pflx) then
+      if (diag_pflx) then  
         varid = nccreate(ncid,'u_slow',(/dn_xu,dn_yr,dn_zr,dn_tm/),
      &                               (/xi_u,eta_rho,N,0/),nf90_double)
         ierr = nf90_put_att(ncid,varid,'long_name','time filtered u')

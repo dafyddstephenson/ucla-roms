@@ -82,7 +82,6 @@
       integer,parameter :: max_options_string=2000
       character(len=max_options_string),public::surf_forcing_strings=' '
       character(len=max_options_string),public::bc_options = ' '
-
       character(len=max_options_string),public::cdr_frc_opt='False'
 
       ! from old ncvars **************:
@@ -119,10 +118,6 @@
       public :: put_global_atts
       public :: store_string_att
       public :: create_file
-
-      public :: offset
-      public :: sec2date
-      public :: init_refdate
 
       interface set_frc_data
         module procedure
