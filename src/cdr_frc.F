@@ -141,7 +141,8 @@
         ierr = nf90_close(ncid)
 
         ! find fractional cdr fluxes for this subdomain
-        allocate(dist(GLOBAL_2D_ARRAY)); dist = 1e6 ! Some large number so we don't get single-point releases in the halos
+        allocate(dist(GLOBAL_2D_ARRAY)); dist = 1e6 ! Some large number
+                            ! so we don't get single-point releases in the halos
         allocate(frac(GLOBAL_2D_ARRAY,ncdr))
 
         cidx = 0
@@ -202,7 +203,7 @@
         cdr_nprf = cidx
 
         ! allocate total number of profiles for all releases
-        allocate(cdr_prf(cdr_nprf,nz))
+        allocate(cdr_prf(cdr_nprf,nz)); cdr_prf(:,:) = 0
         allocate(cdr_icdr(cdr_nprf))
         allocate(cdr_iloc(cdr_nprf))
         allocate(cdr_jloc(cdr_nprf))
@@ -227,7 +228,7 @@
                      arg_nz(k) = abs(z_r(i,j,k) + cdr_dep(icdr))
                    enddo
                      arg = minloc(arg_nz,1)
-                     cdr_prf(cidx,arg) = 1
+                     cdr_prf(cidx,arg) = frac(i,j,icdr)
                  else
                    vint = 0
                    do k=1,nz
@@ -251,6 +252,9 @@
      %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:)/global_int
           local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
 
+          print *, "YAY", cdr_prf(:,:)
+          print *, "LOC", local_int
+
         enddo
 
         deallocate(dist)
@@ -264,6 +268,7 @@
       end subroutine init_cdr_frc  !]
 ! ----------------------------------------------------------------------
       subroutine init_arrays_cdr  ![
+
       implicit none
 
       character(len=30) :: string
