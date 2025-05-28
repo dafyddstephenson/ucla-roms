@@ -252,9 +252,6 @@
      %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:)/global_int
           local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
 
-          print *, "YAY", cdr_prf(:,:)
-          print *, "LOC", local_int
-
         enddo
 
         deallocate(dist)
