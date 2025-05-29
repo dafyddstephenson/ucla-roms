@@ -93,6 +93,23 @@ CSDISTRIBUTE_RESHAPE  noxg(BLOCK_PATTERN,*) BLOCK_CLAUSE
 # endif
 #endif /* NOX_FORCING */
 
+#ifdef DDIC_DCO2_FORCING
+! carbonate sensitivity
+! --- ----
+      real,allocatable,dimension(:,:) :: ddic_dco2
+CSDISTRIBUTE_RESHAPE  ddic_dco2(BLOCK_PATTERN,*) BLOCK_CLAUSE
+# if defined DDIC_DCO2_DATA || defined ALL_DATA
+# ifndef SET_SMTH
+#  undef DDIC_DCO2_DATA
+# endif
+      real,allocatable,dimension(:,:,:) :: ddic_dco2g 
+CSDISTRIBUTE_RESHAPE  ddic_dco2g(BLOCK_PATTERN,*) BLOCK_CLAUSE
+      real    :: ddic_dco2_cycle, ddic_dco2_time(2)
+      integer :: ddic_dco2_ncycle,  ddic_dco2_rec, itddic_dco2, ntddic_dco2,
+     &           ddic_dco2_file_id, ddic_dco2_id, ddic_dco2_tid
+# endif
+#endif /* DDIC_DCO2_FORCING */
+
 #if defined BIOLOGY_BEC || defined BIOLOGY_BEC2 || defined(MARBL)
 ! dust flux
 ! ---- ----
@@ -166,6 +183,16 @@ CSDISTRIBUTE_RESHAPE  irong(BLOCK_PATTERN,*) BLOCK_CLAUSE
       allocate( noxg(GLOBAL_2D_ARRAY,2) )
 # endif
 #endif /* NOX_FORCING */
+
+#ifdef DDIC_DCO2_FORCING
+      allocate( ddic_dco2(GLOBAL_2D_ARRAY) )
+# if defined DDIC_DCO2_DATA || defined ALL_DATA
+# ifndef SET_SMTH
+#  undef DDIC_DCO2_DATA
+# endif
+      allocate( ddic_dco2g(GLOBAL_2D_ARRAY,2) )
+# endif
+#endif /* DDIC_DCO2_FORCING */
 
 #if defined BIOLOGY_BEC || defined BIOLOGY_BEC2 || defined MARBL
       allocate( dust(GLOBAL_2D_ARRAY) )

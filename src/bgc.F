@@ -107,6 +107,9 @@
 #ifdef NHY_FORCING
       call set_frc_data(nc_nhy,nhy,'r')
 #endif /* NHY_FORCING */
+#ifdef DDIC_DCO2_FORCING
+      call set_frc_data(nc_ddic_dco2,ddic_dco2,'r')
+#endif /* DDIC_DCO2_FORCING */   
 
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
@@ -561,6 +564,9 @@
 #endif
 #ifdef NHY_FORCING
       allocate( nc_nhy%vdata( GLOBAL_2D_ARRAY,2) )
+#endif
+#ifdef DDIC_DCO2_FORCING
+      allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
 #endif
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
