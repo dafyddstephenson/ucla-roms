@@ -22,6 +22,9 @@
       use param
       use dimensions
       use surf_flux,  only: stflx                          ! surface tracer flux should possibly live in this module rather?
+#ifdef ANTITRACER      
+      use bulk_frc,  only: ddic_dco2, set_gas_transfer_velocity
+#endif      
       use scalars                                          ! for 'FIRST_TIME_STEP' and nstp
       use nc_read_write
       use roms_read_write
@@ -44,7 +47,8 @@
       logical, dimension(nt), public      :: wrt_t_avg               ! t/f output avg tracer.
       logical, dimension(nt), public      :: wrt_t_dia = .false.     ! t/f diagnostics tracer.
 
-      integer, dimension(nt)              :: t_ana_frc               ! whether surface flux is read in (0), or analytical (1)
+      integer, dimension(nt)              :: t_ana_frc               ! whether surface flux is read in (0), or analytical (1), 
+                                                                     ! or (2) read in + with online computed air-sea gas exchange
 
       !-- Tracer netcdf variables as arrays/matrices of 'NT' length:
       ! Final tracer concentrations live in 't' in ocean3d
@@ -62,7 +66,7 @@
 
       integer,dimension(NT),public :: NT_2_t_avg                     ! convert index from t(itrc) to t_avg(itavg) since averages array may be smaller
       integer,public        :: n_t_avg                               ! number of tracer averages to output <= NT
-
+      
 #if defined(BIOLOGY_BEC2) && !defined(MARBL)
 # include "bgc_tracers_indx.opt"
 #endif
@@ -90,9 +94,13 @@
       integer           :: itrc       ! tracer number for loop index
       character(len=46) :: t_flx_name ! Tracer time name
 
+#ifdef ANTITRACER      
+      call set_gas_transfer_velocity
+#endif
+
       do itrc=iTandS+1,NT
 
-        if (t_ana_frc(itrc)==0) then ! Read in forcing data (not analytical)
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
 
           call set_frc_data(nc_t(itrc), stflx(i0:i1,j0:j1,itrc) )
 
@@ -110,6 +118,12 @@
           error stop
 
         endif ! if(t_ana_frc(itrc)==0)
+
+        if (t_ana_frc(itrc)==2) then
+
+            call compute_air_sea_gas_exchange(itrc)
+
+        endif ! if(t_ana_frc(itrc)==2)
 
         call exchange_xxx(stflx)
 
@@ -152,6 +166,27 @@
       endif
 
       end subroutine set_ana_surf_tracer_flx  !]
+! ----------------------------------------------------------------------
+
+      subroutine compute_air_sea_gas_exchange(itrc)  ![
+      ! Formulate air sea gas exchange as surface tracer flux
+      implicit none
+
+      ! input/outputs
+      integer itrc ! Current tracer index number
+
+      ! local
+      integer i,j
+
+      do j=0,ny+1
+        do i=0,nx+1
+          stflx(i,j,itrc) = stflx(i,j,itrc) - &
+                            k_gas(i,j) / ddic_dco2(i,j) * t(i,j,nz,nrhs,itrc)
+        enddo
+      enddo
+
+      end subroutine compute_air_sea_gas_exchange  !]
+
 ! ----------------------------------------------------------------------
       subroutine def_his_trc( ncid )  ![
       ! Define history file variables in def_his.F
