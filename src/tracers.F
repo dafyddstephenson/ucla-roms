@@ -23,7 +23,7 @@
       use dimensions
       use surf_flux,  only: stflx                          ! surface tracer flux should possibly live in this module rather?
 #ifdef ANTITRACER      
-      use bulk_frc,  only: ddic_dco2, k_gas
+      use surf_flux,  only: ddic_dco2, k_gas, uwnd, vwnd
 #endif      
       use scalars                                          ! for 'FIRST_TIME_STEP' and nstp
       use nc_read_write
@@ -93,6 +93,9 @@
       ! local
       integer           :: itrc       ! tracer number for loop index
 
+#ifdef ANTITRACER
+      call set_gas_transfer_velocity
+#endif
       do itrc=iTandS+1,NT
 
         if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
@@ -161,6 +164,38 @@
       endif
 
       end subroutine set_ana_surf_tracer_flx  !]
+! ----------------------------------------------------------------------
+      subroutine set_gas_transfer_velocity ![
+
+      implicit none
+#if defined ANTITRACER
+      ! coefficients to compute Schmidt number
+      real a, b, c, d, e, xkw_coef
+      parameter (a=2116.8)
+      parameter (b=-136.25)
+      parameter (c=4.7353)
+      parameter (d=-0.092307)
+      parameter (e=0.0007555)
+      parameter (xkw_coef=9.036e-06)
+      real schmidt_nr, sst
+      integer i,j
+
+      do j=0,ny+1
+        do i=0,nx+1
+          
+          sst = t(i,j,nz,nrhs,itemp)
+          schmidt_nr = a + sst * (b + sst * (c + sst * (d + e * sst)))
+          k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
+#ifdef SEA_ICE_NOFLUX
+          if( sst .le. -1.8 ) then
+              k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
+          endif
+#endif
+        enddo
+      enddo
+#endif /* defined ANTITRACER */
+
+      end subroutine set_gas_transfer_velocity  !]
 ! ----------------------------------------------------------------------
 
       subroutine compute_air_sea_gas_exchange(itrc)  ![
