@@ -23,6 +23,10 @@
       real,allocatable,dimension(:,:) :: taux              ! The TAU_CORRECTION flag is used to active a correction term to
       real,allocatable,dimension(:,:) :: tauy              ! bring bulk force field closer to that of the measured data.
 #endif
+#if defined ANTITRACER
+      real,public,allocatable,dimension(:,:)   :: ddic_dco2       ! time interpolated carbonate sensitivity
+      real,public,allocatable,dimension(:,:) :: k_gas             ! time interpolated gas transfer velocity
+#endif
 
       real,public,allocatable,dimension(:,:) :: wspd_used  ! wind speed at rho point (also used in BGC routines)
 
@@ -57,6 +61,10 @@
 
       allocate( nc_taux%vdata(GLOBAL_2D_ARRAY,2) )
       allocate( nc_tauy%vdata(GLOBAL_2D_ARRAY,2) )
+#endif
+#if defined ANTITRACER
+      allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
+      allocate( k_gas(GLOBAL_2D_ARRAY)      ); k_gas=0.
 #endif
 
       if (interp_frc==1) then
@@ -106,6 +114,10 @@
       call set_frc_data(nc_tauy,tauy,'r')
 !     call exchange_xxx(taux,tauy)
 #endif
+#if defined ANTITRACER
+      call set_frc_data(nc_ddic_dco2, ddic_dco2, 'r')
+#endif
+
 
 !     call exchange_xxx(srflx,lwrad)
 !     call exchange_xxx(uwnd,vwnd)
@@ -1043,5 +1055,36 @@
       return
       end function bulk_psit  !]
 !-----------------------------------------------------------------------
+      subroutine set_gas_transfer_velocity  ![
+      implicit none
+#if defined ANTITRACER
+      ! local
+      integer i,j
+      real a,b,c,d,e,xkw_coef,schmidt_nr,sst
+
+      a = 2116.8
+      b = -136.25
+      c = 4.7353
+      d = -0.092307
+      e = 0.0007555
+      xkw_coef = 9.036e-06
+      
+      do j=0,ny+1
+        do i=0,nx+1
+          
+          sst = t(i,j,N,nrhs,itemp)
+          schmidt_nr = a + sst * (b + sst * (c + sst * (d + e * sst)))
+          k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
+#ifdef SEA_ICE_NOFLUX
+          if( sst .le. -1.8 ) then
+              k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
+          endif
+#endif
+        enddo
+      enddo
+#endif /* defined ANTITRACER */
+          
+      end subroutine set_gas_transfer_velocity  !]
+! ----------------------------------------------------------------------
 
       end module bulk_frc
