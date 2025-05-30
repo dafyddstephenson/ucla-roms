@@ -58,6 +58,11 @@
       real,public,allocatable,dimension(:,:) :: sss
       real,public :: dSSSdt                                ! input units (cm/day)
 
+#if defined ANTITRACER
+      real,public,allocatable,dimension(:,:) :: ddic_dco2  ! time interpolated carbonate sensitivity
+      real,public,allocatable,dimension(:,:) :: k_gas      ! time interpolated gas transfer velocity
+#endif
+
       ! Netcdf outputting:
       integer            :: output_time = 0  
       integer            :: record = nrpf     ! to trigger the first file creation
@@ -97,6 +102,10 @@
       call store_string_att(surf_forcing_strings,'dSSSdt_units')
       call store_string_att(surf_forcing_strings,'cm/day')
 #endif
+#if defined ANTITRACER
+      allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
+      allocate( k_gas(GLOBAL_2D_ARRAY)      ); k_gas=0.
+#endif
 
       if (sflx_avg) then
         allocate(sustr_avg(1:i1,j0:j1))
@@ -120,6 +129,9 @@
 #if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
       ! Sea-surface salinity (SSS) data
       call set_frc_data(nc_sss,sss,'r')
+#endif
+#ifdef ANTITRACER
+      call set_frc_data(nc_ddic_dco2, ddic_dco2, 'r')
 #endif
 
       end subroutine set_surf_field_corr  !]

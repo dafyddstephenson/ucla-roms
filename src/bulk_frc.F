@@ -23,10 +23,6 @@
       real,allocatable,dimension(:,:) :: taux              ! The TAU_CORRECTION flag is used to active a correction term to
       real,allocatable,dimension(:,:) :: tauy              ! bring bulk force field closer to that of the measured data.
 #endif
-#if defined ANTITRACER
-      real,public,allocatable,dimension(:,:) :: ddic_dco2  ! time interpolated carbonate sensitivity
-      real,public,allocatable,dimension(:,:) :: k_gas      ! time interpolated gas transfer velocity
-#endif
 
       real,public,allocatable,dimension(:,:) :: wspd_used  ! wind speed at rho point (also used in BGC routines)
 
@@ -61,10 +57,6 @@
 
       allocate( nc_taux%vdata(GLOBAL_2D_ARRAY,2) )
       allocate( nc_tauy%vdata(GLOBAL_2D_ARRAY,2) )
-#endif
-#if defined ANTITRACER
-      allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
-      allocate( k_gas(GLOBAL_2D_ARRAY)      ); k_gas=0.
 #endif
 
       if (interp_frc==1) then
@@ -114,10 +106,6 @@
       call set_frc_data(nc_tauy,tauy,'r')
 !     call exchange_xxx(taux,tauy)
 #endif
-#if defined ANTITRACER
-      call set_frc_data(nc_ddic_dco2, ddic_dco2, 'r')
-#endif
-
 
 !     call exchange_xxx(srflx,lwrad)
 !     call exchange_xxx(uwnd,vwnd)
@@ -314,17 +302,6 @@
 # define RHUM_DATA
 # define PRATE_DATA
 # define LWRAD_DATA
-#if defined ANTITRACER
-      ! coefficients to compute Schmidt number
-      real a_gas, b_gas, c_gas, d_gas, e_gas, xkw_coef
-      parameter (a_gas=2116.8)
-      parameter (b_gas=-136.25)
-      parameter (c_gas=4.7353)
-      parameter (d_gas=-0.092307)
-      parameter (e_gas=0.0007555)
-      parameter (xkw_coef=9.036e-06)
-      real schmidt_nr, sst_used
-#endif
 
 
 ! Extended bounds needed since u2rho and rho2u averaging occurs, and
@@ -942,21 +919,6 @@
           end if
         enddo
       enddo
-#if defined ANTITRACER
-      do j=0,ny+1
-        do i=0,nx+1
-          
-          sst_used = t(i,j,N,nrhs,itemp)
-          schmidt_nr = a_gas + sst_used * (b_gas + sst_used * (c_gas + sst_used * (d_gas + e_gas * sst_used)))
-          k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
-#ifdef SEA_ICE_NOFLUX
-          if( sst_used .le. -1.8 ) then
-              k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
-          endif
-#endif
-        enddo
-      enddo
-#endif /* defined ANTITRACER */
 
       end subroutine calc_all_bulk_forces  !]
 !-----------------------------------------------------------------------
