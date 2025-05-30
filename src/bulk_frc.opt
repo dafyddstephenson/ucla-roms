@@ -22,5 +22,9 @@
       type (ncforce)  :: nc_tauy = ncforce(vname='TauY_corr',tname='Taucorr_time'  )  ! bring bulk force field closer to that of the measured data.
 #endif
 
+#if defined ANTITRACER
+      type (ncforce) :: nc_ddic_dco2 = ncforce(vname='ddic_dco2',tname='ddic_dco2_time' )  ! carbonate sensitivity
+#endif
+
       ! End of user inputs
       ! ***************************************************************
