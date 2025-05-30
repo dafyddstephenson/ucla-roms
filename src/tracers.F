@@ -175,8 +175,7 @@
 
       do j=0,ny+1
         do i=0,nx+1
-          stflx(i,j,itrc) = stflx(i,j,itrc) - &
-                            k_gas(i,j) / ddic_dco2(i,j) * t(i,j,nz,nrhs,itrc)
+          stflx(i,j,itrc) = stflx(i,j,itrc) - k_gas(i,j) / ddic_dco2(i,j) * t(i,j,nz,nrhs,itrc)
         enddo
       enddo
 #endif
