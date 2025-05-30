@@ -24,8 +24,8 @@
       real,allocatable,dimension(:,:) :: tauy              ! bring bulk force field closer to that of the measured data.
 #endif
 #if defined ANTITRACER
-      real,public,allocatable,dimension(:,:)   :: ddic_dco2       ! time interpolated carbonate sensitivity
-      real,public,allocatable,dimension(:,:) :: k_gas             ! time interpolated gas transfer velocity
+      real,public,allocatable,dimension(:,:) :: ddic_dco2  ! time interpolated carbonate sensitivity
+      real,public,allocatable,dimension(:,:) :: k_gas      ! time interpolated gas transfer velocity
 #endif
 
       real,public,allocatable,dimension(:,:) :: wspd_used  ! wind speed at rho point (also used in BGC routines)
@@ -314,6 +314,18 @@
 # define RHUM_DATA
 # define PRATE_DATA
 # define LWRAD_DATA
+#if defined ANTITRACER
+      ! coefficients to compute Schmidt number
+      real a_gas, b_gas, c_gas, d_gas, e_gas, xkw_coef
+      parameter (a_gas=2116.8)
+      parameter (b_gas=-136.25)
+      parameter (c_gas=4.7353)
+      parameter (d_gas=-0.092307)
+      parameter (e_gas=0.0007555)
+      parameter (xkw_coef=9.036e-06)
+      real schmidt_nr, sst_used
+#endif
+
 
 ! Extended bounds needed since u2rho and rho2u averaging occurs, and
 ! lmd_kpp has SMOOTH_HBL which requires extended loop ranges for smoothing.
@@ -930,6 +942,21 @@
           end if
         enddo
       enddo
+#if defined ANTITRACER
+      do j=0,ny+1
+        do i=0,nx+1
+          
+          sst_used = t(i,j,N,nrhs,itemp)
+          schmidt_nr = a_gas + sst_used * (b_gas + sst_used * (c_gas + sst_used * (d_gas + e_gas * sst_used)))
+          k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
+#ifdef SEA_ICE_NOFLUX
+          if( sst_used .le. -1.8 ) then
+              k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
+          endif
+#endif
+        enddo
+      enddo
+#endif /* defined ANTITRACER */
 
       end subroutine calc_all_bulk_forces  !]
 !-----------------------------------------------------------------------
@@ -1054,37 +1081,6 @@
 
       return
       end function bulk_psit  !]
-!-----------------------------------------------------------------------
-      subroutine set_gas_transfer_velocity  ![
-      implicit none
-#if defined ANTITRACER
-      ! local
-      integer i,j
-      real a,b,c,d,e,xkw_coef,schmidt_nr,sst
-
-      a = 2116.8
-      b = -136.25
-      c = 4.7353
-      d = -0.092307
-      e = 0.0007555
-      xkw_coef = 9.036e-06
-      
-      do j=0,ny+1
-        do i=0,nx+1
-          
-          sst = t(i,j,N,nrhs,itemp)
-          schmidt_nr = a + sst * (b + sst * (c + sst * (d + e * sst)))
-          k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
-#ifdef SEA_ICE_NOFLUX
-          if( sst .le. -1.8 ) then
-              k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
-          endif
-#endif
-        enddo
-      enddo
-#endif /* defined ANTITRACER */
-          
-      end subroutine set_gas_transfer_velocity  !]
 ! ----------------------------------------------------------------------
 
       end module bulk_frc

@@ -23,7 +23,7 @@
       use dimensions
       use surf_flux,  only: stflx                          ! surface tracer flux should possibly live in this module rather?
 #ifdef ANTITRACER      
-      use bulk_frc,  only: ddic_dco2, set_gas_transfer_velocity
+      use bulk_frc,  only: ddic_dco2, k_gas
 #endif      
       use scalars                                          ! for 'FIRST_TIME_STEP' and nstp
       use nc_read_write
@@ -92,11 +92,6 @@
 
       ! local
       integer           :: itrc       ! tracer number for loop index
-      character(len=46) :: t_flx_name ! Tracer time name
-
-#ifdef ANTITRACER      
-      call set_gas_transfer_velocity
-#endif
 
       do itrc=iTandS+1,NT
 
@@ -169,11 +164,11 @@
 ! ----------------------------------------------------------------------
 
       subroutine compute_air_sea_gas_exchange(itrc)  ![
-      ! Formulate air sea gas exchange as surface tracer flux
       implicit none
 
       ! input/outputs
       integer itrc ! Current tracer index number
+#ifdef ANTITRACER
 
       ! local
       integer i,j
@@ -184,7 +179,7 @@
                             k_gas(i,j) / ddic_dco2(i,j) * t(i,j,nz,nrhs,itrc)
         enddo
       enddo
-
+#endif
       end subroutine compute_air_sea_gas_exchange  !]
 
 ! ----------------------------------------------------------------------
