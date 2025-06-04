@@ -123,9 +123,10 @@
 
         endif ! if(t_ana_frc(itrc)==2)
 
-        call exchange_xxx(stflx)
 
       enddo
+        
+      call exchange_xxx(stflx)
 
       end subroutine set_surf_tracer_flx  !]
 ! ----------------------------------------------------------------------
@@ -416,7 +417,7 @@
 
       ! initialize read in forcing data arrays
       do itrc=iTandS+1,NT
-        if (t_ana_frc(itrc)==0) then
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then
 
           allocate( nc_t(itrc)%vdata( GLOBAL_2D_ARRAY,2) )
 
