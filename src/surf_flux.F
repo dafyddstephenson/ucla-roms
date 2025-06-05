@@ -71,6 +71,7 @@
       ! Public functions
       public init_arrays_surf_flx
       public set_surf_field_corr
+      public set_carbonate_sensitivity
       public wrt_sflux
 
       contains
@@ -104,6 +105,7 @@
 #endif
 #if defined ANTITRACER
       allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
+      allocate( ddic_dco2(GLOBAL_2D_ARRAY)  )
       allocate( k_gas(GLOBAL_2D_ARRAY)      ); k_gas=0.
 #endif
 
@@ -130,11 +132,18 @@
       ! Sea-surface salinity (SSS) data
       call set_frc_data(nc_sss,sss,'r')
 #endif
+
+      end subroutine set_surf_field_corr  !]
+! ----------------------------------------------------------------------
+      subroutine set_carbonate_sensitivity ![
+
+      implicit none
+
 #ifdef ANTITRACER
       call set_frc_data(nc_ddic_dco2, ddic_dco2, 'r')
 #endif
 
-      end subroutine set_surf_field_corr  !]
+      end subroutine set_carbonate_sensitivity  !]
 ! ----------------------------------------------------------------------
       subroutine calc_sflx_avg  ![
       implicit none

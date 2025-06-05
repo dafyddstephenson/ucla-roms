@@ -31,7 +31,7 @@
       use param
       use bulk_frc
       use flux_frc
-      use surf_flux, only: set_surf_field_corr
+      use surf_flux, only: set_surf_field_corr, set_carbonate_sensitivity
       use tracers,   only: set_surf_tracer_flx, iTandS
       use river_frc
       use pipe_frc
@@ -94,10 +94,12 @@ c***              no code here
 
 #ifdef SOLVE3D
 
-# if defined QCORRECTION || defined SFLX_CORR
+# if defined QCORRECTION || defined SFLX_CORR || defined ANTITRACER
       call set_surf_field_corr
 # endif
-
+# if defined ANTITRACER
+      call set_carbonate_sensitivity
+# endif
 # ifdef BULK_FRC
 #  ifdef LMD_KPP
 #   ifdef ANA_SRFLUX
