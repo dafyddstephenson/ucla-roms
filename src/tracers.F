@@ -100,7 +100,7 @@
 
         if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
 
-          call set_frc_data(nc_t(itrc), stflx(i0:i1,j0:j1,itrc) )
+          call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
 
         elseif(t_ana_frc(itrc)==1) then ! Analytical forcing
 
