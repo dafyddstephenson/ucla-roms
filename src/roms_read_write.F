@@ -360,7 +360,7 @@
       cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
       cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
 
-      var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
+      var2d(:,:) = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
       if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
         print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
@@ -417,7 +417,7 @@
       cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
       cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
 
-      var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
+      var2d(:,:) = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
       if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
         print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
@@ -459,7 +459,7 @@
       logical :: first                    ! first time call for this variable
 
       real,dimension(1)    :: ltime
-
+       
       if (ifile==0) then                                             ! first time for this variable
         first = .true.
         ifile = 1
@@ -532,7 +532,6 @@
 
       enddo                            ! search through files: while .not. found_rec .and. ifile<=nfiles.
 
-
       if (.not. found_var_ever) then
         write(*,'(/1x,4A,I3/)') 'ERROR: find_new_record:: ',
      &              'Could not find var: ', vname, ' mynode=', mynode
@@ -546,7 +545,6 @@
       endif
 
       if (first) then  ! Handle initital timestep. Need vtime < model_time. As per (A) above.
-
         ! find_new_rec_cycle deals internally with this
         if(cycle_length<0) then     ! not cyclical data
           if (irec==1) then         ! model time between input files.
