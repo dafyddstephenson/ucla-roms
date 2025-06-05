@@ -214,7 +214,6 @@ CR      write(*,*) ' -6' MYID
 !     FIXME: if using MARBL with diagnostics then this call is skipped and diagnostics arrays are not initialised to 0
       call ecosys2_init
 # endif /*BIOLOGY_BEC2*/
-
 #ifdef ANA_INITIAL
                                     ! Set initial conditions for
       call set_forces               ! model prognostic variables,
@@ -247,6 +246,10 @@ CR      write(*,*) ' -5' MYID
       time=start_time             ! moment "start_time" (global scalar)
       tdays=time*sec2day          ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
+
+#ifdef ANTITRACER
+      call set_forces               
+#endif
 
 #ifdef SOLVE3D
       do tile=my_tile_range       ! recompute three-dimensional S-
