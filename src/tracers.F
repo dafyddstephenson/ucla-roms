@@ -24,6 +24,7 @@
       use surf_flux,  only: stflx                          ! surface tracer flux should possibly live in this module rather?
 #ifdef ANTITRACER      
       use surf_flux,  only: ddic_dco2, k_gas, uwnd, vwnd
+      use ocean_vars, only: Hz
 #endif      
       use scalars                                          ! for 'FIRST_TIME_STEP' and nstp
       use nc_read_write
@@ -94,13 +95,29 @@
       integer           :: itrc       ! tracer number for loop index
 
 #ifdef ANTITRACER
-      call set_gas_transfer_velocity
+      call exchange_xxx(t(:,:,nz,1,itemp) )
+      call set_gas_transfer_velocity(istr,iend,jstr,jend)
 #endif
       do itrc=iTandS+1,NT
 
         if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
-
+      
           call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
+          call exchange_xxx(stflx(:,:,itrc))
+          
+          if (t_ana_frc(itrc)==2) then
+
+              call exchange_xxx(t(:,:,nz,nrhs,itrc) )
+
+              if (mynode == 0) then     
+              print *, 'flux before before: ', stflx(3, 3, itrc)
+              endif
+
+              call modify_surf_tracer_flx(itrc,istr,iend,jstr,jend)
+              call exchange_xxx(stflx(:,:,itrc))
+
+          endif ! if(t_ana_frc(itrc)==2)
+
 
         elseif(t_ana_frc(itrc)==1) then ! Analytical forcing
 
@@ -115,18 +132,9 @@
           endif
           error stop
 
-        endif ! if(t_ana_frc(itrc)==0)
-
-        if (t_ana_frc(itrc)==2) then
-
-            call compute_air_sea_gas_exchange(itrc)
-
-        endif ! if(t_ana_frc(itrc)==2)
-
+        endif ! if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2)
 
       enddo
-        
-      call exchange_xxx(stflx)
 
       end subroutine set_surf_tracer_flx  !]
 ! ----------------------------------------------------------------------
@@ -166,7 +174,7 @@
 
       end subroutine set_ana_surf_tracer_flx  !]
 ! ----------------------------------------------------------------------
-      subroutine set_gas_transfer_velocity ![
+      subroutine set_gas_transfer_velocity(istr,iend,jstr,jend) ![
 
       implicit none
 #if defined ANTITRACER
@@ -179,10 +187,10 @@
       parameter (e=0.0007555)
       parameter (xkw_coef=9.036e-06)
       real schmidt_nr, sst
-      integer i,j
+      integer istr, iend, jstr, jend, i, j
 
-      do j=0,ny+1
-        do i=0,nx+1
+      do j=jstr,jend
+        do i=istr,iend+1
           
           sst = t(i,j,nz,nrhs,itemp)
           schmidt_nr = a + sst * (b + sst * (c + sst * (d + e * sst)))
@@ -194,28 +202,52 @@
 #endif
         enddo
       enddo
+
+      if (mynode == 0) then     
+      print *, 'sst: ', t(3, 3, nz, nrhs, itemp)
+      print *, 'uwnd: ', uwnd(3, 3)
+      print *, 'vwnd: ', vwnd(3, 3)
+      print *, 'k_gas: ', k_gas(3, 3)
+      endif
 #endif /* defined ANTITRACER */
 
       end subroutine set_gas_transfer_velocity  !]
 ! ----------------------------------------------------------------------
-
-      subroutine compute_air_sea_gas_exchange(itrc)  ![
+      subroutine modify_surf_tracer_flx(itrc,istr,iend,jstr,jend)  ![
+      ! Modify surface tracer flux by 
+      ! 1. subtracting the air-sea gas exchange term
+      ! 2. devision by thickness of uppermost layer
+      ! This is consistent with the assumption that the read in surface flux is in
+      ! units 1/s/m2 (rather than 1/s/m3 as for t_ana_frc=0).
       implicit none
 
-      ! input/outputs
       integer itrc ! Current tracer index number
+      integer istr, iend, jstr, jend
+
 #ifdef ANTITRACER
 
       ! local
       integer i,j
+      real beta
+ 
+      if (mynode == 0) then     
+      print *, 'anti-tracer: ', t(3, 3, nz, nrhs, itrc)
+      print *, 'flux before gas exchange: ', stflx(3, 3, itrc)
+      print *, 'beta: ', ddic_dco2(3, 3)
+      endif
 
-      do j=0,ny+1
-        do i=0,nx+1
-          stflx(i,j,itrc) = stflx(i,j,itrc) - k_gas(i,j) / ddic_dco2(i,j) * t(i,j,nz,nrhs,itrc)
+      do j=jstr,jend
+        do i=istr,iend+1
+          beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
+          stflx(i,j,itrc) = stflx(i,j,itrc) - k_gas(i,j) / beta * t(i,j,nz,nrhs,itrc)
+          stflx(i,j,itrc) = stflx(i,j,itrc)/Hz(i,j,nz)
         enddo
       enddo
+      if (mynode == 0) then     
+      print *, 'flux after gas exchange: ', stflx(3, 3, itrc)
+      endif
 #endif
-      end subroutine compute_air_sea_gas_exchange  !]
+      end subroutine modify_surf_tracer_flx  !]
 
 ! ----------------------------------------------------------------------
       subroutine def_his_trc( ncid )  ![
