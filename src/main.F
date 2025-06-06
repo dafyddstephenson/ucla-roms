@@ -246,11 +246,6 @@ CR      write(*,*) ' -5' MYID
       time=start_time             ! moment "start_time" (global scalar)
       tdays=time*sec2day          ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
-
-#ifdef ANTITRACER
-      call set_forces               
-#endif
-
 #ifdef SOLVE3D
       do tile=my_tile_range       ! recompute three-dimensional S-
         call set_depth(tile)      ! coordinate system: at this moment
