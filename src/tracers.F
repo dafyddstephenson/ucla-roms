@@ -173,6 +173,8 @@
       subroutine set_gas_transfer_velocity(istr,iend,jstr,jend) ![
 
       implicit none
+      integer istr, iend, jstr, jend
+
 #if defined ANTITRACER
       ! coefficients to compute Schmidt number
       real a, b, c, d, e, xkw_coef
@@ -183,7 +185,7 @@
       parameter (e=0.0007555)
       parameter (xkw_coef=9.036e-06)
       real schmidt_nr, sst
-      integer istr, iend, jstr, jend, i, j
+      integer i, j
 
       do j=jstr,jend
         do i=istr,iend+1
