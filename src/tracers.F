@@ -109,10 +109,6 @@
 
               call exchange_xxx(t(:,:,nz,nrhs,itrc) )
 
-              if (mynode == 0) then     
-              print *, 'flux before before: ', stflx(3, 3, itrc)
-              endif
-
               call modify_surf_tracer_flx(itrc,istr,iend,jstr,jend)
               call exchange_xxx(stflx(:,:,itrc))
 
@@ -203,12 +199,6 @@
         enddo
       enddo
 
-      if (mynode == 0) then     
-      print *, 'sst: ', t(3, 3, nz, nrhs, itemp)
-      print *, 'uwnd: ', uwnd(3, 3)
-      print *, 'vwnd: ', vwnd(3, 3)
-      print *, 'k_gas: ', k_gas(3, 3)
-      endif
 #endif /* defined ANTITRACER */
 
       end subroutine set_gas_transfer_velocity  !]
@@ -230,12 +220,6 @@
       integer i,j
       real beta
  
-      if (mynode == 0) then     
-      print *, 'anti-tracer: ', t(3, 3, nz, nrhs, itrc)
-      print *, 'flux before gas exchange: ', stflx(3, 3, itrc)
-      print *, 'beta: ', ddic_dco2(3, 3)
-      endif
-
       do j=jstr,jend
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
@@ -243,9 +227,6 @@
           stflx(i,j,itrc) = stflx(i,j,itrc)/Hz(i,j,nz)
         enddo
       enddo
-      if (mynode == 0) then     
-      print *, 'flux after gas exchange: ', stflx(3, 3, itrc)
-      endif
 #endif
       end subroutine modify_surf_tracer_flx  !]
 
