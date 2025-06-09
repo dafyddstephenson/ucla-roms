@@ -49,7 +49,8 @@
       logical, dimension(nt), public      :: wrt_t_dia = .false.     ! t/f diagnostics tracer.
 
       integer, dimension(nt)              :: t_ana_frc               ! whether surface flux is read in (0), or analytical (1), 
-                                                                     ! or (2) read in + with online computed air-sea gas exchange
+                                                                     ! or (2) read in, but assuming that surface flux units are 1/m2/s,
+                                                                     ! or (3) read in (with assumptions of (2)) + with online computed air-sea gas exchange
 
       !-- Tracer netcdf variables as arrays/matrices of 'NT' length:
       ! Final tracer concentrations live in 't' in ocean3d
@@ -100,19 +101,25 @@
 #endif
       do itrc=iTandS+1,NT
 
-        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
       
           call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
           call exchange_xxx(stflx(:,:,itrc))
           
-          if (t_ana_frc(itrc)==2) then
+          if (t_ana_frc(itrc)==3) then
 
               call exchange_xxx(t(:,:,nz,nrhs,itrc) )
-
-              call modify_surf_tracer_flx(itrc,istr,iend,jstr,jend)
+              call subtract_gas_exchange_from_tracer_flx(itrc,istr,iend,jstr,jend)
               call exchange_xxx(stflx(:,:,itrc))
 
-          endif ! if(t_ana_frc(itrc)==2)
+          endif
+
+          if (t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==3) then
+
+              call divide_tracer_flx_by_dz(itrc,istr,iend,jstr,jend)
+              call exchange_xxx(stflx(:,:,itrc))
+
+          endif
 
 
         elseif(t_ana_frc(itrc)==1) then ! Analytical forcing
@@ -205,12 +212,9 @@
 
       end subroutine set_gas_transfer_velocity  !]
 ! ----------------------------------------------------------------------
-      subroutine modify_surf_tracer_flx(itrc,istr,iend,jstr,jend)  ![
-      ! Modify surface tracer flux by 
-      ! 1. subtracting the air-sea gas exchange term
-      ! 2. devision by thickness of uppermost layer
-      ! This is consistent with the assumption that the read in surface flux is in
-      ! units 1/s/m2 (rather than 1/s/m3 as for t_ana_frc=0).
+      subroutine subtract_gas_exchange_from_tracer_flx(itrc,istr,iend,jstr,jend)  ![
+      ! Modify surface tracer flux by subtracting the air-sea gas exchange term
+
       implicit none
 
       integer itrc ! Current tracer index number
@@ -226,11 +230,31 @@
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
           stflx(i,j,itrc) = stflx(i,j,itrc) - k_gas(i,j) / beta * t(i,j,nz,nrhs,itrc)
-          stflx(i,j,itrc) = stflx(i,j,itrc)/Hz(i,j,nz)
         enddo
       enddo
 #endif
-      end subroutine modify_surf_tracer_flx  !]
+      end subroutine subtract_gas_exchange_from_tracer_flx  !]
+
+! ----------------------------------------------------------------------
+      subroutine divide_tracer_flx_by_dz(itrc,istr,iend,jstr,jend)  ![
+      ! Devide surface tracer flux by thickness of uppermost layer. This is
+      ! consistent with the fact that the surface flux is added as c = c + stflx * dt in step3d_t_ISO.F, together with
+      ! * the assumption that the read in surface flux has units 1/s/m2 (t_ana_frc=2 and t_ana_frc=3);
+      ! * the fact that the gas exchange flux is -k/(beta*dz)*c
+      implicit none
+
+      integer itrc ! Current tracer index number
+      integer istr, iend, jstr, jend
+
+      ! local
+      integer i,j
+ 
+      do j=jstr,jend
+        do i=istr,iend+1
+          stflx(i,j,itrc) = stflx(i,j,itrc)/Hz(i,j,nz)
+        enddo
+      enddo
+      end subroutine divide_tracer_flx_by_dz !]
 
 ! ----------------------------------------------------------------------
       subroutine def_his_trc( ncid )  ![
