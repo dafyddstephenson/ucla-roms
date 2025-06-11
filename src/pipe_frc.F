@@ -12,11 +12,16 @@
 ! we have no PIPE_SOURCE flag here anymore, since we are moving away from cpp flags.
 ! Variables still need to be visible within code even when pipes are not used.
 
-  
+
       use dimensions                                       ! has dimensions, a list of forcing files, and rmask
       use roms_read_write
       use nc_read_write
       use scalars
+
+#ifdef PIO
+      use pio_roms
+      use mpi
+#endif
 
       implicit none
 
@@ -65,7 +70,7 @@
       if (p_analytical) then                                ! Set pipe flux volumes and tracer data
 
         call set_ana_pipe_frc
-        
+
       else
 
         call set_frc_data(nc_pvol,pipe_vol)                ! set pipe volume for all pipes at current time
@@ -99,7 +104,7 @@
 
       ! local
       integer :: ierr,ncid,v_id,i,j
-
+      integer :: ierr_bcast
 
       if (p_analytical) then
 
@@ -107,12 +112,17 @@
 
       else
 
+#ifdef PIO
         ! Read 'pipe_flux' from grid file (Pipe_idx & pipe_fraction in one value)
+        call pio_class2d_rho%readVar(grdname, pipe_flx_name, pipe_fraction(i0:i1,j0:j1), ierr)
+        call MPI_Bcast(ierr,1,MPI_INTEGER,0,ocean_grid_comm,ierr_bcast)
+#else
         ierr=nf90_open(grdname, nf90_nowrite, ncid)
         ! Temporarily store as pipe_fraction to avoid extra array,
         ! but value still pipe_idx + pipe_fraction
         call ncread(ncid,pipe_flx_name, pipe_fraction(i0:i1,j0:j1))
-        if(ierr/=0) 
+#endif
+        if(ierr/=0)
      &      call handle_ierr(ierr,'init_pipe_frc:: pipe not in file!')
 
         ! Separate pipe_idx & pipe_fraction:
@@ -128,7 +138,7 @@
 
       init_pipe_done = .true.
       if(mynode==0) write(*,'(/7x,A/)') 'pipe_frc: init pipe locations'
-          
+
       end subroutine init_pipe_frc  !]
 ! ----------------------------------------------------------------------
       subroutine init_arrays_pipes  ![

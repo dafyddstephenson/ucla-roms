@@ -232,7 +232,7 @@
 
       end subroutine createDecomp
 ! ----------------------------------------------------------------------
-      subroutine readVar(this, fname, varName, arr)
+      subroutine readVar(this, fname, varName, arr, ierr)
 
         implicit none
 
@@ -242,14 +242,13 @@
         real,dimension(:,:),intent(inout)   :: arr ! array to be filled
 
         integer :: ierr
-        integer :: retVal
 
         ierr = PIO_openfile(this%pioIoSystem, this%pioFileDesc, this%iotype, trim(fname))
 
         ierr = PIO_inq_varid(this%pioFileDesc, trim(varName), this%varId)
 
         call PIO_read_darray(this%pioFileDesc, this%varId, this%iodescNCells,
-     &  arr, retVal)
+     &  arr, ierr)
 
       end subroutine readVar
 ! ----------------------------------------------------------------------
