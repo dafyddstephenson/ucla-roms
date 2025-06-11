@@ -221,7 +221,7 @@
       do j=jstr,jend
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
-          stflx(i,j,itrc) = stflx(i,j,itrc) - k_gas(i,j) / beta * t(i,j,nz,nrhs,itrc)
+          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nrhs,itrc)
         enddo
       enddo
 #endif
