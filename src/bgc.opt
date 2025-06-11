@@ -27,6 +27,12 @@
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
      &                                +1
 #endif  
+#ifdef ALK_SOURCE
+      type (ncforce) :: nc_alksource   = ncforce( vname='ALK',   tname='ALK_time' )
+#endif
+#ifdef DIC_SOURCE
+      type (ncforce) :: nc_dicsource   = ncforce( vname='DIC',   tname='DIC_time' )
+#endif
       
       integer :: interp_frc  = 0                           ! interpolate forcing from coarser input grid (=1) or not (=0)
 

@@ -58,6 +58,9 @@
 #if defined ALK_SOURCE
       use bgc_forces                  , only: alksource
 #endif
+#if defined DIC_SOURCE
+      use bgc_forces                  , only: dicsource
+#endif
       use ocean_vars                  , only: Hz, z_r, z_w
       
 !     ----------------------------------------------------------------------
@@ -133,8 +136,9 @@
 
 #if defined ALK_SOURCE
       integer :: alk_ind
-      integer :: conserved_tracer_ind
-      integer :: deficit_tracer_ind
+#endif
+#if defined DIC_SOURCE
+      integer :: dic_ind
 #endif
 
 ! ----------------------------------------------------------------------
@@ -308,11 +312,12 @@
          if (trim(marbl_instance%tracer_metadata(idx)%short_name) == "ALK") then
             alk_ind = idx
          end if
-         if (trim(marbl_instance%tracer_metadata(idx)%short_name) == "C_CONSERVED") then
-            conserved_tracer_ind = idx
-         end if
-         if (trim(marbl_instance%tracer_metadata(idx)%short_name) == "C_DEFICIT") then
-            deficit_tracer_ind = idx
+      end do
+#endif
+#if defined DIC_SOURCE
+      do idx=1,nt_marbl ! Loop over MARBL tracers...
+         if (trim(marbl_instance%tracer_metadata(idx)%short_name) == "DIC") then
+            dic_ind = idx
          end if
       end do
 #endif
@@ -1461,13 +1466,11 @@
      &         tracer_array(i,j,nz,nnew,alk_ind+(NT-nt_marbl)) +
      &         alksource(i,j)
      &         *dt/Hz(i,j,nz)
-            tracer_array(i,j,nz,nnew,conserved_tracer_ind+(NT-nt_marbl)) =
-     &         tracer_array(i,j,nz,nnew,conserved_tracer_ind+(NT-nt_marbl)) +
-     &         alksource(i,j)
-     &         *dt/Hz(i,j,nz)
-            tracer_array(i,j,nz,nnew,deficit_tracer_ind+(NT-nt_marbl)) =
-     &         tracer_array(i,j,nz,nnew,deficit_tracer_ind+(NT-nt_marbl)) +
-     &         alksource(i,j)
+#endif
+#if defined DIC_SOURCE
+            tracer_array(i,j,nz,nnew,dic_ind+(NT-nt_marbl)) =
+     &         tracer_array(i,j,nz,nnew,dic_ind+(NT-nt_marbl)) +
+     &         dicsource(i,j)
      &         *dt/Hz(i,j,nz)
 #endif
 

@@ -58,6 +58,21 @@ CSDISTRIBUTE_RESHAPE  alksourceg(BLOCK_PATTERN,*) BLOCK_CLAUSE
      &           alksource_file_id, alksource_id,  alksource_tid
 # endif
 #endif /* ALK_SOURCE */
+#if defined DIC_SOURCE
+! DIC source term at surface
+! ------- -------------
+      real,allocatable,dimension(:,:) :: dicsource
+CSDISTRIBUTE_RESHAPE  dicsource(BLOCK_PATTERN,*) BLOCK_CLAUSE
+# if defined DICSOURCE_DATA || defined ALL_DATA
+# ifndef SET_SMTH
+#  undef DICSOURCE_DATA
+# endif
+CSDISTRIBUTE_RESHAPE  dicsourceg(BLOCK_PATTERN,*) BLOCK_CLAUSE
+      real :: dicsource_cycle, dicsource_time(2)
+      integer :: dicsource_ncycle,  dicsource_rec, itdicsource, ntdicsource,
+     &           dicsource_file_id, dicsource_id,  dicsource_tid
+# endif
+#endif /* DIC_SOURCE */
 
 #ifdef NHY_FORCING
 ! NHY flux
@@ -162,6 +177,9 @@ CSDISTRIBUTE_RESHAPE  irong(BLOCK_PATTERN,*) BLOCK_CLAUSE
 
 #if defined ALK_SOURCE
       allocate( alksource(GLOBAL_2D_ARRAY) )
+#endif
+#if defined DIC_SOURCE
+      allocate( dicsource(GLOBAL_2D_ARRAY) )
 #endif
 
 #ifdef NHY_FORCING

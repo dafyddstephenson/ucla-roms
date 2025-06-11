@@ -136,6 +136,10 @@
 !      call set_frc_var_tile( istr, iend, jstr, jend, nc_alksource, alksource, interp_frc )
       call set_frc_data(nc_alksource,alksource,'r')
 #endif /* ALK_SOURCE */
+#ifdef DIC_SOURCE
+!      call set_frc_var_tile( istr, iend, jstr, jend, nc_dicsource, dicsource, interp_frc )
+      call set_frc_data(nc_dicsource,dicsource,'r')
+#endif /* DIC_SOURCE */
 
       end subroutine set_bgc_surf_frc  !]
 ! ----------------------------------------------------------------------
@@ -568,6 +572,9 @@
 
 #if defined ALK_SOURCE
       allocate( nc_alksource%vdata( GLOBAL_2D_ARRAY,2) )
+#endif
+#if defined DIC_SOURCE
+      allocate( nc_dicsource%vdata( GLOBAL_2D_ARRAY,2) )
 #endif
 
       end subroutine  init_arrays_bgc_frc !]
