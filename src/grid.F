@@ -1,7 +1,7 @@
       module grid
 
 #include "cppdefs.opt"
-              
+
       ! possible choices for an .opt file
       ! ana_grid
       ! curvgrid
@@ -16,6 +16,10 @@
       use pipe_frc
       use scalars
       use mpi_exchanges
+#ifdef PIO
+      use pio_roms
+      use mpi
+#endif
       implicit none
 
 !
@@ -127,11 +131,11 @@
       allocate( f_XI(GLOBAL_2D_ARRAY) )  ; f_XI=init
       allocate( f_ETA(GLOBAL_2D_ARRAY) ) ; f_ETA=init
 # endif
- 
+
 # ifdef CURVGRID
       allocate( angler(GLOBAL_2D_ARRAY) ) ; angler=init
 # endif
- 
+
 #ifdef SPHERICAL
       allocate( latr(GLOBAL_2D_ARRAY) ) ; latr=init
       allocate( lonr(GLOBAL_2D_ARRAY) ) ; lonr=init
@@ -141,7 +145,7 @@
       allocate( yp(GLOBAL_2D_ARRAY) ) ; yp=init
       allocate( yr(GLOBAL_2D_ARRAY) ) ; yr=init
 #endif
- 
+
       allocate( pm(GLOBAL_2D_ARRAY) )   ; pm=init
       allocate( pn(GLOBAL_2D_ARRAY) )   ; pn=init
       allocate( dm_r(GLOBAL_2D_ARRAY) ) ; dm_r=init
@@ -157,7 +161,7 @@
 
       allocate( iA_u(GLOBAL_2D_ARRAY) ) ; iA_u=init
       allocate( iA_v(GLOBAL_2D_ARRAY) ) ; iA_v=init
- 
+
 #if (defined CURVGRID && defined UV_ADV)
       allocate( dmde(GLOBAL_2D_ARRAY) ) ; dmde=init
       allocate( dndx(GLOBAL_2D_ARRAY) ) ; dndx=init
@@ -177,7 +181,7 @@
       end subroutine ana_grid !]
 ! ----------------------------------------------------------------------
       subroutine wrt_ana_grid ![
-      ! write analytical grid to file 
+      ! write analytical grid to file
       implicit none
 
       integer :: ncid,ierr
@@ -373,7 +377,7 @@
       call ncwrite(ncid,'f', f(i0:i1,j0:j1))                    ! Coriolis parameter.
 
       call ncwrite(ncid,'pm', pm(i0:i1,j0:j1))                  ! pm=1./dx, pn=1./dy
-      call ncwrite(ncid,'pn', pn(i0:i1,j0:j1))       
+      call ncwrite(ncid,'pn', pn(i0:i1,j0:j1))
 
 #ifdef SPHERICAL
       call ncwrite(ncid,'lon_rho', lonr(i0:i1,j0:j1))           ! longitude-latitude
@@ -412,22 +416,27 @@
       implicit none
 
       character*1 char1
-      integer :: ierr, ncid, varid, lstr, checkdims
+      integer :: ierr, ierr_bcast, ncid, varid, lstr, checkdims
       integer,dimension(4) :: start
-
+      integer :: i,j
 
 #ifdef ANA_GRID
       call ana_grid
       call wrt_ana_grid
-#else 
+#else
 
 ! Open grid netCDF file for reading. Check that dimensions in the file
 ! are consistent with the model, then read all necessary variables.
 
+#ifdef PIO
+      if (mynode == 0) then
+#endif
       ierr=nf90_open(grdname, nf90_nowrite, ncid)
       if (ierr == nf90_noerr) then
+#ifndef PIO ! skip checkdims if we are using only one input file
         ierr=checkdims (ncid, grdname, varid)
         if (ierr. ne. nf90_noerr) goto 99
+#endif
       else
         write(*,'(/1x,4A/12x,A)')  '### ERROR: get_grid :: Cannot ',
      &          'open input NetCDF file ''', trim(grdname), '''.',
@@ -486,34 +495,77 @@
           goto 99                                        !--> ERROR
         endif
       endif
+#ifdef PIO
+      ierr=nf90_close(ncid)
+      endif
+      ! Broadcast ierr status to other MPI ranks so that they all exit cleanly
+      ! in case of an error
+      call MPI_Bcast(ierr,1,MPI_INTEGER,0,ocean_grid_comm,ierr_bcast)
+#endif
 
 ! Read in grid arrays.
 !===== == ==== =======
-
-      start=1; start(3)=0      ! starting indices in netcdf file. Might not be needed here
-
+#ifdef PIO
       ! The i0,i1,j0,j1 indices are needed because the netcdf files do
       ! include 1 more row/column for subdomains at the physical boundary
+      call pio_class2d_rho%readVar(grdname, 'h', h(i0:i1,j0:j1))
+      call exchange_xxx(h)                         ! (2,.true.)
+
+! Coordinate transformation metrics (m,n) associated with
+! differential distances in XI- and ETA-directions.
+      call pio_class2d_rho%readVar(grdname, 'pm', pm(i0:i1,j0:j1))
+      call pio_class2d_rho%readVar(grdname, 'pn', pn(i0:i1,j0:j1))
+      call exchange_xxx(pm,pn)
+
+# ifdef SPHERICAL
+      ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
+      call pio_class2d_rho%readVar(grdname, 'lon_rho', lonr(i0:i1,j0:j1))
+      call pio_class2d_rho%readVar(grdname, 'lat_rho', latr(i0:i1,j0:j1))
+      call exchange_xxx(lonr,latr)
+# else
+      ! check this with analytical filament example
+      call pio_class2d_rho%readVar(grdname, 'x_rho', xr(i0:i1,j0:j1))
+      call pio_class2d_rho%readVar(grdname, 'y_rho', yr(i0:i1,j0:j1))
+
+      ! Only use if non-spherical grid, otherwise computed in  setup_grid1
+      call pio_class2d_rho%readVar(grdname, 'f', f(i0:i1,j0:j1))
+      call exchange_xxx(xr,yr,f)
+
+# endif
+# ifdef CURVGRID
+      ! grid angle is used to compute non-traditional coriolis components
+      ! and for in-place rotation for data extraction
+      ! Also used in wec for the moment
+      ! Angle (radians) between XI-axis and EAST at RHO-points.
+      call pio_class2d_rho%readVar(grdname, 'angle', angler(i0:i1,j0:j1))
+      call exchange_xxx(angler)
+# endif
+# ifdef MASKING
+      ! Mask at RHO-points.
+      call pio_class2d_rho%readVar(grdname, 'mask_rho', rmask(i0:i1,j0:j1))
+      call exchange_xxx(rmask)
+# endif
+
+#else /* PIO */
 
       call ncread(ncid,'h',h(i0:i1,j0:j1))         ! Bathymetry
       call exchange_xxx(h)                         ! (2,.true.)
 
-      
 ! Coordinate transformation metrics (m,n) associated with
 ! differential distances in XI- and ETA-directions.
 
-      call ncread(ncid,'pm',pm(i0:i1,j0:j1),start)
-      call ncread(ncid,'pn',pn(i0:i1,j0:j1),start)
+      call ncread(ncid,'pm',pm(i0:i1,j0:j1))
+      call ncread(ncid,'pn',pn(i0:i1,j0:j1))
       call exchange_xxx(pm,pn)
 
 # ifdef SPHERICAL
-      call ncread(ncid,'lon_rho',lonr(i0:i1,j0:j1),start)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
-      call ncread(ncid,'lat_rho',latr(i0:i1,j0:j1),start)
+      call ncread(ncid,'lon_rho',lonr(i0:i1,j0:j1))  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
+      call ncread(ncid,'lat_rho',latr(i0:i1,j0:j1))
       call exchange_xxx(lonr,latr)
 # else
       ! check this with analytical filament example
-      call ncread(ncid,'x_rho',xr(i0:i1,j0:j1),start)
-      call ncread(ncid,'y_rho',yr(i0:i1,j0:j1),start)
+      call ncread(ncid,'x_rho',xr(i0:i1,j0:j1))
+      call ncread(ncid,'y_rho',yr(i0:i1,j0:j1))
 
       ! Only use if non-spherical grid, otherwise computed in  setup_grid1
       call ncread(ncid,'f',f(i0:i1,j0:j1))         ! Coriolis parameter.
@@ -524,14 +576,16 @@
       ! grid angle is used to compute non-traditional coriolis components
       ! and for in-place rotation for data extraction
       ! Also used in wec for the moment
-      call ncread(ncid,'angle',angler(i0:i1,j0:j1),start)  ! Angle (radians) between XI-axis and EAST at RHO-points.
+      call ncread(ncid,'angle',angler(i0:i1,j0:j1))  ! Angle (radians) between XI-axis and EAST at RHO-points.
       call exchange_xxx(angler)
 # endif
 # ifdef MASKING
-      call ncread(ncid,'mask_rho',rmask(i0:i1,j0:j1),start)! Mask at RHO-points.
+      call ncread(ncid,'mask_rho',rmask(i0:i1,j0:j1)) ! Mask at RHO-points.
       call exchange_xxx(rmask)
 # endif
       ierr=nf90_close(ncid)
+# endif /* PIO */
+
       if (ierr==nf90_noerr) then
 #ifdef MPI_SILENT_MODE
         if (mynode==0) then

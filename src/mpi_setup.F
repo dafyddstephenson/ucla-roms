@@ -16,6 +16,9 @@ C$    end
       use hidden_mpi_vars
       use mpi
       use roms_read_write
+#ifdef PIO
+      use pio_roms
+#endif
       implicit none
       integer ierr
 
@@ -24,12 +27,17 @@ C$    integer nthrds
 # ifdef PRINT_HOSTNAME
       integer status(MPI_STATUS_SIZE), blank
       character(len=38) msg1 ! <-- greeting message to print
-      character(len=23) msg2 
+      character(len=23) msg2
 # endif
 
       ocean_grid_comm=MPI_COMM_WORLD
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
+
+#ifdef PIO
+      pio_class2d_rho%myRank = mynode
+      pio_class2d_rho%ntasks = nsize
+#endif
 
       exc_call_count=0
                                          ! Determine number of threads
@@ -173,6 +181,25 @@ C$    endif
            eta_v=eta_rho
          endif
 # endif
+
+#ifdef PIO
+        if (inode == 0) then
+          pio_class2d_rho%xi_start = iSW_corn+iwest
+        else
+          pio_class2d_rho%xi_start= iSW_corn+iwest+1
+        endif
+
+        if (jnode == 0) then
+          pio_class2d_rho%eta_start= jSW_corn+jsouth
+        else
+          pio_class2d_rho%eta_start= jSW_corn+jsouth+1
+        endif
+
+        pio_class2d_rho%xi_rho = xi_rho
+        pio_class2d_rho%eta_rho = eta_rho
+#endif
+
+
 ! Print hostnames for each rank = 0 to NNODES-1 in the sequence.
 # ifdef PRINT_HOSTNAME
         call MPI_Barrier(ocean_grid_comm, ierr)
@@ -180,7 +207,7 @@ C$    endif
      &                                   ocean_grid_comm, status, ierr)
 
         write(msg1,'(A,I5,1x,A,I5,1x,A,2x)') 'MPI rank', mynode,
-     &                              'out of', nsize, 'running on' 
+     &                              'out of', nsize, 'running on'
         write(msg2,'(2x,A,2I4)') 'inode,jnode =', inode,jnode
 
         call system('echo "'/ /msg1/ /'`hostname -s`'/ /msg2/ /'"')
