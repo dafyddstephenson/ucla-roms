@@ -101,7 +101,7 @@
 #endif
       do itrc=iTandS+1,NT
 
-        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==3) then ! Read in forcing data
       
           call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
           call exchange_xxx(stflx(:,:,itrc))
@@ -456,7 +456,7 @@
 
       ! initialize read in forcing data arrays
       do itrc=iTandS+1,NT
-        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==3) then
 
           allocate( nc_t(itrc)%vdata( GLOBAL_2D_ARRAY,2) )
 
