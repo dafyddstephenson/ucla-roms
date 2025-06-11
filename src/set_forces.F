@@ -94,7 +94,7 @@ c***              no code here
 
 #ifdef SOLVE3D
 
-# if defined QCORRECTION || defined SFLX_CORR || defined ANTITRACER
+# if defined QCORRECTION || defined SFLX_CORR
       call set_surf_field_corr
 # endif
 # if defined ANTITRACER
