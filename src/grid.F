@@ -508,27 +508,27 @@
 #ifdef PIO
       ! The i0,i1,j0,j1 indices are needed because the netcdf files do
       ! include 1 more row/column for subdomains at the physical boundary
-      call pio_class2d_rho%readVar(grdname, 'h', h(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'h', h(i0:i1,j0:j1), ierr)
       call exchange_xxx(h)                         ! (2,.true.)
 
 ! Coordinate transformation metrics (m,n) associated with
 ! differential distances in XI- and ETA-directions.
-      call pio_class2d_rho%readVar(grdname, 'pm', pm(i0:i1,j0:j1), ierr)
-      call pio_class2d_rho%readVar(grdname, 'pn', pn(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'pm', pm(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'pn', pn(i0:i1,j0:j1), ierr)
       call exchange_xxx(pm,pn)
 
 # ifdef SPHERICAL
       ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
-      call pio_class2d_rho%readVar(grdname, 'lon_rho', lonr(i0:i1,j0:j1), ierr)
-      call pio_class2d_rho%readVar(grdname, 'lat_rho', latr(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'lon_rho', lonr(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'lat_rho', latr(i0:i1,j0:j1), ierr)
       call exchange_xxx(lonr,latr)
 # else
       ! check this with analytical filament example
-      call pio_class2d_rho%readVar(grdname, 'x_rho', xr(i0:i1,j0:j1), ierr)
-      call pio_class2d_rho%readVar(grdname, 'y_rho', yr(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'x_rho', xr(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'y_rho', yr(i0:i1,j0:j1), ierr)
 
       ! Only use if non-spherical grid, otherwise computed in  setup_grid1
-      call pio_class2d_rho%readVar(grdname, 'f', f(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'f', f(i0:i1,j0:j1), ierr)
       call exchange_xxx(xr,yr,f)
 
 # endif
@@ -537,12 +537,12 @@
       ! and for in-place rotation for data extraction
       ! Also used in wec for the moment
       ! Angle (radians) between XI-axis and EAST at RHO-points.
-      call pio_class2d_rho%readVar(grdname, 'angle', angler(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'angle', angler(i0:i1,j0:j1), ierr)
       call exchange_xxx(angler)
 # endif
 # ifdef MASKING
       ! Mask at RHO-points.
-      call pio_class2d_rho%readVar(grdname, 'mask_rho', rmask(i0:i1,j0:j1), ierr)
+      call pio_r%ncread(grdname, 'mask_rho', rmask(i0:i1,j0:j1), ierr)
       call exchange_xxx(rmask)
 # endif
 

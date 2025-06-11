@@ -35,8 +35,8 @@ C$    integer nthrds
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
 
 #ifdef PIO
-      pio_class2d_rho%myRank = mynode
-      pio_class2d_rho%ntasks = nsize
+      pio_r%myRank = mynode
+      pio_r%ntasks = nsize
 #endif
 
       exc_call_count=0
@@ -184,19 +184,23 @@ C$    endif
 
 #ifdef PIO
         if (inode == 0) then
-          pio_class2d_rho%xi_start = iSW_corn+iwest
+          pio_r%xi_start = iSW_corn+iwest
         else
-          pio_class2d_rho%xi_start= iSW_corn+iwest+1
+          pio_r%xi_start= iSW_corn+iwest+1
         endif
 
         if (jnode == 0) then
-          pio_class2d_rho%eta_start= jSW_corn+jsouth
+          pio_r%eta_start= jSW_corn+jsouth
         else
-          pio_class2d_rho%eta_start= jSW_corn+jsouth+1
+          pio_r%eta_start= jSW_corn+jsouth+1
         endif
+        pio_r%s_start = 1
 
-        pio_class2d_rho%xi_rho = xi_rho
-        pio_class2d_rho%eta_rho = eta_rho
+        pio_r%xi_rho = xi_rho
+        pio_r%eta_rho = eta_rho
+        pio_r%xi_u = xi_u
+        pio_r%eta_v = eta_v
+        pio_r%N = N
 #endif
 
 

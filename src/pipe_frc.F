@@ -114,7 +114,7 @@
 
 #ifdef PIO
         ! Read 'pipe_flux' from grid file (Pipe_idx & pipe_fraction in one value)
-        call pio_class2d_rho%readVar(grdname, pipe_flx_name, pipe_fraction(i0:i1,j0:j1), ierr)
+        call pio_r%ncread(grdname, pipe_flx_name, pipe_fraction(i0:i1,j0:j1), ierr)
         call MPI_Bcast(ierr,1,MPI_INTEGER,0,ocean_grid_comm,ierr_bcast)
 #else
         ierr=nf90_open(grdname, nf90_nowrite, ncid)
