@@ -101,26 +101,18 @@
 #endif
       do itrc=iTandS+1,NT
 
-        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==3) then ! Read in forcing data
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
       
           call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
           call exchange_xxx(stflx(:,:,itrc))
           
-          if (t_ana_frc(itrc)==3) then
+          if (t_ana_frc(itrc)==2) then
 
               call exchange_xxx(t(:,:,nz,nrhs,itrc) )
               call subtract_gas_exchange_from_tracer_flx(itrc,istr,iend,jstr,jend)
               call exchange_xxx(stflx(:,:,itrc))
 
           endif
-
-          if (t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==3) then
-
-              call divide_tracer_flx_by_dz(itrc,istr,iend,jstr,jend)
-              call exchange_xxx(stflx(:,:,itrc))
-
-          endif
-
 
         elseif(t_ana_frc(itrc)==1) then ! Analytical forcing
 
@@ -234,27 +226,6 @@
       enddo
 #endif
       end subroutine subtract_gas_exchange_from_tracer_flx  !]
-
-! ----------------------------------------------------------------------
-      subroutine divide_tracer_flx_by_dz(itrc,istr,iend,jstr,jend)  ![
-      ! Devide surface tracer flux by thickness of uppermost layer. This is
-      ! consistent with the fact that the surface flux is added as c = c + stflx * dt in step3d_t_ISO.F, together with
-      ! * the assumption that the read in surface flux has units 1/s/m2 (t_ana_frc=2 and t_ana_frc=3);
-      ! * the fact that the gas exchange flux is -k/(beta*dz)*c
-      implicit none
-
-      integer itrc ! Current tracer index number
-      integer istr, iend, jstr, jend
-
-      ! local
-      integer i,j
- 
-      do j=jstr,jend
-        do i=istr,iend+1
-          stflx(i,j,itrc) = stflx(i,j,itrc)/Hz(i,j,nz)
-        enddo
-      enddo
-      end subroutine divide_tracer_flx_by_dz !]
 
 ! ----------------------------------------------------------------------
       subroutine def_his_trc( ncid )  ![
@@ -456,7 +427,7 @@
 
       ! initialize read in forcing data arrays
       do itrc=iTandS+1,NT
-        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2 .or. t_ana_frc(itrc)==3) then
+        if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then
 
           allocate( nc_t(itrc)%vdata( GLOBAL_2D_ARRAY,2) )
 
