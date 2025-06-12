@@ -427,7 +427,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 # if defined MPI && defined PARALLEL_FILES
 # ifndef PIO
           call insert_node(fname, lstr, mynode, NNODES, ierr)
-!         call insert_nodes(fname)
 # endif
 # endif
           open(testunit,file=fname(1:lstr), status='old', err=97)

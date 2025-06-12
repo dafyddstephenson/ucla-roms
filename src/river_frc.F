@@ -189,7 +189,7 @@
 
 #ifdef PIO
                ! Read 'pipe_flux' from grid file (Pipe_idx & pipe_fraction in one value)
-               call pio_r%ncread(grdname, riv_flx_name, rflx(i0:i1,j0:j1), ierr)
+               call pio_ncread(grdname, riv_flx_name, rflx(i0:i1,j0:j1))
                call MPI_Bcast(ierr,1,MPI_INTEGER,0,ocean_grid_comm,ierr_bcast)
 #else
                call ncread(ncid, riv_flx_name, rflx(i0:i1,j0:j1))

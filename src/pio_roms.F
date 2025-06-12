@@ -14,73 +14,64 @@
 
       use param
       use hidden_mpi_vars
+      use roms_read_write
       implicit none
 
       private
 
-      public :: initialize_pio
+      !> @brief Rank of processor running the code.
+      integer, public :: pio_myRank
+      !> @brief Number of processors participating in MPI communicator.
+      integer, public :: pio_ntasks
+      !> @brief Number of processors performing I/O.
+      integer :: pio_niotasks
+      !> @brief Stride in the mpi rank between io tasks.
+      integer :: pio_stride
+      !> @brief Number of aggregator.
+      integer :: pio_numAggregator
+      !> @brief Start index of I/O processors.
+      integer :: pio_optBase
+      !> @brief The ParallelIO system set up by @ref PIO_init.
+      type(iosystem_desc_t) :: pio_IoSystem
+      !> @brief Contains data identifying the file.
+      type(file_desc_t)     :: pio_FileDesc
+      !> @brief An io descriptor handle that is generated in @ref PIO_initdecomp.
+      type(io_desc_t)       :: pio_desc_2D_r
+      type(io_desc_t)       :: pio_desc_3D_r
+      !> @brief Specifies the flavor of netCDF output.
+      integer               :: pio_type
+      !> @brief The length of the dimension of the netCDF variable.
+      integer, dimension(2) :: pio_dimLen_2D_r
+      integer, dimension(2) :: pio_dimLen_2D_u
+      integer, dimension(2) :: pio_dimLen_2D_v
+      integer, dimension(3) :: pio_dimLen_3D_r
+      integer, dimension(3) :: pio_dimLen_3D_u
+      integer, dimension(3) :: pio_dimLen_3D_v
 
-!! This class contains the data and functions for reading input files.
+      !integer :: xi_rho, pio_eta_rho
+      !integer :: xi_u, eta_v
+      !integer :: N
+      integer, public :: pio_xi_start, pio_eta_start, pio_s_start
 
-      type, public :: pioReader
+      !> @brief Array describing the decomposition of the data.
+      integer, allocatable  :: pio_fcompdof_2D_r(:)
+      integer, allocatable  :: pio_fcompdof_2D_u(:)
+      integer, allocatable  :: pio_fcompdof_2D_v(:)
 
-        !> @brief Rank of processor running the code.
-        integer :: myRank
-        !> @brief Number of processors participating in MPI communicator.
-        integer :: ntasks
-        !> @brief Number of processors performing I/O.
-        integer :: niotasks
-        !> @brief Stride in the mpi rank between io tasks.
-        integer :: stride
-        !> @brief Number of aggregator.
-        integer :: numAggregator
-        !> @brief Start index of I/O processors.
-        integer :: optBase
-        !> @brief The ParallelIO system set up by @ref PIO_init.
-        type(iosystem_desc_t) :: pioIoSystem
-        !> @brief Contains data identifying the file.
-        type(file_desc_t)     :: pioFileDesc
-        !> @brief An io descriptor handle that is generated in @ref PIO_initdecomp.
-        type(io_desc_t)       :: iodesc_2D_r
-        type(io_desc_t)       :: iodesc_3D_r
-        !> @brief Specifies the flavor of netCDF output.
-        integer               :: iotype
-        !> @brief The length of the dimension of the netCDF variable.
-        integer, dimension(2) :: dimLen_2D_r
-        integer, dimension(2) :: dimLen_2D_u
-        integer, dimension(2) :: dimLen_2D_v
-        integer, dimension(3) :: dimLen_3D_r
-        integer, dimension(3) :: dimLen_3D_u
-        integer, dimension(3) :: dimLen_3D_v
+      integer, allocatable  :: pio_fcompdof_3D_r(:)
+      integer, allocatable  :: pio_fcompdof_3D_u(:)
+      integer, allocatable  :: pio_fcompdof_3D_v(:)
 
-        integer :: xi_rho, eta_rho
-        integer :: xi_u, eta_v
-        integer :: N
-        integer :: xi_start, eta_start, s_start
+      !! Initialize the ParallelIO library. Also allocate
+      !! memory to read data from the netCDF file.
+      public  :: pio_initialize
 
-        !> @brief Array describing the decomposition of the data.
-        integer, allocatable  :: fcompdof_2D_r(:)
-        integer, allocatable  :: fcompdof_2D_u(:)
-        integer, allocatable  :: fcompdof_2D_v(:)
+      !! This subroutine creates the decomposition.
+      public  :: pio_createDecomp
 
-        integer, allocatable  :: fcompdof_3D_r(:)
-        integer, allocatable  :: fcompdof_3D_u(:)
-        integer, allocatable  :: fcompdof_3D_v(:)
-
-      contains
-
-        !! Initialize the ParallelIO library. Also allocate
-        !! memory to read data from the netCDF file.
-        procedure,  public  :: init
-
-        !! This subroutine creates the decomposition.
-        procedure,  public  :: createDecomp
-
-        !! This subroutine reads the data array from the netCDF input file.
-        procedure,  public  :: ncread
-        procedure,  public  :: ncread3
-
-      end type pioReader
+      !! This subroutine reads the data array from the netCDF input file.
+      public  :: pio_ncread
+!      public  :: pio_ncread3
 
 !! WRITER
 !        !> @brief The netCDF dimension ID.
@@ -120,52 +111,17 @@
 !        !! This subroutine is called if there is an error.
 !        procedure,  private :: errorHandle
 
-
-      type(pioReader), public :: pio_r
-
       contains
-
-! ----------------------------------------------------------------------
-!! Instantiate all the PIO Example class objects.
-
-      subroutine initialize_pio
-
-      implicit none
-
-      call pio_r%init()
-      call pio_r%createDecomp()
-
-!      call pio_class2d_rho%init()
-!      call pio_class2d_rho%createDecomp()
-
-!      call pio_class2d_rho%init()
-!      call pio_class2d_rho%createDecomp()
-
-!      call pio_class2d_rho%init()
-!      call pio_class2d_rho%createDecomp()
-
-!      call pio_class2d_rho%init()
-!      call pio_class2d_rho%createDecomp()
-
-!      call pio_class2d_rho%init()
-!      call pio_class2d_rho%createDecomp()
-
-!      call pioExInst%closeFile()
-
-      end subroutine initialize_pio
 
 ! ----------------------------------------------------------------------
 !! Initialize the MPI and ParallelIO libraries. Also allocate
 !! memory to write and read the sample data to the netCDF file.
 
-      subroutine init(this)
+      subroutine pio_initialize
 
         implicit none
 
-        class(pioReader), intent(inout) :: this
-
         integer :: ierr,i,j,k
-        integer :: xi_start, eta_start
         integer :: wbuf, tmp_idx
 
         integer tile
@@ -174,85 +130,84 @@
 
         ! Set up PIO for this object
 
-        this%stride        = 1  ! 128
-        this%numAggregator = 0
-        this%optBase       = 1
-        this%iotype        = PIO_iotype_netcdf !pnetcdf
+        pio_stride        = 1  ! 128
+        pio_numAggregator = 0
+        pio_optBase       = 1
+        pio_type        = PIO_iotype_netcdf !pnetcdf
 
-        this%dimLen_2D_r(1)     = LLm+2
-        this%dimLen_2D_r(2)     = MMm+2
-        this%dimLen_2D_u(1)     = LLm+1
-        this%dimLen_2D_u(2)     = MMm+2
-        this%dimLen_2D_v(1)     = LLm+2
-        this%dimLen_2D_v(2)     = MMm+1
+        pio_dimLen_2D_r(1)     = LLm+2
+        pio_dimLen_2D_r(2)     = MMm+2
+!        pio_dimLen_2D_u(1)     = LLm+1
+!        pio_dimLen_2D_u(2)     = MMm+2
+!        pio_dimLen_2D_v(1)     = LLm+2
+!        pio_dimLen_2D_v(2)     = MMm+1
 
-        this%dimLen_3D_r(1)     = LLm+2
-        this%dimLen_3D_r(2)     = MMm+2
-        this%dimLen_3D_r(3)     = N
-        this%dimLen_3D_u(1)     = LLm+1
-        this%dimLen_3D_u(2)     = MMm+2
-        this%dimLen_3D_u(3)     = N
-        this%dimLen_3D_v(1)     = LLm+2
-        this%dimLen_3D_v(2)     = MMm+1
-        this%dimLen_3D_v(3)     = N
+!        pio_dimLen_3D_r(1)     = LLm+2
+!        pio_dimLen_3D_r(2)     = MMm+2
+!        pio_dimLen_3D_r(3)     = N
+!        pio_dimLen_3D_u(1)     = LLm+1
+!        pio_dimLen_3D_u(2)     = MMm+2
+!        pio_dimLen_3D_u(3)     = N
+!        pio_dimLen_3D_v(1)     = LLm+2
+!        pio_dimLen_3D_v(2)     = MMm+1
+!        pio_dimLen_3D_v(3)     = N
 
-        this%niotasks = this%ntasks ! keep things simple - 1 iotask per MPI process
+        pio_niotasks = pio_ntasks ! keep things simple - 1 iotask per MPI process
 
-        call PIO_init(this%myRank,       ! MPI rank
+        call PIO_init(pio_myRank,       ! MPI rank
      &       MPI_COMM_WORLD,             ! MPI communicator
-     &       this%niotasks,              ! Number of iotasks (ntasks/stride)
-     &       this%numAggregator,         ! number of aggregators to use
-     &       this%stride,                ! stride
+     &       pio_niotasks,              ! Number of iotasks (ntasks/stride)
+     &       pio_numAggregator,         ! number of aggregators to use
+     &       pio_stride,                ! stride
      &       PIO_rearr_subset,           ! do not use any form of rearrangement (can be BOX or SUBSET)
-     &       this%pioIoSystem,           ! iosystem
-     &       base=this%optBase)          ! base (optional argument)
+     &       pio_IoSystem,           ! iosystem
+     &       base=pio_optBase)          ! base (optional argument)
 
-        allocate(this%fcompdof_2D_r( this%xi_rho * this%eta_rho * N ))
-        allocate(this%fcompdof_2D_u( this%xi_u   * this%eta_rho * N ))
-        allocate(this%fcompdof_2D_v( this%xi_rho * this%eta_v   * N ))
-        allocate(this%fcompdof_3D_r( this%xi_rho * this%eta_rho * N ))
-        allocate(this%fcompdof_3D_u( this%xi_u   * this%eta_rho * N ))
-        allocate(this%fcompdof_3D_v( this%xi_rho * this%eta_v   * N ))
+        allocate(pio_fcompdof_2D_r( xi_rho * eta_rho ))
+!        allocate(pio_fcompdof_2D_u( xi_u   * eta_rho ))
+!        allocate(pio_fcompdof_2D_v( xi_rho * eta_v   ))
+!        allocate(pio_fcompdof_3D_r( xi_rho * eta_rho * N ))
+!        allocate(pio_fcompdof_3D_u( xi_u   * eta_rho * N ))
+!        allocate(pio_fcompdof_3D_v( xi_rho * eta_v   * N ))
 
-        do j=1,this%eta_rho
-          do i=1,this%xi_rho
-            wbuf = (this%eta_start - 1 + j - 1) * this%dimLen_2D_r(1) + (this%xi_start - 1 + i)
-            tmp_idx = (j - 1) * this%xi_rho + i
-            this%fcompdof_2D_r(tmp_idx) = wbuf
+        do j=1,eta_rho
+          do i=1,xi_rho
+            wbuf = (pio_eta_start - 1 + j - 1) * pio_dimLen_2D_r(1) + (pio_xi_start - 1 + i)
+            tmp_idx = (j - 1) * xi_rho + i
+            pio_fcompdof_2D_r(tmp_idx) = wbuf
           end do
         end do
 
-        do k=1,N
-          do j=1,this%eta_rho
-            do i=1,this%xi_rho
-              wbuf = (this%s_start - 1 + k - 1) * (this%dimLen_3D_r(1)*this%dimLen_3D_r(2)) +
-     &               (this%eta_start - 1 + j - 1) * this%dimLen_2D_r(1) + (this%xi_start - 1 + i)
-              tmp_idx = (k - 1) * ( this%xi_rho * this%eta_rho) + (j - 1) * this%xi_rho + i
-              this%fcompdof_3D_r(tmp_idx) = wbuf
-            end do
-          end do
-        end do
+!        do k=1,N
+!          do j=1,eta_rho
+!            do i=1,xi_rho
+!              wbuf = (pio_s_start - 1 + k - 1) * (pio_dimLen_3D_r(1)*pio_dimLen_3D_r(2)) +
+!     &               (pio_eta_start - 1 + j - 1) * pio_dimLen_2D_r(1) + (pio_xi_start - 1 + i)
+!              tmp_idx = (k - 1) * ( xi_rho * eta_rho) + (j - 1) * xi_rho + i
+!              pio_fcompdof_3D_r(tmp_idx) = wbuf
+!            end do
+!          end do
+!        end do
 
-      end subroutine init
+      call pio_createDecomp()
+
+      end subroutine pio_initialize
 ! ----------------------------------------------------------------------
-      subroutine createDecomp(this)
+      subroutine pio_createDecomp()
 
         implicit none
 
-        class(pioReader), intent(inout) :: this
+        call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_2D_r, pio_fcompdof_2D_r,
+     &       pio_desc_2D_r)
+!        call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_3D_r, pio_fcompdof_3D_r,
+!     &       pio_desc_3D_r)
 
-        call PIO_initdecomp(this%pioIoSystem, PIO_double, this%dimLen_2D_r, this%fcompdof_2D_r,
-     &       this%iodesc_2D_r)
-        call PIO_initdecomp(this%pioIoSystem, PIO_double, this%dimLen_3D_r, this%fcompdof_3D_r,
-     &       this%iodesc_3D_r)
-
-      end subroutine createDecomp
+      end subroutine pio_createDecomp
 ! ----------------------------------------------------------------------
-      subroutine ncread(this, fname, varName, arr, ierr)
+      subroutine pio_ncread(fname, varName, arr)
 
         implicit none
 
-        class(pioReader), intent(inout) :: this
         character(len=*) :: fname
         character(len=*) :: varName
         real,dimension(:,:),intent(inout)   :: arr ! array to be filled
@@ -260,36 +215,35 @@
         type(var_desc_t) :: varId
         integer :: ierr
 
-        ierr = PIO_openfile(this%pioIoSystem, this%pioFileDesc, this%iotype, trim(fname))
+        ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
 
-        ierr = PIO_inq_varid(this%pioFileDesc, trim(varName), varId)
+        ierr = PIO_inq_varid(pio_FileDesc, trim(varName), varId)
 
-        call PIO_read_darray(this%pioFileDesc, varId, this%iodesc_2D_r,
+        call PIO_read_darray(pio_FileDesc, varId, pio_desc_2D_r,
      &  arr, ierr)
 
-      end subroutine ncread
+      end subroutine pio_ncread
 
 ! ----------------------------------------------------------------------
-      subroutine ncread3(this, fname, varName, arr, ierr)
-
-        implicit none
-
-        class(pioReader), intent(inout) :: this
-        character(len=*) :: fname
-        character(len=*) :: varName
-        real,dimension(:,:),intent(inout)   :: arr ! array to be filled
-
-        type(var_desc_t) :: varId
-        integer :: ierr
-
-        ierr = PIO_openfile(this%pioIoSystem, this%pioFileDesc, this%iotype, trim(fname))
-
-        ierr = PIO_inq_varid(this%pioFileDesc, trim(varName), varId)
-
-        call PIO_read_darray(this%pioFileDesc, varId, this%iodesc_3D_r,
-     &  arr, ierr)
-
-      end subroutine ncread3
+!      subroutine pio_ncread3(fname, varName, arr)
+!
+!        implicit none
+!
+!        character(len=*) :: fname
+!        character(len=*) :: varName
+!        real,dimension(:,:),intent(inout)   :: arr ! array to be filled
+!
+!        type(var_desc_t) :: varId
+!        integer :: ierr
+!
+!        ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
+!
+!        ierr = PIO_inq_varid(pio_FileDesc, trim(varName), varId)
+!
+!        call PIO_read_darray(pio_FileDesc, varId, pio_desc_3D_r,
+!     &  arr, ierr)
+!
+!      end subroutine pio_ncread3
 
 ! ----------------------------------------------------------------------
 !      subroutine createFile(this)

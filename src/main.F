@@ -30,7 +30,7 @@ C$    ierr=0
 
       call mpi_setup(ierr)
 #ifdef PIO
-      call initialize_pio()
+      call pio_initialize
 #endif
       tstart=MPI_Wtime()
 
