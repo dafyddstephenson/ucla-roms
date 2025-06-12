@@ -52,7 +52,7 @@ C$OMP PARALLEL                           ! fast-time averaging weights
           call roms_thread               ! for barotropic mode, and
 C$OMP END PARALLEL                       ! launch the model in OpenMP
         endif                            ! parallel regime.
-#ifdef NHMG
+#ifdef NHMG  
       ! write nhmg statistics to fort.10
       call nhmg_clean()
 #endif
@@ -86,7 +86,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
         if (diag_sync .and. may_day_flag /= 0) goto 99
       enddo
   99  call stop_timers()                 ! summarized among all nodes
-      if (may_day_flag /=0)
+      if (may_day_flag /=0) 
      &  call wrt_his_ocean_vars(.true.)  ! Emergency history file output
 C$OMP BARRIER                            ! and broadcasted by "diag"
 C$OMP MASTER                             ! [which sets diag_sync=T to
@@ -168,12 +168,12 @@ C$OMP END MASTER                       ! system
 C$OMP BARRIER
       if (may_day_flag /= 0) goto 99
 #endif
-
+      
       call get_grid                  ! can be analytic or from netcdf
 
 
 #ifdef DIAGNOSTICS
-      call init_diagnostics
+      call init_diagnostics  
 #endif
 
 #ifdef NHMG
@@ -232,7 +232,7 @@ CR      write(*,*) ' -6' MYID
       call set_forces               ! model prognostic variables,
       call ana_init                 ! may require surface forcing
                                     ! either analytically or read
-      if (nrrec > 0) then
+      if (nrrec > 0) then 
 #endif
 #ifdef EXACT_RESTART
 C$OMP MASTER                           ! setup environmental variables
@@ -267,7 +267,7 @@ CR      write(*,*) ' -5' MYID
 C$OMP BARRIER
 
 !----------------------------------------------------------------------
-!  Set NHMG horizontal and vertical grids
+!  Set NHMG horizontal and vertical grids 
 !  then set matrices coefficients for the elliptic problem
 !----------------------------------------------------------------------
 #ifdef NHMG
@@ -293,11 +293,11 @@ CR      write(*,*)  ' -2' MYID
         call init_particles
       endif
 
-#if defined SPONGE
+#if defined SPONGE 
       call set_nudgcof(0)
 #endif
       ! The optional argument refers to
-      ! blowup if true, and initial if false.
+      ! blowup if true, and initial if false. 
       ! Come up with a better name!
       call wrt_his_ocean_vars(.false.)
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
@@ -407,7 +407,7 @@ CR      write(*,*)  ' -2' MYID
       call prsgrd
       call pre_step3d(0)  ! u is m/s here
 
-      !! nnew ==n+1/2
+      !! nnew ==n+1/2  
 
 
       !! set_HUV1 is like set_HUV, but first removes the barotr/barocl mismatch
@@ -457,7 +457,7 @@ CR      write(*,*)  ' -2' MYID
       enddo
 
       ! step3d_uv2 re-computes FlxU,FlV but still for n+1/2
-      call step3d_uv2(0)
+      call step3d_uv2(0)   
 
       call omega
       call step3d_t(0)
@@ -476,7 +476,7 @@ CR      write(*,*)  ' -2' MYID
       time=start_time+dt*float(iic-ntstart) + dt !n+1
       tdays=time*sec2day
 
-      call calc_avg_ocean_vars
+      call calc_avg_ocean_vars 
 
 !     Done with stepping, time for outputs
 
@@ -494,7 +494,7 @@ CR      write(*,*)  ' -2' MYID
       if (wrt_smflx.or.wrt_stflx) call wrt_sflux
 
 #ifdef DIAGNOSTICS
-      if (diag_uv.or.diag_trc.or.diag_pflx) call do_diagnostics
+      if (diag_uv.or.diag_trc.or.diag_pflx) call do_diagnostics 
 #endif
 
       if (do_random) call wrt_random
