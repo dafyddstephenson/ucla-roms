@@ -95,10 +95,9 @@
       ! local
       integer           :: itrc       ! tracer number for loop index
 
-#ifdef ANTITRACER
-      call exchange_xxx(t(:,:,nz,1,itemp) )
+      call exchange_xxx(t(:,:,nz,nrhs,itemp) )
       call set_gas_transfer_velocity(istr,iend,jstr,jend)
-#endif
+
       do itrc=iTandS+1,NT
 
         if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
