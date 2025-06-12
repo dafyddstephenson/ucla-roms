@@ -423,8 +423,7 @@
 #ifdef ANA_GRID
       call ana_grid
       call wrt_ana_grid
-#else
-
+#else 
 ! Open grid netCDF file for reading. Check that dimensions in the file
 ! are consistent with the model, then read all necessary variables.
 

@@ -1,8 +1,8 @@
 title:
-   Flux_frc module test.
+   USWC sample domain - realistic CDR test 
 
 time_stepping: NTIMES   dt[sec]  NDTFAST  NINFO
-               10        20       30       1
+               50        40       30       1
 
 S-coord: THETA_S,   THETA_B,    hc (m)
           6.0D0        6.0D0     25.0D0
@@ -12,14 +12,16 @@ grid:  filename
 
 forcing: filename
      input_data/sample_flux_frc.nc
-     input_data/roms_bry_trace.nc       
+     input_data/sample_wwv_riv.nc      
+     input_data/roms_bry_trace.nc
+     cdr_release.nc
 
 initial: NRREC  filename
           1
      input_data/roms_init_trace.nc
 
 output_root_name:
-     Flux_frc
+     cdr
 
 lateral_visc:   VISC2,    VISC4    [m^2/sec for all]
                  0.       0.
@@ -29,6 +31,10 @@ rho0:
 
 v_sponge:           V_SPONGE [m^2/sec]
                    1.
+
+vertical_mixing:  Akv  Akt1  Akt2
+                  0.0  0.0   0.0
+
 
 tracer_diff2: TNU2(1:NT)           [m^2/sec for all]
  0. 0. 0. 0. 0. 0. 0. 0. 0.
