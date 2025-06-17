@@ -95,7 +95,7 @@
       ! local
       integer           :: itrc       ! tracer number for loop index
 
-      call exchange_xxx(t(:,:,nz,nrhs,itemp) )
+      call exchange_xxx(t(:,:,nz,nnew,itemp) )
       call set_gas_transfer_velocity(istr,iend,jstr,jend)
 
       do itrc=iTandS+1,NT
@@ -105,11 +105,22 @@
           call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
           call exchange_xxx(stflx(:,:,itrc))
           
+          if (mynode==6) then
+             if (itrc==3 .or. itrc==4) then
+                   print *, 'after set_frc_data: tr = ', itrc, 'stflx = ', stflx(5, 4, itrc)
+             endif
+          endif
+          
           if (t_ana_frc(itrc)==2) then
 
-              call exchange_xxx(t(:,:,nz,nrhs,itrc) )
+              call exchange_xxx(t(:,:,nz,nnew,itrc) )
               call subtract_gas_exchange_from_tracer_flx(itrc,istr,iend,jstr,jend)
               call exchange_xxx(stflx(:,:,itrc))
+              if (mynode==6) then
+                 if (itrc==3 .or. itrc==4) then
+                   print *, 'after subtract gas exch, tr = ',itrc, ' stflx = ', stflx(5, 4, itrc)
+                 endif
+              endif
 
           endif
 
@@ -175,20 +186,19 @@
 
 #if defined ANTITRACER
       ! coefficients to compute Schmidt number
-      real a, b, c, d, e, xkw_coef
-      parameter (a=2116.8)
-      parameter (b=-136.25)
-      parameter (c=4.7353)
-      parameter (d=-0.092307)
-      parameter (e=0.0007555)
-      parameter (xkw_coef=9.036e-06)
+      real, parameter :: a = 2116.8
+      real, parameter :: b = -136.25
+      real, parameter :: c = 4.7353
+      real, parameter :: d = -0.092307
+      real, parameter :: e = 0.0007555
+      real, parameter :: xkw_coef = 9.036e-06
       real schmidt_nr, sst
       integer i, j
 
       do j=jstr,jend
         do i=istr,iend+1
           
-          sst = t(i,j,nz,nrhs,itemp)
+          sst = t(i,j,nz,nnew,itemp)
           schmidt_nr = a + sst * (b + sst * (c + sst * (d + e * sst)))
           k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
 #ifdef SEA_ICE_NOFLUX
@@ -196,6 +206,12 @@
               k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
           endif
 #endif
+          if (mynode==6) then
+            if (i==5 .AND. j==4)
+               print *, 'schmidt nr = ', schmidt_nr
+               print *, 'k_gas = ', k_gas(5, 4)
+             endif
+          endif
         enddo
       enddo
 
@@ -217,10 +233,16 @@
       integer i,j
       real beta
  
+      if (mynode==6) then
+         if (itrc==3 .or. itrc==4) then
+           print *, 'for subtracting gas exchange: tr no= ',itrc, 'nnew= ', nnew
+           print *, 't = ', t(5, 4, N, nnew, itrc)
+         endif
+      endif
       do j=jstr,jend
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
-          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nrhs,itrc)
+          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nnew,itrc)
         enddo
       enddo
 #endif
