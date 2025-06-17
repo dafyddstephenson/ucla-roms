@@ -191,7 +191,7 @@
       real, parameter :: c = 4.7353
       real, parameter :: d = -0.092307
       real, parameter :: e = 0.0007555
-      real, parameter :: xkw_coef = 9.036e-06
+      real, parameter :: xkw_coef = 6.97e-07
       real schmidt_nr, sst
       integer i, j
 
