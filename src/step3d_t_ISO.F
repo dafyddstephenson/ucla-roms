@@ -858,12 +858,6 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
 ! Start computation of vertical diffusion: add surface forcing fluxes
 
           !! JM add line for bottom tracer flux
-          if (mynode==6) then
-            if (itrc==3 .or. itrc==4) then
-              print *, 'nnew = ', nnew, 'add tendency, tr no = ',itrc
-              print *, 'stflx = ', stflx(5, 4, itrc), 't = ', t(5,4,N,nnew,itrc)
-            endif
-          endif
           do i=istr,iend
             t(i,j,N,nnew,itrc)=t(i,j,N,nnew,itrc)+dt*stflx(i,j,itrc)
 !           t(i,j,1,nnew,itrc)=t(i,j,1,nnew,itrc)+dt*btflx(i,j,itrc)

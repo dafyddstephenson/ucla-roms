@@ -105,22 +105,11 @@
           call set_frc_data(nc_t(itrc), stflx(:,:,itrc), 'r' )
           call exchange_xxx(stflx(:,:,itrc))
           
-          if (mynode==6) then
-             if (itrc==3 .or. itrc==4) then
-                   print *, 'after set_frc_data: tr = ', itrc, 'stflx = ', stflx(5, 4, itrc)
-             endif
-          endif
-          
           if (t_ana_frc(itrc)==2) then
 
               call exchange_xxx(t(:,:,nz,nnew,itrc) )
               call subtract_gas_exchange_from_tracer_flx(itrc,istr,iend,jstr,jend)
               call exchange_xxx(stflx(:,:,itrc))
-              if (mynode==6) then
-                 if (itrc==3 .or. itrc==4) then
-                   print *, 'after subtract gas exch, tr = ',itrc, ' stflx = ', stflx(5, 4, itrc)
-                 endif
-              endif
 
           endif
 
@@ -206,12 +195,6 @@
               k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
           endif
 #endif
-          if (mynode==6) then
-            if (i==5 .AND. j==4)
-               print *, 'schmidt nr = ', schmidt_nr
-               print *, 'k_gas = ', k_gas(5, 4)
-             endif
-          endif
         enddo
       enddo
 
@@ -233,16 +216,10 @@
       integer i,j
       real beta
  
-      if (mynode==6) then
-         if (itrc==3 .or. itrc==4) then
-           print *, 'for subtracting gas exchange: tr no= ',itrc, 'nnew= ', nnew
-           print *, 't = ', t(5, 4, N, nnew, itrc)
-         endif
-      endif
       do j=jstr,jend
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
-          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nnew,itrc)
+          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nnew,itrc) / Hz(i,j,nz)
         enddo
       enddo
 #endif
