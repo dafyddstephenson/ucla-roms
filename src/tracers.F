@@ -219,9 +219,7 @@
       do j=jstr,jend
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
-          ! Note: t currently stores (t * Hz), so we divide by Hz to recover t.
-          ! This gives: stflx = stflx - (k_gas / beta) * t / Hz
-          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nnew,itrc) / Hz(i,j,nz)
+          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nnew,itrc)
           ! Here, stflx is stored as (stflx * Hz) to maintain consistency
           ! with t, which is also in (t * Hz) form. This ensures the units match
           ! when stflx is added to t in step3d_t_ISO.
