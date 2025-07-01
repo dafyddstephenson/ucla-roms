@@ -1,7 +1,7 @@
       module surf_flux
       ! Declaration of surface flux variables
       ! Output of surface fluxes
-      ! Sets fields for flux correction 
+      ! Sets fields for flux correction
 
       ! Devin Dollery & Jeroen Molemaker (2020-2022)
 
@@ -20,7 +20,7 @@
 
 #include "surf_flux.opt"
 
-#if defined SALINITY 
+#if defined SALINITY
       logical,parameter :: salinity=.true.
 #else
       logical,parameter :: salinity=.false.
@@ -39,8 +39,8 @@
       real,public,allocatable,dimension(:,:)   :: srflx    ! Short-wave radiation surface flux
 
       real,public,allocatable,dimension(:,:) ::  uwnd             ! time interpolated u-wind
-      real,public,allocatable,dimension(:,:) ::  vwnd             ! time interpolated v-wind      
-      
+      real,public,allocatable,dimension(:,:) ::  vwnd             ! time interpolated v-wind
+
       character(len=5) :: sustr_name = 'sustr'
       character(len=5) :: svstr_name = 'svstr'
       character(len=5) :: shflx_name = 'shflx'
@@ -64,8 +64,8 @@
 #endif
 
       ! Netcdf outputting:
-      integer            :: output_time = 0  
-      integer            :: record = nrpf     ! to trigger the first file creation
+      real    :: output_time = 0
+      integer :: record = nrpf     ! to trigger the first file creation
       integer :: ncid = -1, prev_fill_mode
 
       ! Public functions
@@ -82,9 +82,8 @@
       implicit none
 
       ! local
-      character(len=30) :: string
       allocate(  uwnd  (GLOBAL_2D_ARRAY)    );
-      allocate(  vwnd  (GLOBAL_2D_ARRAY)    );       
+      allocate(  vwnd  (GLOBAL_2D_ARRAY)    );
       allocate( sustr  (GLOBAL_2D_ARRAY)    ); sustr=init
       allocate( sustr_r(GLOBAL_2D_ARRAY)    ); sustr_r=init
       allocate( svstr  (GLOBAL_2D_ARRAY)    ); svstr=init
@@ -96,12 +95,6 @@
       allocate( sss(GLOBAL_2D_ARRAY)        ); sss=init
       allocate(nc_sss%vdata(GLOBAL_2D_ARRAY,2) )
 
-      call store_string_att(surf_forcing_strings,'<surf_flux.F>')
-      call store_string_att(surf_forcing_strings,'dSSSdt=')
-      write (string, "(F9.6)") dSSSdt*(100.*day2sec)                 ! convert number to string...
-      call store_string_att(surf_forcing_strings,string)
-      call store_string_att(surf_forcing_strings,'dSSSdt_units')
-      call store_string_att(surf_forcing_strings,'cm/day')
 #endif
 #if defined ANTITRACER
       allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
@@ -111,8 +104,8 @@
 
       if (sflx_avg) then
         allocate(sustr_avg(1:i1,j0:j1))
-        allocate(svstr_avg(i0:i1,1:j1)) 
-        allocate(stflx_avg(i0:i1,j0:j1,nt)) 
+        allocate(svstr_avg(i0:i1,1:j1))
+        allocate(stflx_avg(i0:i1,j0:j1,nt))
       endif
 
       end subroutine init_arrays_surf_flx  !]
@@ -216,7 +209,7 @@
       character(len=99),save :: fname
       integer                :: ierr
 
-      output_time = output_time + dt 
+      output_time = output_time + dt
 
       if (sflx_avg) call calc_sflx_avg
 

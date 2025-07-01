@@ -6,7 +6,7 @@
       use dimensions
       use mpi_exchanges
       use roms_read_write
-      
+
       implicit none
 
       private  ! make all variable private to this module unless public specified
@@ -38,7 +38,7 @@
       allocate(     Q(GLOBAL_2D_ARRAY) )
       allocate( prate(GLOBAL_2D_ARRAY) )
       allocate( lwrad(GLOBAL_2D_ARRAY) )
-      
+
       allocate( wspd_used(GLOBAL_2D_ARRAY) )
 
 !     vdata needs to be of global_2d_array size
@@ -69,6 +69,14 @@
         nc_swrad%coarse = 1
       endif
 
+      ! Print user options (bulk_frc.opt) to netcdf attributes
+      ! Note: to turn bulk forces off, edit cppdefs!
+      bulk_frc_opt = ''
+      if (interp_frc==1) then
+        call store_string_att(bulk_frc_opt, 'Interpolation ON')
+      else
+        call store_string_att(bulk_frc_opt, 'Interpolation OFF')
+      endif
 
       end subroutine init_arrays_bulk_frc  !]
 ! ----------------------------------------------------------------------
@@ -90,10 +98,10 @@
       ! file. The ranges here need to match the sizes in the partitioned files
       call set_frc_data(nc_swrad,srflx,'r')
       call set_frc_data(nc_lwrad,lwrad,'r')
-      
+
       call set_frc_data(nc_uwnd,uwnd,'r')
       call set_frc_data(nc_vwnd,vwnd,'r')
-      
+
       call set_frc_data(nc_tair,tair,'r')
       call set_frc_data(nc_Q,Q,'r')
 
@@ -717,7 +725,7 @@
 !
           stflx(i,j,itemp)=srflx(i,j)+hflw+hflat+hfsen
 !
-# ifdef SALINITY          
+# ifdef SALINITY
 !  Total surface salt flux
 !
           evap=-cp*hflat/Hlv
@@ -728,7 +736,7 @@
           stflx(i,j,itemp)=stflx(i,j,itemp)*rmask(i,j)
 # ifdef SALINITY
           stflx(i,j,isalt)=stflx(i,j,isalt)*rmask(i,j)
-# endif          
+# endif
 # endif
 !
 !  Save for the calculation of wind stress
@@ -782,13 +790,13 @@
 ! Flux correction to surface salt flux.
 !--------------------------------------------------------------
 # ifdef SFLX_CORR
-# ifdef SALINITY          
+# ifdef SALINITY
           stflx(i,j,isalt)=stflx(i,j,isalt) -dSSSdt*(
      &           t(i,j,N,nrhs,isalt) - sss(i,j)  )
 #  ifdef MASKING
      &                                           *rmask(i,j)
 #  endif
-# endif          
+# endif
 # endif
 
 !---------------------------------------------------------------

@@ -46,11 +46,11 @@ C$OMP END PARALLEL
       implicit none
       integer nx,ny, nsub_x,nsub_y
       integer ntrds, ntx,nty, nsb, i,size,excess,max_exc
-C$    integer omp_get_num_threads
+!C$    integer omp_get_num_threads
       integer,parameter :: min_vect_lenght=96, targ_length=128
 
       ntrds=1
-C$    ntrds=omp_get_num_threads()
+!C$    ntrds=omp_get_num_threads()
 
       if (nx>8*min_vect_lenght-1 .and. mod(ntrds,8)==0) then
         ntx=8
@@ -142,8 +142,8 @@ C$OMP END CRITICAL (tiling_cr_rgn)
       istr=max(istr,1)                   ! upward, while the excess
                                          ! (in the case when the
       size=(ny+nsub_y-1)/nsub_y          ! domain cannot be divided
-      jstr=1+j*size -(nsub_y*size-ny)/2  ! evenly) is half-and-half 
-      jend=min(jstr+size-1,ny)           ! split between the ends. 
+      jstr=1+j*size -(nsub_y*size-ny)/2  ! evenly) is half-and-half
+      jend=min(jstr+size-1,ny)           ! split between the ends.
       jstr=max(jstr,1)                   ! As the result tiles the
                                          ! first and the last in each
       end                                ! direction may be smaller.

@@ -31,7 +31,9 @@
 # define dt illegal
 
 # ifndef EW_PERIODIC
-      if (.not. west_exchng) then
+!     if (.not.ew_periodic) then ! no boundary conditions if periodic
+!     if (.not. west_exchng) then
+      if (inode==0) then
 #  ifdef OBC_WEST
 #   ifdef OBC_M3ORLANSKI
         do k=1,nz                         ! Western edge radiation
@@ -69,7 +71,7 @@
             if (cx < 0.) then     !--> cancel, if inflow
               cx=0. ; cy=0.
 #    if defined M3_FRC_BRY
-              if (u_west(j,k) > 0.) then 
+              if (u_west(j,k) > 0.) then
                 cext=u_west(j,k)
               else
                 cext=ubind
@@ -211,7 +213,7 @@ c            u(iend+1,j,k,nnew)=-ust(iend+1,j,k) ! no Lagrangian flux
 #    endif
 #   else
             u(iend+1,j,k,nnew)=0.               !  (no-flux: default)
-#   endif   
+#   endif
           enddo
         enddo
 #  endif
@@ -333,7 +335,7 @@ c            u(iend+1,j,k,nnew)=-ust(iend+1,j,k) ! no Lagrangian flux
      &                            -min(cy,0.)*grad(i  ,jend)
      &                                                     )
 
-#    if defined M3_FRC_BRY 
+#    if defined M3_FRC_BRY
 #      if defined SPONGE_TUNE
             if (ub_tune) cext = max(cext,min(ub_north(i),1.0))
 #      endif
@@ -377,7 +379,7 @@ c            u(iend+1,j,k,nnew)=-ust(iend+1,j,k) ! no Lagrangian flux
 #  endif
       endif   !<-- NORTHERN_EDGE
 # endif        /* !NS_PERIODIC */
-                           
+
 ! Corners between adjacent open boundaries
 
 # if defined OBC_SOUTH && defined OBC_WEST

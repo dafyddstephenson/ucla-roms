@@ -3,7 +3,7 @@
       subroutine set_forces
 
 ! Using either data read from netCDF files or created analytically,
-! prepare surface and bottom boundary fluxes, so they can be 
+! prepare surface and bottom boundary fluxes, so they can be
 ! applied to the model. This
 ! procedure essentially interpolates the available data to current
 ! model time and converts units to make all fluxes be kinematic
@@ -35,6 +35,7 @@
       use tracers,   only: set_surf_tracer_flx, iTandS
       use river_frc
       use pipe_frc
+      use cdr_frc
       use tides
       use wec_frc
       use bgc ! , only: set_bgc_surf_frc
@@ -45,7 +46,7 @@
 
       implicit none
 
-      
+
       integer ierr
       integer,save:: tile=0
 
@@ -85,7 +86,7 @@ c***              no code here
 ! Thermodynamic forcing: Note that BULK_FLUX requires computing the
 ! short-wave radiation flux first because bulk flux routine performs
 ! the final assembly of everything. Conversely if model is forced by
-! precomputed total flux (which includes daily averaged short-wave 
+! precomputed total flux (which includes daily averaged short-wave
 ! radiation interpolated in time), then to introduce DIURNAL CYCLE
 ! modulation set_srflux routine must interpolate short-wave flux in
 ! time first, then subtract it from total, then modulate short-wave,
@@ -111,6 +112,7 @@ c***              no code here
 
       ! DevinD not sure what flag to use here to avoid set_flux for purely analytical
 #  ifndef ANA_SMFLUX
+      frctype = 'SURF:'
       call set_flux_frc(istr,iend,jstr,jend)
 #  endif
 
@@ -129,7 +131,7 @@ c***              no code here
 #  endif
 # endif
 
-      if(NT>iTandS) call set_surf_tracer_flx(istr,iend,jstr,jend)
+      if(nt>iTandS) call set_surf_tracer_flx
 
       ! BGC surface flux:
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
@@ -137,9 +139,14 @@ c***              no code here
 # endif
 
 
-      if (river_source) call set_river_frc
+      if (river_source) then
+        frctype = 'RIVERS:'
+        call set_river_frc
+      endif
 
       if (pipe_source) call set_pipe_frc
+
+      if (cdr_source) call set_cdr_frc
 
 # ifdef WEC
       call set_wec_frc_tile(istr,iend,jstr,jend,ierr)
@@ -148,7 +155,7 @@ c***              no code here
 
 #endif  /* SOLVE3D */
 
-                                 
+
 !--> Bottom boundary fluxes [Styles and Glenn (1996) bottom
 !    boundary layer formulation.  Not implemented in this code]
 
