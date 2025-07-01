@@ -820,12 +820,6 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
         endif
 # endif
 
-        if (mynode==6) then
-          if (itrc==4) then
-            print *, 'nnew = ', nnew, 'add tendency, tr no = ',itrc
-            print *, 'stflx = ', stflx(5, 4, itrc), 't = ', t(5,4,N,nnew,itrc)
-          endif
-        endif
         do j=jstr,jend
 
 # include "compute_vert_tracer_fluxes.h"

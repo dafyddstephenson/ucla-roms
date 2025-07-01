@@ -188,11 +188,6 @@
         do i=istr,iend+1
           
           sst = t(i,j,nz,nrhs,itemp)
-          if (mynode==6) then
-            if (i==5 .AND. j==4) then
-               print *, 'sst = ', sst 
-             endif
-          endif
           schmidt_nr = a + sst * (b + sst * (c + sst * (d + e * sst)))
           k_gas(i,j) = xkw_coef * (uwnd(i,j)**2 + vwnd(i,j)**2) * sqrt(660.0 / schmidt_nr)
 #ifdef SEA_ICE_NOFLUX
@@ -200,12 +195,6 @@
               k_gas(i,j)=0.                    ! If SST colder than -1.8 C, assume zero piston velocity due to sea ice
           endif
 #endif
-          if (mynode==6) then
-            if (i==5 .AND. j==4) then
-               print *, 'schmidt nr = ', schmidt_nr
-               print *, 'k_gas = ', k_gas(5, 4)
-             endif
-          endif
         enddo
       enddo
 
@@ -231,16 +220,6 @@
         do i=istr,iend+1
           beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
           stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nrhs,itrc)
-          if (mynode==6) then
-            if (itrc==4) then
-              if (i==5 .AND. j==4) then
-                 print *, 'beta = ', beta
-                 print *, 't = ', t(5, 4, nz, nrhs, itrc)
-                 print *, 'stflx = ', stflx(5, 4, itrc)
-              endif
-            endif
-          endif
-
           ! Here, stflx is stored as (stflx * Hz) to maintain consistency
           ! with t, which is also in (t * Hz) form. This ensures the units match
           ! when stflx is added to t in step3d_t_ISO.
