@@ -131,7 +131,7 @@ c***              no code here
 #  endif
 # endif
 
-      if(nt>iTandS) call set_surf_tracer_flx
+      if(nt>iTandS) call set_surf_tracer_flx(istr,iend,jstr,jend)
 
       ! BGC surface flux:
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
