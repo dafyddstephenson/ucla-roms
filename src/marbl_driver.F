@@ -417,7 +417,7 @@
 
       end subroutine marbldrv_configure_tracers
 
-      subroutine marbldrv_read_tracer_output_list(t_vname,wrt_t)
+      subroutine marbldrv_read_tracer_output_list(t_vname,wrt_t,wrt_t_avg)
 
 !-----------------------------------------------------------------------
 !     SUBROUTINE: marbldrv_read_tracer_output_list
