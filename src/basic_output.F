@@ -528,6 +528,8 @@
 
 # ifdef EXACT_RESTART
 #  ifdef EXTRAP_BAR_FLUXES
+        call ncwrite(ncid,'DU_avg1',    DU_avg1( 1:i1,j0:j1),start)
+        call ncwrite(ncid,'DV_avg1',    DV_avg1(i0:i1, 1:j1),start)
         call ncwrite(ncid,'DU_avg2',    DU_avg2( 1:i1,j0:j1),start)
         call ncwrite(ncid,'DV_avg2',    DV_avg2(i0:i1, 1:j1),start)
         call ncwrite(ncid,'DU_avg_bak', DU_avg_bak( 1:i1,j0:j1),start)
@@ -822,6 +824,14 @@
 
 # ifdef EXACT_RESTART
 #  ifdef EXTRAP_BAR_FLUXES
+      varid = nccreate(ncid,'DU_avg1',(/dn_xu,dn_yr,dn_tm/),(/xi_u,eta_rho,0/),nf90_double)
+      ierr=nf90_put_att(ncid, varid, 'long_name',
+     &           '<<fast-time averaged uflx>>')
+
+      varid = nccreate(ncid,'DV_avg1',(/dn_xr,dn_yv,dn_tm/),(/xi_rho,eta_v,0/),nf90_double)
+      ierr=nf90_put_att(ncid, varid, 'long_name',
+     &           '<<fast-time-averaged vflx>>')
+
       varid = nccreate(ncid,'DU_avg2',(/dn_xu,dn_yr,dn_tm/),(/xi_u,eta_rho,0/),nf90_double)
       ierr=nf90_put_att(ncid, varid, 'long_name',
      &           '<<fast-time averaged ubar(:,:,n+1/2)>>')

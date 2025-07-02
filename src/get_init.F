@@ -36,6 +36,8 @@
 #ifdef EXACT_RESTART
      &                    , apprx_rst=3, exact_rst=4
       real time_bak
+      logical :: exact_succes
+
 # ifdef NHMG
 !     integer i,j,k
 # endif
@@ -196,6 +198,7 @@ c--#define VERBOSE
 
 #ifdef EXACT_RESTART
       if (tindx == 2) then
+        iic = 1 ! Hack to not re-compute DU/DV_avg1 but use the version loaded here
         forw_start=0
         if (record < max_rec) then
           time_bak=start_time
@@ -219,6 +222,7 @@ c--#define VERBOSE
      &                'in ''', trim(ininame),  ''' are not ',
      &                'consecutive time steps ==> proceeding ',
      &                          'with forward initial time step.'
+              iic = 0 ! set back to zero if exact restart fails
             endif
           else
             write(*,2) trim(vname(1,indxTime)), record,
@@ -277,6 +281,7 @@ c--#define VERBOSE
      &              trim(ininame),  ''' are not consecutive time ',
      &                                    'steps ==> proceeding with',
      &                                   'forward initial time step.'
+            iic = 0 ! set back to zero in case of fail
             return   !--> no need to read preliminary record
           endif
         elseif (tindx == 1) then
@@ -335,30 +340,30 @@ c--#define VERBOSE
 #ifdef SOLVE3D
 # ifdef EXACT_RESTART
 #  ifdef EXTRAP_BAR_FLUXES
-      ierr=nf90_inq_varid(ncid, 'DU_avg2', varid)  ! change these to varid
+      exact_succes = .true.
+      ierr=nf90_inq_varid(ncid, 'DU_avg1', varid)
+      if (ierr /= nf90_noerr) exact_succes = .false.
+      ierr=nf90_inq_varid(ncid, 'DV_avg1', varid)
+      if (ierr /= nf90_noerr) exact_succes = .false.
+      ierr=nf90_inq_varid(ncid, 'DU_avg2', varid)
+      if (ierr /= nf90_noerr) exact_succes = .false.
+      ierr=nf90_inq_varid(ncid, 'DV_avg2', varid)
+      if (ierr /= nf90_noerr) exact_succes = .false.
+      ierr=nf90_inq_varid(ncid, 'DU_avg_bak', varid)
+      if (ierr /= nf90_noerr) exact_succes = .false.
+      ierr=nf90_inq_varid(ncid, 'DV_avg_bak', varid)
+      if (ierr /= nf90_noerr) exact_succes = .false.
+
       if (ierr == nf90_noerr) then
-        ierr=nf90_inq_varid(ncid, 'DV_avg2', varid)
-        if (ierr == nf90_noerr) then
-          ierr=nf90_inq_varid(ncid, 'DU_avg_bak', varid)
-          if (ierr == nf90_noerr) then
-            ierr=nf90_inq_varid(ncid, 'DV_avg_bak', varid)
-            if (ierr == nf90_noerr) then
-              call ncread(ncid,'DU_avg2',      DU_avg2( 1:i1,j0:j1),start)
-              call ncread(ncid,'DV_avg2',      DV_avg2(i0:i1, 1:j1),start)
-              call ncread(ncid,'DU_avg_bak',DU_avg_bak( 1:i1,j0:j1),start)
-              call ncread(ncid,'DV_avg_bak',DV_avg_bak(i0:i1, 1:j1),start)
-              if (ierr /= nf90_noerr) goto 99                  !--> ERROR
-            else
-              forw_start=ntstart      !--> cancel exact restart
-            endif
-          else
-            forw_start=ntstart      !--> cancel exact restart
-          endif
-        else
-          forw_start=ntstart    !--> cancel exact restart
-        endif
+        call ncread(ncid,'DU_avg1',   DU_avg1( 1:i1,j0:j1),start)
+        call ncread(ncid,'DV_avg1',   DV_avg1(i0:i1, 1:j1),start)
+        call ncread(ncid,'DU_avg2',   DU_avg2( 1:i1,j0:j1),start)
+        call ncread(ncid,'DV_avg2',   DV_avg2(i0:i1, 1:j1),start)
+        call ncread(ncid,'DU_avg_bak',DU_avg_bak( 1:i1,j0:j1),start)
+        call ncread(ncid,'DV_avg_bak',DV_avg_bak(i0:i1, 1:j1),start)
       else
         forw_start=ntstart    !--> cancel exact restart
+        iic = 0 ! set back to zero
       endif
 
 #  elif defined PRED_COUPLED_MODE
