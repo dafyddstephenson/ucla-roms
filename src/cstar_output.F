@@ -154,32 +154,55 @@
         endif
 
       if (do_avg) then
-        allocate(zeta__avg(GLOBAL_2D_ARRAY) ); zeta__avg(:,:)=0
-        allocate(temp_avg(GLOBAL_2D_ARRAY,1:N) ); temp_avg(:,:,:)=0
-        allocate(salt_avg(GLOBAL_2D_ARRAY,1:N) ); salt_avg(:,:,:)=0
-        allocate(ALK_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_avg(:,:,:)=0
-        allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) ); hALK_avg(:,:,:)=0
-        allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_avg(:,:,:)=0
-        allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) ); hDIC_avg(:,:,:)=0
-        allocate(ALK_alt_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_alt_avg(:,:,:)=0
-        allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) ); hALK_alt_avg(:,:,:)=0
-        allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_alt_avg(:,:,:)=0
-        allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) ); hDIC_alt_avg(:,:,:)=0
-        allocate(pH_avg(GLOBAL_2D_ARRAY,1:N) ); pH_avg(:,:,:)=0
-        allocate(pH_alt_avg(GLOBAL_2D_ARRAY,1:N) ); pH_alt_avg(:,:,:)=0
-        allocate(FG_CO2_avg(GLOBAL_2D_ARRAY) ); FG_CO2_avg(:,:)=0
-        allocate(FG_ALT_CO2_avg(GLOBAL_2D_ARRAY) ); FG_ALT_CO2_avg(:,:)=0
+        allocate(zeta__avg(GLOBAL_2D_ARRAY) )
+        zeta__avg(:,:)=0
+        allocate(temp_avg(GLOBAL_2D_ARRAY,1:N) )
+        temp_avg(:,:,:)=0
+        allocate(salt_avg(GLOBAL_2D_ARRAY,1:N) )
+        salt_avg(:,:,:)=0
+        allocate(ALK_avg(GLOBAL_2D_ARRAY,1:N) )
+        ALK_avg(:,:,:)=0
+        allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) )
+        hALK_avg(:,:,:)=0
+        allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) )
+        DIC_avg(:,:,:)=0
+        allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_avg(:,:,:)=0
+        allocate(ALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        ALK_alt_avg(:,:,:)=0
+        allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        hALK_alt_avg(:,:,:)=0
+        allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        DIC_alt_avg(:,:,:)=0
+        allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_alt_avg(:,:,:)=0
+        allocate(pH_avg(GLOBAL_2D_ARRAY,1:N) )
+        pH_avg(:,:,:)=0
+        allocate(pH_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        pH_alt_avg(:,:,:)=0
+        allocate(FG_CO2_avg(GLOBAL_2D_ARRAY) )
+        FG_CO2_avg(:,:)=0
+        allocate(FG_ALT_CO2_avg(GLOBAL_2D_ARRAY) )
+        FG_ALT_CO2_avg(:,:)=0
         if (cdr_source) then
-          allocate(ALK_source_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_source_avg(:,:,:)=0
-          allocate(ALK_alt_source_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_alt_source_avg(:,:,:)=0
-          allocate(DIC_source_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_source_avg(:,:,:)=0
-          allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_alt_source_avg(:,:,:)=0
+          allocate(ALK_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          ALK_source_avg(:,:,:)=0
+          allocate(ALK_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          ALK_alt_source_avg(:,:,:)=0
+          allocate(DIC_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          DIC_source_avg(:,:,:)=0
+          allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          DIC_alt_source_avg(:,:,:)=0
         endif
       else
-        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) ); hALK_tmp(:,:,:)=0
-        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) ); hDIC_tmp(:,:,:)=0
-        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) ); hALK_alt_tmp(:,:,:)=0
-        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) ); hDIC_alt_tmp(:,:,:)=0
+        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hALK_tmp(:,:,:)=0
+        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_tmp(:,:,:)=0
+        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hALK_alt_tmp(:,:,:)=0
+        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_alt_tmp(:,:,:)=0
       endif
 
       if (mynode==0) print *,'init cstar'
