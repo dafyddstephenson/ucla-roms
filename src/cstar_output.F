@@ -154,32 +154,32 @@
         endif
 
       if (do_avg) then
-        allocate(zeta__avg(GLOBAL_2D_ARRAY) )
-        allocate(temp_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(salt_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(ALK_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(ALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(pH_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(pH_alt_avg(GLOBAL_2D_ARRAY,1:N) )
-        allocate(FG_CO2_avg(GLOBAL_2D_ARRAY) )
-        allocate(FG_ALT_CO2_avg(GLOBAL_2D_ARRAY) )
+        allocate(zeta__avg(GLOBAL_2D_ARRAY) ); zeta__avg(:,:)=0
+        allocate(temp_avg(GLOBAL_2D_ARRAY,1:N) ); temp_avg(:,:,:)=0
+        allocate(salt_avg(GLOBAL_2D_ARRAY,1:N) ); salt_avg(:,:,:)=0
+        allocate(ALK_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_avg(:,:,:)=0
+        allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) ); hALK_avg(:,:,:)=0
+        allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_avg(:,:,:)=0
+        allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) ); hDIC_avg(:,:,:)=0
+        allocate(ALK_alt_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_alt_avg(:,:,:)=0
+        allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) ); hALK_alt_avg(:,:,:)=0
+        allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_alt_avg(:,:,:)=0
+        allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) ); hDIC_alt_avg(:,:,:)=0
+        allocate(pH_avg(GLOBAL_2D_ARRAY,1:N) ); pH_avg(:,:,:)=0
+        allocate(pH_alt_avg(GLOBAL_2D_ARRAY,1:N) ); pH_alt_avg(:,:,:)=0
+        allocate(FG_CO2_avg(GLOBAL_2D_ARRAY) ); FG_CO2_avg(:,:)=0
+        allocate(FG_ALT_CO2_avg(GLOBAL_2D_ARRAY) ); FG_ALT_CO2_avg(:,:)=0
         if (cdr_source) then
-          allocate(ALK_source_avg(GLOBAL_2D_ARRAY,1:N) )
-          allocate(ALK_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
-          allocate(DIC_source_avg(GLOBAL_2D_ARRAY,1:N) )
-          allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          allocate(ALK_source_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_source_avg(:,:,:)=0
+          allocate(ALK_alt_source_avg(GLOBAL_2D_ARRAY,1:N) ); ALK_alt_source_avg(:,:,:)=0
+          allocate(DIC_source_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_source_avg(:,:,:)=0
+          allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) ); DIC_alt_source_avg(:,:,:)=0
         endif
       else
-        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
-        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) ); hALK_tmp(:,:,:)=0
+        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) ); hDIC_tmp(:,:,:)=0
+        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) ); hALK_alt_tmp(:,:,:)=0
+        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) ); hDIC_alt_tmp(:,:,:)=0
       endif
 
       if (mynode==0) print *,'init cstar'
@@ -450,25 +450,44 @@
 
         if (do_avg) then
           call ncwrite(ncid,'zeta'  ,zeta__avg(i0:i1,j0:j1),(/1,1,record/))
+          zeta__avg(:,:)=0
           call ncwrite(ncid,'temp',temp_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          temp_avg(:,:,:)=0
           call ncwrite(ncid,'salt',salt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          salt_avg(:,:,:)=0
           call ncwrite(ncid,'ALK',ALK_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          ALK_avg(:,:,:)=0
           call ncwrite(ncid,'DIC',DIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          DIC_avg(:,:,:)=0
           call ncwrite(ncid,'ALK_ALT_CO2',ALK_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          ALK_alt_avg(:,:,:)=0
           call ncwrite(ncid,'DIC_ALT_CO2',DIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          DIC_alt_avg(:,:,:)=0
           call ncwrite(ncid,'hALK',hALK_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hALK_avg(:,:,:)=0
           call ncwrite(ncid,'hDIC',hDIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hDIC_avg(:,:,:)=0
           call ncwrite(ncid,'hALK_ALT_CO2',hALK_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hALK_alt_avg(:,:,:)=0
           call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hDIC_alt_avg(:,:,:)=0
           call ncwrite(ncid,'pH',pH_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          pH_avg(:,:,:)=0
           call ncwrite(ncid,'pH_ALT_CO2',pH_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          pH_alt_avg(:,:,:)=0
           call ncwrite(ncid,'FG_CO2'  ,FG_CO2_avg(i0:i1,j0:j1),(/1,1,record/))
+          FG_CO2_avg(:,:)=0
           call ncwrite(ncid,'FG_ALT_CO2'  ,FG_ALT_CO2_avg(i0:i1,j0:j1),(/1,1,record/))
+          FG_ALT_CO2_avg(:,:)=0
           if (cdr_source) then
             call ncwrite(ncid,'ALK_source',ALK_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            ALK_source_avg(:,:,:)=0
             call ncwrite(ncid,'ALK_ALT_source',ALK_alt_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            ALK_alt_source_avg(:,:,:)=0
             call ncwrite(ncid,'DIC_source',DIC_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            DIC_source_avg(:,:,:)=0
             call ncwrite(ncid,'DIC_ALT_source',DIC_alt_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            DIC_alt_source_avg(:,:,:)=0
           endif
         else
           call multiply_by_thickness
