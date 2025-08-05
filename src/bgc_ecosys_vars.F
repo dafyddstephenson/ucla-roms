@@ -12,9 +12,9 @@
 # ifdef MARBL_DIAGS
      &     ,marbldrv_configure_diagnostics
      &     ,nr_marbl_diag_2d,nr_marbl_diag_3d
-     &     ,diag_array_2d,diag_array_3d
-     &     ,idx_bgc_diag_2d,idx_bgc_diag_3d
-     &     ,wrt_bgc_diag_2d,wrt_bgc_diag_3d
+     &     ,marbl_diag_2d,marbl_diag_3d
+     &     ,idx_marbl_diag_2d,idx_marbl_diag_3d
+     &     ,wrt_marbl_diag_2d,wrt_marbl_diag_3d
 # endif
 #endif
 
@@ -211,10 +211,10 @@
 
 #elif defined(MARBL_DIAGS)
 
-      wrt_bgc_diag_2d => wrt_bec2_diag_2d
-      wrt_bgc_diag_3d => wrt_bec2_diag_3d
-      idx_bgc_diag_2d => idx_bec2_diag_2d
-      idx_bgc_diag_3d => idx_bec2_diag_3d
+      wrt_marbl_diag_2d => wrt_bec2_diag_2d
+      wrt_marbl_diag_3d => wrt_bec2_diag_3d
+      idx_marbl_diag_2d => idx_bec2_diag_2d
+      idx_marbl_diag_3d => idx_bec2_diag_3d
 
 
       call marbldrv_configure_diagnostics(
@@ -270,8 +270,8 @@
       bec2_diag_2d=0.0
       bec2_diag_3d=0.0
 #ifdef MARBL_DIAGS
-      diag_array_2d => bec2_diag_2d
-      diag_array_3d => bec2_diag_3d
+      marbl_diag_2d => bec2_diag_2d
+      marbl_diag_3d => bec2_diag_3d
 #endif
 
       if (wrt_avg_dia) then
