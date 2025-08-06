@@ -132,16 +132,7 @@
 ! Initialize local copies of tracer array:
 !
 
-      ! DevinD - surely this is avoidable just by using iPO4, etc rather
-      ! than po4_ind_t?
-      ! also should be using 't' array directly to save memory?
-      ! tracer array as a copy is a massive memory burden
-       do m=1,ntrc_bio
-          do k=1,N
-             tracer(istr:iend,jstr:jend,k,m) =
-     &              t(istr:iend,jstr:jend,k,nnew,isalt+nt_passive+m)
-          enddo
-       enddo
+
        sstt(istr:iend,jstr:jend) = t(istr:iend,jstr:jend,N,nnew,1)
        ssss(istr:iend,jstr:jend) = t(istr:iend,jstr:jend,N,nnew,2)
 
@@ -258,10 +249,10 @@
                !!! we let n2o_atm trace the invasion of atmospheric n2o
                !!! and set the atmopspheric concentration of all other
                !!! tracer to 0 So that everything is additive.
-               FLUX(i,j) = PV(i,j) * (N2OSAT_USED - tracer(i,j,N,n2o_ind_t))
+               FLUX(i,j) = PV(i,j) * (N2OSAT_USED - t(i,j,N,nnew,iN2O))
                STF(i,j,n2o_ind_t) = FLUX(i,j)
                !!! Update tracer
-               tracer(i,j,N,n2o_ind_t) = tracer(i,j,N,n2o_ind_t)+
+               t(i,j,N,nnew,iN2O) = t(i,j,N,nnew,iN2O)+
      &                 stf(i,j,n2o_ind_t)*dt/Hz(i,j,N)
 
 # if defined BEC2_DIAG && defined Ncycle_SY
@@ -314,9 +305,9 @@
 # endif
 !!!!!---------------Tracking only N2 excess for no2---------!!!!! to track full use:
 !                FLUX(i,j) = PV(i,j) * (N2SAT_USED - tracer(i,j,N,n2_ind_t))
-               FLUX(i,j) = PV(i,j) * (c0 - tracer(i,j,N,n2_ind_t))
+               FLUX(i,j) = PV(i,j) * (c0 - t(i,j,N,nnew,iN2))
                STF(i,j,n2_ind_t) = FLUX(i,j)
-               tracer(i,j,N,n2_ind_t) = tracer(i,j,N,n2_ind_t)+
+               t(i,j,N,nnew,iN2) = t(i,j,N,nnew,iN2)+
      &                 stf(i,j,n2_ind_t)*dt/Hz(i,j,N)
 # ifdef BEC2_DIAG
        if (wrt_bec2_diag_2d(pvn2_idx_t)) then
@@ -364,9 +355,9 @@
 # ifdef MASKING
      &                      * rmask(i,j)
 # endif
-               FLUX(i,j) = PV(i,j) * (O2SAT_USED - tracer(i,j,N,o2_ind_t))
+               FLUX(i,j) = PV(i,j) * (O2SAT_USED - t(i,j,N,nnew,iO2))
                STF(i,j,o2_ind_t) = FLUX(i,j)
-               tracer(i,j,N,o2_ind_t) = tracer(i,j,N,o2_ind_t)+
+               t(i,j,N,nnew,iO2) = t(i,j,N,nnew,iO2)+
      &                 stf(i,j,o2_ind_t)*dt/Hz(i,j,N)
 # ifdef BEC2_DIAG
        if (wrt_bec2_diag_2d(pvo2_idx_t)) then
@@ -432,10 +423,10 @@
 
              CALL co2calc_row(LANDMASK(istr:iend,j),
      &         SSTT(istr:iend,j), SSSS(istr:iend,j),
-     &         tracer(istr:iend,j,N,dic_ind_t),
-     &         tracer(istr:iend,j,N,alk_ind_t),
-     &         tracer(istr:iend,j,N,po4_ind_t),
-     &         tracer(istr:iend,j,N,sio3_ind_t),
+     &         t(istr:iend,j,N,nnew,iDIC),
+     &         t(istr:iend,j,N,nnew,iALK),
+     &         t(istr:iend,j,N,nnew,iPO4),
+     &         t(istr:iend,j,N,nnew,iSIO3),
      &         PHLO(istr:iend), PHHI(istr:iend), PH_NEW(istr:iend), XCO2(istr:iend),
      &         AP_USED(istr:iend,j), CO2STAR_ROW(istr:iend),
      &         DCO2STAR_ROW(istr:iend), pco2oc_ROW(istr:iend),
@@ -470,8 +461,8 @@
 
           STF(istr:iend,jstr:jend,dic_ind_t) = FLUX(istr:iend,jstr:jend)
 
-          tracer(istr:iend,jstr:jend,N,dic_ind_t) =
-     &       tracer(istr:iend,jstr:jend,N,dic_ind_t) +
+          t(istr:iend,jstr:jend,N,nnew,iDIC) = 
+     &       t(istr:iend,jstr:jend,N,nnew,iDIC) +
      &       stf(istr:iend,jstr:jend,dic_ind_t)
      &       *dt/Hz(istr:iend,jstr:jend,N)
 # ifdef BEC2_DIAG
@@ -495,22 +486,22 @@
        endif
        FLUX = FLUX * parm_Fe_bioavail * nmol_cm2_to_mmol_m2
        STF(istr:iend,jstr:jend,fe_ind_t) = FLUX(istr:iend,jstr:jend)
-       tracer(istr:iend,jstr:jend,N,fe_ind_t) =
-     &         tracer(istr:iend,jstr:jend,N,fe_ind_t) +
+       t(istr:iend,jstr:jend,N,nnew,iFE) =
+     &         t(istr:iend,jstr:jend,N,nnew,iFE) +
      &         stf(istr:iend,jstr:jend,fe_ind_t)
      &         *dt/Hz(istr:iend,jstr:jend,N)
 
 # ifdef NOX_FORCING
        ! NOx: added to nitrate (convert units from kg N to mmol N)
-       tracer(istr:iend,jstr:jend,N,no3_ind_t) =
-     &         tracer(istr:iend,jstr:jend,N,no3_ind_t) +
+       t(istr:iend,jstr:jend,N,nnew,iNO3) =
+     &         t(istr:iend,jstr:jend,N,nnew,iNO3) +
      &         nox(istr:iend,jstr:jend)*71394.200220751
      &         *dt/Hz(istr:iend,jstr:jend,N)
 # endif
 # ifdef NHY_FORCING
        ! NHy: added to ammonium (convert units from kg N to mmol N)
-       tracer(istr:iend,jstr:jend,N,nh4_ind_t) =
-     &         tracer(istr:iend,jstr:jend,N,nh4_ind_t) +
+       t(istr:iend,jstr:jend,N,nnew, iNH4) = 
+     &         t(istr:iend,jstr:jend,N,nnew,iNH4) +
      &         nhy(istr:iend,jstr:jend)*71394.200220751
      &         *dt/Hz(istr:iend,jstr:jend,N)
 # endif
@@ -555,7 +546,7 @@
        do k=1,n
           do m=1,ntrc_bio
              t(istr:iend,jstr:jend,k,nnew,isalt+nt_passive+m) =
-     &             tracer(istr:iend,jstr:jend,k,m)
+     &             t(istr:iend,jstr:jend,k,nnew,isalt+nt_passive+m)
      &             + dt * DTRACER_MODULE(istr:iend,jstr:jend,k,m)
           enddo
 
@@ -769,70 +760,70 @@
     !   create local copies of model tracers
     !   treat negative values as zero
     !---------------------------------------------------------------------------
-       PO4_loc  = MAX(c0, TRACER(istr:iend,j,k,po4_ind_t))
-       NO3_loc  = MAX(c0, TRACER(istr:iend,j,k,no3_ind_t))
-       SiO3_loc = MAX(c0, TRACER(istr:iend,j,k,sio3_ind_t))
-       NH4_loc  = MAX(c0, TRACER(istr:iend,j,k,nh4_ind_t))
-       Fe_loc   = MAX(c0, TRACER(istr:iend,j,k,fe_ind_t))
-       O2_loc   = MAX(c0, TRACER(istr:iend,j,k,o2_ind_t))
-       DOC_loc  = MAX(c0, TRACER(istr:iend,j,k,doc_ind_t))
-       spC_loc  = MAX(c0, TRACER(istr:iend,j,k,spC_ind_t))
-       spChl_loc= MAX(c0, TRACER(istr:iend,j,k,spChl_ind_t))
-       spCaCO3_loc  = MAX(c0,TRACER(istr:iend,j,k,spCaCO3_ind_t))
-       diatC_loc= MAX(c0, TRACER(istr:iend,j,k,diatC_ind_t))
-       diatChl_loc  = MAX(c0, TRACER(istr:iend,j,k,diatChl_ind_t))
-       zooC_loc  = MAX(c0, TRACER(istr:iend,j,k,zooC_ind_t))
-       spFe_loc  = MAX(c0, TRACER(istr:iend,j,k,spFe_ind_t))
-       diatSi_loc = MAX(c0, TRACER(istr:iend,j,k,diatSi_ind_t))
-       diatFe_loc  = MAX(c0, TRACER(istr:iend,j,k,diatFe_ind_t))
-       diazC_loc    = MAX(c0, TRACER(istr:iend,j,k,diazC_ind_t))
-       diazChl_loc  = MAX(c0, TRACER(istr:iend,j,k,diazChl_ind_t))
-       diazFe_loc   = MAX(c0, TRACER(istr:iend,j,k,diazFe_ind_t))
-       DON_loc  = MAX(c0, TRACER(istr:iend,j,k,don_ind_t))
-       DOFe_loc = MAX(c0, TRACER(istr:iend,j,k,dofe_ind_t))
-       DOP_loc  = MAX(c0, TRACER(istr:iend,j,k,dop_ind_t))
-       DOPr_loc = MAX(c0, TRACER(istr:iend,j,k,dopr_ind_t))
-       DONr_loc = MAX(c0, TRACER(istr:iend,j,k,donr_ind_t))
+       PO4_loc  = MAX(c0, T(istr:iend,j,k,nnew,iPO4))
+       NO3_loc  = MAX(c0, T(istr:iend,j,k,nnew,iNO3))
+       SiO3_loc = MAX(c0, T(istr:iend,j,k,nnew,iSIO3))
+       NH4_loc  = MAX(c0, T(istr:iend,j,k,nnew,iNH4))
+       Fe_loc   = MAX(c0, T(istr:iend,j,k,nnew,iFE))
+       O2_loc   = MAX(c0, T(istr:iend,j,k,nnew,iO2))
+       DOC_loc  = MAX(c0, T(istr:iend,j,k,nnew,iDOC))
+       spC_loc  = MAX(c0, T(istr:iend,j,k,nnew,iSPC))
+       spChl_loc= MAX(c0, T(istr:iend,j,k,nnew,iSPCHL))
+       spCaCO3_loc  = MAX(c0,T(istr:iend,j,k,nnew,iSPCACO3))
+       diatC_loc= MAX(c0, T(istr:iend,j,k,nnew,iDIATC))
+       diatChl_loc  = MAX(c0, T(istr:iend,j,k,nnew,iDIATCHL))
+       zooC_loc  = MAX(c0, T(istr:iend,j,k,nnew,iZOOC))
+       spFe_loc  = MAX(c0, T(istr:iend,j,k,nnew,iSPFE))
+       diatSi_loc = MAX(c0, T(istr:iend,j,k,nnew,iDIATSI))
+       diatFe_loc  = MAX(c0, T(istr:iend,j,k,nnew,iDIATFE))
+       diazC_loc    = MAX(c0, T(istr:iend,j,k,nnew,iDIAZC))
+       diazChl_loc  = MAX(c0, T(istr:iend,j,k,nnew,iDIAZCHL))
+       diazFe_loc   = MAX(c0, T(istr:iend,j,k,nnew,iDIAZFE))
+       DON_loc  = MAX(c0, T(istr:iend,j,k,nnew,iDON))
+       DOFe_loc = MAX(c0, T(istr:iend,j,k,nnew,iDOFE))
+       DOP_loc  = MAX(c0, T(istr:iend,j,k,nnew,iDOP))
+       DOPr_loc = MAX(c0, T(istr:iend,j,k,nnew,iDOPR))
+       DONr_loc = MAX(c0, T(istr:iend,j,k,nnew,iDONR))
 # ifdef Ncycle_SY
-       NO2_loc  = MAX(c0, TRACER(istr:iend,j,k,no2_ind_t))
-       N2_loc  = MAX(c0, TRACER(istr:iend,j,k,n2_ind_t))
-       N2O_loc = MAX(c0, TRACER(istr:iend,j,k,n2o_ind_t))
+       NO2_loc  = MAX(c0, T(istr:iend,j,k,nnew,iNO2))
+       N2_loc  = MAX(c0, T(istr:iend,j,k,nnew,iN2))
+       N2O_loc = MAX(c0, t(istr:iend,j,k,nnew,iN2O))
 # endif
 
 #ifdef BEC2_DIAG
        if (wrt_bec2_diag_3d(totchl_idx_t)) then
           idiag = idx_bec2_diag_3d(totchl_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = tracer(istr:iend,j,k,spchl_ind_t)
-     &     + tracer(istr:iend,j,k,diatchl_ind_t) + tracer(istr:iend,j,k,diazchl_ind_t)
+          bec2_diag_3d(istr:iend,j,k,idiag) = t(istr:iend,j,k,nnew,iSPCHL)
+     &     + t(istr:iend,j,k,nnew,iDIATCHL) + t(istr:iend,j,k,nnew,iDIAZCHL)
        endif
        if (wrt_bec2_diag_3d(totphytoc_idx_t)) then
           idiag = idx_bec2_diag_3d(totphytoc_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = tracer(istr:iend,j,k,spc_ind_t)
-     &     + tracer(istr:iend,j,k,diatc_ind_t) + tracer(istr:iend,j,k,diazc_ind_t)
+          bec2_diag_3d(istr:iend,j,k,idiag) = t(istr:iend,j,k,nnew,iSPC)
+     &     + t(istr:iend,j,k,nnew,iDIATC) + t(istr:iend,j,k,nnew,iDIAZC)
        endif
        if (wrt_bec2_diag_3d(spczero_idx_t)) then
           idiag = idx_bec2_diag_3d(spczero_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-TRACER(istr:iend,j,k,spC_ind_t))/dt
+          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-T(istr:iend,j,k,nnew,iSPC))/dt
        endif
        if (wrt_bec2_diag_3d(diatczero_idx_t)) then
           idiag = idx_bec2_diag_3d(diatczero_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-TRACER(istr:iend,j,k,diatC_ind_t))/dt
+          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-T(istr:iend,j,k,nnew,iDIATC))/dt
        endif
        if (wrt_bec2_diag_3d(diazczero_idx_t)) then
           idiag = idx_bec2_diag_3d(diazczero_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-TRACER(istr:iend,j,k,diazC_ind_t))/dt
+          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-T(istr:iend,j,k,nnew,iDIAZC))/dt
        endif
        if (wrt_bec2_diag_3d(doczero_idx_t)) then
           idiag = idx_bec2_diag_3d(doczero_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-TRACER(istr:iend,j,k,doc_ind_t))/dt
+          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-T(istr:iend,j,k,nnew,iDOC))/dt
        endif
        if (wrt_bec2_diag_3d(zooczero_idx_t)) then
           idiag = idx_bec2_diag_3d(zooczero_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-TRACER(istr:iend,j,k,zooC_ind_t))/dt
+          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-T(istr:iend,j,k,nnew,iZOOC))/dt
        endif
        if (wrt_bec2_diag_3d(spcaco3zero_idx_t)) then
           idiag = idx_bec2_diag_3d(spcaco3zero_idx_t)
-          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-TRACER(istr:iend,j,k,spCaCO3_ind_t))/dt
+          bec2_diag_3d(istr:iend,j,k,idiag) = max(c0,-T(istr:iend,j,k,nnew,iSPCACO3))/dt
        endif
 #endif
 
