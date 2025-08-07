@@ -29,6 +29,7 @@
       integer,dimension(6) :: date
       character(len=15)  :: datestr
       integer :: month_at_prev_timestep
+      real :: avg_begin_time, avg_end_time
 
       integer :: navg = 0
       integer :: iALK, iDIC, iALK_alt, iDIC_alt
@@ -219,14 +220,25 @@
       ! local
       real :: coef
 
+      if (navg == 0) then
+        ! By the time the code enters here, it will have advanced one timestep,
+        ! so save the time from one timestep previous
+        avg_begin_time = time - dt
+      endif
+
       navg = navg+1
 
       coef = 1./navg
 
       if (coef==1) then                                    ! this refreshes average (1-coef)=0
-       if (mynode==0) write(*,'(7x,2A,F9.1)')
-     &   'cstar :: started averaging. ',
-     &   'output_period (s) =', output_period
+        if (mynode==0) then
+          if (monthly_averages) then
+            print *, 'cstar :: started monthly averaging.'
+          else
+            print *, 'cstar :: started averaging. ',
+     &      'output_period (s) =', output_period
+          endif
+        endif
       endif
 
       zeta__avg(:,:) = zeta__avg(:,:)*(1-coef) + zeta(:,:,knew)*coef
@@ -412,6 +424,14 @@
 
 
       if (do_avg) then
+        varid = nccreate(ncid,'avg_begin_time',(/dn_tm/),(/0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at beginning of averaging period')
+        ierr = nf90_put_att(ncid,varid,'units','seconds' )
+
+        varid = nccreate(ncid,'avg_end_time',(/dn_tm/),(/0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at end of averaging period')
+        ierr = nf90_put_att(ncid,varid,'units','seconds' )
+
         ierr=nf90_put_att(ncid,nf90_global,'averaging',
      &      'All variables are averaged in time')
       endif
@@ -472,6 +492,8 @@
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
         if (do_avg) then
+          call ncwrite(ncid,'avg_begin_time',(/avg_begin_time/),(/record/))
+          call ncwrite(ncid,'avg_end_time',(/time/),(/record/))
           call ncwrite(ncid,'zeta'  ,zeta__avg(i0:i1,j0:j1),(/1,1,record/))
           zeta__avg(:,:)=0
           call ncwrite(ncid,'temp',temp_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
