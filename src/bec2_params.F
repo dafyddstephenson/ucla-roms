@@ -4,14 +4,6 @@
       ! and initialisation of the
       ! BGC - bio-geo-chemical model
       ! -----------------------------
-!!====================================================================
-!! 10/2022 : Revised architecture from bgc_param_bec2.h and
-!!           bgc_ecosys_bec2_init.F
-!!====================================================================
-!!
-!! ---> Version for PACMED-25KM - 10/2022
-!!
-!!====================================================================
 
 #include "cppdefs.opt"
 #ifdef BIOLOGY_BEC2
@@ -366,7 +358,7 @@
       use param
       use grid
       use bgc
-      use bgc_ecosys_vars
+      use bgc_shared_vars
 
       implicit none
 
