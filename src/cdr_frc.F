@@ -162,7 +162,7 @@
           local_minloc(2) = mynode
 
           ! Find global minimum and rank where the minimum occurs
-          call MPI_Reduce( local_minloc, global_minloc, 2, mpi_2double_precision,
+          call MPI_Reduce( local_minloc, global_minloc, 1, mpi_2double_precision,
      &    mpi_minloc, 0, ocean_grid_comm, ierr)
 
           ! Broadcast rank where minimum occurs to all processes
@@ -246,7 +246,7 @@
                    vint = 0
                    do k=1,nz
                      arg = ( (z_r(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
-                     cdr_prf(cidx,k) = exp(-arg)*Hz(i,j,k)
+                     cdr_prf(cidx,k) = exp(-arg)
                    enddo
                    ! The 1D integral of exp^(z/cdr_vsc(icdr))**2 is cdr_vsc(icdr)*SQRT(pi),
                    ! so normalizing by this amount will ensure we don't weight the

@@ -103,9 +103,6 @@
 # include "compute_extended_bounds.h"
 #endif
 
-
-!     call set_frc_var_tile( istr, iend, jstr, jend, nc_dust,    dust,    interp_frc )  ! dust
-!     call set_frc_var_tile( istr, iend, jstr, jend, nc_iron,    iron,    interp_frc )  ! iron
       call set_frc_data(nc_dust,dust,'r')
       call set_frc_data(nc_iron,iron,'r')
 
@@ -552,24 +549,31 @@
       implicit none
 
       allocate( nc_dust%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_dust%coarse = 1
       allocate( nc_iron%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_iron%coarse = 1
 
 #ifdef PCO2AIR_FORCING
       allocate( nc_pco2air%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_pco2air%coarse = 1
 #ifdef MARBL
       allocate( nc_pco2air_alt%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_pco2air_alt%coarse = 1
 #endif
 #endif
 
 #ifdef NOX_FORCING
       allocate( nc_nox%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_nox%coarse = 1
 #endif
 #ifdef NHY_FORCING
       allocate( nc_nhy%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_nhy%coarse = 1
 #endif
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       allocate( nc_swrad_avg%vdata( GLOBAL_2D_ARRAY,2) )
+      if (interp_frc==1) nc_swrad_avg%coarse = 1
 #endif
 
       end subroutine  init_arrays_bgc_frc !]

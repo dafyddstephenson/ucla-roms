@@ -148,6 +148,14 @@
       ! For vertical velocity
       allocate( Wvl(GLOBAL_2D_ARRAY,nz+1))
       if (diag_pflx) then
+#ifndef DIAGNOSTICS
+        if (mynode == 0) then
+          print *, 'ERROR: init_extract_data :: Must define CPP key '//
+     &    'DIAGNOSTICS if do_extract=.true. and diag_pflx=.true.'
+          call flush()
+        endif
+        error stop
+#endif
         allocate( upe(GLOBAL_2D_ARRAY) ); upe = 0
         allocate( vpe(GLOBAL_2D_ARRAY) ); vpe = 0
       endif
