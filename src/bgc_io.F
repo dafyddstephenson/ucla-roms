@@ -1,4 +1,4 @@
-      module bgc
+      module bgc_io
 
       ! BGC - bio-geo-chemical module
       ! -----------------------------
@@ -616,4 +616,4 @@
 ! ----------------------------------------------------------------------
 #endif /*(BIOLOGY_BEC2 || MARBL)*/
 
-      end module bgc
+      end module bgc_io
