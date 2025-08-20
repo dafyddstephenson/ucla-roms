@@ -1,5 +1,5 @@
       module roms_part
-      
+
       ! ROMS functionality to facilitate partioning and joining of files
 
       use netcdf
@@ -8,7 +8,7 @@
       use netcdf
 
       private
-       
+
       ! usage flags
       logical,public :: del_part_files,classic
 
@@ -55,7 +55,7 @@
 
       ! module local variables
       integer,public       :: nparts
-      
+
       type,public :: ncstructure
         integer                                     :: nrecords  ! number of records
         integer                                     :: nvars     ! number of variables
@@ -65,7 +65,7 @@
         character(len=2),dimension(:),allocatable   :: bryvar    ! is this a boundary variable
         logical,dimension(:),allocatable            :: varpart   ! partitionable or not
         integer,dimension(:),allocatable            :: xtype     ! variable type
-        integer,dimension(:),allocatable            :: ndims  
+        integer,dimension(:),allocatable            :: ndims
         integer,dimension(:),allocatable            :: natts
         type(dimstruct),dimension(:),allocatable    :: dims
         type(attstruct),dimension(:),allocatable    :: atts
@@ -81,12 +81,12 @@
         character(len=200),dimension(:),allocatable ::attvalues
         real,dimension(:),allocatable               ::attparams
       end type attstruct
- 
+
       type,public :: filestruct
         integer,dimension(:),allocatable            :: numfiles
         character(len=128),dimension(:),allocatable :: filelist
       end type filestruct
-      
+
       public :: cmd_args_optimal
       public :: cmd_args_map
       public :: cmd_args_partit
@@ -104,12 +104,12 @@
       implicit none
 
 !     import/export
-      real,intent(out)            :: cores 
-      character(len=128),intent(out) :: grdfile 
+      real,intent(out)            :: cores
+      character(len=128),intent(out) :: grdfile
 
 !     local
       integer            :: nargs
-      character(len=128) :: arg 
+      character(len=128) :: arg
 
       nargs =  command_argument_count()
 
@@ -137,7 +137,7 @@
       if (nargs < 3) then
         print*,'Command Template:  part_map npartx nparty grdfile.nc'
       endif
-      
+
       ! first 2 should be number of subdomains in x- or y- direction
       call get_command_argument(1,arg);
       read(arg,*) npartx
@@ -155,29 +155,44 @@
       integer,intent(out) :: npartx,nparty
 
       integer :: nargs,i
+      integer :: argcount = 1
       character(len=128) :: arg
+
+      classic   = .false.
 
       nargs =  command_argument_count()
 
       if (nargs < 4) call show_use_partit
-      
+
+      call get_command_argument(argcount,arg)
+      ! "classic" flag: does not write the "neighbors" attribute, which tells
+        ! ROMS that we will not use mpi_masking
+      if (index(arg,'-classic')>0) then
+        print*,'Partitioning in classic mode (ignoring mpi_masking)'
+        classic = .true.
+        argcount = argcount + 1
+      endif
+
       ! first 2 should be number of subdomains in x- or y- direction
-      call get_command_argument(1,arg);
+      call get_command_argument(argcount,arg);
       read(arg,*) npartx
-      call get_command_argument(2,arg);
+      argcount = argcount + 1
+      call get_command_argument(argcount,arg);
       read(arg,*) nparty
       print *,nargs,npartx,nparty
-
-      call get_command_argument(3,arg)
+      argcount = argcount + 1
+      call get_command_argument(argcount,arg)
       grdfile = trim(adjustl(arg))
+      argcount = argcount + 1
 !     read(arg,*) grdfile
 !     print *,'gridfile: ',grdfile
-      
-      nfiles = nargs - 3
+
+      nfiles = nargs - argcount + 1
+      print *,nfiles
       allocate(srcfiles(nfiles))
-      do i = 4,nargs
+      do i = argcount,nargs
         call get_command_argument(i,arg)
-        srcfiles(i-3) = trim(adjustl(arg))
+        srcfiles(i-argcount + 1) = trim(adjustl(arg))
 !       read(arg,*) srcfiles(i-3)
       enddo
       print *,grdfile,srcfiles(1)
@@ -197,7 +212,7 @@
       nargs =  command_argument_count()
 
       if (nargs < 1) call show_use_ncjoin
-      
+
       nflags = 0
       nfiles = 0
       do i = 1,nargs
@@ -232,7 +247,7 @@
 
       ! starting file
       file = partfile(1:idx-1)
-      
+
       ! search for other files that wished to be partitioned - recording total amount
       total_files=1
       if (.not.(allocated(file_indices))) allocate(file_indices(nfiles))
@@ -287,17 +302,20 @@
 
        print *, 'Usage of partit should be: ',
      &       'partmap npx npy grdfile.nc'
-     
+
       stop
 
-      end subroutine show_use_map  !] 
+      end subroutine show_use_map  !]
 ! ----------------------------------------------------------------------
       subroutine show_use_partit  ![
       implicit none
 
-      print *, 'Usage of partit should be: ',
-     &       'partit npx npy grdfile.nc, file1.nc...'
-     
+      print *, 'Usage of partit should be: '
+      print *, 'partit npx npy grdfile.nc, file1.nc...'
+      print *, 'or'
+      print *, 'partit -classic npx npy grdfile.nc, file1.nc...'
+      print *, 'if we do not want to use the mpi masking feature.'
+
       stop
 
       end subroutine show_use_partit !]
@@ -307,7 +325,7 @@
 
       print *, 'Usage of ncjoin should be: ',
      &       'ncjoin --flags (optional) file1.??.nc ...'
-     
+
       stop
 
       end subroutine show_use_ncjoin !]
@@ -317,7 +335,7 @@
 
       print *, 'Usage of optimal should be: ',
      &         'optimal_part cores grdfile.nc'
-       
+
       stop
 
       end subroutine show_use_optimal !]
@@ -337,7 +355,7 @@
       integer :: loc_x,loc_y
       integer :: npi,npj
       integer :: count
-      
+
       ! Get interior subdomain size
       nx = ceiling(1.0*gnx/npx)
       ny = ceiling(1.0*gny/npy)
@@ -417,7 +435,7 @@
       integer :: loc_x,loc_y
       integer :: npi,npj
       integer :: count
-      
+
 
       ierr = nf90_open(trim(adjustl(grdfile)), nf90_nowrite, ncid)
        print *, grdfile
@@ -491,7 +509,11 @@
       count = 0
       do npj = 1,npy
         do npi = 1,npx
-          msk_mx = maxval(mask(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
+          if (.not. classic) then
+            msk_mx = maxval(mask(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
+          else
+            msk_mx = 1
+          endif
           if (msk_mx /= 0) then
             count = count+1
             node_map(npj,npi) = count
@@ -528,12 +550,12 @@
       allocate(jlcv(npy,3))
       ilcu = iloc
       jlcv = jloc
-      ilcu(1,1) = iloc(1,1)-1 
-      jlcv(1,1) = jloc(1,1)-1 
-      ilcu(2:npx,2) = ilcu(2:npx,2)-1 
-      ilcu(:,3) = ilcu(:,3)-1 
-      jlcv(2:npy,2) = jlcv(2:npy,2)-1 
-      jlcv(:,3) = jlcv(:,3)-1 
+      ilcu(1,1) = iloc(1,1)-1
+      jlcv(1,1) = jloc(1,1)-1
+      ilcu(2:npx,2) = ilcu(2:npx,2)-1
+      ilcu(:,3) = ilcu(:,3)-1
+      jlcv(2:npy,2) = jlcv(2:npy,2)-1
+      jlcv(:,3) = jlcv(:,3)-1
 
 
       end subroutine partition_mask  !]
@@ -563,25 +585,25 @@
 
       ! open up reference netcdf for global attributes
       ierr = nf90_open(trim(srcfile), nf90_nowrite, ncid)
-      if (ierr/=nf90_noerr) 
+      if (ierr/=nf90_noerr)
      &  call handle_ierr(ierr,'opening file: ',trim(srcfile) )
 
-      call get_nc_info(ncid, ncinfo) 
+      call get_nc_info(ncid, ncinfo)
 
       do part = 1,nparts
         i = npi_c(part)
         j = npj_c(part)
-    
+
         fname = srcfile
         call insert_nodes(fname,part-1,nparts)
 
        ierr=nf90_create(trim(fname),nf90_netcdf4,npid)
 !        ierr=nf90_create(trim(fname),nf90_classic_model,npid)
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'creating file: ',trim(fname) )
 
         ! global rho-dimensions
-        ierr=nf90_put_att(npid, nf90_global, 'globaldims', 
+        ierr=nf90_put_att(npid, nf90_global, 'globaldims',
      &                   (/ncinfo%gsize(1)-2,ncinfo%gsize(2)-2/))
 
         ! subdompos: i,j position of sub-domain
@@ -603,14 +625,17 @@
         ! i and j nodes (how it was partitioned)
         ierr=nf90_put_att(npid, nf90_global, 'ij_nodes', (/npartx,nparty/))
 
+        ! only write "neighbors" attribute if we are using mpi_masking
+        if (.not. classic) then
         ! neighbors: N,NE,E,SE,S,SW,W,NW (READ IN THAT ORDER)
         loc_neigh = (/ node_map(j+1,i), node_map(j+1,i+1),
      &                 node_map(j,i+1), node_map(j-1,i+1),
      &                 node_map(j-1,i), node_map(j-1,i-1),
      &                 node_map(j,i-1), node_map(j+1,i-1) /)
         ierr=nf90_put_att(npid, nf90_global, 'neighbors',loc_neigh-1)
-         
-        ! No I/O is performed when NF90_INQUIRE is called, since the required information is 
+        endif
+
+        ! No I/O is performed when NF90_INQUIRE is called, since the required information is
         ! available in memory for each open netCDF dataset.
 
         ! read all global attributes from srcfile and write them
@@ -624,7 +649,7 @@
           if (index(att_name,'subdompos')) cycle
           if (index(att_name,'globaldims')) cycle
           ierr = nf90_copy_att(ncid,nf90_global,att_name,npid,nf90_global)
-        enddo 
+        enddo
 
         do ivar = 1,ncinfo%nvars
           vname   = ncinfo%varname(ivar)
@@ -646,7 +671,7 @@
             if (index(dname(idm),'xi_u') > 0)    dsize(idm)=ilcu(i,1)
             if (index(dname(idm),'eta_rho') > 0) dsize(idm)=jloc(j,1)
             if (index(dname(idm),'eta_v') > 0)   dsize(idm)=jlcv(j,1)
-            if (index(dname(idm),'time') > 0)    dsize(idm)= 0 
+            if (index(dname(idm),'time') > 0)    dsize(idm)= 0
           enddo
 
           if (ndims==0) then
@@ -677,8 +702,8 @@
 
         ierr = nf90_close(npid)
 
-      enddo 
-      
+      enddo
+
       ! save specific name of time dimension
       ndims = ncinfo%ndims(1)
       dname(1:ndims) = ncinfo%dims(1)%dimnames
@@ -756,15 +781,15 @@
       allocate(ncparts(part0:part1))
 
       do part = part0,part1  ! zero based ![
-    
+
         fname = srcfile
         call insert_nodes(fname,part,nparts)
 
         ierr = nf90_open(trim(adjustl(fname)),nf90_write,npid)
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'opening file: ',trim(fname) )
 
-        if (part.eq.part0) call get_nc_info(npid, ncinfo) 
+        if (part.eq.part0) call get_nc_info(npid, ncinfo)
 
         ierr = nf90_get_att(npid,nf90_global,'start_idx',llidx)
         i0(part) = llidx(1)
@@ -817,7 +842,7 @@
         ierr = nf90_inquire_dimension(ncid,dimid,len=nrecords)
         if (ierr /= nf90_noerr) call handle_ierr(ierr)
       endif
-     
+
       print *,'nrecords: ',nrecords
 
       do record = 1,nrecords
@@ -1139,7 +1164,7 @@
              if (ierr/=nf90_noerr) call handle_ierr(ierr)
           enddo
         endif
-        
+
       enddo  ! ivars
 
       enddo  ! records
@@ -1186,9 +1211,9 @@
       idx1 = index(joinfile,'.',back=.true.)
       joinfile = joinfile(1:idx1-1) //'.nc'
 
-      ! Open first partial file in range 
+      ! Open first partial file in range
       ierr = nf90_open(trim(partfile), nf90_nowrite, npid)
-      if (ierr/=nf90_noerr) 
+      if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'opening file: ',trim(partfile) )
 
       call get_nc_info(npid,ncinfo)
@@ -1209,7 +1234,7 @@
       elseif (ierr/=nf90_noerr) then
         partfile = partfiles(nparts-1)
         ierr = nf90_open(trim(partfile), nf90_nowrite, npid)
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'opening file: ',trim(partfile) )
         ierr=nf90_get_att(npid, nf90_global, 'partition', ibuff)
         ierr=nf90_inquire(npid,ndimensions=ndims)
@@ -1225,18 +1250,18 @@
       gnx = gdims(1)+2
       gny = gdims(2)+2
       nz  = gdims(3)
-      
+
       if (mynode==0) then ! single node to create joined file
 
         print *,'Creating joined file'
 
         ierr=nf90_create(trim(joinfile),nf90_netcdf4,ncid)
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'creating file: ',trim(joinfile) )
 
         ! Adding dmimensions to joined file
         ierr = nf90_open(trim(partfiles(nparts-1)), nf90_nowrite, npid)
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'opening file: ',trim(partfile) )
         ierr=nf90_inquire(npid,ndimensions=ndims)
         do i = 1,ndims
@@ -1245,7 +1270,7 @@
           if (index(dname(i),'xi_u') > 0) dsize(i) = gnx-1
           if (index(dname(i),'eta_rho')>0)  dsize(i) = gny
           if (index(dname(i),'eta_v') > 0)dsize(i) = gny-1
-          if (index(dname(i),'time') > 0) dsize(i) = 0 
+          if (index(dname(i),'time') > 0) dsize(i) = 0
           if (index(dname(i),'s_rho') > 0) dsize(i) = nz
           if (index(dname(i),'s_w') > 0) dsize(i) = nz+1
           ierr=nf90_def_dim(ncid,dname(i),dsize(i),did(i))
@@ -1253,7 +1278,7 @@
 
         ! Read all global attributes from partial file and write to joined
         ierr = nf90_inquire(npid, nAttributes=ngatt)
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'getting global atts: ',trim(partfile) )
         do iatt = 1,ngatt
           ierr = nf90_inq_attname(npid,nf90_global,iatt,att_name)
@@ -1263,7 +1288,7 @@
           if (index(att_name,'start_idx')>0) cycle
           if (index(att_name,'neighbors')>0) cycle
           ierr = nf90_copy_att(npid,nf90_global,att_name,ncid,nf90_global)
-        enddo 
+        enddo
 
         do ivar = 1,ncinfo%nvars
           vname   = ncinfo%varname(ivar)
@@ -1292,13 +1317,13 @@
           ierr=nf90_def_var(ncid,vname,xtype,did(1:ndims),vid,
      &            chunksizes = csizes(1:ndims),
      &            deflate_level=1, shuffle=.true.)
-          if (ierr/=nf90_noerr) 
+          if (ierr/=nf90_noerr)
      &      call handle_ierr(ierr,'creating joined var: ',trim(vname) )
- 
+
 
   98      if (ncinfo%xtype(ivar).eq.nf90_char) then
             ierr=nf90_def_var(ncid,vname,xtype,vid)
-            if (ierr/=nf90_noerr) 
+            if (ierr/=nf90_noerr)
      &       call handle_ierr(ierr,'creating joined var: ',trim(vname) )
           endif
 
@@ -1309,7 +1334,7 @@
             elseif (ndims==1) then
               ierr=nf90_def_var(ncid,vname,xtype,did(1:ndims),vid)
             endif
-            if (ierr/=nf90_noerr) 
+            if (ierr/=nf90_noerr)
      &       call handle_ierr(ierr,'creating joined var: ',trim(vname) )
           endif
 
@@ -1330,7 +1355,7 @@
 
       endif ! mynode==0
 
-  
+
       end subroutine make_joined_file !]
 ! ----------------------------------------------------------------------
       subroutine write_joined_file ![
@@ -1400,7 +1425,7 @@
         do part=part0,part1
           partfile=partfiles(part)
           ierr = nf90_open(trim(partfile),nf90_nowrite,npid)
-          if (ierr/=nf90_noerr) 
+          if (ierr/=nf90_noerr)
      &      call handle_ierr(ierr,'opening file: ',trim(partfile) )
           ierr = nf90_get_att(npid,nf90_global,'partition',ibuff)
           j0(part) = ibuff(4)
@@ -1434,7 +1459,7 @@
       if (.not.mpimasking) call MPI_BCAST(jparts,jsize,MPI_INTEGER,0,part_comm,ierr)
 
       call MPI_BCAST(nrows,1,MPI_INTEGER,0,part_comm,ierr)
- 
+
       call MPI_Barrier(part_comm,ierr)
 
       ! get j partitions per row
@@ -1471,11 +1496,11 @@
         ! check if current partitioned files jnode is within desired mpinode(row)
         if ((jnode >= (mynode*rowpart)).and.(jnode < ((mynode+1)*rowpart))) then
           partitions(counter)=part
-          counter=counter+1  
+          counter=counter+1
         ! the final row, which is last mpi node, will overflow with remainding nodes if needed
         elseif (((mynode+1)==total_nodes).and.(jnode > (mynode)*rowpart)) then
           partitions(counter)=part
-          counter=counter+1  
+          counter=counter+1
         endif
         ierr=nf90_close(npid)
       enddo
@@ -1484,7 +1509,7 @@
       partitions=pack(partitions, partitions>-1)
       rp0 = partitions(1)
       rp1 = partitions(size(partitions))
-  
+
       print*,'Node ',mynode,'File ranges: ',partitions
 
       call MPI_Barrier(write_comm,ierr)
@@ -1505,15 +1530,15 @@
       allocate(je(rp0:rp1))
 
       if (mynode==0) print *,'scanning partial files'
-      do part = rp0,rp1 
-    
+      do part = rp0,rp1
+
         partfile = partfiles(part)
 
         ierr = nf90_open(trim(partfile),nf90_nowrite,npid)
 
         if (part.eq.rp0) call get_nc_info(npid,ncinfo)
 
-        if (ierr/=nf90_noerr) 
+        if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'opening file: ',trim(partfile) )
 
         ierr = nf90_get_att(npid,nf90_global,'partition',ibuff)
@@ -1696,7 +1721,7 @@
             partfile = partfiles(part)
             ierr = nf90_open(trim(partfile),nf90_nowrite,npid)
             call ncread(npid,vname,tmp3d(is(part):ie(part),:,:),startr)
-            ! since var3d is added to for ncwrite, we use a temporary array to see if this 
+            ! since var3d is added to for ncwrite, we use a temporary array to see if this
             ! bry variable is present in current partition. If not, then we skip and do not
             ! overwrite var3d with empty data.
             if (minval(tmp3d(is(part):ie(part),:,:))==maxval(tmp3d(is(part):ie(part),:,:))) cycle
@@ -1714,7 +1739,7 @@
           call MPI_Barrier(write_comm,ierr)
 
           ierr = nf90_open_par(trim(joinfile),nf90_write,write_comm,MPI_Info_Null,ncid)
-          if (ierr/=nf90_noerr) 
+          if (ierr/=nf90_noerr)
      &      call handle_ierr(ierr,'opening file: ',trim(joinfile) )
           ierr = nf90_var_par_access(ncid,ivar,nf90_collective)
 
@@ -1728,7 +1753,7 @@
         else !not-partitionable
 
           if (ncinfo%xtype(ivar).eq.nf90_char) cycle
- 
+
           if (mynode==0) then
             print *,trim(vname),' is NOT partitionable '
             select case(ndims)
@@ -1773,13 +1798,13 @@
             var3d = 0
             partfile = partfiles(rp0)
             ierr = nf90_open(trim(partfile), nf90_nowrite, npid)
-            if (ierr/=nf90_noerr) 
+            if (ierr/=nf90_noerr)
      &        call handle_ierr(ierr,'opening file: ',trim(partfile))
             call ncread(npid,trim(vname),var3d(is(rp0):ie(rp0),js(rp0):je(rp0),:),startr)
             ierr = nf90_close(npid)
 
             ierr = nf90_open(trim(joinfile),nf90_write,ncid)
-            if (ierr/=nf90_noerr) 
+            if (ierr/=nf90_noerr)
      &        call handle_ierr(ierr,'opening file: ',trim(joinfile) )
             call ncwrite(ncid,vname,var3d,startw)
             ierr = nf90_close(ncid)
@@ -1806,8 +1831,8 @@
 ! ----------------------------------------------------------------------
       subroutine get_nc_info(ncid, ncinfo)  ![
 
-      implicit none        
-        
+      implicit none
+
       ! input/output
       integer,           intent(in)  :: ncid
       type(ncstructure), intent(out) :: ncinfo
@@ -1843,14 +1868,14 @@
 
       ! append info to allocated arrays apart of derived type
       do ivar = 1,nvars
-        
+
         ! Get information per variable
         ierr = nf90_inquire_variable(ncid,ivar,vname,xtype,ndims,dimids,natts)
-        
+
         ! name of variable
         ncinfo%varname(ivar) = vname
 
-        ! check variable to determine boundary 
+        ! check variable to determine boundary
         if (index(vname,'_west')>0) then
           ncinfo%bryvar(ivar) = 'w'
         elseif (index(vname,'_east')>0) then
@@ -1934,12 +1959,12 @@
             ierr = nf90_get_att(ncid,ivar,attname,attparam)
             ncinfo%atts(ivar)%attparams(i) = attparam
             ncinfo%atts(ivar)%attvalues(i) = 'n/a'
-          else 
+          else
             ncinfo%atts(ivar)%attvalues(i) = attvalue
             ncinfo%atts(ivar)%attparams(i) = 0
           endif
         enddo
-        
+
       enddo
 
       end subroutine get_nc_info !]
@@ -1950,7 +1975,7 @@
       implicit none
 
       ! import/export
-      character(len=*),intent(inout):: fname 
+      character(len=*),intent(inout):: fname
       integer, intent(in) :: mynode, nnodes
 
       ! Local
@@ -1959,7 +1984,7 @@
       logical :: ncf
       integer :: istart
 
-      ncf =  findstr(fname,'.nc',istart) 
+      ncf =  findstr(fname,'.nc',istart)
       if (ncf) then
         fname(istart:istart+2) = '   '
       else
