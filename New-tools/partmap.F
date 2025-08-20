@@ -44,7 +44,8 @@
       ierr = nf90_inq_dimid(ncid,'eta_rho',dimid)
        if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','eta_rho')
       ierr = nf90_inquire_dimension(ncid, dimid, len=gny)
-       if (ierr/=0) call handle_ierr(ierr,'getting dimension: ','eta_rho')
+       if (ierr/=0) call
+     &     handle_ierr(ierr,'getting dimension: ','eta_rho')
 
       gnx = gnx-2
       gny = gny-2
@@ -61,7 +62,7 @@
        if (ierr/=0) call handle_ierr(ierr,'creating: ','part.nc')
 
       ! add variables
-      dname=(/'xi_rho','eta_rho'/)
+      dname=(/dn_xr,dn_yr/)
       dsize=(/gnx+2,gny+2/)
       vname1='node'
       varid=nccreate(npid,vname1,dname,dsize)
@@ -69,7 +70,7 @@
       varid=nccreate(npid,vname2,dname,dsize)
       vname3='jnode'
       varid=nccreate(npid,vname3,dname,dsize)
-      
+
       ! Set up subdomain indices
       nx = ceiling(1.0*gnx/npx)
       ny = ceiling(1.0*gny/npy)
