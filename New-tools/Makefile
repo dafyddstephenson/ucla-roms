@@ -53,6 +53,7 @@ PSRC = partit.F roms_part.F nc_read_write.F
 MSRC = partmap.F roms_part.F nc_read_write.F
 OSRC = optimal_part.F roms_part.F nc_read_write.F
 JSRC = ncjoin.F roms_part.F nc_read_write.F
+SRCS = $(PSRC) $(MSRC) $(OSRC) $(JSRC)
 
   PCS = $(PSRC:.F=.f)
   PBJS = $(PSRC:.F=.o)
