@@ -155,29 +155,44 @@
       integer,intent(out) :: npartx,nparty
 
       integer :: nargs,i
+      integer :: argcount = 1
       character(len=128) :: arg
+
+      classic   = .false.
 
       nargs =  command_argument_count()
 
       if (nargs < 4) call show_use_partit
 
+      call get_command_argument(argcount,arg)
+      ! "classic" flag: does not write the "neighbors" attribute, which tells
+        ! ROMS that we will not use mpi_masking
+      if (index(arg,'-classic')>0) then
+        print*,'Partitioning in classic mode (ignoring mpi_masking)'
+        classic = .true.
+        argcount = argcount + 1
+      endif
+
       ! first 2 should be number of subdomains in x- or y- direction
-      call get_command_argument(1,arg);
+      call get_command_argument(argcount,arg);
       read(arg,*) npartx
-      call get_command_argument(2,arg);
+      argcount = argcount + 1
+      call get_command_argument(argcount,arg);
       read(arg,*) nparty
       print *,nargs,npartx,nparty
-
-      call get_command_argument(3,arg)
+      argcount = argcount + 1
+      call get_command_argument(argcount,arg)
       grdfile = trim(adjustl(arg))
+      argcount = argcount + 1
 !     read(arg,*) grdfile
 !     print *,'gridfile: ',grdfile
 
-      nfiles = nargs - 3
+      nfiles = nargs - argcount + 1
+      print *,nfiles
       allocate(srcfiles(nfiles))
-      do i = 4,nargs
+      do i = argcount,nargs
         call get_command_argument(i,arg)
-        srcfiles(i-3) = trim(adjustl(arg))
+        srcfiles(i-argcount + 1) = trim(adjustl(arg))
 !       read(arg,*) srcfiles(i-3)
       enddo
       print *,grdfile,srcfiles(1)
@@ -295,8 +310,11 @@
       subroutine show_use_partit  ![
       implicit none
 
-      print *, 'Usage of partit should be: ',
-     &       'partit npx npy grdfile.nc, file1.nc...'
+      print *, 'Usage of partit should be: '
+      print *, 'partit npx npy grdfile.nc, file1.nc...'
+      print *, 'or'
+      print *, 'partit -classic npx npy grdfile.nc, file1.nc...'
+      print *, 'if we do not want to use the mpi masking feature.'
 
       stop
 
@@ -491,7 +509,11 @@
       count = 0
       do npj = 1,npy
         do npi = 1,npx
-          msk_mx = maxval(mask(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
+          if (.not. classic) then
+            msk_mx = maxval(mask(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
+          else
+            msk_mx = 1
+          endif
           if (msk_mx /= 0) then
             count = count+1
             node_map(npj,npi) = count
@@ -603,12 +625,15 @@
         ! i and j nodes (how it was partitioned)
         ierr=nf90_put_att(npid, nf90_global, 'ij_nodes', (/npartx,nparty/))
 
+        ! only write "neighbors" attribute if we are using mpi_masking
+        if (.not. classic) then
         ! neighbors: N,NE,E,SE,S,SW,W,NW (READ IN THAT ORDER)
         loc_neigh = (/ node_map(j+1,i), node_map(j+1,i+1),
      &                 node_map(j,i+1), node_map(j-1,i+1),
      &                 node_map(j-1,i), node_map(j-1,i-1),
      &                 node_map(j,i-1), node_map(j+1,i-1) /)
         ierr=nf90_put_att(npid, nf90_global, 'neighbors',loc_neigh-1)
+        endif
 
         ! No I/O is performed when NF90_INQUIRE is called, since the required information is
         ! available in memory for each open netCDF dataset.
@@ -1274,7 +1299,6 @@
           attparam(1:natts)= ncinfo%atts(ivar)%attparams
           dsize(1:ndims) = ncinfo%dims(ivar)%dimsizes
           dname(1:ndims) = ncinfo%dims(ivar)%dimnames
-
 
           if (xtype.eq.nf90_char) goto 98
 

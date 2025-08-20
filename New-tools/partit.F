@@ -34,7 +34,6 @@
       call MPI_Comm_rank(part_comm, mynode, ierr)
       call MPI_Comm_size(part_comm, nnodes, ierr)
 
-
       if (mynode==0) then
       ! possibly: all nodes do this, making their on set of partial files
 
