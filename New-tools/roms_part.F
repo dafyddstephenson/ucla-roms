@@ -2013,7 +2013,7 @@
 ! ----------------------------------------------------------------------
       subroutine system_mem_usage(valueRSS) ![
 
-      !use ifport !if on intel compiler
+!      use ifport !if on intel compiler
 
       implicit none
       integer, intent(out) :: valueRSS
@@ -2024,6 +2024,11 @@
       integer            :: pid
       logical            :: ifxst
       integer            :: ios
+
+      interface
+        integer function getpid() bind(C, name="getpid")
+        end function getpid
+      end interface
 
       valueRSS = -1    ! return negative number if not found
 
