@@ -643,11 +643,11 @@
         do iatt = 1,ngatt
           ierr = nf90_inq_attname(ncid,nf90_global,iatt,att_name)
           ! if present, these attributes would mess up the writes above
-          if (index(att_name,'start_idx')) cycle
-          if (index(att_name,'end_idx')) cycle
-          if (index(att_name,'neighbors')) cycle
-          if (index(att_name,'subdompos')) cycle
-          if (index(att_name,'globaldims')) cycle
+          if (index(att_name,'start_idx') > 0) cycle
+          if (index(att_name,'end_idx') > 0) cycle
+          if (index(att_name,'neighbors') > 0) cycle
+          if (index(att_name,'subdompos') > 0) cycle
+          if (index(att_name,'globaldims') > 0) cycle
           ierr = nf90_copy_att(ncid,nf90_global,att_name,npid,nf90_global)
         enddo
 
@@ -1601,11 +1601,13 @@
               select case(ncinfo%vartype(ivar))
               case('r')
                 if ((bryvariable=='w').or.(bryvariable=='e')) then
-                  allocate(var3d(lj0:lj1,1,1)); allocate(tmp3d(lj0:lj1,1,1))
+                  allocate(var3d(lj0:lj1,1,1))
+                  allocate(tmp3d(lj0:lj1,1,1))
                   is = j0; ie = j1
                   startw = (/lj0,record,1,1/)
                 elseif ((bryvariable=='s').or.(bryvariable=='n')) then
-                  allocate(var3d(gnx,1,1)); allocate(tmp3d(gnx,1,1))
+                  allocate(var3d(gnx,1,1))
+                  allocate(tmp3d(gnx,1,1))
                   is = i0; ie = i1
                   startw = (/1,record,1,1/)
                 endif
@@ -2011,7 +2013,7 @@
 ! ----------------------------------------------------------------------
       subroutine system_mem_usage(valueRSS) ![
 
-      use ifport !if on intel compiler
+      !use ifport !if on intel compiler
 
       implicit none
       integer, intent(out) :: valueRSS
