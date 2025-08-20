@@ -6,7 +6,6 @@
 
       ! coded by Jeroen Molemaker
       use param
-      use hidden_mpi_vars
 
       implicit none
       private

@@ -365,7 +365,7 @@
           j=jnorth+1
           do i=1,nx
             FY4(i,ny+1) = 0.25*( FlxV(i-1,ny+1,k) + FlxV(i,ny+1,k) )
-     &                     *( u(i,ny+1,k,nrhs) + u(i,ny,k,nrhs)
+     &                     *( u(i,ny+1,k,nrhs) + u(i,ny,k,nrhs) )
           enddo
         endif
 

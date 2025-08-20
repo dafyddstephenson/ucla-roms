@@ -952,7 +952,7 @@
         ierr = nf90_put_att(ncid,varid,'units','Pa??')
       endif
 
-      if (obc_tune) then
+      if (obc_tuning) then
          varid = nccreate(ncid,'ub_west',
      &                       (/dn_yr,dn_tm/),
      &                       (/eta_rho,0/),nf90_double)

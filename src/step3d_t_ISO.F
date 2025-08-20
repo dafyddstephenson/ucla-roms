@@ -169,6 +169,8 @@ c--#  define ntdf nrhs
 
 # ifndef ADV_ISONEUTRAL
           if (diag_trc.and.wrt_t_dia(itrc) ) then
+            call diag_t_adv_hc4(k,itrc)
+          endif
 # endif
 
             do j=jstr,jend

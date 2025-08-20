@@ -235,7 +235,7 @@
       subroutine set_HUV1(tile)
 
       use param
-      use hidden_mpi_vars
+      use roms_mpi
       use private_scratch
 
       implicit none
