@@ -1741,10 +1741,13 @@
           call MPI_Barrier(write_comm,ierr)
 
           ierr = nf90_open_par(trim(joinfile),nf90_write,write_comm,MPI_Info_Null,ncid)
-          if (ierr/=nf90_noerr)
-     &      call handle_ierr(ierr,'opening file: ',trim(joinfile) )
-          ierr = nf90_var_par_access(ncid,ivar,nf90_collective)
-
+          if (ierr == nf90_enopar) then
+            ierr = nf90_open(trim(joinfile),nf90_write,ncid)
+          else if (ierr == nf90_noerr) then
+            ierr = nf90_var_par_access(ncid,ivar,nf90_collective)
+          else
+            call handle_ierr(ierr,'opening file: ',trim(joinfile) )
+          endif
           call ncwrite(ncid,vname,var3d,startw)
 
           ierr = nf90_close(ncid)
