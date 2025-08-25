@@ -8,15 +8,15 @@ declare -a Examples=( "Flux_frc" "Pipes_ana" "Pipes_real" "Rivers_ana" "Rivers_r
 arg=$1
 
 case "$arg" in
-    expanse|maya|laptop|github|github_ifx)
+    expanse|maya|laptop|github_gnu|github_ifx)
 	echo "running test for $arg"
 	;;
     *)
 	echo "Script must have argument 'expanse' or 'maya'! E.g.: './do_test_all.sh maya'. Try again!"
-	exit
+	exit 1
 	;;
 esac
-                                                 
+
 error_cnt=0                                      # count of exit codes from each test
 total=${#Examples[*]}                            # total number of examples
 for (( i=0; i<=$(( $total -1 )); i++ ))          # run test cases:
@@ -39,13 +39,13 @@ do
     esac
     retval=$?                                      # $? gives exit code from ./do_test_roms.sh
     error_cnt=$(( $error_cnt + $retval ))
-    
+
   if [ $retval -ne 0 ]
   then
     echo -e "  test failed! \n"
 #   break
-  fi  
-  
+  fi
+
   cd ../                                         # need return out of /code_check/ for next iteration
 done
 

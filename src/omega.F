@@ -37,13 +37,14 @@
 
       use param
       use pipe_frc
+      use cdr_frc
       use grid
       use ocean_vars
       use scalars
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
-      real CX(PRIVATE_1D_SCRATCH_ARRAY,0:N),  dtau, c2d,dh, cw, cff, 
+      real CX(PRIVATE_1D_SCRATCH_ARRAY,0:N),  dtau, c2d,dh, cw, cff,
      &    wrk(PRIVATE_1D_SCRATCH_ARRAY),      cw_min,cw_max,cw_max2
       real, parameter :: cu_min=0.6D0, cu_max=1.0D0,
      &  cmnx_ratio=cu_min/cu_max,  cutoff=2.D0-cmnx_ratio,
@@ -60,14 +61,25 @@
 c**     dtau=(1.-1./6.)*dt
       endif
 
+      Wi(1:nx,1:ny,0)=0.
+
+      if (cdr_source.and.cdr_volume) then
+        do cidx=1,cdr_nprf
+          icdr = cdr_icdr(cidx)
+          i = cdr_iloc(cidx)
+          j = cdr_iloc(cidx)
+          do k=1,nz
+            Wi(i,j,k)=Wi(i,j,k-1)
+     &         + cdr_vol(icdr)*cdr_prf(cidx,k)
+          enddo
+        enddo
+      endif
+
       do j=jstr,jend
 
       !!! For NHMG pipes, the flux needs to be out of the bottom.
-      !!! Additionally, modify, where needed, the We to Wi split 
+      !!! Additionally, modify, where needed, the We to Wi split
       !!! for pipe sources
-        do i=istr,iend
-          Wi(i,j,0)=0.
-        enddo
         do k=1,N,+1        !--> recursive
           do i=istr,iend
             Wi(i,j,k)=Wi(i,j,k-1) -FlxU(i+1,j,k) +FlxU(i,j,k)
@@ -88,18 +100,18 @@ c**     dtau=(1.-1./6.)*dt
           wrk(i)=Wi(i,j,N)/(z_w(i,j,N)-z_w(i,j,0))
           Wi(i,j,N)=0.
           We(i,j,N)=0.                      ! note that
-          We(i,j,0)=0.                      ! CX(i,k)*CX(i,0)/Hz(i,j,k) 
+          We(i,j,0)=0.                      ! CX(i,k)*CX(i,0)/Hz(i,j,k)
           CX(i,0)=dtau*pm(i,j)*pn(i,j)      ! is horizontal 2D Courant
         enddo                               ! number within Hz(i,j,k)
         do k=N-1,1,-1
           do i=istr,iend
             Wi(i,j,k)=Wi(i,j,k)-wrk(i)*(z_w(i,j,k)-z_w(i,j,0))  !! this removes the grid motion
 
-c*          if (Wi(i,j,k) > 0.) then         ! Three different variants 
-c*            c2d=CX(i,k)   ; dh=Hz(i,j,k)   ! for computing 2D Courant 
-c*          else                             ! number at the interface: 
-c*            c2d=CX(i,k+1) ; dh=Hz(i,j,k+1) ! (1) use value from the 
-c*          endif                            !     grid box upstream in 
+c*          if (Wi(i,j,k) > 0.) then         ! Three different variants
+c*            c2d=CX(i,k)   ; dh=Hz(i,j,k)   ! for computing 2D Courant
+c*          else                             ! number at the interface:
+c*            c2d=CX(i,k+1) ; dh=Hz(i,j,k+1) ! (1) use value from the
+c*          endif                            !     grid box upstream in
                                              !     vertical direction;
 c>          c2d=0.5*(CX(i,k) +CX(i,k+1))
 c>          dh=0.5*(Hz(i,j,k)+Hz(i,j,k+1))   ! (2) average the two; or
@@ -118,7 +130,7 @@ c>          dh=0.5*(Hz(i,j,k)+Hz(i,j,k+1))   ! (2) average the two; or
               if (cw < cw_min) then
                 cff=cw_max2
               elseif (cw < cutoff*cw_max) then
-                cff=cw_max2 +r4cmx*(cw-cw_min)**2 
+                cff=cw_max2 +r4cmx*(cw-cw_min)**2
               else
                 cff=cw_max*cw
               endif

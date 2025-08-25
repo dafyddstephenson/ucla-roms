@@ -55,12 +55,13 @@ c--# define CONST_TRACERS
 
       use param
       use pipe_frc
+      use cdr_frc
       use river_frc
       use surf_flux, only: stflx, srflx
       use tracers
-#ifdef MARBL      
+#ifdef MARBL
       use marbl_driver, only: marbldrv_column_physics
-#endif      
+#endif
       use diagnostics
       use eos_vars
       use grid
@@ -820,6 +821,22 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
         endif
 # endif
 
+        if (cdr_source) then
+          ! Loop over cdr release locations in this subdomain
+          ! The global sum over all cdr_prf should be 1.
+          ! cdr_flux unit is [C/s]
+          do cidx=1,cdr_nprf
+            icdr = cdr_icdr(cidx)
+            i = cdr_iloc(cidx)
+            j = cdr_jloc(cidx)
+            do k=1,nz
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
+     &           +dt*pm(i,j)*pn(i,j)*
+     &            cdr_prf(cidx,k)*cdr_flx(icdr,itrc)
+            enddo
+          enddo
+        endif
+
         do j=jstr,jend
 
 # include "compute_vert_tracer_fluxes.h"
@@ -853,6 +870,7 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
 
             enddo
           enddo
+
 
 
 ! Start computation of vertical diffusion: add surface forcing fluxes
@@ -1004,7 +1022,7 @@ c??         enddo
           enddo           !--> discard FC,WC,CF,DC
 
 # ifdef DIAGNOSTICS
-          if (diag_trc .and. wrt_t_dia(itrc) .and. calc_diag) then 
+          if (diag_trc .and. wrt_t_dia(itrc) .and. calc_diag) then
             do k=1,nz
               do i=istr,iend
                 VFlxD(i,k) =
@@ -1013,7 +1031,7 @@ c??         enddo
             enddo
             ! Convert divergence to fluxes on w-points
             do i=istr,iend
-              ZFlx(i,1)= VFlxD(i,1)/(pm(i,j)*pn(i,j)) 
+              ZFlx(i,1)= VFlxD(i,1)/(pm(i,j)*pn(i,j))
               do k=2,nz
                 ZFlx(i,k)= VFlxD(i,k)/(pm(i,j)*pn(i,j)) + ZFlx(i,k-1)
               enddo
@@ -1023,17 +1041,17 @@ c??         enddo
             endif
             do i=istr,iend
               do k=1,nz
-!               Tdiag(i,j,k,vmixd,td(itrc)) = 
-!    &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc)) 
-!               Tdiag(i,j,k,tmixz,td(itrc)) = 
-!    &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc)) 
+!               Tdiag(i,j,k,vmixd,td(itrc)) =
+!    &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc))
+!               Tdiag(i,j,k,tmixz,td(itrc)) =
+!    &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc))
 
 #  ifdef ADV_ISONEUTRAL
                 Tdiag(i,j,k,tmixz,td(itrc)) = Tdiag(i,j,k,tmixz,td(itrc)) +
-     &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc)) 
+     &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc))
 #  else
-                Tdiag(i,j,k,tmixz,td(itrc)) = 
-     &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc)) 
+                Tdiag(i,j,k,tmixz,td(itrc)) =
+     &               ZFlx(i,k) - Tdiag(i,j,k,tadvz,td(itrc))
 #  endif
               enddo
             enddo
@@ -1063,7 +1081,7 @@ c??         enddo
       if (mynode==0) then
       print *, 'doing BGC with MARBL'
       end if
-      
+
 !     Pass indices, tracer and mask arrays, diagnostics arrays, and saved state arrays to MARBL
 !      if (mynode==0) then
 !         print *, shape(t), ' is the shape of t'
@@ -1074,7 +1092,7 @@ c??         enddo
       if (mynode==0) then
       print *, 'doing BGC with BEC'
       end if
-      
+
       call ecosys_bec2_tile(istr,iend,jstr,jend) ! BEC, 2014
 # endif
 

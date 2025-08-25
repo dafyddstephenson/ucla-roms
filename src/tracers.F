@@ -30,9 +30,9 @@
       use nc_read_write
       use roms_read_write
       use netcdf
-#ifdef MARBL      
+#ifdef MARBL
       use marbl_driver
-#endif      
+#endif
       use mpi_exchanges
       implicit none
       private
@@ -85,11 +85,11 @@
       contains
 
 ! ----------------------------------------------------------------------
-      subroutine set_surf_tracer_flx(istr,iend,jstr,jend) ![ set tracer flux at surface
+      subroutine set_surf_tracer_flx(istr,iend,jstr,jend) ![
 
       implicit none
 
-      ! input/outputs
+      ! input/outputsAdd commentMore actions
       integer,intent(in) :: istr,iend,jstr,jend
 
       ! local
@@ -98,7 +98,7 @@
       call exchange_xxx(t(:,:,nz,nrhs,itemp) )
       call set_gas_transfer_velocity(istr,iend,jstr,jend)
 
-      do itrc=iTandS+1,NT
+      do itrc=iTandS+1,nt
 
         if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2) then ! Read in forcing data
       
@@ -128,6 +128,8 @@
 
         endif ! if (t_ana_frc(itrc)==0 .or. t_ana_frc(itrc)==2)
 
+!       call exchange_xxx(stflx)
+
       enddo
 
       end subroutine set_surf_tracer_flx  !]
@@ -156,15 +158,16 @@
       endif
 
 !     Could have various switches here for the different tracers, e.g.:
-!      u_pist = 5.55e-5 ! 0.20 cm/hour
-!      u_pist = u_pist/20.  ! linearization of carbon chemistry
-!      if(itrc==3) then
-!         do j=0,ny+1
-!           do i=0,nx+1
-!             stflx(i,j,itrc)= -u_pist*t(i,j,nz,nrhs,itrc)
-!           enddo
-!         enddo
-!      endif
+!     This should be an include file instead: ana_frc_trc.h
+!     u_pist = 5.55e-5 ! 0.20 cm/hour
+!     u_pist = u_pist/20.  ! linearization of carbon chemistry
+!     if(itrc==3) then
+!        do j=0,ny+1
+!          do i=0,nx+1
+!            stflx(i,j,itrc)= -u_pist*t(i,j,nz,nrhs,itrc)
+!          enddo
+!        enddo
+!     endif
 
       end subroutine set_ana_surf_tracer_flx  !]
 ! ----------------------------------------------------------------------
@@ -384,10 +387,10 @@
 #include "tracers.opt"
 
 
-#ifdef MARBL      
+#ifdef MARBL
       call marbldrv_configure_tracers(
      &     itot,t_vname,t_lname,t_units,t_tname,wrt_t,wrt_t_avg,t_ana_frc)
-#endif      
+#endif
 
       if (mynode==0) then
          print *, 'metadata about ',NT, ' tracers:'
@@ -397,7 +400,7 @@
             print *,'SHORT NAME: ', t_vname(itrc)
             print *,'LONG NAME: ', t_lname(itrc)
             print *,'UNITS: ', t_units(itrc)
-            print *, '-----------'         
+            print *, '-----------'
          end do
       end if
 

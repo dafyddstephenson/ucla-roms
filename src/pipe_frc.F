@@ -12,7 +12,7 @@
 ! we have no PIPE_SOURCE flag here anymore, since we are moving away from cpp flags.
 ! Variables still need to be visible within code even when pipes are not used.
 
-  
+
       use dimensions                                       ! has dimensions, a list of forcing files, and rmask
       use roms_read_write
       use nc_read_write
@@ -41,6 +41,7 @@
       character(len=5)  ::npipe_dim_name = 'npipe'      !! dimension name for number of pipes in file
       character(len=8)  :: ntrc_dim_name = 'ntracers'   !! dimension name for number of tracers in file
 
+
       logical :: init_pipe_done = .false.
 
       public set_pipe_frc
@@ -65,7 +66,7 @@
       if (p_analytical) then                                ! Set pipe flux volumes and tracer data
 
         call set_ana_pipe_frc
-        
+
       else
 
         call set_frc_data(nc_pvol,pipe_vol)                ! set pipe volume for all pipes at current time
@@ -103,7 +104,7 @@
 
       if (p_analytical) then
 
-        ! pipe_flx is defined in ana_grid()
+        ! pipe_flx is defined in ana_pipe_frc.h
 
       else
 
@@ -112,7 +113,7 @@
         ! Temporarily store as pipe_fraction to avoid extra array,
         ! but value still pipe_idx + pipe_fraction
         call ncread(ncid,pipe_flx_name, pipe_fraction(i0:i1,j0:j1))
-        if(ierr/=0) 
+        if(ierr/=0)
      &      call handle_ierr(ierr,'init_pipe_frc:: pipe not in file!')
 
         ! Separate pipe_idx & pipe_fraction:
@@ -128,12 +129,13 @@
 
       init_pipe_done = .true.
       if(mynode==0) write(*,'(/7x,A/)') 'pipe_frc: init pipe locations'
-          
+
       end subroutine init_pipe_frc  !]
 ! ----------------------------------------------------------------------
       subroutine init_arrays_pipes  ![
       implicit none
 
+      character(len=30) :: string
       allocate( pipe_idx(GLOBAL_2D_ARRAY) );      pipe_idx=0.
       allocate( pipe_fraction(GLOBAL_2D_ARRAY) ); pipe_fraction=0.
       allocate( pipe_flx(GLOBAL_2D_ARRAY) );      pipe_flx=0.
@@ -143,6 +145,17 @@
         allocate(nc_pvol%vdata(npip,1 ,2))
         allocate(nc_ptrc%vdata(npip,nt,2))
       endif
+
+      ! Print user options (pipe_frc.opt) to netcdf attributes
+      pipe_frc_opt = ''
+      write(string, '(A,I3)') '# of pipes: ', npip
+      call store_string_att(pipe_frc_opt, string)
+      if (p_analytical) then
+        call store_string_att(pipe_frc_opt, ', analytical')
+      else
+        call store_string_att(pipe_frc_opt, ', real')
+      endif
+      pipe_frc_opt = trim(adjustl(pipe_frc_opt))
 
       end subroutine init_arrays_pipes  !]
 ! ----------------------------------------------------------------------

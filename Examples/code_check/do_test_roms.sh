@@ -2,15 +2,15 @@
 
 # need this here as well, in case example run on its own:
 case "$1" in
-    expanse|maya|laptop|github|github_ifx)
+    expanse|maya|laptop|github_gnu|github_ifx)
 	echo "running test for $1"
 	;;
     *)
 	echo "Script must have argument 'expanse' or 'maya'! E.g.: './do_test_all.sh maya'. Try again!"
-	exit
+	exit 1
 	;;
 esac
-    
+
 bm_file="benchmark.result_$1"                    # set benchmark specific to machine (maya/expanse)
 echo "$bm_file"
 
@@ -23,10 +23,10 @@ cp -p ../*.h . &> /dev/null
 cp -p ../cppdefs.opt .
 cp -p ../param.opt .
 cp -p $ROMS_ROOT/Examples/code_check/diag.opt .
-cp -p $ROMS_ROOT/Examples/code_check/Makedefs.inc .
+#cp -p $ROMS_ROOT/Examples/code_check/Makedefs.inc .
 cp -p $ROMS_ROOT/Examples/Makefile .
 make compile_clean &> /dev/null
-make > compile.log 
+make > compile.log
 
 
 # 2) Run test case:
@@ -51,13 +51,13 @@ rm cppdefs.opt# &> /dev/null
 rm roms      &> /dev/null
 
 # 2) Python - confirm values:
-cp $ROMS_ROOT/Examples/code_check/test_roms.py . 
+cp $ROMS_ROOT/Examples/code_check/test_roms.py .
 python3 test_roms.py $bm_file
 retval=$?
 
 rm test_roms.py
 
-# 3) Rename results logs so they can't be mistakenly read by the 
+# 3) Rename results logs so they can't be mistakenly read by the
 #    python script even if new simulation doesn't run
 mv test.log test_old.log
 

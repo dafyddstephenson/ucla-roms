@@ -71,7 +71,7 @@ contains
 !  be aware that the 2D mg is not tested yet
 
     real(kind=rp),dimension(:,:,:),pointer,intent(in) :: x
-    real(kind=rp),dimension(:,:,:),pointer,intent(out) :: y
+    real(kind=rp),dimension(:,:,:),pointer,intent(inout) :: y
     integer(kind=ip), intent(in) :: nx, ny
 
     integer(kind=ip) :: i,j,i2,j2
@@ -84,7 +84,7 @@ contains
        do i2=1,nx
           i=2*i2-1
           do j2=1,ny
-             j=2*j2-1      
+             j=2*j2-1
              y(1,j2,i2) = (x(1,j,i)+x(1,j,i+1)+x(1,j+1,i)+x(1,j+1,i+1))
           enddo
        enddo
@@ -93,7 +93,7 @@ contains
        do i2=1,nx
           i=2*i2-1
           do j2=1,ny
-             j=2*j2-1     
+             j=2*j2-1
              y(1,j2,i2) = (x(1,j,i)+x(1,j,i+1)+x(1,j+1,i)+x(1,j+1,i+1)&
                           +x(2,j,i)+x(2,j,i+1)+x(2,j+1,i)+x(2,j+1,i+1))
           enddo
@@ -107,7 +107,7 @@ contains
     !
     ! Fine2coarse 'x' from fine level l1 to 'y' on coarse level l2=l1+1
     real(kind=rp),dimension(:,:,:),pointer,intent(in) :: x
-    real(kind=rp),dimension(:,:,:),pointer,intent(out) :: y
+    real(kind=rp),dimension(:,:,:),pointer,intent(inout) :: y
     integer(kind=ip), intent(in) :: nx, ny, nz
     ! local
     integer(kind=ip) :: i,j,k,i2,j2,k2
@@ -154,7 +154,7 @@ contains
        pc => grid(lev+1)%dummy3
        nxc = grid(lev+1)%nx / grid(lev+1)%ngx
        nyc = grid(lev+1)%ny / grid(lev+1)%ngy
-       nzc = grid(lev+1)%nz       
+       nzc = grid(lev+1)%nz
     endif
 
     rf => grid(lev)%r
@@ -178,7 +178,7 @@ contains
   !------------------------------------------------------------
   subroutine coarse2fine_2D_linear(xf,xc,nx,ny)
 
-    real(kind=rp),dimension(:,:,:),pointer,intent(out) :: xf
+    real(kind=rp),dimension(:,:,:),pointer,intent(inout) :: xf
     real(kind=rp),dimension(:,:,:),pointer,intent(in)  :: xc
     integer(kind=ip),intent(in) :: nx, ny
 
@@ -219,7 +219,7 @@ contains
   !------------------------------------------------------------
   subroutine coarse2fine_3D_linear(xf,xc,nx,ny,nz)
 
-    real(kind=rp),dimension(:,:,:),pointer,intent(out) :: xf
+    real(kind=rp),dimension(:,:,:),pointer,intent(inout) :: xf
     real(kind=rp),dimension(:,:,:),pointer,intent(in)  :: xc
     integer(kind=ip),intent(in) :: nx, ny, nz
 
@@ -246,7 +246,7 @@ contains
     e =  9._8 / 64._8
     f =  3._8 / 64._8
     g =  1._8 / 64._8
-    ! 
+    !
     do i2=1,nx
        i=2*i2-1
        do j2=1,ny
@@ -304,7 +304,7 @@ contains
                b * xc(k2,j2+1,i2) + b * xc(k2,j2  ,i2-1)   )
           xf(k  ,j  ,i+1) =  (1-hlf*dirichlet_flag)  * (     &
                a * xc(k2,j2  ,i2) + c * xc(k2,j2-1,i2+1) +   &
-               b * xc(k2,j2-1,i2) + b * xc(k2,j2  ,i2+1)   ) 
+               b * xc(k2,j2-1,i2) + b * xc(k2,j2  ,i2+1)   )
           xf(k  ,j+1,i+1) =  (1-hlf*dirichlet_flag)  * (     &
                a * xc(k2,j2  ,i2) + c * xc(k2,j2+1,i2+1) +   &
                b * xc(k2,j2+1,i2) + b * xc(k2,j2  ,i2+1)   )

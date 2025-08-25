@@ -7,7 +7,7 @@
       !          Devin.D & Jeroen.M   (  MPI  version)
 
       ! Edits:
-      ! - 2021-Jan: DevinD changed nf_create and nf_def_var to nf90
+      ! - 2021-Jan: DevinD changed nf90_create and nf90_def_var to nf90
       !             routines to create netcdf-4 files to allow for
       !             file compression.
       !             Change compression level with 'deflate_level='.
@@ -24,7 +24,7 @@
 !
 ! where files.???.nc matches a complete set of partial files (or
 ! several complete sets) and "-d" or "--delete" forces deletion of
-! partial files upon successful joining. 
+! partial files upon successful joining.
 
 ! np_x and np_y are the number of sub-domains you choose in x and y
 ! for ncjoin_mpi not your input partition files, they can be different!
@@ -369,7 +369,7 @@ c--#define MPIVERBOSE
 
           if (ncid(node).eq.-1) ierr=nf90_open(ncname(node),nf90_nowrite, ncid(node))
 
-          if (ierr .eq. nf_noerr) then
+          if (ierr .eq. nf90_noerr) then
 
             call check_ndims_nvars_natts(node)
             if (mayday) goto 23
@@ -378,17 +378,17 @@ c--#define MPIVERBOSE
             if (mayday) goto 23
 
             if (node.gt.0) then           ! close all the files, except for node=0.
-              ierr=nf_close(ncid(node))   ! since master only, need to close files to open collectively later.
+              ierr=nf90_close(ncid(node))   ! since master only, need to close files to open collectively later.
               ncid(node)=-1               ! keep node=0 open as still using below.
             endif
 
           else
             write(*,'(/1x,A,1x,3A/14x,A)')    '### ERROR: Cannot ',
      &                 'open netCDF file ''', ncname(node)(1:lncn),
-     &                                    '''.', nf_strerror(ierr)
+     &                                    '''.', nf90_strerror(ierr)
             goto 97
           endif
-        enddo  !<-- node=0,nnodes-1 
+        enddo  !<-- node=0,nnodes-1
 
 #ifdef VERBOSE
         if(my_rank==0) then
@@ -469,7 +469,7 @@ c--#define MPIVERBOSE
         enddo    !<-- i=1,nvars, loop over variables
 
 
-        if (ierr.eq.nf_noerr) then
+        if (ierr.eq.nf90_noerr) then
           clean_set=.true.
           goto 98
         endif
