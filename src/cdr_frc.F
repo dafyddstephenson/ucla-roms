@@ -3,13 +3,8 @@
       ! CDR forcing module
       ! --------------------
 
-      ! for cdrs:  Qbar(nx,y), the total cdr flux for that grid point ! (m3/s) function of time
-      !            Qshape(ncdrs), the vertical shape of the cdr distribution ! fractions sum(Qshape) = 1
-
-      ! done: add MPI_reduce_scatter
-      ! force all tracers or single tracer forcing
-
       ! Coding by Jeroen Molemaker (March 2025)
+      ! And Scott Bachman (beginning March 2025)
 
 #include "cppdefs.opt"
 
@@ -27,33 +22,40 @@
 
 #include "cdr_frc.opt"
 
-      ! Variables used in the evolution equations
+      !!! Variables used for all releases
       integer,public                            :: cdr_nprf     ! number of locations with a release
       real   ,public,allocatable,dimension(:,:) :: cdr_prf      ! cdr fractions
       integer,public,allocatable,dimension(:)   :: cdr_iloc     ! cdr local i location
       integer,public,allocatable,dimension(:)   :: cdr_jloc     ! cdr local j location
       real   ,public,allocatable,dimension(:)   :: cdr_icdr     ! cdr release number
 
-      integer,public  :: icdr,cidx !   index for looping through cdr locations
+      integer,public                            :: icdr,cidx    ! index for looping through cdr locations
+      integer,allocatable,dimension(:)          :: cdr_nloc     ! number of active grid points for cdr
 
-      real,public,dimension(ncdr)           :: cdr_vol      ! cdr volume
-      real,public,dimension(ncdr,nt)        :: cdr_flx      ! cdr tracer flux
+      real,dimension(:,:)  ,allocatable         :: dist         ! array of distances from target release location
+      real,dimension(:,:,:),allocatable         :: frac         ! array for determining how to distribute release spatially
 
-      real,dimension(ncdr,nt)        :: cdr_trc      ! cdr tracer concentration
-      real,dimension(ncdr)           :: cdr_lon,cdr_lat         ! cdr location
-      real,dimension(ncdr)           :: cdr_hsc,cdr_vsc,cdr_dep ! cdr scales and depth
-      integer,dimension(0:ncdr)   :: cdr_nloc=0  ! number of active grid points for per cdr
-
-     ! Netcdf names
-      character(len=9)  :: cdr_flx_name = 'cdr_flux'  !! stored in the grid file
-      character(len=11) :: cdr_vol_name = 'cdr_volume'!! stored in a forcing file
-      character(len=11) :: cdr_trc_name = 'cdr_tracer'!! stored in a forcing file
-      character(len=9)  :: cdr_tim_name = 'cdr_time'  !! stored in a forcing file
-!     character(len=5)  :: ncdr_dim_name = 'ncdr'      !! dimension name for number of cdrs in file
-!     character(len=8)  :: ntrc_dim_name = 'ntracers'   !! dimension name for number of tracers in file
-
+      character(len=1)                          :: depth_profiles    ! T if this file contains depth profiles,
+                                                                     ! F if parameterizing using idealized Gaussian profiles
+      real, allocatable, dimension(:)                  :: cdr_lon    ! longitude of cdr release
+      real, allocatable, dimension(:)                  :: cdr_lat    ! latitude of cdr location
+      integer                                          :: ncdr       ! Total number of CDR releases
+      real,public,allocatable,dimension(:,:)           :: cdr_flx      ! cdr tracer flux
 
       logical :: init_cdr_done = .false.
+
+      !!! Variables used only for parameterized releases
+      real,public,dimension(ncdr_parm)           :: cdr_vol      ! cdr volume
+      real,public,dimension(ncdr_parm,nt)        :: cdr_trc      ! cdr tracer concentration
+      real,dimension(ncdr_parm)                  :: cdr_hsc      ! cdr horizontal scale
+      real,dimension(ncdr_parm)                  :: cdr_vsc      ! cdr vertical scale
+      real,dimension(ncdr_parm)                  :: cdr_dep      ! cdr depth
+
+      !!! Variables used only For vertical profiles
+      real, allocatable, dimension(:,:,:)        :: cdr_flx3d   ! cdr tracer flux (layerwise)
+      real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
+      integer                                    :: ncdr_prof   ! number of release locations
+      integer                                    :: N_src       ! number of layers from source file
 
       public set_cdr_frc
       public init_cdr_frc
@@ -62,7 +64,7 @@
 
 ! ----------------------------------------------------------------------
       subroutine set_cdr_frc  ![
-      ! set cdr forces (realistic and analytical)
+      ! set cdr forces
       ! - read and interpolation all cdr forcing.
       ! - all cdr variables need time interpolation only
       !   here so can use same generic routine.
@@ -74,26 +76,26 @@
 
       if (.not. init_cdr_done) call init_cdr_frc
 
-      if (cdr_analytical) then                                ! Set cdr flux volumes and tracer data
+      if (cdr_volume) then
+        call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
+        call set_frc_data(nc_cdrtrc,var2d=cdr_trc)          ! set cdr tracers conc. for all cdrs at current time
 
-!       call set_ana_cdr_frc
+        do icdr=1,ncdr
+          cdr_flx(icdr,:) = cdr_vol(icdr)*cdr_trc(icdr,:)
+        enddo
 
       else
-
-        if (cdr_volume) then
-          call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
-          call set_frc_data(nc_cdrtrc,var2d=cdr_trc)          ! set cdr tracers conc. for all cdrs at current time
-
-          do icdr=1,ncdr
-            cdr_flx(icdr,:) = cdr_vol(icdr)*cdr_trc(icdr,:)
-          enddo
-
-        else
+        if (depth_profiles == 'F') then
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
+        else
+          call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
+          call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
 
+          call create_cdr_vertical_structure
         endif
 
       endif
+
 
       end subroutine set_cdr_frc !]
 ! ----------------------------------------------------------------------
@@ -111,35 +113,69 @@
 
       ! local
       integer :: ierr,ncid,i,j,k
-      real :: vint,arg
+      integer :: id,ndims,dimid, varid
       real :: local_int,global_int
-      real, dimension(nz) :: arg_nz
       real :: local_min_val
       integer, dimension(2) :: lmi
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
-      real,dimension(:,:)  ,allocatable :: dist
-      real,dimension(:,:,:),allocatable :: frac
       integer :: cidx_start
-
-      call init_arrays_cdr
-
-      if (cdr_analytical) then
-
-        ! cdr_flx is defined in ana_cdr_frc.h
-
-      else
+      character(len=16) dname
 
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
         if(ierr/=0)
      &      call handle_ierr(ierr,'init_cdr_frc:: Cant open cdr forcing file')
 
+        ierr=nf90_inq_varid (ncid, 'depth_profiles', varid)
+        if (ierr == nf90_noerr) then
+          ierr=nf90_get_var(ncid, varid, depth_profiles)
+          if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
+            error stop 'ERROR: while reading CDR forcing file, invalid value found for variable depth_profiles (must be T or F)'
+          endif
+        else
+          ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
+          mpi_nonexit_warn print *, ' --- WARNING: ',
+     &    'variable depth_profiles not found in CDR forcing file, so we will treat it is being False and will look for inputs ',
+     &    'to initialize Gaussian profiles.'
+          depth_profiles='F'
+        endif
+
+        if (depth_profiles == 'T') then
+          ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
+          if (ierr /= nf90_noerr) then
+            error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
+          endif
+          ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
+
+          ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
+          if (ierr /= nf90_noerr) then
+            error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
+          endif
+          ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
+
+          ncdr = ncdr_prof
+          allocate(cdr_flx3d(ncdr,2,N_src)); cdr_flx3d(:,:,:) = 0
+          allocate(cdr_hz(ncdr,N_src));       cdr_hz(:,:) = 0
+        else
+          ncdr = ncdr_parm
+          call ncread(ncid,cdr_loc_dep,cdr_dep)
+          call ncread(ncid,cdr_scl_hor,cdr_hsc)
+          call ncread(ncid,cdr_scl_vrt,cdr_vsc)
+        endif
+
+        allocate(cdr_flx(ncdr,nt)); cdr_flx(:,:) = 0
+        allocate(cdr_lon(ncdr)); cdr_lon(:) = 0
+        allocate(cdr_lat(ncdr)); cdr_lat(:) = 0
+        allocate(cdr_nloc(0:ncdr)); cdr_nloc(:)=0
+
+        call init_arrays_cdr
+
         call ncread(ncid,cdr_loc_lon,cdr_lon)
         call ncread(ncid,cdr_loc_lat,cdr_lat)
-        call ncread(ncid,cdr_loc_dep,cdr_dep)
-        call ncread(ncid,cdr_scl_hor,cdr_hsc)
-        call ncread(ncid,cdr_scl_vrt,cdr_vsc)
+
         ierr = nf90_close(ncid)
+
+
 
         ! find fractional cdr fluxes for this subdomain
         allocate(dist(GLOBAL_2D_ARRAY)); dist = 1e6 ! Some large number so we don't get single-point releases in the halos
@@ -162,7 +198,7 @@
           local_minloc(2) = mynode
 
           ! Find global minimum and rank where the minimum occurs
-          call MPI_Reduce( local_minloc, global_minloc, 1, mpi_2double_precision,
+          call MPI_Reduce( local_minloc, global_minloc, 2, mpi_2double_precision,
      &    mpi_minloc, 0, ocean_grid_comm, ierr)
 
           ! Broadcast rank where minimum occurs to all processes
@@ -181,7 +217,7 @@
 
 
           ! Handler for single-point release
-          if (cdr_hsc(icdr) == 0) then
+          if ((cdr_hsc(icdr) == 0) .or. (depth_profiles=='T')) then
             if (mynode == global_minloc(2)) then
               frac(lmi(1),lmi(2),icdr) = 1
               cidx = cidx+1
@@ -221,6 +257,28 @@
         allocate(cdr_iloc(cdr_nprf))
         allocate(cdr_jloc(cdr_nprf))
 
+        call create_cdr_vertical_structure
+
+        init_cdr_done = .true.
+        if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
+
+      end subroutine init_cdr_frc  !]
+! ----------------------------------------------------------------------
+      subroutine create_cdr_vertical_structure  ![
+
+      use mpi
+      implicit none
+
+      ! local
+      integer :: ierr,ncid,i,j,k
+      real :: vint,arg
+      real :: local_int,global_int
+      real, dimension(nz) :: arg_nz
+      real :: local_min_val
+      integer, dimension(2) :: lmi
+      real, dimension(2) :: local_minloc
+      real, dimension(2) :: global_minloc
+
         ! populate the profiles with fractional releases
         cidx = 0
         do icdr= 1,ncdr
@@ -234,27 +292,34 @@
                  cdr_iloc(cidx) = i
                  cdr_jloc(cidx) = j
 
-                 ! figure vertical profile, depths are relative to surface
-                 ! prf = exp( - ((z-d)/vsc )^2)
-                 if (cdr_vsc(icdr) == 0) then
-                   do k=1,nz
-                     arg_nz(k) = abs(z_r(i,j,k) + cdr_dep(icdr))
-                   enddo
-                     arg = minloc(arg_nz,1)
-                     cdr_prf(cidx,arg) = frac(i,j,icdr)
+                 ! PARAMETERIZED VERTICAL STRUCTURE
+                 if (depth_profiles == 'F') then
+                   ! figure vertical profile, depths are relative to surface
+                   ! prf = exp( - ((z-d)/vsc )^2)
+                   if (cdr_vsc(icdr) == 0) then
+                     do k=1,nz
+                       arg_nz(k) = abs(z_r(i,j,k) + cdr_dep(icdr))
+                     enddo
+                       arg = minloc(arg_nz,1)
+                       cdr_prf(cidx,arg) = frac(i,j,icdr)
+                   else
+                     vint = 0
+                     do k=1,nz
+                       arg = ( (z_r(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
+                       cdr_prf(cidx,k) = exp(-arg)*Hz(i,j,k)
+                     enddo
+                     ! The 1D integral of exp^(z/cdr_vsc(icdr))**2 is cdr_vsc(icdr)*SQRT(pi),
+                     ! so normalizing by this amount will ensure we don't weight the
+                     ! tracer incorrectly in this column when a substantial fraction of the release
+                     ! is beneath the seafloor.
+                     vint = cdr_vsc(icdr) * SQRT(pi)
+                     cdr_prf(cidx,:) = frac(i,j,icdr)*cdr_prf(cidx,:)/vint
+                   endif
+                 ! VERTICAL STRUCTURE FROM DATA
                  else
-                   vint = 0
-                   do k=1,nz
-                     arg = ( (z_r(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
-                     cdr_prf(cidx,k) = exp(-arg)
-                   enddo
-                   ! The 1D integral of exp^(z/cdr_vsc(icdr))**2 is cdr_vsc(icdr)*SQRT(pi),
-                   ! so normalizing by this amount will ensure we don't weight the
-                   ! tracer incorrectly in this column when a substantial fraction of the release
-                   ! is beneath the seafloor.
-                   vint = cdr_vsc(icdr) * SQRT(pi)
-                   cdr_prf(cidx,:) = frac(i,j,icdr)*cdr_prf(cidx,:)/vint
+                   call remap_src_to_grid(i,j,icdr)
                  endif
+
                endif
             enddo
           enddo
@@ -271,47 +336,409 @@
 
         enddo
 
-        deallocate(dist)
-        deallocate(frac)
+      end subroutine create_cdr_vertical_structure  !]
+! ----------------------------------------------------------------------
+      ! This routine will populate cdr_prf using the data that is read from file
 
-      endif
+      subroutine remap_src_to_grid(i,j,icdr)
 
-      init_cdr_done = .true.
-      if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
+      use mpi
+      implicit none
 
-      end subroutine init_cdr_frc  !]
+      integer, intent(in) :: i,j,icdr
+
+      ! local
+      integer :: ierr,ncid,k,k_new,trc,idx
+      real, dimension(2,N_src+1) :: interface_values
+      real :: total_depth_src, total_depth_tgt
+      real, dimension(2,N_src) :: a0, a1, a2
+      real, dimension(N_src+1) :: z_orig_interfaces
+      real, dimension(N_src) :: H_orig
+      real, dimension(nz) :: H_new
+      ! These are the total fluxes/m^2 in this column. These arrays are mostly used for checking
+      ! that the remapping is conservative
+      real, dimension(2) :: total_flux_orig = 0
+      real, dimension(2) :: total_flux_new = 0
+      real :: H_new_tot = 0
+      real :: H_orig_tot = 0
+      real :: tot_dist = 0
+
+      real :: curr_src_index = 0
+      integer, dimension(nz) :: tgt_index_start = 0
+      integer, dimension(nz) :: tgt_index_end = 0
+
+      ! Keep track of how far up we are in the water column
+      real :: curr_tgt_height, curr_src_height
+
+      ! Keep track of where in each H_orig cell the interfaces of H_new are
+      real, dimension(nz) :: tgt_frac_start = 0
+      real, dimension(nz) :: tgt_frac_end = 0
+
+      ! This holds the integrated_values
+      real, dimension(2,nz) :: definite_integral = 0
+
+      ! Temporary array to hold the remapped fluxes
+      real, dimension(2,nz) :: cdrflx_tmp = 0
+
+
+
+      call calc_interface_values(cdr_flx3d(icdr,:,:), cdr_hz(icdr,:), interface_values)
+
+      total_depth_src = 0
+      total_depth_tgt = 0
+      do k=1,nz
+        total_depth_tgt = total_depth_tgt + Hz(i,j,k)
+      enddo
+
+      do k=1,N_src
+        total_depth_src = total_depth_src + cdr_hz(icdr,k)
+      enddo
+
+      do trc=1,2
+        do k=1,N_src
+          a0(trc,k) = interface_values(trc,k)
+          a1(trc,k) = 6*cdr_flx3d(icdr,trc,k) - 4*interface_values(trc,k) - 2*interface_values(trc,k+1)
+          a2(trc,k) = 3*interface_values(trc,k) + interface_values(trc,k+1) - 2*cdr_flx3d(icdr,trc,k)
+        enddo
+      enddo
+
+      ! These are vector copies of each column.
+      do k = 1,N_src
+        H_orig(k) = cdr_hz(icdr,k)
+        H_orig_tot = H_orig_tot + H_orig(k)
+      enddo
+
+      do k = 1,nz
+        H_new(k) = Hz(i,j,k)
+        H_new_tot = H_new_tot + H_new(k)
+      enddo
+
+      do trc = 1,2
+        do k = 1,N_src
+          total_flux_orig(trc) = total_flux_orig(trc) + H_orig(k) * cdr_flx3d(icdr,trc,k)
+        enddo
+      enddo
+
+      !! Going to normalize the thicknesses to make the forthcoming loop logic and
+      !! tracer conservation a bit easier. This is just for bookkeeping here and will not
+      !! affect the actual thicknesses.
+
+      do k = 1,N_src
+        H_orig(k) = H_orig(k) * (H_new_tot / H_orig_tot)
+      enddo
+
+      !! The division and multiplication in the above step may not make the total column thicknesses
+      !! match exactly, so one more really small correction will be added to the top layer.
+
+      H_orig_tot = 0
+      do k = 1,N_src
+        H_orig_tot = H_orig_tot + H_orig(k)
+      enddo
+      H_orig(N_src) = H_orig(N_src) + H_new_tot - H_orig_tot
+
+      !! Also keep track of the original interface depths.
+      z_orig_interfaces(1) = 0
+      do k = 1,N_src
+        z_orig_interfaces(k+1) = z_orig_interfaces(k) + H_orig(k)
+      enddo
+
+      ! Keep track of how far up we are in the water column
+      curr_tgt_height = H_new(1)
+      curr_src_height = H_orig(1)
+
+      do k_new = 1,nz-1
+
+        do while (curr_tgt_height > curr_src_height)
+          curr_src_index = curr_src_index + 1
+          curr_src_height = H_orig(curr_src_index)
+        enddo
+
+        tgt_index_end(k_new) = curr_src_index
+        tgt_index_start(k_new+1) = curr_src_index
+
+        tgt_frac_end(k_new) = (curr_tgt_height - z_orig_interfaces(curr_src_index)) / H_orig(curr_src_index)
+        tgt_frac_start(k_new+1) = tgt_frac_end(k_new)
+
+        curr_tgt_height = curr_tgt_height + H_new(k_new+1)
+
+      enddo
+
+      tgt_index_end(nz) = nz
+      tgt_frac_end(nz)  = 1
+
+      do trc = 1,2
+        do k = 1,nz-1
+
+          do idx = tgt_index_start(k),tgt_index_end(k)
+
+            if (tgt_index_start(k) == tgt_index_end(k)) then
+              definite_integral(trc,k) = integrate(a0(trc,idx), a1(trc,idx), a2(trc,idx), tgt_frac_start(k), tgt_frac_end(k))
+              tot_dist = tgt_frac_end(k) - tgt_frac_start(k)
+            elseif ((idx == tgt_index_start(k)) .and. (idx < tgt_index_end(k))) then
+              definite_integral(trc,k) = integrate(a0(trc,idx), a1(trc,idx), a2(trc,idx), tgt_frac_start(k), 1.0)
+              tot_dist = 1 - tgt_frac_start(k)
+            elseif ((idx < tgt_index_end(k)) .and. (idx > tgt_index_start(k))) then
+              definite_integral(trc,k) = definite_integral(trc,k) + integrate(a0(trc,idx), a1(trc,idx), a2(trc,idx), 0.0, 1.0)
+              tot_dist = tot_dist + 1
+            else
+              definite_integral(trc,k) = definite_integral(trc,k) +
+     &          integrate(a0(trc,idx), a1(trc,idx), a2(trc,idx), 0.0, tgt_frac_end(k))
+              tot_dist = tot_dist + tgt_frac_end(k)
+            endif
+
+          enddo
+          cdrflx_tmp(trc,k) = definite_integral(trc,k) / tot_dist
+
+        enddo
+      enddo
+
+      do trc = 1,2
+        do k = 1,nz
+          total_flux_new(trc) = total_flux_new(trc) + H_new(k) * cdrflx_tmp(trc,k)
+        enddo
+      enddo
+
+!    var total_tracer_new : [1..num_tracers] real = 0;
+!    for (t,k) in {1..num_tracers,0..<(Nz-1)} {
+!      total_tracer_new[t] += H_new[k] * tracer_n.localAccess[i,j,t,k];
+!    }
+!
+!    // Can I just take a guess at this, instead of doing this whole calculation?
+!    for t in 1..num_tracers {
+!      tracer_n.localAccess[i,j,t,Nz-1] = (total_tracer_orig[t] - total_tracer_new[t]) / H_new[Nz-1];
+!    }
+!
+!    total_tracer_new = 0;
+!    for (t,k) in {1..num_tracers,0..<Nz} {
+!      total_tracer_new[t] += H_new[k] * tracer_n.localAccess[i,j,t,k];
+!    }
+!    tracer_n.localAccess[i,j,1,Nz-1] += total_tracer_orig[1] - total_tracer_new[1];
+!
+!    } // mask_rho
+!
+!  } // end of forall
+!
+!} // if num_tracers > 0
+!
+!} // end of subroutine
+      end subroutine remap_src_to_grid
+! ----------------------------------------------------------------------
+      real function integrate(a0, a1, a2, z0, z1) ![
+
+      implicit none
+
+      real :: a0, a1, a2, z0, z1
+      real :: one_third = 0.3333333333
+
+      integrate = a0 * (z1 - z0) + 0.5*a1*(z1**2 - z0**2) +
+     & one_third*a2*(z1**3 - z0**3)
+
+      end function integrate !]
+! ----------------------------------------------------------------------
+
+      subroutine calc_interface_values(arr, H, int_vals)  ![
+
+      implicit none
+
+      real, dimension(2,N_src), intent(in)  :: arr
+      real, dimension(N_src), intent(in)    ::  H
+      real, dimension(2,N_src+1), intent(out) :: int_vals
+
+      real, dimension(2,0:3) :: B
+      real, dimension(0:3,0:3) :: M
+      real :: h_b
+      real :: h_t
+      real :: iH
+      real, dimension(2) :: Ts_bot
+      real, dimension(2) :: Ts_top
+
+      integer :: k, kk, kkp, kkp1, trc
+      integer :: ord = 3
+
+      !!                  Get tracer values at layer interfaces                !!
+      !!  Calculated with Implicit Fourth-order scheme using Thomas algorithm  !!
+      !!                   (White and Adcroft, 2008, Eq. 46)                   !!
+
+      !! Bottom boundary extrapolation
+      !! Calculated using a polynomial of order "ord" over the bottom (ord+1) cells
+
+      h_b = 0
+      h_t = H(1)
+      iH  = 1.0 / (h_t - h_b)
+
+      do k = 0,ord
+        do kk = 0,ord
+          kkp1 = kk+1
+          M(k,kk) = (1.0 / kkp1) * iH * (h_t**(kkp1) - h_b**(kkp1))
+        enddo
+
+        h_b = h_b + H(k+1)
+        h_t = h_t + H(k+2)
+        iH = 1.0/(h_t - h_b)
+
+        do trc = 1,2
+          B(trc,k) = arr(trc,k+1)
+        enddo
+      enddo
+
+      do trc = 1,2
+        Ts_bot(trc) = gauss(M, B(trc,:),ord)
+      enddo
+
+      !! Top boundary extrapolation
+      h_b = 0
+      h_t = H(N_src)
+      iH = 1.0 / (h_t - h_b)
+      do k = 0,ord
+        do kk = 0,ord
+          kkp = kk+1
+          M(k,kk) = (1.0 / kkp1) * iH * (h_t**kkp1 - h_b**kkp1)
+        enddo
+
+        h_b = h_b + H(N_src-k)
+        h_t = h_t + H(N_src-1-k)
+        iH = 1.0 / (h_t - h_b)
+
+        do trc = 1,2
+          B(trc,k) = arr(trc,N_src-1-k)
+        enddo
+      enddo
+
+      do trc = 1,2
+        Ts_top(trc) = gauss(M, B(trc,:),ord)
+      enddo
+
+      !!!!!!!!!!!!!!!!!!!!!!
+
+      call thomas_PPM(Ts_bot, Ts_top, arr, H, int_vals)
+
+      end subroutine calc_interface_values  !]
+! ----------------------------------------------------------------------
+      real function gauss(M, b, ord) ![
+
+      implicit none
+
+      real, dimension(0:3,0:3), intent(inout) :: M
+      real, dimension(0:3), intent(inout) :: b
+      integer, intent(in) :: ord
+      real :: ratio
+      integer :: i,j,k
+
+      !! This routine uses Gaussian Elimination to reduce the matrix M to row-echelon form (lower triangular).
+      !! It only returns the first element of the solution vector.
+
+      !! Starting from the last row, we're going to work upwards to
+      !! make M a lower triangular matrix
+      do i = 1,ord,-1
+
+      !! Iterate over all rows above i
+        do j = 0,(i-1)
+          ratio = M(j,i) / M(i,i)
+
+          !! Iterate over all columns up to i.
+          !! This operation basically is multiplying the ith row by "ratio" and adding it to the jth row
+          do k = 0,i
+            M(j,k) = M(j,k) - ratio*M(i,k)
+          enddo
+          b(j) = b(j) - ratio*b(i)
+        enddo
+      enddo
+
+      gauss = (b(0) / M(0,0))
+
+      end function gauss !]
+! ----------------------------------------------------------------------
+      subroutine thomas_PPM(Ts_bot, Ts_top, arr, H, int_vals)  ![
+
+      implicit none
+
+      real, dimension(2), intent(in) :: Ts_bot
+      real, dimension(2), intent(in) :: Ts_top
+      real, dimension(2,N_src), intent(in)  :: arr
+      real, dimension(N_src),   intent(in)  :: H
+      real, dimension(2,N_src+1), intent(out) :: int_vals
+
+      integer :: n,t,k
+      real, dimension(N_src+1) :: a, b, c, d, cp, dp, x
+      real :: h0, h1, alpha, beta, d1, d2
+
+      n = N_src+1
+
+      do t = 1,2
+        b(1) = 1.0
+        b(n) = 1.0
+        d(1) = Ts_bot(t)
+        d(n) = Ts_top(t)
+
+        do k=1,(n-2)
+          h0 = H(k)
+          h1 = H(k+1)
+
+          alpha = (h1**2) / ((h0 + h1)**2)
+          beta = (h0**2) / ((h0 + h1)**2)
+          d1 = 2*(h1**2)*(h1**2 + 2*h0**2 + 3*h0*h1) / ((h0+h1)**4)
+          d2 = 2*(h0**2)*(h0**2 + 2*h1**2 + 3*h0*h1) / ((h0+h1)**4)
+
+          a(k+1) = alpha
+          b(k+1) = 1.0
+          c(k+1) = beta
+
+          d(k+1) = d1*arr(t,k) + d2*arr(t,k+1)
+        enddo
+
+        cp(1) = c(1) / b(1)
+        dp(1) = d(1) / b(1)
+
+        do k = 2,(n-1)
+          cp(k) = c(k) / (b(k) - a(k)*cp(k-1))
+          dp(k) = (d(k) - a(k)*dp(k-1)) / (b(k) - a(k)*cp(k-1))
+        enddo
+
+        dp(n) = (d(n) - a(n)*dp(n-1)) / (b(n) - a(n)*cp(n-1))
+
+        int_vals(t,n) = dp(n)
+        do k = 1,(n-1),-1
+          int_vals(t,k) = dp(k) - cp(k)*int_vals(t,k+1)
+        enddo
+      enddo
+
+      end subroutine thomas_PPM !]
 ! ----------------------------------------------------------------------
       subroutine init_arrays_cdr  ![
       implicit none
 
       character(len=30) :: string
 
-      if (.not. cdr_analytical) then
-        if (cdr_volume) then
-          allocate(nc_cdrvol%vdata(ncdr,1 ,2))
-          allocate(nc_cdrtrc%vdata(ncdr,nt,2))
+      if (cdr_volume) then
+        allocate(nc_cdrvol%vdata(ncdr,1 ,2))
+        allocate(nc_cdrtrc%vdata(ncdr,nt,2))
+        nc_cdrvol%single_file = .true.
+        nc_cdrvol%single_filename = cdr_file
+
+        nc_cdrtrc%single_file = .true.
+        nc_cdrtrc%single_filename = cdr_file
+      else
+        if (depth_profiles=='T') then
+          allocate(nc_cdrhz%vdata(ncdr,N_src,2))
+          allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
+          nc_cdrhz%single_file = .true.
+          nc_cdrhz%single_filename = cdr_file
+          nc_cdrflx3d%single_file = .true.
+          nc_cdrflx3d%single_filename = cdr_file
         else
           allocate(nc_cdrflx%vdata(ncdr,nt,2))
+          nc_cdrflx%single_file = .true.
+          nc_cdrflx%single_filename = cdr_file
         endif
+
       endif
 
       ! Print user options (cdr_frc.opt) to netcdf attributes
       cdr_frc_opt = ''
       write(string, '(A,I3)') 'ncdr =', ncdr
       call store_string_att(cdr_frc_opt, string)
-      if (cdr_analytical) then
-        call store_string_att(cdr_frc_opt, ', Analytical')
-      endif
 
       end subroutine init_arrays_cdr  !]
-! ----------------------------------------------------------------------
-!     subroutine set_ana_cdr_frc  ![
-      ! Analytical cdr forcing volume and tracer data
-      ! Put here to avoid circular reference if in analytical.F
-
-!!!!!#include "ana_cdr_frc.h"
-
-!     end subroutine set_ana_cdr_frc  !]
 ! ----------------------------------------------------------------------
       subroutine ll2dist(lon,lat,lon0,lat0,dist)  ![
       ! Great circle distance from lon,lat fields to point (lon0,lat0)

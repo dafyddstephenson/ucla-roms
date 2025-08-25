@@ -106,6 +106,7 @@ C$OMP END MASTER                         ! is in uniform state]. This
       use boundary
       use particles
       use cstar_output
+      use upscale_output
       use random_output
       use cstar_output
       use cdr_frc
@@ -293,6 +294,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
+      if (do_upscale) call init_upscale
 
       if (may_day_flag /=0 ) goto 99     !-->  EXIT
 

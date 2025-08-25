@@ -61,6 +61,7 @@ c--# define CONST_TRACERS
       use tracers
 #ifdef MARBL
       use marbl_driver, only: marbldrv_column_physics
+      use upscale_output
 #endif
       use diagnostics
       use eos_vars
@@ -1069,12 +1070,20 @@ c??         enddo
 #endif
         enddo      !<-- j
 
+      enddo     !<-- itrc
+
+! Need to calculate/save additionality before the perturbation at the boundaries
+! is zeroed out in t3db_tile
+#if defined MARBL && defined MARBL_DIAGS
+      if (do_upscale) call wrt_upscale
+#endif
+
+      do itrc=1,nt
         call t3dbc_tile (istr,iend,jstr,jend, itrc, wrk1)
 # ifdef DIAGNOSTICS
 !       if (diag_trc .and. wrt_t_dia(itrc) .and. calc_diag)
 !    &    call set_diags_t_bc(itrc,td)
 # endif
-
       enddo     !<-- itrc
 
 # if defined(MARBL)

@@ -55,7 +55,22 @@
         integer                           :: irec =0   ! Record number in file
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
+        logical                           :: single_file = .false.
+        character(len=20)                 :: single_filename=''
       end type ncforce
+
+      type,public  :: ncforce3d
+        character(len=20)                 :: vname     ! name of variable in input file
+        character(len=20)                 :: tname     ! time variable name for variable
+        real,dimension(:,:,:,:),allocatable :: vdata     ! currently must be exact size of sub-domain (no buffer)
+        integer                           :: coarse=0  ! Flag to indicate interpolation of the input data
+        integer                           :: ifile=0   ! Index to file in list of filenames
+        integer                           :: irec =0   ! Record number in file
+        integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
+        real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
+        logical                           :: single_file = .false.
+        character(len=20)                 :: single_filename=''
+      end type ncforce3d
 
       integer, target :: test_var
       character(len=99), public  :: output_root_name
@@ -148,11 +163,11 @@
 
       interface set_frc_data
         module procedure
-     &     set_frc_data_1d,set_frc_data_2d,set_frc_data_surf
+     &     set_frc_data_1d,set_frc_data_2d,set_frc_data_3d,set_frc_data_surf
       end interface
       interface fill_frc_slice
         module procedure
-     &     fill_frc_slice_aux,fill_frc_slice_surf
+     &     fill_frc_slice_aux, fill_frc_slice_aux3d, fill_frc_slice_surf
       end interface
 
       contains
@@ -432,6 +447,81 @@
 
       end subroutine set_frc_data_2d  !]
 ! ----------------------------------------------------------------------
+      subroutine set_frc_data_3d(nc,var3d,obry)  ![
+      implicit none
+
+      ! input/outputs
+      type(ncforce3d),      intent(inout) :: nc    ! derived type containing all neccesary supporting data
+      real,dimension(:,:,:),intent(out)   :: var3d ! time interpolated forcing data
+      integer,optional,   intent(in)    :: obry  ! bry=1, suppress terminal info, bry=2 display boundary
+
+      ! local
+      real    :: cff1,cff2  ! for time interpolations
+      real    :: modtime    ! model time
+      real    :: dummy_modtime=0  ! a dummy variable that does nothing
+      integer :: bry
+
+      integer           :: it1,it2
+      real,dimension(2) :: vtimes
+
+      if (present(obry)) then
+        bry = obry
+      else
+        bry = 0
+      endif
+
+      modtime = tdays + 0.5*dt*sec2day    ! input data times in days. Interpolated time is based on 1/2 step time
+
+      it1 = nc%it1
+      it2 = nc%it2
+
+      if (nc%times(it2) < modtime) then  ! need to refresh data
+
+        if (nc%ifile == 0) then   ! the first time, we need to fill both slots
+          call fill_frc_slice_aux3d(nc,modtime,it1,bry)
+        else ! cycle it1,it2 between 1 and 2
+          it1 = mod(it1,2) + 1
+          it2 = mod(it2,2) + 1
+        endif
+
+        call fill_frc_slice_aux3d(nc,modtime,it2,bry)
+
+        ! If (new irec) is greater than (old irec-1), this means we skipped one or more
+        ! forcing entries. Then we need to also do fill_frc_slice for it1,
+        ! and we will read in the greatest irec that is less than (new irec)
+        if (irec_stride > 1) then
+
+          if ((ifile_stride == 0) .or. (nc%irec>2)) then
+            nc%irec = nc%irec-2
+          else
+            nc%ifile = nc%ifile-1
+            nc%irec = ifile_max_recs(nc%ifile) + nc%irec - 2
+          endif
+
+          call fill_frc_slice_aux3d(nc,dummy_modtime,it1,bry)
+
+        endif
+      endif
+
+      nc%it1 = it1
+      nc%it2 = it2
+
+      ! Temporal interpolation
+
+      vtimes  = nc%times
+      cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
+      cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
+
+      var3d = cff1*nc%vdata(:,:,:,it1) + cff2*nc%vdata(:,:,:,it2)
+
+      if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
+        print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
+        print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
+        error stop 'ERROR: set_frc_data :: time interpolation error'
+      endif
+
+      end subroutine set_frc_data_3d  !]
+! ----------------------------------------------------------------------
       subroutine set_frc_data_surf(nc,var2d,gtype)  ![
       implicit none
       ! Specifically for 2-dimensional surface forcing data
@@ -508,7 +598,7 @@
 
       end subroutine set_frc_data_surf  !]
 ! ----------------------------------------------------------------------
-      subroutine find_new_record(vname,tname,time,ifile,irec,vtime) ![
+      subroutine find_new_record(vname,tname,time,ifile,irec,vtime,single_filename) ![
       ! Finds the index for the filename and record number of the first record
       ! with a time that is larger than the model time. It will stores
       ! the corresponding time of the record in vtime.
@@ -524,7 +614,9 @@
       integer                       ,intent(inout):: ifile   ! index for file name in list
       integer                       ,intent(inout):: irec    ! variable record entry
       real                          ,intent(out)  :: vtime   ! read in variable time
-
+      character(len=*), optional    ,intent(in)   :: single_filename ! If this variable is present,
+                                                             ! read this file only on the head node.
+                                                             ! It is assumed that this function is only being called on rank 0.
       ! local
       integer, dimension(1) :: dimids     ! time dimension ID
       real    :: time_old
@@ -558,7 +650,11 @@
       do while (.not.found_rec .and. ifile <= max_frc)               ! while record not found & still more files to check
 
         found_var = .false.                                          ! reset for new file
-        ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
+        if (present(single_filename)) then
+          ierr = nf90_open(single_filename, nf90_nowrite, ncid)
+        else
+          ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
+        endif
         if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'Find_new_record, opening: ',frcfile(ifile))
 
@@ -611,6 +707,11 @@
           ifile_stride = ifile_stride+1
           ifile = ifile+1
           irec = 0                                                   ! Reset irec for new file
+          if (present(single_filename)) then
+            print *, 'ERROR: find_new_record: Ran out of time records ',
+     &           'for ', vname, ' in single file ', single_filename
+            error stop
+          endif
         endif
 
         ierr=nf90_close (ncid)
@@ -701,6 +802,10 @@
 ! ----------------------------------------------------------------------
       subroutine fill_frc_slice_aux(nc,modtime,it,d1,bry) ![
       ! Fill a time slice of forcing data, not surface forcing
+
+      use param
+      use mpi
+
       implicit none
 
       ! input/outputs
@@ -718,11 +823,37 @@
       character(len=100) :: forcing_version ! version of forcing input data
       character(len=300) :: frcstr
       integer            :: irec,ifile
+      integer            :: msg_size
 
       irec  = nc%irec
       ifile = nc%ifile
       vname = nc%vname
       tname = nc%tname
+
+      if (nc%single_file) then
+        if (mynode == 0) then
+          call find_new_record(vname,tname,modtime,ifile,irec,
+     &                         nc%times(it), nc%single_filename)
+          ierr=nf90_open(nc%single_filename,nf90_nowrite, ncid)
+          if (d1) then
+            call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
+          else
+            call ncread(ncid,vname,nc%vdata(:,:,it),(/1,1,irec/))
+          endif
+          ierr = nf90_close(ncid)
+        endif
+        call MPI_Barrier(ocean_grid_comm, ierr)
+        msg_size = size(nc%vdata(:,:,it))
+        ! These are needed to make sure each rank follows the same
+        ! code pathway in set_frc_data
+        call MPI_Bcast(irec,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(irec_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(ifile,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(ifile_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        ! Send time and vdata to each rank
+        call MPI_Bcast(nc%times(it),1,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(nc%vdata(:,:,it),msg_size,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
+      else
 
       call find_new_record(vname,tname,modtime,ifile,irec,
      &                         nc%times(it))
@@ -751,6 +882,7 @@
         endif
       endif
       ierr = nf90_close(ncid)
+      endif ! single_file
 
       if (bry==0) then
         if (mynode==0)
@@ -768,6 +900,95 @@
       nc%ifile = ifile
 
       end subroutine fill_frc_slice_aux !]
+! ----------------------------------------------------------------------
+      subroutine fill_frc_slice_aux3d(nc,modtime,it,bry) ![
+      ! Fill a time slice of forcing data, not surface forcing
+
+      use param
+      use mpi
+
+      implicit none
+
+      ! input/outputs
+      type(ncforce3d)      ,intent(inout) :: nc    ! derived type containing all neccesary supporting data
+      real               ,intent(in)    :: modtime ! current time of the model
+      integer            ,intent(in)    :: it      ! index (1 or 2) of the forcing data
+      integer            ,intent(in)    :: bry     ! suppress terminal output of boundary
+
+      ! local
+      integer :: ierr,ncid
+
+      character(len=20)  :: vname  ! name of variable in input file
+      character(len=20)  :: tname  ! time variable name for variable
+      character(len=100) :: forcing_version ! version of forcing input data
+      character(len=300) :: frcstr
+      integer            :: irec,ifile
+      integer            :: msg_size
+
+      irec  = nc%irec
+      ifile = nc%ifile
+      vname = nc%vname
+      tname = nc%tname
+
+      if (nc%single_file) then
+        if (mynode == 0) then
+          call find_new_record(vname,tname,modtime,ifile,irec,
+     &                         nc%times(it), nc%single_filename)
+          ierr=nf90_open(nc%single_filename,nf90_nowrite, ncid)
+          call ncread(ncid,vname,nc%vdata(:,:,:,it),(/1,1,1,irec/))
+          ierr = nf90_close(ncid)
+        endif
+        call MPI_Barrier(ocean_grid_comm, ierr)
+        msg_size = size(nc%vdata(:,:,:,it))
+        ! These are needed to make sure each rank follows the same
+        ! code pathway in set_frc_data
+        call MPI_Bcast(irec,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(irec_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(ifile,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(ifile_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        ! Send time and vdata to each rank
+        call MPI_Bcast(nc%times(it),1,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(nc%vdata(:,:,:,it),msg_size,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
+      else
+
+      call find_new_record(vname,tname,modtime,ifile,irec,
+     &                         nc%times(it))
+
+      ierr=nf90_open(frcfile(ifile),nf90_nowrite, ncid)
+      call ncread(ncid,vname,nc%vdata(:,:,:,it),(/1,1,1,irec/))
+      ! add force file info to output nc
+      if (mynode == 0) then
+        ierr = nf90_get_att(ncid,nf90_global,'data_source',forcing_version)
+        ! if forcing netcdf has information
+        if (len(trim(forcing_version)) /= 0) then
+          ! if attribute has not been set yet
+          if (index(force_info,forcing_version) == 0) then
+            write(frcstr,'(2A)') trim(adjustl(frctype)),
+     &            trim(adjustl(forcing_version))
+            frcstr = trim(adjustl(frcstr))
+            call store_string_att(force_info,frcstr)
+          endif
+        endif
+      endif
+      ierr = nf90_close(ncid)
+      endif ! single_file
+
+      if (bry==0) then
+        if (mynode==0)
+     &    call display_read_time_to_log(vname,nc%times(it),irec )
+      elseif (bry==1) then
+        ! do nothing (suppress terminal output)
+      elseif (bry==2) then
+        if (mynode==0 .or. mynode==nnodes-1)                         ! 2 nodes catch e/w/s/n boundaries
+     &    call display_read_time_to_log(vname,nc%times(it),irec )
+      else
+        stop 'fill_frc_slice - bry error'
+      endif
+
+      nc%irec  = irec
+      nc%ifile = ifile
+
+      end subroutine fill_frc_slice_aux3d !]
 ! ----------------------------------------------------------------------
       subroutine fill_frc_slice_surf(nc,modtime,it,gtype) ![
       ! Fill a time slice of forcing data
