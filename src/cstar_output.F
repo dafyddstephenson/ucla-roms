@@ -405,19 +405,23 @@
 
       if (cdr_source) then
         varid = nccreate(ncid,'ALK_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','ALK source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','ALK source from '//
+     &     'CDR module')
         ierr = nf90_put_att(ncid,varid,'units','meq/s')
 
         varid = nccreate(ncid,'ALK_ALT_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','alt ALK source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','alt ALK source '//
+     &    'from CDR module')
         ierr = nf90_put_att(ncid,varid,'units','meq/s')
 
         varid = nccreate(ncid,'DIC_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','DIC source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','DIC source from '//
+     &      'CDR module')
         ierr = nf90_put_att(ncid,varid,'units','mmol/s')
 
         varid = nccreate(ncid,'DIC_ALT_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','alt DIC source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','alt DIC source '//
+     &      'from CDR module')
         ierr = nf90_put_att(ncid,varid,'units','mmol/s')
       endif
 
@@ -425,11 +429,13 @@
 
       if (do_avg) then
         varid = nccreate(ncid,'avg_begin_time',(/dn_tm/),(/0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at beginning of averaging period')
+        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at '//
+     &    'beginning of averaging period')
         ierr = nf90_put_att(ncid,varid,'units','seconds' )
 
         varid = nccreate(ncid,'avg_end_time',(/dn_tm/),(/0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at end of averaging period')
+        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at end of '//
+     &     'averaging period')
         ierr = nf90_put_att(ncid,varid,'units','seconds' )
 
         ierr=nf90_put_att(ncid,nf90_global,'averaging',
