@@ -28,7 +28,8 @@
 
       integer,dimension(6) :: date
       character(len=15)  :: datestr
-      integer :: prev_month
+      integer :: month_at_prev_timestep
+      real :: avg_begin_time, avg_end_time
 
       integer :: navg = 0
       integer :: iALK, iDIC, iALK_alt, iDIC_alt
@@ -91,12 +92,14 @@
          error stop 'ERROR: cstar_output:: monthly avgs=t, but do_avg=f'
       endif
 
+      ! Look one timestep ahead to initialize the "previous month", so that
+      ! when we restart we don't immediately write out a file.
       if (monthly_averages) then
-          call sec2date(time,date)
-          prev_month = date(2)
+          call sec2date(time+dt,date)
+          month_at_prev_timestep = date(2)
       endif
 
-      if (mynode==0) print *,'init random'
+      if (mynode==0) print *,'init cstar'
 
       ! Loop over MARBL tracers...
       ! ...but use itot as index (to include other tracers)
@@ -132,12 +135,12 @@
       itot = 0
       ! Loop over 3D BGC diagnostics...
       ! ...but use itot as index (to include other diagnostics)
-      do idx=1,nr_bec2_diag_3d
+      do idx=1,nr_marbl_ss_3d
          itot=itot+1
-         if (vname_bec2_diag_3d(1,idx)=='pH_3D') then
+         if (vname_marbl_ss_3d(1,idx)=='MARBL_PH_3D') then
            iPH = itot
          endif
-         if (vname_bec2_diag_3d(1,idx)=='pH_3D_ALT_CO2') then
+         if (vname_marbl_ss_3d(1,idx)=='MARBL_PH_3D_ALT_CO2') then
            iPH_alt = itot
          endif
       enddo
@@ -153,31 +156,54 @@
 
       if (do_avg) then
         allocate(zeta__avg(GLOBAL_2D_ARRAY) )
+        zeta__avg(:,:)=0
         allocate(temp_avg(GLOBAL_2D_ARRAY,1:N) )
+        temp_avg(:,:,:)=0
         allocate(salt_avg(GLOBAL_2D_ARRAY,1:N) )
+        salt_avg(:,:,:)=0
         allocate(ALK_avg(GLOBAL_2D_ARRAY,1:N) )
+        ALK_avg(:,:,:)=0
         allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) )
+        hALK_avg(:,:,:)=0
         allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) )
+        DIC_avg(:,:,:)=0
         allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_avg(:,:,:)=0
         allocate(ALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        ALK_alt_avg(:,:,:)=0
         allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        hALK_alt_avg(:,:,:)=0
         allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        DIC_alt_avg(:,:,:)=0
         allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_alt_avg(:,:,:)=0
         allocate(pH_avg(GLOBAL_2D_ARRAY,1:N) )
+        pH_avg(:,:,:)=0
         allocate(pH_alt_avg(GLOBAL_2D_ARRAY,1:N) )
+        pH_alt_avg(:,:,:)=0
         allocate(FG_CO2_avg(GLOBAL_2D_ARRAY) )
+        FG_CO2_avg(:,:)=0
         allocate(FG_ALT_CO2_avg(GLOBAL_2D_ARRAY) )
+        FG_ALT_CO2_avg(:,:)=0
         if (cdr_source) then
           allocate(ALK_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          ALK_source_avg(:,:,:)=0
           allocate(ALK_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          ALK_alt_source_avg(:,:,:)=0
           allocate(DIC_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          DIC_source_avg(:,:,:)=0
           allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
+          DIC_alt_source_avg(:,:,:)=0
         endif
       else
         allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hALK_tmp(:,:,:)=0
         allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_tmp(:,:,:)=0
         allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hALK_alt_tmp(:,:,:)=0
         allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_alt_tmp(:,:,:)=0
       endif
 
       if (mynode==0) print *,'init cstar'
@@ -194,14 +220,25 @@
       ! local
       real :: coef
 
+      if (navg == 0) then
+        ! By the time the code enters here, it will have advanced one timestep,
+        ! so save the time from one timestep previous
+        avg_begin_time = time - dt
+      endif
+
       navg = navg+1
 
       coef = 1./navg
 
       if (coef==1) then                                    ! this refreshes average (1-coef)=0
-       if (mynode==0) write(*,'(7x,2A,F9.1)')
-     &   'cstar :: started averaging. ',
-     &   'output_period (s) =', output_period
+        if (mynode==0) then
+          if (monthly_averages) then
+            print *, 'cstar :: started monthly averaging.'
+          else
+            print *, 'cstar :: started averaging. ',
+     &      'output_period (s) =', output_period
+          endif
+        endif
       endif
 
       zeta__avg(:,:) = zeta__avg(:,:)*(1-coef) + zeta(:,:,knew)*coef
@@ -226,9 +263,9 @@
 
       hDIC_alt_avg(:,:,:) = hDIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC_alt)*Hz(:,:,:)*coef
 
-      pH_avg(:,:,:) = pH_avg(:,:,:)*(1-coef) + bec2_diag_3d(:,:,:,iPH)*coef
+      pH_avg(:,:,:) = pH_avg(:,:,:)*(1-coef) + marbl_saved_state_3d(:,:,:,iPH)*coef
 
-      pH_alt_avg(:,:,:) = pH_alt_avg(:,:,:)*(1-coef) + bec2_diag_3d(:,:,:,iPH_alt)*coef
+      pH_alt_avg(:,:,:) = pH_alt_avg(:,:,:)*(1-coef) + marbl_saved_state_3d(:,:,:,iPH_alt)*coef
 
       FG_CO2_avg(:,:) = FG_CO2_avg(:,:)*(1-coef) + bec2_diag_2d(:,:,iFG)*coef
 
@@ -305,86 +342,102 @@
       integer                        :: ierr, varid
 
       varid = nccreate(ncid,'zeta',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','sea surface heigth')
-      ierr = nf90_put_att(ncid,varid,'units','m')
+      ierr = nf90_put_att(ncid,varid,'long_name',
+     & 'free-surface elevation')
+      ierr = nf90_put_att(ncid,varid,'units','meters')
 
       varid = nccreate(ncid,'temp',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','temperature')
-      ierr = nf90_put_att(ncid,varid,'units','degrees C')
+      ierr = nf90_put_att(ncid,varid,'long_name',
+     & 'potential temperature')
+      ierr = nf90_put_att(ncid,varid,'units','degrees Celsius')
 
       varid = nccreate(ncid,'salt',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
       ierr = nf90_put_att(ncid,varid,'long_name','salinity')
       ierr = nf90_put_att(ncid,varid,'units','PSU')
 
       varid = nccreate(ncid,'ALK',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alkalinity')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iALK))
+      ierr = nf90_put_att(ncid,varid,'units',t_units(iALK))
 
       varid = nccreate(ncid,'DIC',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','DIC')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iDIC))
+      ierr = nf90_put_att(ncid,varid,'units',t_units(iDIC))
 
       varid = nccreate(ncid,'ALK_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alt alkalinity')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iALK_alt))
+      ierr = nf90_put_att(ncid,varid,'units',t_units(iALK_alt))
 
       varid = nccreate(ncid,'DIC_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alt DIC')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iDIC_alt))
+      ierr = nf90_put_att(ncid,varid,'units',t_units(iDIC_alt))
 
       varid = nccreate(ncid,'hALK',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted alkalinity')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iALK)))
+      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iALK)))
 
       varid = nccreate(ncid,'hDIC',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted DIC')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iDIC)))
+      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC)))
 
       varid = nccreate(ncid,'hALK_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alt thickness-weighted alkalinity')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iALK_alt)))
+      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iALK_alt)))
 
       varid = nccreate(ncid,'hDIC_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alt thickness-weighted DIC')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iDIC_alt)))
+      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC_alt)))
 
       varid = nccreate(ncid,'pH',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','pH')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name',vname_marbl_ss_3d(2,iPH))
+      ierr = nf90_put_att(ncid,varid,'units',vname_marbl_ss_3d(3,iPH))
 
       varid = nccreate(ncid,'pH_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alt pH')
-      ierr = nf90_put_att(ncid,varid,'units','nondimensional')
+      ierr = nf90_put_att(ncid,varid,'long_name',vname_marbl_ss_3d(2,iPH_alt))
+      ierr = nf90_put_att(ncid,varid,'units',vname_marbl_ss_3d(3,iPH_alt))
 
       varid = nccreate(ncid,'FG_CO2',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','surface flux of CO2')
-      ierr = nf90_put_att(ncid,varid,'units','m')
+      ierr = nf90_put_att(ncid,varid,'long_name',vname_bec2_diag_2d(2,iFG))
+      ierr = nf90_put_att(ncid,varid,'units',vname_bec2_diag_2d(3,iFG))
 
       varid = nccreate(ncid,'FG_ALT_CO2',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','alt surface flux of CO2')
-      ierr = nf90_put_att(ncid,varid,'units','m')
+      ierr = nf90_put_att(ncid,varid,'long_name',vname_bec2_diag_2d(2,iFG_alt))
+      ierr = nf90_put_att(ncid,varid,'units',vname_bec2_diag_2d(3,iFG_alt))
 
       if (cdr_source) then
         varid = nccreate(ncid,'ALK_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','ALK source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','ALK source from '//
+     &     'CDR module')
         ierr = nf90_put_att(ncid,varid,'units','meq/s')
 
         varid = nccreate(ncid,'ALK_ALT_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','alt ALK source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','alt ALK source '//
+     &    'from CDR module')
         ierr = nf90_put_att(ncid,varid,'units','meq/s')
 
         varid = nccreate(ncid,'DIC_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','DIC source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','DIC source from '//
+     &      'CDR module')
         ierr = nf90_put_att(ncid,varid,'units','mmol/s')
 
         varid = nccreate(ncid,'DIC_ALT_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','alt DIC source from CDR module')
+        ierr = nf90_put_att(ncid,varid,'long_name','alt DIC source '//
+     &      'from CDR module')
         ierr = nf90_put_att(ncid,varid,'units','mmol/s')
       endif
 
 
 
       if (do_avg) then
+        varid = nccreate(ncid,'avg_begin_time',(/dn_tm/),(/0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at '//
+     &    'beginning of averaging period')
+        ierr = nf90_put_att(ncid,varid,'units','seconds' )
+
+        varid = nccreate(ncid,'avg_end_time',(/dn_tm/),(/0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at end of '//
+     &     'averaging period')
+        ierr = nf90_put_att(ncid,varid,'units','seconds' )
+
         ierr=nf90_put_att(ncid,nf90_global,'averaging',
      &      'All variables are averaged in time')
       endif
@@ -402,9 +455,9 @@
       if (monthly_averages) then
         call sec2date(time+dt,date)
 
-        if ((date(2) - prev_month) /= 0) call wrt_output
+        if ((date(2) - month_at_prev_timestep) /= 0) call wrt_output
 
-        prev_month = date(2)
+        month_at_prev_timestep = date(2)
       else
 
         output_time = output_time + dt
@@ -445,26 +498,47 @@
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
         if (do_avg) then
+          call ncwrite(ncid,'avg_begin_time',(/avg_begin_time/),(/record/))
+          call ncwrite(ncid,'avg_end_time',(/time/),(/record/))
           call ncwrite(ncid,'zeta'  ,zeta__avg(i0:i1,j0:j1),(/1,1,record/))
+          zeta__avg(:,:)=0
           call ncwrite(ncid,'temp',temp_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          temp_avg(:,:,:)=0
           call ncwrite(ncid,'salt',salt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          salt_avg(:,:,:)=0
           call ncwrite(ncid,'ALK',ALK_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          ALK_avg(:,:,:)=0
           call ncwrite(ncid,'DIC',DIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          DIC_avg(:,:,:)=0
           call ncwrite(ncid,'ALK_ALT_CO2',ALK_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          ALK_alt_avg(:,:,:)=0
           call ncwrite(ncid,'DIC_ALT_CO2',DIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          DIC_alt_avg(:,:,:)=0
           call ncwrite(ncid,'hALK',hALK_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hALK_avg(:,:,:)=0
           call ncwrite(ncid,'hDIC',hDIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hDIC_avg(:,:,:)=0
           call ncwrite(ncid,'hALK_ALT_CO2',hALK_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hALK_alt_avg(:,:,:)=0
           call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          hDIC_alt_avg(:,:,:)=0
           call ncwrite(ncid,'pH',pH_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          pH_avg(:,:,:)=0
           call ncwrite(ncid,'pH_ALT_CO2',pH_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          pH_alt_avg(:,:,:)=0
           call ncwrite(ncid,'FG_CO2'  ,FG_CO2_avg(i0:i1,j0:j1),(/1,1,record/))
+          FG_CO2_avg(:,:)=0
           call ncwrite(ncid,'FG_ALT_CO2'  ,FG_ALT_CO2_avg(i0:i1,j0:j1),(/1,1,record/))
+          FG_ALT_CO2_avg(:,:)=0
           if (cdr_source) then
             call ncwrite(ncid,'ALK_source',ALK_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            ALK_source_avg(:,:,:)=0
             call ncwrite(ncid,'ALK_ALT_source',ALK_alt_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            ALK_alt_source_avg(:,:,:)=0
             call ncwrite(ncid,'DIC_source',DIC_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            DIC_source_avg(:,:,:)=0
             call ncwrite(ncid,'DIC_ALT_source',DIC_alt_source_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+            DIC_alt_source_avg(:,:,:)=0
           endif
         else
           call multiply_by_thickness
@@ -480,8 +554,8 @@
           call ncwrite(ncid,'hDIC',hDIC_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
           call ncwrite(ncid,'hALK_ALT_CO2',hALK_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
           call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
-          call ncwrite(ncid,'pH',bec2_diag_3d(i0:i1,j0:j1,:,iPH),(/1,1,1,record/))
-          call ncwrite(ncid,'pH_ALT_CO2',bec2_diag_3d(i0:i1,j0:j1,:,iPH_alt),(/1,1,1,record/))
+          call ncwrite(ncid,'pH',marbl_saved_state_3d(i0:i1,j0:j1,:,iPH),(/1,1,1,record/))
+          call ncwrite(ncid,'pH_ALT_CO2',marbl_saved_state_3d(i0:i1,j0:j1,:,iPH_alt),(/1,1,1,record/))
           call ncwrite(ncid,'FG_CO2'  ,bec2_diag_2d(i0:i1,j0:j1,iFG),(/1,1,record/))
           call ncwrite(ncid,'FG_ALT_CO2'  ,bec2_diag_2d(i0:i1,j0:j1,iFG_alt),(/1,1,record/))
           if (cdr_source) then

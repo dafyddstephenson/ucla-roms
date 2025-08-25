@@ -111,7 +111,7 @@
 
       ! local
       integer :: ierr,ncid,i,j,k
-      real :: norm,vint,arg
+      real :: vint,arg
       real :: local_int,global_int
       real, dimension(nz) :: arg_nz
       real :: local_min_val
@@ -120,6 +120,7 @@
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
       real,dimension(:,:,:),allocatable :: frac
+      integer :: cidx_start
 
       call init_arrays_cdr
 
@@ -145,58 +146,70 @@
         allocate(frac(GLOBAL_2D_ARRAY,ncdr)); frac = 0
 
         cidx = 0
+        cidx_start = 0
         do icdr= 1,ncdr
 
-          if (cdr_hsc(icdr) == 0) then
-            call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
+          call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
 
-            local_min_val = MINVAL(dist)
-            ! Find local index that is closest to release location
-            lmi = MINLOC(dist)
-            ! Adjust index to account for the fact that GLOBAL_ARRAY does not start at index 1
-            lmi(:) = lmi(:) + lbound(dist) - 1
+          local_min_val = MINVAL(dist)
+          ! Find local index that is closest to release location
+          lmi = MINLOC(dist)
+          ! Adjust index to account for the fact that GLOBAL_ARRAY does not start at index 1
+          lmi(:) = lmi(:) + lbound(dist) - 1
 
-            ! Pack local minimum and MPI rank into a vector
-            local_minloc(1) = local_min_val
-            local_minloc(2) = mynode
+          ! Pack local minimum and MPI rank into a vector
+          local_minloc(1) = local_min_val
+          local_minloc(2) = mynode
 
-            ! Find global minimum and rank where the minimum occurs
-            call MPI_Reduce( local_minloc, global_minloc, 2, mpi_2double_precision,
-     &      mpi_minloc, 0, ocean_grid_comm, ierr)
+          ! Find global minimum and rank where the minimum occurs
+          call MPI_Reduce( local_minloc, global_minloc, 1, mpi_2double_precision,
+     &    mpi_minloc, 0, ocean_grid_comm, ierr)
 
-            ! Broadcast rank where minimum occurs to all processes
-            call MPI_Bcast(global_minloc, 2,mpi_double_precision,0,ocean_grid_comm,ierr)
+          ! Broadcast rank where minimum occurs to all processes
+          call MPI_Bcast(global_minloc, 2,mpi_double_precision,0,ocean_grid_comm,ierr)
 
-            if (mynode == global_minloc(2)) then
-              print *, 'The minimum distance to single-point Release', icdr, 'is', global_minloc(1)
-              print *, 'This is on rank:', mynode
-              print *, 'at point', lmi
-              print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
-              print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
-              if (rmask(lmi(1),lmi(2))==0) then
-                error stop 'ERROR: single-point CDR release requested on a land point'
-              else
-                frac(lmi(1),lmi(2),icdr) = 1
-                cidx = cidx+1
-              endif
+          if (mynode == global_minloc(2)) then
+            print *, 'The minimum distance to Release', icdr, 'is', global_minloc(1)
+            print *, 'This is on rank:', mynode
+            print *, 'at point', lmi
+            print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
+            print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
+            if ((rmask(lmi(1),lmi(2))==0) .and. (cdr_hsc(icdr) == 0)) then
+              error stop 'ERROR: single-point CDR release requested on a land point'
             endif
+          endif
 
+
+          ! Handler for single-point release
+          if (cdr_hsc(icdr) == 0) then
+            if (mynode == global_minloc(2)) then
+              frac(lmi(1),lmi(2),icdr) = 1
+              cidx = cidx+1
+            endif
+          ! Handler for nonzero hscl
           else
-
-!           close  = max(3*cdr_hsc(icdr),dx)
-            norm = pi*cdr_hsc(icdr)*cdr_hsc(icdr) ! 2d integral of exp(-(dist/hscl)^2 )
             call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
             frac(:,:,icdr) = exp(-(dist/cdr_hsc(icdr))**2)
-            frac(:,:,icdr) = frac(:,:,icdr)/pm/pn/norm
+
             do j=1,ny
               do i=1,nx
-!               if (dist(i,j)<close.and.rmask(i,j)>0) then
                 if (frac(i,j,icdr) >1e-3.and.rmask(i,j)>0) then
                   cidx = cidx+1
                 endif
               enddo
             enddo
-          endif ! hscl = 0
+
+            ! Handler for really small values of hscl
+            if (mynode == global_minloc(2)) then
+              if (cidx == cidx_start) then
+                frac(lmi(1),lmi(2),icdr) = 1
+                cidx = cidx+1
+              endif
+            endif
+
+          endif ! cdr_hsc(icdr) = 0
+          cidx_start = cidx
+
         enddo ! icdr
 
         cdr_nprf = cidx
@@ -233,9 +246,13 @@
                    vint = 0
                    do k=1,nz
                      arg = ( (z_r(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
-                     cdr_prf(cidx,k) = exp(-arg)*Hz(i,j,k)
-                     vint = vint + cdr_prf(cidx,k)
+                     cdr_prf(cidx,k) = exp(-arg)
                    enddo
+                   ! The 1D integral of exp^(z/cdr_vsc(icdr))**2 is cdr_vsc(icdr)*SQRT(pi),
+                   ! so normalizing by this amount will ensure we don't weight the
+                   ! tracer incorrectly in this column when a substantial fraction of the release
+                   ! is beneath the seafloor.
+                   vint = cdr_vsc(icdr) * SQRT(pi)
                    cdr_prf(cidx,:) = frac(i,j,icdr)*cdr_prf(cidx,:)/vint
                  endif
                endif

@@ -237,6 +237,8 @@ CR      write(*,*) ' -6' MYID
 #endif
         call get_init(nrrec, 1)
 
+        call init_restarts
+
 #ifdef ANA_INITIAL
       endif    !<-- nrrec>0
 #endif
@@ -482,9 +484,6 @@ CR      write(*,*)  ' -2' MYID
 #if defined MARBL && defined MARBL_DIAGS
       if (do_cstar)  call wrt_cstar
 #endif
-
-      if (do_cstar)  call wrt_cstar
-
       if (do_zslice) call wrt_zslice
 
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
