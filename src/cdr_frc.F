@@ -719,24 +719,23 @@
       if (cdr_volume) then
         allocate(nc_cdrvol%vdata(ncdr,1 ,2))
         allocate(nc_cdrtrc%vdata(ncdr,nt,2))
-        nc_cdrvol%single_file = .true.
-        nc_cdrvol%single_filename = cdr_file
+        nc_cdrvol%ungridded = .true.
+        nc_cdrvol%ungridded_forcing_file = cdr_file
 
-        nc_cdrtrc%single_file = .true.
-        nc_cdrtrc%single_filename = cdr_file
+        nc_cdrtrc%ungridded = .true.
+        nc_cdrtrc%ungridded_forcing_file = cdr_file
       else
         if (depth_profiles=='T') then
           allocate(nc_cdrhz%vdata(ncdr,N_src,2))
           allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
-          nc_cdrhz%single_file = .true.
-          nc_cdrhz%single_filename = cdr_file
-          nc_cdrflx3d%single_file = .true.
-          nc_cdrflx3d%single_filename = cdr_file
-        else
-          allocate(nc_cdrflx%vdata(ncdr,nt,2))
-          nc_cdrflx%single_file = .true.
-          nc_cdrflx%single_filename = cdr_file
+          nc_cdrhz%ungridded = .true.
+          nc_cdrhz%ungridded_forcing_file = cdr_file
+          nc_cdrflx3d%ungridded = .true.
+          nc_cdrflx3d%ungridded_forcing_file = cdr_file
         endif
+          allocate(nc_cdrflx%vdata(ncdr,nt,2))
+          nc_cdrflx%ungridded = .true.
+          nc_cdrflx%ungridded_forcing_file = cdr_file
 
       endif
 
