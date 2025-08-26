@@ -58,7 +58,8 @@
       end type ncforce
 
       integer, target :: test_var
-      character(len=max_fname_size), public  :: output_root_name
+      integer, parameter, public :: max_name_size=256
+      character(len=max_name_size), public  :: output_root_name
       character(len=41), public  :: git_hash
 
       ! Dimension names for in and output in netcdf files
@@ -126,7 +127,6 @@
      &                              xi_u=xi_rho-1, eta_v=eta_rho-1
 #endif
 
-      integer, parameter, public :: max_name_size=256
       character, public :: date_str*44, title*80
       character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
 
