@@ -58,7 +58,7 @@
       end type ncforce
 
       integer, target :: test_var
-      character(len=99), public  :: output_root_name
+      character(len=max_fname_size), public  :: output_root_name
       character(len=41), public  :: git_hash
 
       ! Dimension names for in and output in netcdf files
