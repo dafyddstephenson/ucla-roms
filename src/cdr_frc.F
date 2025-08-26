@@ -317,12 +317,18 @@
                    endif
                  ! VERTICAL STRUCTURE FROM DATA
                  else
-                   call remap_src_to_grid(i,j,icdr)
+!                   call remap_src_to_grid(i,j,icdr)
+                    ! cdr_flx should be the total mass in the column
+                    ! cdr_prf should be determined by remapping the vertical structure
                  endif
 
                endif
             enddo
           enddo
+
+          ! Normalize cdr_prf to make sure injection rate exactly equals cdr_trcflx
+          ! Only do this step for analytical forcing
+          if (depth_profiles=='F') then
           cdr_nloc(icdr) = cidx
 
           local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
@@ -332,7 +338,8 @@
 
           cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:) =
      %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:)/global_int
-          local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
+          !local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
+          endif
 
         enddo
 

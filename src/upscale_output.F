@@ -1,0 +1,658 @@
+      module upscale_output
+
+! Upscaling module. This module will write out transects along any open boundaries, which
+! are meant to be used to create input files for the CDR forcing module in the parent domain.
+! This module assumes that the CDR perturbation is done by adding to the ALK field (not ALK_alt).
+
+#include "cppdefs.opt"
+
+#if defined MARBL && defined MARBL_DIAGS
+
+      use dimensions
+      use grid
+      use nc_read_write
+      use roms_read_write
+      use netcdf
+      use tracers, only: t, t_vname, t_lname, t_units  ! need to get names of tracers
+      use ocean_vars
+      use basic_output, vn=>vname
+      use scalars
+      use diagnostics
+#if defined(BIOLOGY_BEC2) || defined(MARBL)
+      use bgc_ecosys_vars
+#endif
+
+      implicit none
+      private
+
+#include "upscale_output.opt"
+
+      integer                        :: record_uscl=nrpf_uscl   ! record number in file
+      real                           :: otime=0   ! time since last output
+      integer :: navg = 0
+      integer :: iALK, iDIC, iALK_alt, iDIC_alt
+
+#ifdef OBC_NORTH
+      real,allocatable,dimension(:,:) :: ALK_add_north_avg
+      real,allocatable,dimension(:,:) :: DIC_add_north_avg
+      real,allocatable,dimension(:,:) :: ALK_totmass_north_avg
+      real,allocatable,dimension(:,:) :: DIC_totmass_north_avg
+      real,allocatable,dimension(:,:) :: h_north_avg
+      real,allocatable,dimension(:)   :: lat_north
+      real,allocatable,dimension(:)   :: lon_north
+
+      real,allocatable,dimension(:,:) :: area_north
+#endif
+
+#ifdef OBC_SOUTH
+      real,allocatable,dimension(:,:) :: ALK_add_south_avg
+      real,allocatable,dimension(:,:) :: DIC_add_south_avg
+      real,allocatable,dimension(:,:) :: ALK_totmass_south_avg
+      real,allocatable,dimension(:,:) :: DIC_totmass_south_avg
+      real,allocatable,dimension(:,:) :: h_south_avg
+      real,allocatable,dimension(:)   :: lat_south
+      real,allocatable,dimension(:)   :: lon_south
+
+      real,allocatable,dimension(:,:) :: area_south
+#endif
+
+#ifdef OBC_EAST
+      real,allocatable,dimension(:,:) :: ALK_add_east_avg
+      real,allocatable,dimension(:,:) :: DIC_add_east_avg
+      real,allocatable,dimension(:,:) :: ALK_totmass_east_avg
+      real,allocatable,dimension(:,:) :: DIC_totmass_east_avg
+      real,allocatable,dimension(:,:) :: h_east_avg
+      real,allocatable,dimension(:)   :: lat_east
+      real,allocatable,dimension(:)   :: lon_east
+
+      real,allocatable,dimension(:,:) :: area_east
+#endif
+
+#ifdef OBC_WEST
+      real,allocatable,dimension(:,:) :: ALK_add_west_avg
+      real,allocatable,dimension(:,:) :: DIC_add_west_avg
+      real,allocatable,dimension(:,:) :: ALK_totmass_west_avg
+      real,allocatable,dimension(:,:) :: DIC_totmass_west_avg
+      real,allocatable,dimension(:,:) :: h_west_avg
+      real,allocatable,dimension(:)   :: lat_west
+      real,allocatable,dimension(:)   :: lon_west
+
+      real,allocatable,dimension(:,:) :: area_west
+#endif
+
+      public init_upscale, wrt_upscale
+
+      contains
+! ----------------------------------------------------------------------
+      subroutine init_upscale ![
+      ! Allocate and initialize arrays.
+
+      use param
+      use hidden_mpi_vars
+
+      implicit none
+
+      ! local
+      logical,save :: done=.false.
+      integer :: itot=0
+      integer :: idx,k
+      integer :: tile
+
+#include "compute_tile_bounds.h"
+
+      if (done) then
+        return
+      else
+#ifndef ASININE
+        if (mynode == 0) then
+          print *, 'WARNING: Upscale output is requested, but ',
+     &      'ASININE is not defined in cppdefs.opt. Upscaling without ',
+     &      'ASININE is not recommended.'
+        endif
+#endif
+
+#ifndef OBC_TSPECIFIED
+        if (mynode == 0) then
+          print *, 'WARNING: Upscale output is requested, but ',
+     &      'OBC_TSPECIFIED is not defined in cppdefs.opt. Upscaling ',
+     &      'without OBC_TSPECIFIED is not recommended.'
+        endif
+#endif
+        done = .true.
+      endif
+
+      if (mynode==0) print *,'init upscale'
+
+      ! Loop over MARBL tracers...
+      ! ...but use itot as index (to include other tracers)
+      do idx=1,ntrc_bio
+         itot=itot+1
+         if (t_vname(itot)=='ALK') then
+           iALK = itot
+         endif
+         if (t_vname(itot)=='DIC') then
+           iDIC = itot
+         endif
+         if (t_vname(itot)=='ALK_ALT_CO2') then
+           iALK_alt = itot
+         endif
+         if (t_vname(itot)=='DIC_ALT_CO2') then
+           iDIC_alt = itot
+         endif
+      enddo
+
+#ifdef OBC_NORTH
+      if (.not.north_exchng) then
+        allocate(ALK_add_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_add_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(ALK_totmass_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_totmass_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(h_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(lat_north(GLOBAL_1DX_ARRAY))
+        allocate(lon_north(GLOBAL_1DX_ARRAY))
+        allocate(area_north(GLOBAL_1DX_ARRAY,1:N) )
+        ALK_add_north_avg(:,:) = 0
+        DIC_add_north_avg(:,:) = 0
+        ALK_totmass_north_avg(:,:) = 0
+        DIC_totmass_north_avg(:,:) = 0
+        h_north_avg(:,:) = 0
+        lat_north(:) = 0
+        lon_north(:) = 0
+        do k=1,N
+          area_north(:,k) = 1.0 / (pm(:,jend+1)*pn(:,jend+1))
+        enddo
+      endif
+#endif
+
+#ifdef OBC_SOUTH
+      if (.not.south_exchng) then
+        allocate(ALK_add_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_add_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(ALK_totmass_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_totmass_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(h_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(lat_south(GLOBAL_1DX_ARRAY))
+        allocate(lon_south(GLOBAL_1DX_ARRAY))
+        allocate(area_south(GLOBAL_1DX_ARRAY,1:N) )
+        ALK_add_south_avg(:,:) = 0
+        DIC_add_south_avg(:,:) = 0
+        ALK_totmass_south_avg(:,:) = 0
+        DIC_totmass_south_avg(:,:) = 0
+        h_south_avg(:,:) = 0
+        lat_south(:) = 0
+        lon_south(:) = 0
+        do k=1,N
+          area_south(:,k) = 1.0 / (pm(:,jstr-1)*pn(:,jstr-1))
+        enddo
+      endif
+#endif
+
+#ifdef OBC_EAST
+      if (.not.east_exchng) then
+        allocate(ALK_add_east_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(DIC_add_east_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(ALK_totmass_east_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_totmass_east_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(h_east_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(lat_east(GLOBAL_1DY_ARRAY))
+        allocate(lon_east(GLOBAL_1DY_ARRAY))
+        allocate(area_east(GLOBAL_1DY_ARRAY,1:N) )
+        ALK_add_east_avg(:,:) = 0
+        DIC_add_east_avg(:,:) = 0
+        ALK_totmass_east_avg(:,:) = 0
+        DIC_totmass_east_avg(:,:) = 0
+        h_east_avg(:,:) = 0
+        lat_east(:) = 0
+        lon_east(:) = 0
+        do k=1,N
+          area_east(:,k) = 1.0 / (pm(iend+1,:)*pn(iend+1,:))
+        enddo
+      endif
+#endif
+
+#ifdef OBC_WEST
+      if (.not.west_exchng) then
+        allocate(ALK_add_west_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(DIC_add_west_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(ALK_totmass_west_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_totmass_west_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(h_west_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(lat_west(GLOBAL_1DY_ARRAY))
+        allocate(lon_west(GLOBAL_1DY_ARRAY))
+        allocate(area_west(GLOBAL_1DY_ARRAY,1:N) )
+        ALK_add_west_avg(:,:) = 0
+        DIC_add_west_avg(:,:) = 0
+        ALK_totmass_west_avg(:,:) = 0
+        DIC_totmass_west_avg(:,:) = 0
+        h_west_avg(:,:) = 0
+        lat_west(:) = 0
+        lon_west(:) = 0
+        do k=1,N
+          area_west(:,k) = 1.0 / (pm(istr-1,:)*pn(istr-1,:))
+        enddo
+      endif
+#endif
+
+      end subroutine init_upscale  !]
+!----------------------------------------------------------------------
+      subroutine calc_average ![
+      ! Update averages
+      ! The average is always scaled properly throughout
+      ! reset navg_rnd=0 after an output of the average
+      use param
+      use hidden_mpi_vars
+      implicit none
+
+      ! local
+      real :: coef
+      integer :: tile
+
+#include "compute_tile_bounds.h"
+
+      navg = navg+1
+
+      coef = 1./navg
+
+      if (coef==1) then                                    ! this refreshes average (1-coef)=0
+       if (mynode==0) write(*,'(7x,2A,F9.1)')
+     &   'upscale :: started averaging.'
+      endif
+
+#ifdef OBC_NORTH
+      if (.not.north_exchng) then
+        ALK_add_north_avg(:,:) = ALK_add_north_avg(:,:)*(1-coef) +
+     &  (t(:,jend+1,:,knew,iALK)-t(:,jend+1,:,knew,iALK_alt))*coef
+        DIC_add_north_avg(:,:) = DIC_add_north_avg(:,:)*(1-coef) +
+     &  (t(:,jend+1,:,knew,iDIC)-t(:,jend+1,:,knew,iDIC_alt))*coef
+        h_north_avg(:,:) = h_north_avg(:,:)*(1-coef) + Hz(:,jend+1,:)*coef
+        ALK_totmass_north_avg(:,:) = ALK_totmass_north_avg(:,:)*(1-coef) +
+     &  Hz(:,jend+1,:)*area_north(:,:)*(t(:,jend+1,:,knew,iALK)-t(:,jend+1,:,knew,iALK_alt))*coef
+        DIC_totmass_north_avg(:,:) = DIC_totmass_north_avg(:,:)*(1-coef) +
+     &  Hz(:,jend+1,:)*area_north(:,:)*(t(:,jend+1,:,knew,iDIC)-t(:,jend+1,:,knew,iDIC_alt))*coef
+      endif
+#endif
+
+#ifdef OBC_SOUTH
+      if (.not.south_exchng) then
+        ALK_add_south_avg(:,:) = ALK_add_south_avg(:,:)*(1-coef) +
+     &  (t(:,jstr-1,:,knew,iALK)-t(:,jstr-1,:,knew,iALK_alt))*coef
+        DIC_add_south_avg(:,:) = DIC_add_south_avg(:,:)*(1-coef) +
+     &  (t(:,jstr-1,:,knew,iDIC)-t(:,jstr-1,:,knew,iDIC_alt))*coef
+        h_south_avg(:,:) = h_south_avg(:,:)*(1-coef) + Hz(:,jstr-1,:)*coef
+        ALK_totmass_south_avg(:,:) = ALK_totmass_south_avg(:,:)*(1-coef) +
+     &  Hz(:,jstr-1,:)*area_south(:,:)*(t(:,jstr-1,:,knew,iALK)-t(:,jstr-1,:,knew,iALK_alt))*coef
+        DIC_totmass_south_avg(:,:) = DIC_totmass_south_avg(:,:)*(1-coef) +
+     &  Hz(:,jstr-1,:)*area_south(:,:)*(t(:,jstr-1,:,knew,iDIC)-t(:,jstr-1,:,knew,iDIC_alt))*coef
+      endif
+#endif
+
+#ifdef OBC_EAST
+      if (.not.east_exchng) then
+        ALK_add_east_avg(j0:j1,:) = ALK_add_east_avg(j0:j1,:)*(1-coef) +
+     &  (t(iend+1,j0:j1,:,knew,iALK)-t(iend+1,j0:j1,:,knew,iALK_alt))*coef
+        DIC_add_east_avg(:,:) = DIC_add_east_avg(:,:)*(1-coef) +
+     &  (t(iend+1,:,:,knew,iDIC)-t(iend+1,:,:,knew,iDIC_alt))*coef
+        h_east_avg(:,:) = h_east_avg(:,:)*(1-coef) + Hz(iend+1,:,:)*coef
+        ALK_totmass_east_avg(:,:) = ALK_totmass_east_avg(:,:)*(1-coef) +
+     &  Hz(iend+1,:,:)*area_east(:,:)*(t(iend+1,:,:,knew,iALK)-t(iend+1,:,:,knew,iALK_alt))*coef
+        DIC_totmass_east_avg(:,:) = DIC_totmass_east_avg(:,:)*(1-coef) +
+     &  Hz(iend+1,:,:)*area_east(:,:)*(t(iend+1,:,:,knew,iDIC)-t(iend+1,:,:,knew,iDIC_alt))*coef
+      endif
+#endif
+
+#ifdef OBC_WEST
+      if (.not.west_exchng) then
+        ALK_add_west_avg(:,:) = ALK_add_west_avg(:,:)*(1-coef) +
+     &  (t(istr-1,:,:,knew,iALK)-t(istr-1,:,:,knew,iALK_alt))*coef
+        DIC_add_west_avg(:,:) = DIC_add_west_avg(:,:)*(1-coef) +
+     &  (t(istr-1,:,:,knew,iDIC)-t(istr-1,:,:,knew,iDIC_alt))*coef
+        h_west_avg(:,:) = h_west_avg(:,:)*(1-coef) + Hz(istr-1,:,:)*coef
+        ALK_totmass_west_avg(:,:) = ALK_totmass_west_avg(:,:)*(1-coef) +
+     &  Hz(istr-1,:,:)*area_west(:,:)*(t(istr-1,:,:,knew,iALK)-t(istr-1,:,:,knew,iALK_alt))*coef
+        DIC_totmass_west_avg(:,:) = DIC_totmass_west_avg(:,:)*(1-coef) +
+     &  Hz(istr-1,:,:)*area_west(:,:)*(t(istr-1,:,:,knew,iDIC)-t(istr-1,:,:,knew,iDIC_alt))*coef
+      endif
+#endif
+
+      end subroutine calc_average  !]
+!----------------------------------------------------------------------
+      subroutine wrt_upscale ![
+      ! extract data for all objects, for all vars
+      ! and write to file
+      implicit none
+
+      ! local
+      integer :: ierr,ncid
+      character(len=99),save :: fname
+      integer,dimension(3) :: start2D
+
+
+      if (record_uscl==nrpf_uscl) then
+          call create_upscale_file(fname)
+          record_uscl = 0
+      endif
+
+      !! We have to update the object records regardless of whether
+      !! there are points in the sub-domain to ensure correct file
+      !! names for all
+
+      call calc_average
+      otime = otime + dt
+
+      if (otime>=output_period_uscl) then
+        ierr=nf90_open(fname,nf90_write,ncid)
+        record_uscl = record_uscl+1
+
+        start2D = (/1,1,record_uscl/)
+
+        call ncwrite(ncid,'ocean_time',(/time/),(/record_uscl/))
+
+#ifdef OBC_NORTH
+        if (.not.north_exchng) then
+          call ncwrite(ncid,'ALK_add_north',ALK_add_north_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_add_north',DIC_add_north_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'ALK_totmass_north',ALK_totmass_north_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_totmass_north',DIC_totmass_north_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'h_north',h_north_avg(i0:i1,:),(/1,1,record_uscl/))
+          ALK_add_north_avg(:,:) = 0
+          DIC_add_north_avg(:,:) = 0
+          ALK_totmass_north_avg(:,:) = 0
+          DIC_totmass_north_avg(:,:) = 0
+          h_north_avg(:,:) = 0
+        endif
+#endif
+
+#ifdef OBC_SOUTH
+        if (.not.south_exchng) then
+          call ncwrite(ncid,'ALK_add_south',ALK_add_south_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_add_south',DIC_add_south_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'ALK_totmass_south',ALK_totmass_south_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_totmass_south',DIC_totmass_south_avg(i0:i1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'h_south',h_south_avg(i0:i1,:),(/1,1,record_uscl/))
+          ALK_add_south_avg(:,:) = 0
+          DIC_add_south_avg(:,:) = 0
+          ALK_totmass_south_avg(:,:) = 0
+          DIC_totmass_south_avg(:,:) = 0
+          h_south_avg(:,:) = 0
+        endif
+#endif
+
+#ifdef OBC_EAST
+        if (.not.east_exchng) then
+          call ncwrite(ncid,'ALK_add_east',ALK_add_east_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_add_east',DIC_add_east_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'ALK_totmass_east',ALK_totmass_east_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_totmass_east',DIC_totmass_east_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'h_east',h_east_avg(j0:j1,:),(/1,1,record_uscl/))
+          ALK_add_east_avg(:,:) = 0
+          DIC_add_east_avg(:,:) = 0
+          ALK_totmass_east_avg(:,:) = 0
+          DIC_totmass_east_avg(:,:) = 0
+          h_east_avg(:,:) = 0
+        endif
+#endif
+
+#ifdef OBC_WEST
+        if (.not.west_exchng) then
+          call ncwrite(ncid,'ALK_add_west',ALK_add_west_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_add_west',DIC_add_west_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'ALK_totmass_west',ALK_totmass_west_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'DIC_totmass_west',DIC_totmass_west_avg(j0:j1,:),(/1,1,record_uscl/))
+          call ncwrite(ncid,'h_west',h_west_avg(j0:j1,:),(/1,1,record_uscl/))
+          ALK_add_west_avg(:,:) = 0
+          DIC_add_west_avg(:,:) = 0
+          ALK_totmass_west_avg(:,:) = 0
+          DIC_totmass_west_avg(:,:) = 0
+          h_west_avg(:,:) = 0
+        endif
+#endif
+
+        ierr=nf90_close(ncid)
+
+        otime = 0
+        navg=0
+
+      endif
+
+      end subroutine wrt_upscale  !]
+! ----------------------------------------------------------------------
+      subroutine create_upscale_file(fname) ![
+      implicit none
+
+      !input/output
+      character(len=99),intent(out) :: fname
+
+      !local
+      integer :: ncid,ierr
+
+      call create_file('_uscl',fname)
+
+      ierr=nf90_open(fname,nf90_write,ncid)
+
+      ! Make sure all necessary dimensions are in all files
+      ierr=nccreate(ncid,'',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/))
+      call create_upscale_vars(ncid)
+
+      ierr = nf90_close(ncid)
+
+      end subroutine create_upscale_file !]
+! ----------------------------------------------------------------------
+      subroutine create_upscale_vars(ncid)  ![
+      ! Add edata variables to an opened netcdf file
+
+      use nc_read_write
+      use hidden_mpi_vars
+      implicit none
+
+      !import/export
+      integer, intent(in) :: ncid
+      integer             :: ierr, varid
+      integer :: tile
+
+#include "compute_tile_bounds.h"
+
+#ifdef OBC_NORTH
+      if (.not.north_exchng) then
+        varid = nccreate(ncid,'ALK_add_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'ALK additionality on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+
+        varid = nccreate(ncid,'DIC_add_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'DIC additionality on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+
+        varid = nccreate(ncid,'ALK_totmass_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of ALK additionality on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'DIC_totmass_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of DIC additionality on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'h_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Layer thickness on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','meters')
+
+        varid = nccreate(ncid,'lat_north',(/dn_xr/),(/xi_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Latitudes of tracer points on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lat_north',latr(i0:i1,jend+1),(/1/))
+
+        varid = nccreate(ncid,'lon_north',(/dn_xr/),(/xi_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Longitudes of tracer points on northern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lon_north',lonr(i0:i1,jend+1),(/1/))
+      endif
+#endif
+
+#ifdef OBC_SOUTH
+      if (.not.south_exchng) then
+        varid = nccreate(ncid,'ALK_add_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'ALK additionality on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+
+        varid = nccreate(ncid,'DIC_add_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'DIC additionality on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+
+        varid = nccreate(ncid,'ALK_totmass_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of ALK additionality on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'DIC_totmass_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of DIC additionality on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'h_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Layer thickness on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','meters')
+
+        varid = nccreate(ncid,'lat_south',(/dn_xr/),(/xi_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Latitudes of tracer points on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lat_south',latr(i0:i1,jstr-1),(/1/))
+
+        varid = nccreate(ncid,'lon_south',(/dn_xr/),(/xi_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Longitudes of tracer points on southern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lon_south',lonr(i0:i1,jstr-1),(/1/))
+      endif
+#endif
+
+#ifdef OBC_EAST
+      if (.not.east_exchng) then
+        varid = nccreate(ncid,'ALK_add_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'ALK additionality on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+
+        varid = nccreate(ncid,'DIC_add_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'DIC additionality on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+
+        varid = nccreate(ncid,'ALK_totmass_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of ALK additionality on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'DIC_totmass_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of DIC additionality on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'h_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Layer thickness on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','meters')
+
+        varid = nccreate(ncid,'lat_east',(/dn_yr/),(/eta_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Latitudes of tracer points on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lat_east',latr(iend+1,j0:j1),(/1/))
+
+        varid = nccreate(ncid,'lon_east',(/dn_yr/),(/eta_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Longitudes of tracer points on eastern boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lon_east',lonr(iend+1,j0:j1),(/1/))
+      endif
+#endif
+
+#ifdef OBC_WEST
+      if (.not.west_exchng) then
+        varid = nccreate(ncid,'ALK_add_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'ALK additionality on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+
+        varid = nccreate(ncid,'DIC_add_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'DIC additionality on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+
+        varid = nccreate(ncid,'ALK_totmass_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of ALK additionality on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'DIC_totmass_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'total mass of DIC additionality on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units','mmol')
+
+        varid = nccreate(ncid,'h_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Layer thickness on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units','meters')
+
+        varid = nccreate(ncid,'lat_west',(/dn_yr/),(/eta_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Latitudes of tracer points on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lat_west',latr(istr-1,j0:j1),(/1/))
+
+        varid = nccreate(ncid,'lon_west',(/dn_yr/),(/eta_rho/),uscl_prec)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &  'Longitudes of tracer points on western boundary')
+        ierr = nf90_put_att(ncid,varid,'units','degrees')
+        call ncwrite(ncid,'lon_west',lonr(istr-1,j0:j1),(/1/))
+      endif
+#endif
+
+      end subroutine create_upscale_vars  !]
+! ----------------------------------------------------------------------
+#else /* MARBL && MARBL_DIAGS */
+
+!----------------------------------------------------------------------
+      use param
+      use tracers
+      use dimensions
+      use roms_read_write
+      use scalars
+      use ocean_vars
+
+      implicit none
+
+      private
+
+#include "upscale.opt"
+
+      ! Public functions
+      public init_upscale
+
+      contains
+
+      subroutine init_upscale ![
+      ! Allocate and initialize arrays.
+      implicit none
+
+#ifndef MARBL
+      error stop 'ERROR: upscale module must have MARBL enabled.'
+#endif
+
+#ifndef MARBL_DIAGS
+      error stop 'ERROR: upscale module must have MARBL_DIAGS enabled.'
+#endif
+
+      end subroutine init_upscale !]
+!----------------------------------------------------------------------
+
+#endif /* MARBL && MARBL_DIAGS */
+
+      end module upscale_output
