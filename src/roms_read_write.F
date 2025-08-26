@@ -55,8 +55,8 @@
         integer                           :: irec =0   ! Record number in file
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
-        logical                           :: single_file = .false.
-        character(len=20)                 :: single_filename=''
+        logical                           :: ungridded = .false.
+        character(len=20)                 :: ungridded_forcing_file=''
       end type ncforce
 
       integer, target :: test_var
@@ -509,7 +509,7 @@
 
       end subroutine set_frc_data_surf  !]
 ! ----------------------------------------------------------------------
-      subroutine find_new_record(vname,tname,time,ifile,irec,vtime,single_filename) ![
+      subroutine find_new_record(vname,tname,time,ifile,irec,vtime,ungridded_filename) ![
       ! Finds the index for the filename and record number of the first record
       ! with a time that is larger than the model time. It will stores
       ! the corresponding time of the record in vtime.
@@ -525,7 +525,7 @@
       integer                       ,intent(inout):: ifile   ! index for file name in list
       integer                       ,intent(inout):: irec    ! variable record entry
       real                          ,intent(out)  :: vtime   ! read in variable time
-      character(len=*), optional    ,intent(in)   :: single_filename ! If this variable is present,
+      character(len=*), optional    ,intent(in)   :: ungridded_filename ! If this variable is present,
                                                              ! read this file only on the head node.
                                                              ! It is assumed that this function is only being called on rank 0.
       ! local
@@ -561,8 +561,8 @@
       do while (.not.found_rec .and. ifile <= max_frc)               ! while record not found & still more files to check
 
         found_var = .false.                                          ! reset for new file
-        if (present(single_filename)) then
-          ierr = nf90_open(single_filename, nf90_nowrite, ncid)
+        if (present(ungridded_filename)) then
+          ierr = nf90_open(ungridded_filename, nf90_nowrite, ncid)
         else
           ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
         endif
@@ -618,9 +618,9 @@
           ifile_stride = ifile_stride+1
           ifile = ifile+1
           irec = 0                                                   ! Reset irec for new file
-          if (present(single_filename)) then
+          if (present(ungridded_filename)) then
             print *, 'ERROR: find_new_record: Ran out of time records ',
-     &           'for ', vname, ' in single file ', single_filename
+     &           'for ', vname, ' in single file ', ungridded_filename
             error stop
           endif
         endif
@@ -741,12 +741,12 @@
       vname = nc%vname
       tname = nc%tname
 
-      if (nc%single_file) then
+      if (nc%ungridded) then
         if (mynode == 0) then
           call find_new_record(vname,tname,modtime,ifile,irec,
-     &                         nc%times(it), nc%single_filename)
+     &                         nc%times(it), nc%ungridded_forcing_file)
 
-          ierr=nf90_open(nc%single_filename,nf90_nowrite, ncid)
+          ierr=nf90_open(nc%ungridded_forcing_file,nf90_nowrite, ncid)
           if (d1) then
             call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
           else
@@ -794,7 +794,7 @@
         endif
       endif
       ierr = nf90_close(ncid)
-      endif ! single_file
+      endif ! ungridded
 
       if (bry==0) then
         if (mynode==0)
