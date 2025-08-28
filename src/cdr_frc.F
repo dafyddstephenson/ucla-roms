@@ -290,8 +290,15 @@
         if (cdr_volume) then
           allocate(nc_cdrvol%vdata(ncdr,1 ,2))
           allocate(nc_cdrtrc%vdata(ncdr,nt,2))
+          nc_cdrvol%ungridded = .true.
+          nc_cdrvol%ungridded_forcing_file = cdr_file
+
+          nc_cdrtrc%ungridded = .true.
+          nc_cdrtrc%ungridded_forcing_file = cdr_file
         else
           allocate(nc_cdrflx%vdata(ncdr,nt,2))
+          nc_cdrflx%ungridded = .true.
+          nc_cdrflx%ungridded_forcing_file = cdr_file
         endif
       endif
 

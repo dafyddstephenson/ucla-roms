@@ -23,7 +23,7 @@
       integer ierr
 
       integer, parameter :: input=15, testunit=40,
-     &                  max_fname=256, max_kwsize=99
+     &                  max_fname=256, max_kwsize=256
       character(len=max_fname)  :: fname, force_string
       character(len=max_kwsize) :: keyword
       character(len=3), parameter :: end_signal='end'
