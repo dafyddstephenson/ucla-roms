@@ -56,7 +56,7 @@
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
         logical                           :: ungridded = .false.
-        character(len=20)                 :: ungridded_forcing_file=''
+        character(len=100)                 :: ungridded_forcing_file=''
       end type ncforce
 
       integer, target :: test_var
@@ -563,11 +563,13 @@
         found_var = .false.                                          ! reset for new file
         if (present(ungridded_filename)) then
           ierr = nf90_open(ungridded_filename, nf90_nowrite, ncid)
+        if (ierr/=nf90_noerr)
+     &    call handle_ierr(ierr,'Find_new_record, opening: ',ungridded_filename)
         else
           ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
-        endif
         if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'Find_new_record, opening: ',frcfile(ifile))
+        endif
 
         ierr = nf90_inq_varid(ncid, vname,vid)                       ! check if this file contains the variable
 
