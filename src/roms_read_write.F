@@ -56,7 +56,7 @@
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
         logical                           :: ungridded = .false.
-        character(len=40)                 :: ungridded_forcing_file=''
+        character(len=100)                 :: ungridded_forcing_file=''
       end type ncforce
 
       type,public  :: ncforce3d
@@ -1109,7 +1109,6 @@
       call cancel_kwd (keyword(1:kwlen), ierr)             ! remove keyword from keyword list for read_inp.F
                                                            ! to know it's accounted for
       read(input,'(A)',err=95) output_root_name            ! read & save filename root
-
       goto 100
                                                            ! error for read(input,'(A)',err=95)
   95  write(*,'(/1x,4A/)') '### ERROR: roms_read_write :: Cannot ',
