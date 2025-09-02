@@ -56,7 +56,7 @@
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
         logical                           :: ungridded = .false.
-        character(len=20)                 :: ungridded_forcing_file=''
+        character(len=40)                 :: ungridded_forcing_file=''
       end type ncforce
 
       type,public  :: ncforce3d
@@ -68,8 +68,8 @@
         integer                           :: irec =0   ! Record number in file
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
-        logical                           :: single_file = .false.
-        character(len=40)                 :: single_filename=''
+        logical                           :: ungridded = .false.
+        character(len=40)                 :: ungridded_forcing_file=''
       end type ncforce3d
 
       integer, target :: test_var
@@ -692,6 +692,11 @@
             irec=irec+1                                              ! why not use ncread????
             ierr=nf90_get_var(ncid,tid,ltime,(/irec/), (/1/))        ! Get vtime (nf90 needs array hence syntax)
             vtime = ltime(1)
+!!!
+!            if (mynode == 0) then
+!             print *, vname, vtime
+!             print *, "curr time", time
+!            endif
 
             if (vtime>time) then                                     ! correct time
               found_rec = .true.
@@ -933,11 +938,11 @@
       vname = nc%vname
       tname = nc%tname
 
-      if (nc%single_file) then
+      if (nc%ungridded) then
         if (mynode == 0) then
           call find_new_record(vname,tname,modtime,ifile,irec,
-     &                         nc%times(it), nc%single_filename)
-          ierr=nf90_open(nc%single_filename,nf90_nowrite, ncid)
+     &                         nc%times(it), nc%ungridded_forcing_file)
+          ierr=nf90_open(nc%ungridded_forcing_file,nf90_nowrite, ncid)
           call ncread(ncid,vname,nc%vdata(:,:,:,it),(/1,1,1,irec/))
           ierr = nf90_close(ncid)
         endif
@@ -974,7 +979,7 @@
         endif
       endif
       ierr = nf90_close(ncid)
-      endif ! single_file
+      endif ! ungridded
 
       if (bry==0) then
         if (mynode==0)

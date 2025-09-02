@@ -220,9 +220,6 @@ CR      write(*,*) ' -6' MYID
       call ecosys2_init
 # endif /*BIOLOGY_BEC2*/
 
-      ! we should have a grid and z_r by now
-      if (cdr_source) call init_cdr_frc
-
 #ifdef ANA_INITIAL
                                     ! Set initial conditions for
       call set_forces               ! model prognostic variables,
@@ -281,6 +278,9 @@ CR      write(*,*)  ' -2' MYID
       if (floats) then
         call init_particles
       endif
+
+      ! we should have a grid and z_r by now
+!      if (cdr_source) call init_cdr_frc
 
 #if defined SPONGE
       call set_nudgcof(0)

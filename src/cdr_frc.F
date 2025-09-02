@@ -23,11 +23,11 @@
 #include "cdr_frc.opt"
 
       !!! Variables used for all releases
-      integer,public                            :: cdr_nprf     ! number of locations with a release
-      real   ,public,allocatable,dimension(:,:) :: cdr_prf      ! cdr fractions
-      integer,public,allocatable,dimension(:)   :: cdr_iloc     ! cdr local i location
-      integer,public,allocatable,dimension(:)   :: cdr_jloc     ! cdr local j location
-      real   ,public,allocatable,dimension(:)   :: cdr_icdr     ! cdr release number
+      integer,public                              :: cdr_nprf     ! number of locations with a release
+      real   ,public,allocatable,dimension(:,:,:) :: cdr_prf      ! cdr fractions as a function of tracer
+      integer,public,allocatable,dimension(:)     :: cdr_iloc     ! cdr local i location
+      integer,public,allocatable,dimension(:)     :: cdr_jloc     ! cdr local j location
+      real   ,public,allocatable,dimension(:)     :: cdr_icdr     ! cdr release number
 
       integer,public                            :: icdr,cidx    ! index for looping through cdr locations
       integer,allocatable,dimension(:)          :: cdr_nloc     ! number of active grid points for cdr
@@ -54,8 +54,14 @@
       !!! Variables used only For vertical profiles
       real, allocatable, dimension(:,:,:)        :: cdr_flx3d   ! cdr tracer flux (layerwise)
       real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
+      real, allocatable, dimension(:,:)          :: cdr_tot_mass      ! layer thicknesses of CDR release
       integer                                    :: ncdr_prof   ! number of release locations
       integer                                    :: N_src       ! number of layers from source file
+
+      !!! Variables used only if we are using the module for upscaling (adding ALK and DIC)
+      integer :: iALK, iDIC
+      integer, dimension(2) :: cdr_inds
+
 
       public set_cdr_frc
       public init_cdr_frc
@@ -69,12 +75,17 @@
       ! - all cdr variables need time interpolation only
       !   here so can use same generic routine.
       ! - input data in days!
+      use mpi
+
       implicit none
 
       ! local
       integer :: i,j
+      integer :: ierr
 
       if (.not. init_cdr_done) call init_cdr_frc
+
+      call MPI_Barrier(ocean_grid_comm, ierr)
 
       if (cdr_volume) then
         call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
@@ -89,6 +100,7 @@
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         else
           call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
+          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! set total mass of ALK and DIC to be added at current time
           call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
 
           call create_cdr_vertical_structure
@@ -156,6 +168,7 @@
           ncdr = ncdr_prof
           allocate(cdr_flx3d(ncdr,2,N_src)); cdr_flx3d(:,:,:) = 0
           allocate(cdr_hz(ncdr,N_src));       cdr_hz(:,:) = 0
+          allocate(cdr_tot_mass(ncdr,2));       cdr_tot_mass(:,:) = 0
         else
           ncdr = ncdr_parm
           call ncread(ncid,cdr_loc_dep,cdr_dep)
@@ -251,11 +264,21 @@
         cdr_nprf = cidx
 
         ! allocate total number of profiles for all releases
-        allocate(cdr_prf(cdr_nprf,nz))
-        cdr_prf(:,:) = 0
+        allocate(cdr_prf(cdr_nprf,nt,nz))
+        cdr_prf(:,:,:) = 0
         allocate(cdr_icdr(cdr_nprf))
         allocate(cdr_iloc(cdr_nprf))
         allocate(cdr_jloc(cdr_nprf))
+
+        if (depth_profiles == 'T') then
+          call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
+          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! initialize total mass of ALK and DIC to be added at current time
+          call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
+        endif
+
+        if (cdr_upscaling) then
+          call get_tracer_indices
+        endif
 
         call create_cdr_vertical_structure
 
@@ -263,6 +286,31 @@
         if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
 
       end subroutine init_cdr_frc  !]
+! ----------------------------------------------------------------------
+      subroutine get_tracer_indices  ![
+
+      ! Need to get names of tracers
+      use tracers, only: t, t_vname, t_lname, t_units
+
+      implicit none
+
+      integer :: idx, itot
+
+      itot = 0
+      do idx=1,ntrc_bio
+         itot=itot+1
+         if (t_vname(itot)=='ALK') then
+           iALK = itot
+         endif
+         if (t_vname(itot)=='DIC') then
+           iDIC = itot
+         endif
+      enddo
+
+      cdr_inds(1) = iALK
+      cdr_inds(2) = iDIC
+
+      end subroutine get_tracer_indices  !]
 ! ----------------------------------------------------------------------
       subroutine create_cdr_vertical_structure  ![
 
@@ -301,25 +349,29 @@
                        arg_nz(k) = abs(z_r(i,j,k) + cdr_dep(icdr))
                      enddo
                        arg = minloc(arg_nz,1)
-                       cdr_prf(cidx,arg) = frac(i,j,icdr)
+                       cdr_prf(cidx,:,arg) = frac(i,j,icdr)
                    else
                      vint = 0
                      do k=1,nz
                        arg = ( (z_r(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
-                       cdr_prf(cidx,k) = exp(-arg)*Hz(i,j,k)
+                       cdr_prf(cidx,:,k) = exp(-arg)*Hz(i,j,k)
                      enddo
                      ! The 1D integral of exp^(z/cdr_vsc(icdr))**2 is cdr_vsc(icdr)*SQRT(pi),
                      ! so normalizing by this amount will ensure we don't weight the
                      ! tracer incorrectly in this column when a substantial fraction of the release
                      ! is beneath the seafloor.
                      vint = cdr_vsc(icdr) * SQRT(pi)
-                     cdr_prf(cidx,:) = frac(i,j,icdr)*cdr_prf(cidx,:)/vint
+                     cdr_prf(cidx,:,:) = frac(i,j,icdr)*cdr_prf(cidx,:,:)/vint
                    endif
                  ! VERTICAL STRUCTURE FROM DATA
                  else
-!                   call remap_src_to_grid(i,j,icdr)
-                    ! cdr_flx should be the total mass in the column
-                    ! cdr_prf should be determined by remapping the vertical structure
+!                  if (icdr == 235) then
+!                  print *, "YAY", mynode, icdr
+!                  call flush()
+                  call remap_src_to_grid(i,j,icdr,cidx)
+!                  endif
+!                    ! cdr_flx should be the total mass in the column
+!                    ! cdr_prf should be determined by remapping the vertical structure
                  endif
 
                endif
@@ -331,14 +383,13 @@
           if (depth_profiles=='F') then
           cdr_nloc(icdr) = cidx
 
-          local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
+          local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:,:))
           call MPI_Reduce(local_int,global_int,1,
      %           mpi_double_precision,mpi_sum,0,ocean_grid_comm,ierr)
           call MPI_Bcast(global_int,1,mpi_double_precision,0,ocean_grid_comm,ierr)
 
-          cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:) =
-     %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:)/global_int
-          !local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:))
+          cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:,:) =
+     %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),:,:)/global_int
           endif
 
         enddo
@@ -347,12 +398,12 @@
 ! ----------------------------------------------------------------------
       ! This routine will populate cdr_prf using the data that is read from file
 
-      subroutine remap_src_to_grid(i,j,icdr)
+      subroutine remap_src_to_grid(i,j,icdr,cidx)
 
       use mpi
       implicit none
 
-      integer, intent(in) :: i,j,icdr
+      integer, intent(in) :: i,j,icdr,cidx
 
       ! local
       integer :: ierr,ncid,k,k_new,trc,idx
@@ -364,29 +415,44 @@
       real, dimension(nz) :: H_new
       ! These are the total fluxes/m^2 in this column. These arrays are mostly used for checking
       ! that the remapping is conservative
-      real, dimension(2) :: total_flux_orig = 0
-      real, dimension(2) :: total_flux_new = 0
-      real :: H_new_tot = 0
-      real :: H_orig_tot = 0
-      real :: tot_dist = 0
+      real, dimension(2) :: total_mass_orig
+      real, dimension(2) :: total_mass_new
+      real :: H_new_tot
+      real :: H_orig_tot
+      real :: tot_dist
 
-      real :: curr_src_index = 0
-      integer, dimension(nz) :: tgt_index_start = 0
-      integer, dimension(nz) :: tgt_index_end = 0
+      integer :: curr_src_index
+      integer, dimension(nz) :: tgt_index_start
+      integer, dimension(nz) :: tgt_index_end
 
       ! Keep track of how far up we are in the water column
       real :: curr_tgt_height, curr_src_height
 
       ! Keep track of where in each H_orig cell the interfaces of H_new are
-      real, dimension(nz) :: tgt_frac_start = 0
-      real, dimension(nz) :: tgt_frac_end = 0
+      real, dimension(nz) :: tgt_frac_start
+      real, dimension(nz) :: tgt_frac_end
 
       ! This holds the integrated_values
-      real, dimension(2,nz) :: definite_integral = 0
+      real, dimension(2,nz) :: definite_integral
 
       ! Temporary array to hold the remapped fluxes
-      real, dimension(2,nz) :: cdrflx_tmp = 0
+      real, dimension(2,nz) :: cdrflx_tmp
 
+      ! Array to hold the tracer mass in each cell
+      real, dimension(2,nz) :: cellwise_mass
+
+      total_mass_orig = 0.0
+      total_mass_new = 0.0
+      H_new_tot = 0.0
+      H_orig_tot = 0.0
+      tot_dist = 0.0
+
+      tgt_frac_start(:) = 0.0
+      tgt_frac_end(:)   = 0.0
+
+      definite_integral(:,:) = 0.0
+      cdrflx_tmp(:,:) = 0.0
+      cellwise_mass(:,:) = 0.0
 
 
       call calc_interface_values(cdr_flx3d(icdr,:,:), cdr_hz(icdr,:), interface_values)
@@ -409,39 +475,26 @@
         enddo
       enddo
 
-      ! These are vector copies of each column.
+      ! These are vector copies of the source and target column.
       do k = 1,N_src
         H_orig(k) = cdr_hz(icdr,k)
-        H_orig_tot = H_orig_tot + H_orig(k)
       enddo
 
       do k = 1,nz
         H_new(k) = Hz(i,j,k)
-        H_new_tot = H_new_tot + H_new(k)
       enddo
 
-      do trc = 1,2
-        do k = 1,N_src
-          total_flux_orig(trc) = total_flux_orig(trc) + H_orig(k) * cdr_flx3d(icdr,trc,k)
-        enddo
-      enddo
-
-      !! Going to normalize the thicknesses to make the forthcoming loop logic and
-      !! tracer conservation a bit easier. This is just for bookkeeping here and will not
-      !! affect the actual thicknesses.
-
+      ! Match the thicknesses of the source and target columns
       do k = 1,N_src
-        H_orig(k) = H_orig(k) * (H_new_tot / H_orig_tot)
+        H_orig(k) = H_orig(k) * (total_depth_tgt / total_depth_src)
       enddo
-
       !! The division and multiplication in the above step may not make the total column thicknesses
       !! match exactly, so one more really small correction will be added to the top layer.
-
       H_orig_tot = 0
       do k = 1,N_src
         H_orig_tot = H_orig_tot + H_orig(k)
       enddo
-      H_orig(N_src) = H_orig(N_src) + H_new_tot - H_orig_tot
+      H_orig(N_src) = H_orig(N_src) + total_depth_tgt - H_orig_tot
 
       !! Also keep track of the original interface depths.
       z_orig_interfaces(1) = 0
@@ -450,14 +503,17 @@
       enddo
 
       ! Keep track of how far up we are in the water column
+      tgt_index_start = 1
+      tgt_index_end = 1
       curr_tgt_height = H_new(1)
       curr_src_height = H_orig(1)
+      curr_src_index = 1
 
       do k_new = 1,nz-1
 
         do while (curr_tgt_height > curr_src_height)
           curr_src_index = curr_src_index + 1
-          curr_src_height = H_orig(curr_src_index)
+          curr_src_height = curr_src_height + H_orig(curr_src_index)
         enddo
 
         tgt_index_end(k_new) = curr_src_index
@@ -470,11 +526,11 @@
 
       enddo
 
-      tgt_index_end(nz) = nz
+      tgt_index_end(nz) = N_src
       tgt_frac_end(nz)  = 1
 
       do trc = 1,2
-        do k = 1,nz-1
+        do k = 1,nz
 
           do idx = tgt_index_start(k),tgt_index_end(k)
 
@@ -501,33 +557,20 @@
 
       do trc = 1,2
         do k = 1,nz
-          total_flux_new(trc) = total_flux_new(trc) + H_new(k) * cdrflx_tmp(trc,k)
+          cellwise_mass(trc,k) = cdrflx_tmp(trc,k) * H_new(k) / (pm(i,j)*pn(i,j))
+          total_mass_new(trc) = total_mass_new(trc) + cellwise_mass(trc,k)
         enddo
-      enddo
 
-!    var total_tracer_new : [1..num_tracers] real = 0;
-!    for (t,k) in {1..num_tracers,0..<(Nz-1)} {
-!      total_tracer_new[t] += H_new[k] * tracer_n.localAccess[i,j,t,k];
-!    }
-!
-!    // Can I just take a guess at this, instead of doing this whole calculation?
-!    for t in 1..num_tracers {
-!      tracer_n.localAccess[i,j,t,Nz-1] = (total_tracer_orig[t] - total_tracer_new[t]) / H_new[Nz-1];
-!    }
-!
-!    total_tracer_new = 0;
-!    for (t,k) in {1..num_tracers,0..<Nz} {
-!      total_tracer_new[t] += H_new[k] * tracer_n.localAccess[i,j,t,k];
-!    }
-!    tracer_n.localAccess[i,j,1,Nz-1] += total_tracer_orig[1] - total_tracer_new[1];
-!
-!    } // mask_rho
-!
-!  } // end of forall
-!
-!} // if num_tracers > 0
-!
-!} // end of subroutine
+        if (total_mass_new(trc) > 0) then
+          do k = 1,nz
+            cdr_prf(cidx,cdr_inds(trc),k) = cellwise_mass(trc,k) / total_mass_new(trc)
+          enddo
+        endif
+
+      enddo
+      cdr_flx(icdr,iALK) = cdr_tot_mass(icdr,1)
+      cdr_flx(icdr,iDIC) = cdr_tot_mass(icdr,2)
+
       end subroutine remap_src_to_grid
 ! ----------------------------------------------------------------------
       real function integrate(a0, a1, a2, z0, z1) ![
@@ -582,7 +625,6 @@
         h_b = h_b + H(k+1)
         h_t = h_t + H(k+2)
         iH = 1.0/(h_t - h_b)
-
         do trc = 1,2
           B(trc,k) = arr(trc,k+1)
         enddo
@@ -598,23 +640,21 @@
       iH = 1.0 / (h_t - h_b)
       do k = 0,ord
         do kk = 0,ord
-          kkp = kk+1
+          kkp1 = kk+1
           M(k,kk) = (1.0 / kkp1) * iH * (h_t**kkp1 - h_b**kkp1)
         enddo
 
         h_b = h_b + H(N_src-k)
         h_t = h_t + H(N_src-1-k)
         iH = 1.0 / (h_t - h_b)
-
         do trc = 1,2
-          B(trc,k) = arr(trc,N_src-1-k)
+          B(trc,k) = arr(trc,N_src-k)
         enddo
       enddo
 
       do trc = 1,2
         Ts_top(trc) = gauss(M, B(trc,:),ord)
       enddo
-
       !!!!!!!!!!!!!!!!!!!!!!
 
       call thomas_PPM(Ts_bot, Ts_top, arr, H, int_vals)
@@ -636,8 +676,7 @@
 
       !! Starting from the last row, we're going to work upwards to
       !! make M a lower triangular matrix
-      do i = 1,ord,-1
-
+      do i = ord,1,-1
       !! Iterate over all rows above i
         do j = 0,(i-1)
           ratio = M(j,i) / M(i,i)
@@ -672,27 +711,32 @@
       n = N_src+1
 
       do t = 1,2
+        ! Solution for top and bottom boundaries
         b(1) = 1.0
         b(n) = 1.0
         d(1) = Ts_bot(t)
         d(n) = Ts_top(t)
+        a(n) = 0
+        c(1) = 0
 
-        do k=1,(n-2)
-          h0 = H(k)
-          h1 = H(k+1)
+        ! Fill interior of tridiagonal matrix
+        do k=2,(n-1)
+          h0 = H(k-1)
+          h1 = H(k)
 
           alpha = (h1**2) / ((h0 + h1)**2)
-          beta = (h0**2) / ((h0 + h1)**2)
+          beta  = (h0**2) / ((h0 + h1)**2)
           d1 = 2*(h1**2)*(h1**2 + 2*h0**2 + 3*h0*h1) / ((h0+h1)**4)
           d2 = 2*(h0**2)*(h0**2 + 2*h1**2 + 3*h0*h1) / ((h0+h1)**4)
 
-          a(k+1) = alpha
-          b(k+1) = 1.0
-          c(k+1) = beta
+          a(k) = alpha
+          b(k) = 1.0
+          c(k) = beta
 
-          d(k+1) = d1*arr(t,k) + d2*arr(t,k+1)
+          d(k) = d1*arr(t,k-1) + d2*arr(t,k)
         enddo
 
+        ! Solve using Thomas algorithm
         cp(1) = c(1) / b(1)
         dp(1) = d(1) / b(1)
 
@@ -700,11 +744,13 @@
           cp(k) = c(k) / (b(k) - a(k)*cp(k-1))
           dp(k) = (d(k) - a(k)*dp(k-1)) / (b(k) - a(k)*cp(k-1))
         enddo
-
         dp(n) = (d(n) - a(n)*dp(n-1)) / (b(n) - a(n)*cp(n-1))
 
-        int_vals(t,n) = dp(n)
-        do k = 1,(n-1),-1
+        !int_vals(t,n) = dp(n)
+        !int_vals(t,1) = Ts_bot(t)
+        int_vals(t,n) = d(n)
+        !do k = (n-1),1,-1
+        do k = (n-1),1,-1
           int_vals(t,k) = dp(k) - cp(k)*int_vals(t,k+1)
         enddo
       enddo
@@ -727,9 +773,12 @@
       else
         if (depth_profiles=='T') then
           allocate(nc_cdrhz%vdata(ncdr,N_src,2))
+          allocate(nc_tot_mass%vdata(ncdr,2,2))
           allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
           nc_cdrhz%ungridded = .true.
           nc_cdrhz%ungridded_forcing_file = cdr_file
+          nc_tot_mass%ungridded = .true.
+          nc_tot_mass%ungridded_forcing_file = cdr_file
           nc_cdrflx3d%ungridded = .true.
           nc_cdrflx3d%ungridded_forcing_file = cdr_file
         endif

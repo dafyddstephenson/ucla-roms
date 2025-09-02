@@ -824,7 +824,7 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
 
         if (cdr_source) then
           ! Loop over cdr release locations in this subdomain
-          ! The global sum over all cdr_prf should be 1.
+          ! The global sum over all cdr_prf for each tracer should be 1.
           ! cdr_flux unit is [C/s]
           do cidx=1,cdr_nprf
             icdr = cdr_icdr(cidx)
@@ -833,7 +833,7 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
             do k=1,nz
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
      &           +dt*pm(i,j)*pn(i,j)*
-     &            cdr_prf(cidx,k)*cdr_flx(icdr,itrc)
+     &            cdr_prf(cidx,itrc,k)*cdr_flx(icdr,itrc)
             enddo
           enddo
         endif
