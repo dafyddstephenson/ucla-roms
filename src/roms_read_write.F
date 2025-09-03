@@ -56,10 +56,13 @@
         integer                           :: irec =0   ! Record number in file
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
+        logical                           :: ungridded = .false.
+        character(len=100)                 :: ungridded_forcing_file=''
       end type ncforce
 
       integer, target :: test_var
-      character(len=99), public  :: output_root_name
+      integer, parameter, public :: max_name_size=256
+      character(len=max_name_size), public  :: output_root_name
       character(len=41), public  :: git_hash
 
       ! Dimension names for in and output in netcdf files
@@ -126,7 +129,6 @@
 !    &                              xi_u=xi_rho-1, eta_v=eta_rho-1
 #endif
 
-      integer, parameter, public :: max_name_size=256
       character, public :: date_str*44, title*80
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
       character(len=max_name_size), public :: ininame,frcfile(max_frc_files)
@@ -357,7 +359,6 @@
         endif
 
         call fill_frc_slice(nc,modtime,it2,d1,bry)
-
         ! If (new irec) is greater than (old irec-1), this means we skipped one or more
         ! forcing entries. Then we need to also do fill_frc_slice for it1,
         ! and we will read in the greatest irec that is less than (new irec)
@@ -470,7 +471,7 @@
 
       end subroutine set_frc_data_surf  !]
 ! ----------------------------------------------------------------------
-      subroutine find_new_record(vname,tname,time,ifile,irec,vtime) ![
+      subroutine find_new_record(vname,tname,time,ifile,irec,vtime,ungridded_filename) ![
       ! Finds the index for the filename and record number of the first record
       ! with a time that is larger than the model time. It will stores
       ! the corresponding time of the record in vtime.
@@ -486,7 +487,9 @@
       integer                       ,intent(inout):: ifile   ! index for file name in list
       integer                       ,intent(inout):: irec    ! variable record entry
       real                          ,intent(out)  :: vtime   ! read in variable time
-
+      character(len=*), optional    ,intent(in)   :: ungridded_filename ! If this variable is present,
+                                                             ! read this file only on the head node.
+                                                             ! It is assumed that this function is only being called on rank 0.
       ! local
       integer, dimension(1) :: dimids     ! time dimension ID
       real    :: time_old
@@ -520,9 +523,15 @@
       do while (.not.found_rec .and. ifile <= max_frc)               ! while record not found & still more files to check
 
         found_var = .false.                                          ! reset for new file
-        ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
+        if (present(ungridded_filename)) then
+          ierr = nf90_open(ungridded_filename, nf90_nowrite, ncid)
+        if (ierr/=nf90_noerr)
+     &    call handle_ierr(ierr,'Find_new_record, opening: ',ungridded_filename)
+        else
+          ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
         if (ierr/=nf90_noerr)
      &    call handle_ierr(ierr,'Find_new_record, opening: ',frcfile(ifile))
+        endif
 
         ierr = nf90_inq_varid(ncid, vname,vid)                       ! check if this file contains the variable
 
@@ -573,6 +582,11 @@
           ifile_stride = ifile_stride+1
           ifile = ifile+1
           irec = 0                                                   ! Reset irec for new file
+          if (present(ungridded_filename)) then
+            print *, 'ERROR: find_new_record: Ran out of time records ',
+     &           'for ', vname, ' in single file ', ungridded_filename
+            error stop
+          endif
         endif
 
         ierr=nf90_close (ncid)
@@ -663,6 +677,10 @@
 ! ----------------------------------------------------------------------
       subroutine fill_frc_slice_aux(nc,modtime,it,d1,bry) ![
       ! Fill a time slice of forcing data, not surface forcing
+
+      use param
+      use mpi
+
       implicit none
 
       ! input/outputs
@@ -680,11 +698,38 @@
       character(len=100) :: forcing_version ! version of forcing input data
       character(len=300) :: frcstr
       integer            :: irec,ifile
+      integer            :: msg_size
 
       irec  = nc%irec
       ifile = nc%ifile
       vname = nc%vname
       tname = nc%tname
+
+      if (nc%ungridded) then
+        if (mynode == 0) then
+          call find_new_record(vname,tname,modtime,ifile,irec,
+     &                         nc%times(it), nc%ungridded_forcing_file)
+
+          ierr=nf90_open(nc%ungridded_forcing_file,nf90_nowrite, ncid)
+          if (d1) then
+            call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
+          else
+            call ncread(ncid,vname,nc%vdata(:,:,it),(/1,1,irec/))
+          endif
+          ierr = nf90_close(ncid)
+        endif
+        call MPI_Barrier(ocean_grid_comm, ierr)
+        msg_size = size(nc%vdata(:,:,it))
+        ! These are needed to make sure each rank follows the same
+        ! code pathway in set_frc_data
+        call MPI_Bcast(irec,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(irec_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(ifile,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(ifile_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
+        ! Send time and vdata to each rank
+        call MPI_Bcast(nc%times(it),1,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
+        call MPI_Bcast(nc%vdata(:,:,it),msg_size,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
+      else
 
       call find_new_record(vname,tname,modtime,ifile,irec,
      &                         nc%times(it))
@@ -713,6 +758,7 @@
         endif
       endif
       ierr = nf90_close(ncid)
+      endif ! ungridded
 
       if (bry==0) then
         if (mynode==0)
@@ -842,7 +888,6 @@
       call cancel_kwd (keyword(1:kwlen), ierr)             ! remove keyword from keyword list for read_inp.F
                                                            ! to know it's accounted for
       read(input,'(A)',err=95) output_root_name            ! read & save filename root
-
       goto 100
                                                            ! error for read(input,'(A)',err=95)
   95  write(*,'(/1x,4A/)') '### ERROR: roms_read_write :: Cannot ',

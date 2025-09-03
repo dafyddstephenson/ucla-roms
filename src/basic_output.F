@@ -73,7 +73,7 @@
       integer :: ncid=-1, prev_fill_mode
       real    :: t_avg_ovars=0
       integer :: navg_ovars = 0                             ! number of samples in average
-      character(len=99),public :: fname_rst                 ! restart filename needed by diagnostics
+      character(len=max_name_size),public :: fname_rst                 ! restart filename needed by diagnostics
       integer,public           :: rec_rst=nrpf_rst          ! current file output record needed by diags
       integer                :: month_at_prev_timestep
       logical                :: write_another_step = .false.
@@ -267,7 +267,7 @@
       integer,save           :: total_rec_his=0                      ! total his output records so far
       real,save              :: output_time_his=output_period_his+10
       logical,save           :: first_step=.true.
-      character(len=99),save :: fname_his
+      character(len=max_name_size),save :: fname_his
       integer                :: tile, ierr, i, j, k
       logical,save           :: supress=.false.
       logical                :: blowup,initial
@@ -401,7 +401,7 @@
       integer,save           :: total_rec_avg=0                      ! total avg output records so far
       real,save              :: output_time_avg=0                    ! time since last output
       logical,save           :: first_step=.true.
-      character(len=99),save :: fname_avg
+      character(len=max_name_size),save :: fname_avg
       character(len=99)      :: output_time_string
       character(len=99)      :: formatted_string
       integer :: tile, tn, ierr, k
@@ -645,7 +645,7 @@
       implicit none
 
       !input/output
-      character(len=99),intent(out) :: fname
+      character(len=max_name_size),intent(out) :: fname
       logical,          intent(in)  :: avg                 ! his or average file
 
       ! local
@@ -676,7 +676,7 @@
       implicit none
 
       !input/output
-      character(len=99),intent(out) :: fname
+      character(len=max_name_size),intent(out) :: fname
 
       ! local
       integer :: ierr,varid

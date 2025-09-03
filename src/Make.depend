@@ -76,10 +76,10 @@ add_git_hash.o : add_git_hash.F nc_read_write.o roms_read_write.o
 random_output.o : random_output.F random_output.opt set_global_definitions.h cppdefs.opt diagnostics.o ocean_vars.o scalars.o nc_read_write.o roms_read_write.o dimensions.o param.o
 cstar_output.o : cstar_output.F cstar_output.opt set_global_definitions.h cppdefs.opt cdr_frc.o diagnostics.o ocean_vars.o scalars.o nc_read_write.o roms_read_write.o dimensions.o bgc_ecosys_vars.o marbl_driver.o tracers.o param.o
 zslice_output.o : zslice_output.F zslice_output.opt set_global_definitions.h cppdefs.opt surf_flux.o tracers.o diagnostics.o ocean_vars.o scalars.o nc_read_write.o roms_read_write.o dimensions.o grid.o param.o
-bgc_ecosys_vars.o : bgc_ecosys_vars.F bgc_3Ddiagnostics.opt bgc_2Ddiagnostics.opt bgc.opt set_global_definitions.h cppdefs.opt roms_read_write.o tracers.o param.o
+bgc_shared_vars.o : bgc_shared_vars.F bgc_3Ddiagnostics.opt bgc_2Ddiagnostics.opt bgc.opt set_global_definitions.h cppdefs.opt roms_read_write.o tracers.o param.o marbl_driver.o bec2_vars.o
 bgc_forces.o : bgc_forces.F set_global_definitions.h cppdefs.opt param.o
-bgc_param_ini.o : bgc_param_ini.F set_global_definitions.h cppdefs.opt
-bgc_ecosys_bec2.o : bgc_ecosys_bec2.F set_global_definitions.h cppdefs.opt bgc_param_ini.o bgc_ecosys_vars.o scalars.o ocean_vars.o grid.o param.o
+bec2_params.o : bec2_params.F set_global_definitions.h cppdefs.opt
+bgc_ecosys_bec2.o : bgc_ecosys_bec2.F set_global_definitions.h cppdefs.opt bec2_params.o bgc_shared_vars.o scalars.o ocean_vars.o grid.o param.o
 marbl_driver.o : marbl_driver.F set_global_definitions.h cppdefs.opt
 main.o : main.F set_global_definitions.h cppdefs.opt mixing.o tides.o zslice_output.o surf_flux.o extract_data.o bgc.o bgc_param_ini.o cdr_frc.o random_output.o cstar_output.o particles.o boundary.o diagnostics.o analytical.o grid.o dimensions.o basic_output.o ocean_vars.o scalars.o sponge_tune.o tracers.o param.o
 checkdims.o : checkdims.F compute_starts_counts.h set_global_definitions.h cppdefs.opt scoord.o nc_read_write.o roms_read_write.o param.o
