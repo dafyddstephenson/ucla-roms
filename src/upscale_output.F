@@ -307,13 +307,13 @@
         if (NORTHERN_EDGE) then
           do i=istr,iend
             if (itrc == iALK)
-     &        ALK_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+     &        ALK_rate_north(i,k) = FE(i,jend+1)!*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
             if (itrc == iALK_alt)
-     &        ALK_alt_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+     &        ALK_alt_rate_north(i,k) = FE(i,jend+1)!*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
             if (itrc == iDIC)
-     &        DIC_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+     &        DIC_rate_north(i,k) = FE(i,jend+1)!*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
             if (itrc == iDIC_alt)
-     &        DIC_alt_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+     &        DIC_alt_rate_north(i,k) = FE(i,jend+1)!*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
           enddo
         endif
 
@@ -321,13 +321,13 @@
         if (SOUTHERN_EDGE) then
           do i=istr,iend
             if (itrc == iALK)
-     &        ALK_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+     &        ALK_rate_south(i,k) = -FE(i,jstr)!*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
             if (itrc == iALK_alt)
-     &        ALK_alt_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+     &        ALK_alt_rate_south(i,k) = -FE(i,jstr)!*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
             if (itrc == iDIC)
-     &        DIC_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+     &        DIC_rate_south(i,k) = -FE(i,jstr)!*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
             if (itrc == iDIC_alt)
-     &        DIC_alt_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+     &        DIC_alt_rate_south(i,k) = -FE(i,jstr)!*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
           enddo
         endif
 
@@ -335,13 +335,13 @@
         if (EASTERN_EDGE) then
           do j=jstr,jend
             if (itrc == iALK)
-     &        ALK_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+     &        ALK_rate_east(j,k) = FX(iend+1,j)!*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
             if (itrc == iALK_alt)
-     &        ALK_alt_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+     &        ALK_alt_rate_east(j,k) = FX(iend+1,j)!*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
             if (itrc == iDIC)
-     &        DIC_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+     &        DIC_rate_east(j,k) = FX(iend+1,j)!*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
             if (itrc == iDIC_alt)
-     &        DIC_alt_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+     &        DIC_alt_rate_east(j,k) = FX(iend+1,j)!*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
           enddo
         endif
 
@@ -349,13 +349,13 @@
         if (WESTERN_EDGE) then
           do j=jstr,jend
             if (itrc == iALK)
-     &        ALK_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+     &        ALK_rate_west(j,k) = -FX(istr,j)!*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
             if (itrc == iALK_alt)
-     &        ALK_alt_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+     &        ALK_alt_rate_west(j,k) = -FX(istr,j)!*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
             if (itrc == iDIC)
-     &        DIC_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+     &        DIC_rate_west(j,k) = -FX(istr,j)!*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
             if (itrc == iDIC_alt)
-     &        DIC_alt_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+     &        DIC_alt_rate_west(j,k) = -FX(istr,j)!*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
           enddo
         endif
 

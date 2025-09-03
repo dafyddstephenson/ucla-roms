@@ -586,7 +586,7 @@
        cdr_flx(icdr,iALK) = 1.0 !cdr_tot_mass(icdr,1)
        cdr_flx(icdr,iDIC) = 1.0 !cdr_tot_mass(icdr,2)
 
-      !print *, "YAY", mynode, icdr, cdr_flx(icdr,iALK), cellwise_conc(1,:), total_conc_new(1), sum(cdr_prf(cidx,cdr_inds(1),:))
+!      print *, "YAY", mynode, cdr_inds(1), iALK, cdr_flx(icdr,iALK), cdr_prf(cidx,cdr_inds(1),:)
 
       end subroutine remap_src_to_grid
 ! ----------------------------------------------------------------------
