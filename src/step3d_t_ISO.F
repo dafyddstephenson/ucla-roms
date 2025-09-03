@@ -184,6 +184,44 @@ c--#  define ntdf nrhs
               enddo
             enddo                 !-->  discard FX,FE
 
+#if defined MARBL && defined ASININE
+        if (do_upscale) then
+          call calc_forcing_rates(itrc,k,FX,FE,istr,iend,jstr,jend)
+        endif
+!          if (itrc == iALK) then
+!            ! North boundary
+!            if (NORTHERN_EDGE) then
+!              do i=istr,iend
+!     &          ALK_rate_north(i,k) = -FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+!              enddo
+!            endif
+!
+!            ! South boundary
+!          if (SOUTHERN_EDGE) then
+!              do i=istr,iend
+!                ALK_rate_south(i,k) = FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+!              enddo
+!          endif
+!
+!            ! East boundary
+!          if (EASTERN_EDGE) then
+!              do j=jstr,jend
+!                ALK_rate_south(i,k) = -FX(iend+1,j:)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+!                t(iend+1,j,k,nnew,itrc)=t(iend+1,j,k,nnew,itrc)
+!     &            -MIN(0.0,dt*pm(iend+1,j)*pn(iend+1,j)*(-FX(iend+1,j)))
+!              enddo
+!          endif
+!
+!            ! South boundary
+!          if (WESTERN_EDGE) then
+!              do j=jstr,jend
+!                t(istr-1,j,k,nnew,itrc)=t(istr-1,j,k,nnew,itrc)
+!     &            -MIN(0.0,dt*pm(istr-1,j)*pn(istr-1,j)*(FX(istr,j)))
+!              enddo
+!          endif
+
+#endif
+
 # ifdef DIAGNOSTICS
 #  ifdef ADV_ISONEUTRAL
             if (diag_trc .and. wrt_t_dia(itrc) .and. calc_diag) then

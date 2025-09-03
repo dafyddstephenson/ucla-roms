@@ -18,9 +18,6 @@
       use basic_output, vn=>vname
       use scalars
       use diagnostics
-#if defined(BIOLOGY_BEC2) || defined(MARBL)
-      use bgc_ecosys_vars
-#endif
 
       implicit none
       private
@@ -35,52 +32,76 @@
 #ifdef OBC_NORTH
       real,allocatable,dimension(:,:) :: ALK_add_north_avg
       real,allocatable,dimension(:,:) :: DIC_add_north_avg
-      real,allocatable,dimension(:,:) :: ALK_totmass_north_avg
-      real,allocatable,dimension(:,:) :: DIC_totmass_north_avg
+!      real,allocatable,dimension(:,:) :: ALK_totmass_north_avg
+!      real,allocatable,dimension(:,:) :: DIC_totmass_north_avg
+
+      real,allocatable,dimension(:,:) :: ALK_rate_north
+      real,allocatable,dimension(:,:) :: DIC_rate_north
+      real,allocatable,dimension(:,:) :: ALK_alt_rate_north
+      real,allocatable,dimension(:,:) :: DIC_alt_rate_north
+
       real,allocatable,dimension(:,:) :: h_north_avg
       real,allocatable,dimension(:)   :: lat_north
       real,allocatable,dimension(:)   :: lon_north
 
-      real,allocatable,dimension(:,:) :: area_north
+!      real,allocatable,dimension(:,:) :: area_north
 #endif
 
 #ifdef OBC_SOUTH
       real,allocatable,dimension(:,:) :: ALK_add_south_avg
       real,allocatable,dimension(:,:) :: DIC_add_south_avg
-      real,allocatable,dimension(:,:) :: ALK_totmass_south_avg
-      real,allocatable,dimension(:,:) :: DIC_totmass_south_avg
+!      real,allocatable,dimension(:,:) :: ALK_totmass_south_avg
+!      real,allocatable,dimension(:,:) :: DIC_totmass_south_avg
+
+      real,allocatable,dimension(:,:) :: ALK_rate_south
+      real,allocatable,dimension(:,:) :: DIC_rate_south
+      real,allocatable,dimension(:,:) :: ALK_alt_rate_south
+      real,allocatable,dimension(:,:) :: DIC_alt_rate_south
+
       real,allocatable,dimension(:,:) :: h_south_avg
       real,allocatable,dimension(:)   :: lat_south
       real,allocatable,dimension(:)   :: lon_south
 
-      real,allocatable,dimension(:,:) :: area_south
+!      real,allocatable,dimension(:,:) :: area_south
 #endif
 
 #ifdef OBC_EAST
       real,allocatable,dimension(:,:) :: ALK_add_east_avg
       real,allocatable,dimension(:,:) :: DIC_add_east_avg
-      real,allocatable,dimension(:,:) :: ALK_totmass_east_avg
-      real,allocatable,dimension(:,:) :: DIC_totmass_east_avg
+!      real,allocatable,dimension(:,:) :: ALK_totmass_east_avg
+!      real,allocatable,dimension(:,:) :: DIC_totmass_east_avg
+
+      real,allocatable,dimension(:,:) :: ALK_rate_east
+      real,allocatable,dimension(:,:) :: DIC_rate_east
+      real,allocatable,dimension(:,:) :: ALK_alt_rate_east
+      real,allocatable,dimension(:,:) :: DIC_alt_rate_east
+
       real,allocatable,dimension(:,:) :: h_east_avg
       real,allocatable,dimension(:)   :: lat_east
       real,allocatable,dimension(:)   :: lon_east
 
-      real,allocatable,dimension(:,:) :: area_east
+!      real,allocatable,dimension(:,:) :: area_east
 #endif
 
 #ifdef OBC_WEST
       real,allocatable,dimension(:,:) :: ALK_add_west_avg
       real,allocatable,dimension(:,:) :: DIC_add_west_avg
-      real,allocatable,dimension(:,:) :: ALK_totmass_west_avg
-      real,allocatable,dimension(:,:) :: DIC_totmass_west_avg
+!      real,allocatable,dimension(:,:) :: ALK_totmass_west_avg
+!      real,allocatable,dimension(:,:) :: DIC_totmass_west_avg
+
+      real,allocatable,dimension(:,:) :: ALK_rate_west
+      real,allocatable,dimension(:,:) :: DIC_rate_west
+      real,allocatable,dimension(:,:) :: ALK_alt_rate_west
+      real,allocatable,dimension(:,:) :: DIC_alt_rate_west
+
       real,allocatable,dimension(:,:) :: h_west_avg
       real,allocatable,dimension(:)   :: lat_west
       real,allocatable,dimension(:)   :: lon_west
 
-      real,allocatable,dimension(:,:) :: area_west
+!      real,allocatable,dimension(:,:) :: area_west
 #endif
 
-      public init_upscale, wrt_upscale
+      public init_upscale, wrt_upscale, calc_forcing_rates
 
       contains
 ! ----------------------------------------------------------------------
@@ -145,22 +166,30 @@
       if (.not.north_exchng) then
         allocate(ALK_add_north_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(DIC_add_north_avg(GLOBAL_1DX_ARRAY,1:N) )
-        allocate(ALK_totmass_north_avg(GLOBAL_1DX_ARRAY,1:N) )
-        allocate(DIC_totmass_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(ALK_totmass_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(DIC_totmass_north_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(ALK_rate_north(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_rate_north(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(ALK_alt_rate_north(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_alt_rate_north(GLOBAL_1DX_ARRAY,1:N) )
         allocate(h_north_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(lat_north(GLOBAL_1DX_ARRAY))
         allocate(lon_north(GLOBAL_1DX_ARRAY))
-        allocate(area_north(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(area_north(GLOBAL_1DX_ARRAY,1:N) )
         ALK_add_north_avg(:,:) = 0
         DIC_add_north_avg(:,:) = 0
-        ALK_totmass_north_avg(:,:) = 0
-        DIC_totmass_north_avg(:,:) = 0
+!        ALK_totmass_north_avg(:,:) = 0
+!        DIC_totmass_north_avg(:,:) = 0
+        ALK_rate_north(:,:) = 0
+        DIC_rate_north(:,:) = 0
+        ALK_alt_rate_north(:,:) = 0
+        DIC_alt_rate_north(:,:) = 0
         h_north_avg(:,:) = 0
         lat_north(:) = 0
         lon_north(:) = 0
-        do k=1,N
-          area_north(:,k) = 1.0 / (pm(:,jend+1)*pn(:,jend+1))
-        enddo
+!        do k=1,N
+!          area_north(:,k) = 1.0 / (pm(:,jend+1)*pn(:,jend+1))
+!        enddo
       endif
 #endif
 
@@ -168,22 +197,30 @@
       if (.not.south_exchng) then
         allocate(ALK_add_south_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(DIC_add_south_avg(GLOBAL_1DX_ARRAY,1:N) )
-        allocate(ALK_totmass_south_avg(GLOBAL_1DX_ARRAY,1:N) )
-        allocate(DIC_totmass_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(ALK_totmass_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(DIC_totmass_south_avg(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(ALK_rate_south(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_rate_south(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(ALK_alt_rate_south(GLOBAL_1DX_ARRAY,1:N) )
+        allocate(DIC_alt_rate_south(GLOBAL_1DX_ARRAY,1:N) )
         allocate(h_south_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(lat_south(GLOBAL_1DX_ARRAY))
         allocate(lon_south(GLOBAL_1DX_ARRAY))
-        allocate(area_south(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(area_south(GLOBAL_1DX_ARRAY,1:N) )
         ALK_add_south_avg(:,:) = 0
         DIC_add_south_avg(:,:) = 0
-        ALK_totmass_south_avg(:,:) = 0
-        DIC_totmass_south_avg(:,:) = 0
+!        ALK_totmass_south_avg(:,:) = 0
+!        DIC_totmass_south_avg(:,:) = 0
+        ALK_rate_south(:,:) = 0
+        DIC_rate_south(:,:) = 0
+        ALK_alt_rate_south(:,:) = 0
+        DIC_alt_rate_south(:,:) = 0
         h_south_avg(:,:) = 0
         lat_south(:) = 0
         lon_south(:) = 0
-        do k=1,N
-          area_south(:,k) = 1.0 / (pm(:,jstr-1)*pn(:,jstr-1))
-        enddo
+!        do k=1,N
+!          area_south(:,k) = 1.0 / (pm(:,jstr-1)*pn(:,jstr-1))
+!        enddo
       endif
 #endif
 
@@ -191,22 +228,30 @@
       if (.not.east_exchng) then
         allocate(ALK_add_east_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(DIC_add_east_avg(GLOBAL_1DY_ARRAY,1:N) )
-        allocate(ALK_totmass_east_avg(GLOBAL_1DX_ARRAY,1:N) )
-        allocate(DIC_totmass_east_avg(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(ALK_totmass_east_avg(GLOBAL_1DY_ARRAY,1:N) )
+!        allocate(DIC_totmass_east_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(ALK_rate_east(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(DIC_rate_east(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(ALK_alt_rate_east(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(DIC_alt_rate_east(GLOBAL_1DY_ARRAY,1:N) )
         allocate(h_east_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(lat_east(GLOBAL_1DY_ARRAY))
         allocate(lon_east(GLOBAL_1DY_ARRAY))
-        allocate(area_east(GLOBAL_1DY_ARRAY,1:N) )
+!        allocate(area_east(GLOBAL_1DY_ARRAY,1:N) )
         ALK_add_east_avg(:,:) = 0
         DIC_add_east_avg(:,:) = 0
-        ALK_totmass_east_avg(:,:) = 0
-        DIC_totmass_east_avg(:,:) = 0
+!        ALK_totmass_east_avg(:,:) = 0
+!        DIC_totmass_east_avg(:,:) = 0
+        ALK_rate_east(:,:) = 0
+        DIC_rate_east(:,:) = 0
+        ALK_alt_rate_east(:,:) = 0
+        DIC_alt_rate_east(:,:) = 0
         h_east_avg(:,:) = 0
         lat_east(:) = 0
         lon_east(:) = 0
-        do k=1,N
-          area_east(:,k) = 1.0 / (pm(iend+1,:)*pn(iend+1,:))
-        enddo
+!        do k=1,N
+!          area_east(:,k) = 1.0 / (pm(iend+1,:)*pn(iend+1,:))
+!        enddo
       endif
 #endif
 
@@ -214,26 +259,109 @@
       if (.not.west_exchng) then
         allocate(ALK_add_west_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(DIC_add_west_avg(GLOBAL_1DY_ARRAY,1:N) )
-        allocate(ALK_totmass_west_avg(GLOBAL_1DX_ARRAY,1:N) )
-        allocate(DIC_totmass_west_avg(GLOBAL_1DX_ARRAY,1:N) )
+!        allocate(ALK_totmass_west_avg(GLOBAL_1DY_ARRAY,1:N) )
+!        allocate(DIC_totmass_west_avg(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(ALK_rate_west(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(DIC_rate_west(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(ALK_alt_rate_west(GLOBAL_1DY_ARRAY,1:N) )
+        allocate(DIC_alt_rate_west(GLOBAL_1DY_ARRAY,1:N) )
         allocate(h_west_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(lat_west(GLOBAL_1DY_ARRAY))
         allocate(lon_west(GLOBAL_1DY_ARRAY))
-        allocate(area_west(GLOBAL_1DY_ARRAY,1:N) )
+!        allocate(area_west(GLOBAL_1DY_ARRAY,1:N) )
         ALK_add_west_avg(:,:) = 0
         DIC_add_west_avg(:,:) = 0
-        ALK_totmass_west_avg(:,:) = 0
-        DIC_totmass_west_avg(:,:) = 0
+!        ALK_totmass_west_avg(:,:) = 0
+!        DIC_totmass_west_avg(:,:) = 0
+        ALK_rate_west(:,:) = 0
+        DIC_rate_west(:,:) = 0
+        ALK_alt_rate_west(:,:) = 0
+        DIC_alt_rate_west(:,:) = 0
         h_west_avg(:,:) = 0
         lat_west(:) = 0
         lon_west(:) = 0
-        do k=1,N
-          area_west(:,k) = 1.0 / (pm(istr-1,:)*pn(istr-1,:))
-        enddo
+!        do k=1,N
+!          area_west(:,k) = 1.0 / (pm(istr-1,:)*pn(istr-1,:))
+!        enddo
       endif
 #endif
 
       end subroutine init_upscale  !]
+!----------------------------------------------------------------------
+      subroutine calc_forcing_rates(itrc,k,FX,FE,istr,iend,jstr,jend) ![
+      ! Calculate the instantaneous forcing rate in the halo by measuring the rate at
+      ! which tracer mass is added via advection
+      use param
+      use hidden_mpi_vars
+      implicit none
+
+      ! local
+      integer :: i,j,k
+      integer :: istr, iend, jstr, jend
+      integer :: itrc
+      real, dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX,FE
+
+        if ((itrc == iALK) .or. (itrc == iALK_alt) .or. (itrc == iDIC) .or. (itrc == iDIC_alt)) then
+
+        ! North boundary
+        if (NORTHERN_EDGE) then
+          do i=istr,iend
+            if (itrc == iALK)
+     &        ALK_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+            if (itrc == iALK_alt)
+     &        ALK_alt_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+            if (itrc == iDIC)
+     &        DIC_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+            if (itrc == iDIC_alt)
+     &        DIC_alt_rate_north(i,k) = FE(i,jend+1)*pm(i,jend+1)*pn(i,jend+1)/Hz(i,jend+1,k)
+          enddo
+        endif
+
+        ! South boundary
+        if (SOUTHERN_EDGE) then
+          do i=istr,iend
+            if (itrc == iALK)
+     &        ALK_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+            if (itrc == iALK_alt)
+     &        ALK_alt_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+            if (itrc == iDIC)
+     &        DIC_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+            if (itrc == iDIC_alt)
+     &        DIC_alt_rate_south(i,k) = -FE(i,jstr)*pm(i,jstr-1)*pn(i,jstr-1)/Hz(i,jstr-1,k)
+          enddo
+        endif
+
+            ! East boundary
+        if (EASTERN_EDGE) then
+          do j=jstr,jend
+            if (itrc == iALK)
+     &        ALK_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+            if (itrc == iALK_alt)
+     &        ALK_alt_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+            if (itrc == iDIC)
+     &        DIC_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+            if (itrc == iDIC_alt)
+     &        DIC_alt_rate_east(j,k) = FX(iend+1,j)*pm(iend+1,j)*pn(iend+1,j)/Hz(iend+1,j,k)
+          enddo
+        endif
+
+            ! South boundary
+        if (WESTERN_EDGE) then
+          do j=jstr,jend
+            if (itrc == iALK)
+     &        ALK_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+            if (itrc == iALK_alt)
+     &        ALK_alt_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+            if (itrc == iDIC)
+     &        DIC_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+            if (itrc == iDIC_alt)
+     &        DIC_alt_rate_west(j,k) = -FX(istr,j)*pm(istr-1,j)*pn(istr-1,j)/Hz(istr-1,j,k)
+          enddo
+        endif
+
+        endif ! itrc number
+
+        end subroutine calc_forcing_rates
 !----------------------------------------------------------------------
       subroutine calc_average ![
       ! Update averages
@@ -261,56 +389,64 @@
 #ifdef OBC_NORTH
       if (.not.north_exchng) then
         ALK_add_north_avg(:,:) = ALK_add_north_avg(:,:)*(1-coef) +
-     &  (t(:,jend+1,:,knew,iALK)-t(:,jend+1,:,knew,iALK_alt))*coef
+!     &  (t(:,jend+1,:,knew,iALK)-t(:,jend+1,:,knew,iALK_alt))*coef
+     &  (ALK_rate_north(:,:) - ALK_alt_rate_north(:,:))*coef
         DIC_add_north_avg(:,:) = DIC_add_north_avg(:,:)*(1-coef) +
-     &  (t(:,jend+1,:,knew,iDIC)-t(:,jend+1,:,knew,iDIC_alt))*coef
+!     &  (t(:,jend+1,:,knew,iDIC)-t(:,jend+1,:,knew,iDIC_alt))*coef
+     &  (DIC_rate_north(:,:) - DIC_alt_rate_north(:,:))*coef
         h_north_avg(:,:) = h_north_avg(:,:)*(1-coef) + Hz(:,jend+1,:)*coef
-        ALK_totmass_north_avg(:,:) = ALK_totmass_north_avg(:,:)*(1-coef) +
-     &  Hz(:,jend+1,:)*area_north(:,:)*(t(:,jend+1,:,knew,iALK)-t(:,jend+1,:,knew,iALK_alt))*coef
-        DIC_totmass_north_avg(:,:) = DIC_totmass_north_avg(:,:)*(1-coef) +
-     &  Hz(:,jend+1,:)*area_north(:,:)*(t(:,jend+1,:,knew,iDIC)-t(:,jend+1,:,knew,iDIC_alt))*coef
+!        ALK_totmass_north_avg(:,:) = ALK_totmass_north_avg(:,:)*(1-coef) +
+!     &  Hz(:,jend+1,:)*area_north(:,:)*(t(:,jend+1,:,knew,iALK)-t(:,jend+1,:,knew,iALK_alt))*coef
+!        DIC_totmass_north_avg(:,:) = DIC_totmass_north_avg(:,:)*(1-coef) +
+!     &  Hz(:,jend+1,:)*area_north(:,:)*(t(:,jend+1,:,knew,iDIC)-t(:,jend+1,:,knew,iDIC_alt))*coef
       endif
 #endif
 
 #ifdef OBC_SOUTH
       if (.not.south_exchng) then
         ALK_add_south_avg(:,:) = ALK_add_south_avg(:,:)*(1-coef) +
-     &  (t(:,jstr-1,:,knew,iALK)-t(:,jstr-1,:,knew,iALK_alt))*coef
+!     &  (t(:,jstr-1,:,knew,iALK)-t(:,jstr-1,:,knew,iALK_alt))*coef
+     &  (ALK_rate_south(:,:) - ALK_alt_rate_south(:,:))*coef
         DIC_add_south_avg(:,:) = DIC_add_south_avg(:,:)*(1-coef) +
-     &  (t(:,jstr-1,:,knew,iDIC)-t(:,jstr-1,:,knew,iDIC_alt))*coef
+!     &  (t(:,jstr-1,:,knew,iDIC)-t(:,jstr-1,:,knew,iDIC_alt))*coef
+     &  (DIC_rate_south(:,:) - DIC_alt_rate_south(:,:))*coef
         h_south_avg(:,:) = h_south_avg(:,:)*(1-coef) + Hz(:,jstr-1,:)*coef
-        ALK_totmass_south_avg(:,:) = ALK_totmass_south_avg(:,:)*(1-coef) +
-     &  Hz(:,jstr-1,:)*area_south(:,:)*(t(:,jstr-1,:,knew,iALK)-t(:,jstr-1,:,knew,iALK_alt))*coef
-        DIC_totmass_south_avg(:,:) = DIC_totmass_south_avg(:,:)*(1-coef) +
-     &  Hz(:,jstr-1,:)*area_south(:,:)*(t(:,jstr-1,:,knew,iDIC)-t(:,jstr-1,:,knew,iDIC_alt))*coef
+!        ALK_totmass_south_avg(:,:) = ALK_totmass_south_avg(:,:)*(1-coef) +
+!     &  Hz(:,jstr-1,:)*area_south(:,:)*(t(:,jstr-1,:,knew,iALK)-t(:,jstr-1,:,knew,iALK_alt))*coef
+!        DIC_totmass_south_avg(:,:) = DIC_totmass_south_avg(:,:)*(1-coef) +
+!     &  Hz(:,jstr-1,:)*area_south(:,:)*(t(:,jstr-1,:,knew,iDIC)-t(:,jstr-1,:,knew,iDIC_alt))*coef
       endif
 #endif
 
 #ifdef OBC_EAST
       if (.not.east_exchng) then
-        ALK_add_east_avg(j0:j1,:) = ALK_add_east_avg(j0:j1,:)*(1-coef) +
-     &  (t(iend+1,j0:j1,:,knew,iALK)-t(iend+1,j0:j1,:,knew,iALK_alt))*coef
+        ALK_add_east_avg(:,:) = ALK_add_east_avg(:,:)*(1-coef) +
+!     &  (t(iend+1,j0:j1,:,knew,iALK)-t(iend+1,j0:j1,:,knew,iALK_alt))*coef
+     &  (ALK_rate_east(:,:) - ALK_alt_rate_east(:,:))*coef
         DIC_add_east_avg(:,:) = DIC_add_east_avg(:,:)*(1-coef) +
-     &  (t(iend+1,:,:,knew,iDIC)-t(iend+1,:,:,knew,iDIC_alt))*coef
+!     &  (t(iend+1,:,:,knew,iDIC)-t(iend+1,:,:,knew,iDIC_alt))*coef
+     &  (DIC_rate_east(:,:) - DIC_alt_rate_east(:,:))*coef
         h_east_avg(:,:) = h_east_avg(:,:)*(1-coef) + Hz(iend+1,:,:)*coef
-        ALK_totmass_east_avg(:,:) = ALK_totmass_east_avg(:,:)*(1-coef) +
-     &  Hz(iend+1,:,:)*area_east(:,:)*(t(iend+1,:,:,knew,iALK)-t(iend+1,:,:,knew,iALK_alt))*coef
-        DIC_totmass_east_avg(:,:) = DIC_totmass_east_avg(:,:)*(1-coef) +
-     &  Hz(iend+1,:,:)*area_east(:,:)*(t(iend+1,:,:,knew,iDIC)-t(iend+1,:,:,knew,iDIC_alt))*coef
+!        ALK_totmass_east_avg(:,:) = ALK_totmass_east_avg(:,:)*(1-coef) +
+!     &  Hz(iend+1,:,:)*area_east(:,:)*(t(iend+1,:,:,knew,iALK)-t(iend+1,:,:,knew,iALK_alt))*coef
+!        DIC_totmass_east_avg(:,:) = DIC_totmass_east_avg(:,:)*(1-coef) +
+!     &  Hz(iend+1,:,:)*area_east(:,:)*(t(iend+1,:,:,knew,iDIC)-t(iend+1,:,:,knew,iDIC_alt))*coef
       endif
 #endif
 
 #ifdef OBC_WEST
       if (.not.west_exchng) then
         ALK_add_west_avg(:,:) = ALK_add_west_avg(:,:)*(1-coef) +
-     &  (t(istr-1,:,:,knew,iALK)-t(istr-1,:,:,knew,iALK_alt))*coef
+!     &  (t(istr-1,:,:,knew,iALK)-t(istr-1,:,:,knew,iALK_alt))*coef
+     &  (ALK_rate_west(:,:) - ALK_alt_rate_west(:,:))*coef
         DIC_add_west_avg(:,:) = DIC_add_west_avg(:,:)*(1-coef) +
-     &  (t(istr-1,:,:,knew,iDIC)-t(istr-1,:,:,knew,iDIC_alt))*coef
+!     &  (t(istr-1,:,:,knew,iDIC)-t(istr-1,:,:,knew,iDIC_alt))*coef
+     &  (DIC_rate_west(:,:) - DIC_alt_rate_west(:,:))*coef
         h_west_avg(:,:) = h_west_avg(:,:)*(1-coef) + Hz(istr-1,:,:)*coef
-        ALK_totmass_west_avg(:,:) = ALK_totmass_west_avg(:,:)*(1-coef) +
-     &  Hz(istr-1,:,:)*area_west(:,:)*(t(istr-1,:,:,knew,iALK)-t(istr-1,:,:,knew,iALK_alt))*coef
-        DIC_totmass_west_avg(:,:) = DIC_totmass_west_avg(:,:)*(1-coef) +
-     &  Hz(istr-1,:,:)*area_west(:,:)*(t(istr-1,:,:,knew,iDIC)-t(istr-1,:,:,knew,iDIC_alt))*coef
+!        ALK_totmass_west_avg(:,:) = ALK_totmass_west_avg(:,:)*(1-coef) +
+!     &  Hz(istr-1,:,:)*area_west(:,:)*(t(istr-1,:,:,knew,iALK)-t(istr-1,:,:,knew,iALK_alt))*coef
+!        DIC_totmass_west_avg(:,:) = DIC_totmass_west_avg(:,:)*(1-coef) +
+!     &  Hz(istr-1,:,:)*area_west(:,:)*(t(istr-1,:,:,knew,iDIC)-t(istr-1,:,:,knew,iDIC_alt))*coef
       endif
 #endif
 
@@ -351,13 +487,13 @@
         if (.not.north_exchng) then
           call ncwrite(ncid,'ALK_add_north',ALK_add_north_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_north',DIC_add_north_avg(i0:i1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'ALK_totmass_north',ALK_totmass_north_avg(i0:i1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'DIC_totmass_north',DIC_totmass_north_avg(i0:i1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'ALK_totmass_north',ALK_totmass_north_avg(i0:i1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'DIC_totmass_north',DIC_totmass_north_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_north',h_north_avg(i0:i1,:),(/1,1,record_uscl/))
           ALK_add_north_avg(:,:) = 0
           DIC_add_north_avg(:,:) = 0
-          ALK_totmass_north_avg(:,:) = 0
-          DIC_totmass_north_avg(:,:) = 0
+!          ALK_totmass_north_avg(:,:) = 0
+!          DIC_totmass_north_avg(:,:) = 0
           h_north_avg(:,:) = 0
         endif
 #endif
@@ -366,13 +502,13 @@
         if (.not.south_exchng) then
           call ncwrite(ncid,'ALK_add_south',ALK_add_south_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_south',DIC_add_south_avg(i0:i1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'ALK_totmass_south',ALK_totmass_south_avg(i0:i1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'DIC_totmass_south',DIC_totmass_south_avg(i0:i1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'ALK_totmass_south',ALK_totmass_south_avg(i0:i1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'DIC_totmass_south',DIC_totmass_south_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_south',h_south_avg(i0:i1,:),(/1,1,record_uscl/))
           ALK_add_south_avg(:,:) = 0
           DIC_add_south_avg(:,:) = 0
-          ALK_totmass_south_avg(:,:) = 0
-          DIC_totmass_south_avg(:,:) = 0
+!          ALK_totmass_south_avg(:,:) = 0
+!          DIC_totmass_south_avg(:,:) = 0
           h_south_avg(:,:) = 0
         endif
 #endif
@@ -381,13 +517,13 @@
         if (.not.east_exchng) then
           call ncwrite(ncid,'ALK_add_east',ALK_add_east_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_east',DIC_add_east_avg(j0:j1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'ALK_totmass_east',ALK_totmass_east_avg(j0:j1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'DIC_totmass_east',DIC_totmass_east_avg(j0:j1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'ALK_totmass_east',ALK_totmass_east_avg(j0:j1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'DIC_totmass_east',DIC_totmass_east_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_east',h_east_avg(j0:j1,:),(/1,1,record_uscl/))
           ALK_add_east_avg(:,:) = 0
           DIC_add_east_avg(:,:) = 0
-          ALK_totmass_east_avg(:,:) = 0
-          DIC_totmass_east_avg(:,:) = 0
+!          ALK_totmass_east_avg(:,:) = 0
+!          DIC_totmass_east_avg(:,:) = 0
           h_east_avg(:,:) = 0
         endif
 #endif
@@ -396,13 +532,13 @@
         if (.not.west_exchng) then
           call ncwrite(ncid,'ALK_add_west',ALK_add_west_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_west',DIC_add_west_avg(j0:j1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'ALK_totmass_west',ALK_totmass_west_avg(j0:j1,:),(/1,1,record_uscl/))
-          call ncwrite(ncid,'DIC_totmass_west',DIC_totmass_west_avg(j0:j1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'ALK_totmass_west',ALK_totmass_west_avg(j0:j1,:),(/1,1,record_uscl/))
+!          call ncwrite(ncid,'DIC_totmass_west',DIC_totmass_west_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_west',h_west_avg(j0:j1,:),(/1,1,record_uscl/))
           ALK_add_west_avg(:,:) = 0
           DIC_add_west_avg(:,:) = 0
-          ALK_totmass_west_avg(:,:) = 0
-          DIC_totmass_west_avg(:,:) = 0
+!          ALK_totmass_west_avg(:,:) = 0
+!          DIC_totmass_west_avg(:,:) = 0
           h_west_avg(:,:) = 0
         endif
 #endif
@@ -456,22 +592,22 @@
         varid = nccreate(ncid,'ALK_add_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on northern boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK))//'s-1')
 
         varid = nccreate(ncid,'DIC_add_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'DIC additionality on northern boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC))//'s-1')
 
-        varid = nccreate(ncid,'ALK_totmass_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of ALK additionality on northern boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'ALK_totmass_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of ALK additionality on northern boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
-        varid = nccreate(ncid,'DIC_totmass_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of DIC additionality on northern boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'DIC_totmass_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of DIC additionality on northern boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
         varid = nccreate(ncid,'h_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
@@ -497,22 +633,22 @@
         varid = nccreate(ncid,'ALK_add_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on southern boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK))//'s-1')
 
         varid = nccreate(ncid,'DIC_add_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'DIC additionality on southern boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC))//'s-1')
 
-        varid = nccreate(ncid,'ALK_totmass_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of ALK additionality on southern boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'ALK_totmass_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of ALK additionality on southern boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
-        varid = nccreate(ncid,'DIC_totmass_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of DIC additionality on southern boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'DIC_totmass_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of DIC additionality on southern boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
         varid = nccreate(ncid,'h_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
@@ -538,22 +674,22 @@
         varid = nccreate(ncid,'ALK_add_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on eastern boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK))//'s-1')
 
         varid = nccreate(ncid,'DIC_add_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'DIC additionality on eastern boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC))//'s-1')
 
-        varid = nccreate(ncid,'ALK_totmass_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of ALK additionality on eastern boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'ALK_totmass_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of ALK additionality on eastern boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
-        varid = nccreate(ncid,'DIC_totmass_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of DIC additionality on eastern boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'DIC_totmass_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of DIC additionality on eastern boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
         varid = nccreate(ncid,'h_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
@@ -579,22 +715,22 @@
         varid = nccreate(ncid,'ALK_add_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on western boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iALK))//'s-1')
 
         varid = nccreate(ncid,'DIC_add_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'DIC additionality on western boundary')
-        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC)))
+        ierr = nf90_put_att(ncid,varid,'units',trim(t_units(iDIC))//'s-1')
 
-        varid = nccreate(ncid,'ALK_totmass_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of ALK additionality on western boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'ALK_totmass_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of ALK additionality on western boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
-        varid = nccreate(ncid,'DIC_totmass_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
-        ierr = nf90_put_att(ncid,varid,'long_name',
-     &  'total mass of DIC additionality on western boundary')
-        ierr = nf90_put_att(ncid,varid,'units','mmol')
+!        varid = nccreate(ncid,'DIC_totmass_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
+!        ierr = nf90_put_att(ncid,varid,'long_name',
+!     &  'total mass of DIC additionality on western boundary')
+!        ierr = nf90_put_att(ncid,varid,'units','mmol')
 
         varid = nccreate(ncid,'h_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',

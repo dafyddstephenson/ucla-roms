@@ -54,7 +54,7 @@
       !!! Variables used only For vertical profiles
       real, allocatable, dimension(:,:,:)        :: cdr_flx3d   ! cdr tracer flux (layerwise)
       real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
-      real, allocatable, dimension(:,:)          :: cdr_tot_mass      ! layer thicknesses of CDR release
+!      real, allocatable, dimension(:,:)          :: cdr_tot_mass      ! layer thicknesses of CDR release
       integer                                    :: ncdr_prof   ! number of release locations
       integer                                    :: N_src       ! number of layers from source file
 
@@ -100,7 +100,7 @@
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         else
           call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
-          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! set total mass of ALK and DIC to be added at current time
+!          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! set total mass of ALK and DIC to be added at current time
           call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
 
           call create_cdr_vertical_structure
@@ -168,7 +168,7 @@
           ncdr = ncdr_prof
           allocate(cdr_flx3d(ncdr,2,N_src)); cdr_flx3d(:,:,:) = 0
           allocate(cdr_hz(ncdr,N_src));       cdr_hz(:,:) = 0
-          allocate(cdr_tot_mass(ncdr,2));       cdr_tot_mass(:,:) = 0
+!          allocate(cdr_tot_mass(ncdr,2));       cdr_tot_mass(:,:) = 0
         else
           ncdr = ncdr_parm
           call ncread(ncid,cdr_loc_dep,cdr_dep)
@@ -272,7 +272,7 @@
 
         if (depth_profiles == 'T') then
           call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
-          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! initialize total mass of ALK and DIC to be added at current time
+!          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! initialize total mass of ALK and DIC to be added at current time
           call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
         endif
 
@@ -415,8 +415,7 @@
       real, dimension(nz) :: H_new
       ! These are the total fluxes/m^2 in this column. These arrays are mostly used for checking
       ! that the remapping is conservative
-      real, dimension(2) :: total_mass_orig
-      real, dimension(2) :: total_mass_new
+      real, dimension(2) :: total_conc_new
       real :: H_new_tot
       real :: H_orig_tot
       real :: tot_dist
@@ -439,10 +438,11 @@
       real, dimension(2,nz) :: cdrflx_tmp
 
       ! Array to hold the tracer mass in each cell
-      real, dimension(2,nz) :: cellwise_mass
+      real, dimension(2,nz) :: cellwise_conc
 
-      total_mass_orig = 0.0
-      total_mass_new = 0.0
+      real :: cc_new, cc_old1, cc_old2
+
+      total_conc_new = 0.0
       H_new_tot = 0.0
       H_orig_tot = 0.0
       tot_dist = 0.0
@@ -452,7 +452,7 @@
 
       definite_integral(:,:) = 0.0
       cdrflx_tmp(:,:) = 0.0
-      cellwise_mass(:,:) = 0.0
+      cellwise_conc(:,:) = 0.0
 
 
       call calc_interface_values(cdr_flx3d(icdr,:,:), cdr_hz(icdr,:), interface_values)
@@ -555,21 +555,38 @@
         enddo
       enddo
 
-      do trc = 1,2
-        do k = 1,nz
-          cellwise_mass(trc,k) = cdrflx_tmp(trc,k) * H_new(k) / (pm(i,j)*pn(i,j))
-          total_mass_new(trc) = total_mass_new(trc) + cellwise_mass(trc,k)
-        enddo
 
-        if (total_mass_new(trc) > 0) then
-          do k = 1,nz
-            cdr_prf(cidx,cdr_inds(trc),k) = cellwise_mass(trc,k) / total_mass_new(trc)
-          enddo
-        endif
 
-      enddo
-      cdr_flx(icdr,iALK) = cdr_tot_mass(icdr,1)
-      cdr_flx(icdr,iDIC) = cdr_tot_mass(icdr,2)
+!        do k = 1,nz
+!          cc_new = cc_new + cdrflx_tmp(1,k) * H_new(k)
+!          cc_old1 = cc_old1 + cdr_flx3d(icdr,1,k)*cdr_hz(icdr,k)
+!          cc_old2 = cc_old2 + cdr_flx3d(icdr,1,k)*H_orig(k)
+!        enddo
+!
+!        print *, "COMPARE", mynode, cc_new, cc_old1, cc_old2
+
+       do trc = 1,2
+         do k = 1,nz
+           cdr_prf(cidx,cdr_inds(trc),k) = cdrflx_tmp(trc,k)
+         enddo
+       enddo
+!      do trc = 1,2
+!        do k = 1,nz
+!          cellwise_conc(trc,k) = cdrflx_tmp(trc,k) * H_new(k) / (pm(i,j)*pn(i,j))
+!          total_conc_new(trc) = total_conc_new(trc) + cellwise_conc(trc,k)
+!        enddo
+!
+!        if (total_conc_new(trc) /= 0) then
+!          do k = 1,nz
+!            cdr_prf(cidx,cdr_inds(trc),k) = cellwise_conc(trc,k) / total_conc_new(trc)
+!         enddo
+!        endif
+!
+!      enddo
+       cdr_flx(icdr,iALK) = 1.0 !cdr_tot_mass(icdr,1)
+       cdr_flx(icdr,iDIC) = 1.0 !cdr_tot_mass(icdr,2)
+
+      !print *, "YAY", mynode, icdr, cdr_flx(icdr,iALK), cellwise_conc(1,:), total_conc_new(1), sum(cdr_prf(cidx,cdr_inds(1),:))
 
       end subroutine remap_src_to_grid
 ! ----------------------------------------------------------------------
@@ -777,8 +794,8 @@
           allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
           nc_cdrhz%ungridded = .true.
           nc_cdrhz%ungridded_forcing_file = cdr_file
-          nc_tot_mass%ungridded = .true.
-          nc_tot_mass%ungridded_forcing_file = cdr_file
+!          nc_tot_mass%ungridded = .true.
+!          nc_tot_mass%ungridded_forcing_file = cdr_file
           nc_cdrflx3d%ungridded = .true.
           nc_cdrflx3d%ungridded_forcing_file = cdr_file
         endif
