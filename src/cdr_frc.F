@@ -790,7 +790,7 @@
       else
         if (depth_profiles=='T') then
           allocate(nc_cdrhz%vdata(ncdr,N_src,2))
-          allocate(nc_tot_mass%vdata(ncdr,2,2))
+!          allocate(nc_tot_mass%vdata(ncdr,2,2))
           allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
           nc_cdrhz%ungridded = .true.
           nc_cdrhz%ungridded_forcing_file = cdr_file
