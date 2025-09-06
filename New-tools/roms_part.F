@@ -1311,11 +1311,11 @@
             if (index(dname(idm),'time') > 0)    dsize(idm)=0
             ierr = nf90_inq_dimid(ncid,dname(idm),did(idm))
           enddo
-
           if (ndims<=1) goto 99
-
+     !     ierr=nf90_def_var(ncid,vname,xtype,did(1:ndims),vid,
+     !&            chunksizes = csizes(1:ndims),
+     !&            deflate_level=1, shuffle=.true.)
           ierr=nf90_def_var(ncid,vname,xtype,did(1:ndims),vid,
-     &            chunksizes = csizes(1:ndims),
      &            deflate_level=1, shuffle=.true.)
           if (ierr/=nf90_noerr)
      &      call handle_ierr(ierr,'creating joined var: ',trim(vname) )
@@ -1326,7 +1326,6 @@
             if (ierr/=nf90_noerr)
      &       call handle_ierr(ierr,'creating joined var: ',trim(vname) )
           endif
-
   99      if (((ncinfo%xtype(ivar).eq.nf90_double).and.(ndims<=1))
      &       .or.((ncinfo%xtype(ivar).eq.nf90_float).and.(ndims<=1)))then
             if (ndims==0) then
@@ -1337,7 +1336,6 @@
             if (ierr/=nf90_noerr)
      &       call handle_ierr(ierr,'creating joined var: ',trim(vname) )
           endif
-
           ierr = nf90_var_par_access(ncid, vid, nf90_collective)
           do iatt=1,natts
             ! input attribute based on type
@@ -1347,7 +1345,6 @@
               ierr = nf90_put_att(ncid,vid,attname(iatt),attvalue(iatt))
             endif
           enddo
-
         enddo
 
         ierr = nf90_close(ncid)
