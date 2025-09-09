@@ -172,7 +172,7 @@
       logical, intent(in) :: avg
 
       ! local
-      character(len=99),save :: fname_his,fname_avg
+      character(len=max_name_size),save :: fname_his,fname_avg
       integer                :: itrc, itavg, ierr
       logical,save           :: first_step_avg=.true.
       logical,save           :: first_step_his=.true.
@@ -278,7 +278,7 @@
       implicit none
 #if defined (BEC2_DIAG) || defined (MARBL_DIAGS)
       ! local
-      character(len=99),save :: fname_his,fname_avg
+      character(len=max_name_size),save :: fname_his,fname_avg
       integer                :: itrc, ierr, idiag
       logical,save           :: first_step_dia_avg=.true.
       logical,save           :: first_step_dia_his=.true.
@@ -384,7 +384,7 @@
       implicit none
 
       !input/output
-      character(len=99),intent(out) :: fname
+      character(len=max_name_size),intent(out) :: fname
       logical,          intent(in)  :: avg                 ! his or average file
 
       ! local
@@ -409,7 +409,7 @@
       implicit none
 
       !input/output
-      character(len=99),intent(out) :: fname
+      character(len=max_name_size),intent(out) :: fname
       logical,          intent(in)  :: avg                 ! his or average file
 
       ! local
