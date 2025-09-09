@@ -16,7 +16,7 @@ c--# define PRINT_HOSTNAME
       integer,dimension(2) :: subdompos
       integer,dimension(4) :: partition 
       character(len=128) :: fname
-
+      logical :: mpi_masking_active
       integer off_xi,off_eta, conv_ijnode_to_rank,check_neighbor
 # ifdef PRINT_HOSTNAME
       integer status(MPI_STATUS_SIZE), blank
@@ -27,6 +27,7 @@ c--# define PRINT_HOSTNAME
       exc_call_count=0
 
       ! read in gridfile to check if mpi masking is present
+#ifndef ANA_GRID
       ierr=nf90_open(grdname,nf90_nowrite,ncid)
        if (ierr/=nf90_noerr) call handle_ierr(ierr)
       newpart=nf90_get_att(ncid,nf90_global,"neighbors",neighbors)
@@ -37,12 +38,17 @@ c--# define PRINT_HOSTNAME
         ! grab neighbors & i/j nodes
         ierr=nf90_get_att(ncid,nf90_global,"neighbors",neighbors)
         ierr=nf90_get_att(ncid,nf90_global,"subdompos",subdompos)
+        mpi_masking_active=.true.
         print*,'MPI_SETUP: MASKING ON'
       else
         NNODES=NP_XI*NP_ETA
+        mpi_masking_active=.false.
       endif
       ierr=nf90_close(ncid)
-
+#else
+      NNODES=NP_XI*NP_ETA
+      mpi_masking_active=.false.
+#endif /*ANA_GRID*/
 
       if (nsize==NNODES) then       ! Check whether the number of
                                     ! nodes specified by -np argument
@@ -50,7 +56,7 @@ c--# define PRINT_HOSTNAME
         inode=mynode/NP_ETA         ! of mpiexec matches the parameter
         jnode=mynode-inode*NP_ETA   ! settings in the code, and find
 # else
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
         inode=subdompos(1)
         jnode=subdompos(2)
         else
@@ -63,7 +69,7 @@ c--# define PRINT_HOSTNAME
         west_msg_exch=.true.        ! Determine whether the subdomain
         east_msg_exch=.true.        ! has neighbors on the four sides
 # else
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
         west_msg_exch=(neighbors(7)/=-99)
         east_msg_exch=(neighbors(3)/=-99)
         else
@@ -81,7 +87,7 @@ c--# define PRINT_HOSTNAME
         south_msg_exch=.true.       ! via exchange of computational
         north_msg_exch=.true.       ! margins, so that in this case
 # else
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
         south_msg_exch=(neighbors(5)/=-99)
         north_msg_exch=(neighbors(1)/=-99)
         else
@@ -99,7 +105,7 @@ c--# define PRINT_HOSTNAME
 ! and corners. These are needed to designate MPI ranks for sources of
 ! incoming and targets for outgoing messages.
 
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
          p_E=check_neighbor(neighbors(3))
         p_NE=check_neighbor(neighbors(2))
         p_N =check_neighbor(neighbors(1))
