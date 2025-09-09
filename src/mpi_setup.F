@@ -13,7 +13,7 @@
       integer,dimension(2) :: subdompos
       integer,dimension(4) :: partition
       character(len=128) :: fname
-
+      logical :: mpi_masking_active
       integer off_xi,off_eta, conv_ijnode_to_rank,check_neighbor
 
       ! read in gridfile to check if mpi masking is present
@@ -31,6 +31,7 @@
         ! grab neighbors & i/j nodes
         ierr=nf90_get_att(ncid,nf90_global,"neighbors",neighbors)
         ierr=nf90_get_att(ncid,nf90_global,"subdompos",subdompos)
+        mpi_masking_active=.true.
         print*,'MPI_SETUP: MASKING ON'
       else
         nnodes=NP_XI*NP_ETA
@@ -44,7 +45,7 @@
         inode=mynode/NP_ETA         ! of mpiexec matches the parameter
         jnode=mynode-inode*NP_ETA   ! settings in the code, and find
 # else
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
         inode=subdompos(1)
         jnode=subdompos(2)
         else
@@ -57,7 +58,7 @@
         west_msg_exch=.true.        ! Determine whether the subdomain
         east_msg_exch=.true.        ! has neighbors on the four sides
 # else
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
         west_msg_exch=(neighbors(7)/=-99)
         east_msg_exch=(neighbors(3)/=-99)
         else
@@ -75,7 +76,7 @@
         south_msg_exch=.true.       ! via exchange of computational
         north_msg_exch=.true.       ! margins, so that in this case
 # else
-        if (newpart.eq.nf90_noerr) then
+        if (mpi_masking_active) then
         south_msg_exch=(neighbors(5)/=-99)
         north_msg_exch=(neighbors(1)/=-99)
         else
