@@ -32,9 +32,7 @@
       real   ,public,allocatable,dimension(:,:) :: cdr_prf      ! cdr fractions
       integer,public,allocatable,dimension(:)   :: cdr_iloc     ! cdr local i location
       integer,public,allocatable,dimension(:)   :: cdr_jloc     ! cdr local j location
-      real   ,public,allocatable,dimension(:)   :: cdr_icdr     ! cdr release number
-
-      integer,public  :: icdr,cidx !   index for looping through cdr locations
+      integer,public,allocatable,dimension(:)   :: cdr_icdr     ! cdr release number
 
       real,public,dimension(ncdr)           :: cdr_vol      ! cdr volume
       real,public,dimension(ncdr,nt)        :: cdr_flx      ! cdr tracer flux
@@ -70,7 +68,7 @@
       implicit none
 
       ! local
-      integer :: i,j
+      integer :: i,j, icdr
 
       if (.not. init_cdr_done) call init_cdr_frc
 
@@ -110,17 +108,17 @@
       implicit none
 
       ! local
-      integer :: ierr,ncid,i,j,k
+      integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
+      integer, dimension(2) :: lmi
       real :: vint,arg
       real :: local_int,global_int
       real, dimension(nz) :: arg_nz
       real :: local_min_val
-      integer, dimension(2) :: lmi
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
       real,dimension(:,:,:),allocatable :: frac
-      integer :: cidx_start
+
 
       call init_arrays_cdr
 
@@ -132,7 +130,8 @@
 
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
         if(ierr/=0)
-     &      call handle_ierr(ierr,'init_cdr_frc:: Cant open cdr forcing file')
+     &      call handle_ierr(ierr,
+     &       'init_cdr_frc:: Cant open cdr forcing file')
 
         call ncread(ncid,cdr_loc_lon,cdr_lon)
         call ncread(ncid,cdr_loc_lat,cdr_lat)
@@ -174,9 +173,10 @@
             print *, 'at point', lmi
             print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
             print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
-            if ((rmask(lmi(1),lmi(2))==0) .and. (cdr_hsc(icdr) == 0)) then
-              error stop 'ERROR: single-point CDR release requested on a land point'
-            endif
+c$$$            if ((rmask(lmi(1),lmi(2))==0) .and. (cdr_hsc(icdr) == 0)) then
+c$$$              error stop
+c$$$     &           'ERROR: point CDR release requested on a land point'
+c$$$            endif
           endif
 
 
@@ -206,6 +206,24 @@
                 cidx = cidx+1
               endif
             endif
+            if (frac(lmi(1),lmi(2),icdr) ==1 ) then
+               if (rmask(lmi(1),lmi(2))==0) then
+                  print *, "release on dry point", icdr
+               elseif (rmask(lmi(1),lmi(2))==1) then
+                  print *, "release on wet point", icdr
+               end if
+            end if
+
+
+c$$$            end if
+c$$$            if ((rmask(lmi(1),lmi(2))==0) .and.
+c$$$     &           (frac(lmi(1),lmi(2),icdr) == 1)) then
+c$$$               print *, 'release on land:', icdr
+c$$$              !error stop 'ERROR: CDR release is on land.'
+c$$$            elseif (frac(lmi(1),lmi(2),icdr)==1) then
+c$$$               print *, 'release at sea', icdr
+c$$$            endif
+
 
           endif ! cdr_hsc(icdr) = 0
           cidx_start = cidx
