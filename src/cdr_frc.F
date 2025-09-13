@@ -47,8 +47,6 @@
       character(len=11) :: cdr_vol_name = 'cdr_volume'!! stored in a forcing file
       character(len=11) :: cdr_trc_name = 'cdr_tracer'!! stored in a forcing file
       character(len=9)  :: cdr_tim_name = 'cdr_time'  !! stored in a forcing file
-!     character(len=5)  :: ncdr_dim_name = 'ncdr'      !! dimension name for number of cdrs in file
-!     character(len=8)  :: ntrc_dim_name = 'ntracers'   !! dimension name for number of tracers in file
 
 
       logical :: init_cdr_done = .false.
@@ -229,13 +227,6 @@
           end if
           call MPI_Barrier(MPI_COMM_WORLD, ierr)
        end if
-c$$$       if (any(bad_releases)) then
-c$$$          
-c$$$          print *, "ERROR the following CDR releases are on land",
-c$$$     &            pack([(i,i=1,ncdr)], bad_releases)
-c$$$          error stop
-c$$$       end if
-
             
 
         cdr_nprf = cidx
