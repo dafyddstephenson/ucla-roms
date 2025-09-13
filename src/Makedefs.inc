@@ -183,8 +183,7 @@ endif
 # Apply debug, strict, vtune, or grof settings for Intel compilers
 ifeq ($(COMPILER),$(filter ifort intel, $(COMPILER)))
     ifeq ($(BUILD_MODE),debug)
-        FFLAGS = -O0 -g -traceback -check all
-        KEEP_PPSRC=true
+        FFLAGS = -g -traceback -check all
     else ifeq ($(BUILD_MODE),strict)
         FFLAGS += -fp-model strict
     else ifeq ($(BUILD_MODE),vtune)
@@ -198,8 +197,7 @@ endif
 ifeq ($(COMPILER),gnu)
     FFLAGS = -O3 -fallow-argument-mismatch
     ifeq ($(BUILD_MODE),debug)
-         KEEP_PPSRC=true
-        FFLAGS = -O0 -fallow-argument-mismatch -g -fbacktrace -fcheck=all
+        FFLAGS = -fallow-argument-mismatch -g -fbacktrace -fcheck=all
     endif
 endif
 
