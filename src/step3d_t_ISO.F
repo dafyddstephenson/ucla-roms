@@ -826,10 +826,6 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
           ! Loop over cdr release locations in this subdomain
           ! The global sum over all cdr_prf should be 1.
           ! cdr_flux unit is [C/s]
-c$$$           print *,"RANK",mynode,
-c$$$     &          "all CDR indices:", cdr_icdr(:), "NPRF", cdr_nprf
-c$$$           print *, "RANK",mynode,"SHAPE OF cdr_icdr:", SHAPE(cdr_icdr),
-c$$$     &          "CDR_NPRF", cdr_nprf
           do cidx=1,cdr_nprf
             icdr = cdr_icdr(cidx)
             i = cdr_iloc(cidx)
