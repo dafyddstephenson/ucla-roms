@@ -208,10 +208,10 @@
      &         (rmask(lmi(1),lmi(2))==0)) then
              bad_releases(icdr) = .true.
           end if
-          
+
           cidx_start = cidx
        enddo                    ! icdr
-       
+
 ! Report any releases on land and stop
        call MPI_Allreduce(MPI_IN_PLACE, bad_releases, ncdr, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierr)
 
@@ -223,11 +223,11 @@
              print *, "(Note 1-indexing):",
      &            pack([(i,i=1,ncdr)], bad_releases)
              print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)             
+             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
           end if
           call MPI_Barrier(MPI_COMM_WORLD, ierr)
        end if
-            
+
 
         cdr_nprf = cidx
 
