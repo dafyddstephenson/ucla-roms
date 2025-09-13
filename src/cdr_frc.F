@@ -109,6 +109,7 @@
 
       ! local
       integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
+      logical, dimension(ncdr)  :: bad_releases
       integer, dimension(2) :: lmi
       real :: vint,arg
       real :: local_int,global_int
@@ -119,7 +120,7 @@
       real,dimension(:,:)  ,allocatable :: dist
       real,dimension(:,:,:),allocatable :: frac
 
-
+      bad_releases(:) = .false.
       call init_arrays_cdr
 
       if (cdr_analytical) then
@@ -173,10 +174,6 @@
             print *, 'at point', lmi
             print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
             print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
-c$$$            if ((rmask(lmi(1),lmi(2))==0) .and. (cdr_hsc(icdr) == 0)) then
-c$$$              error stop
-c$$$     &           'ERROR: point CDR release requested on a land point'
-c$$$            endif
           endif
 
 
@@ -205,30 +202,41 @@ c$$$            endif
                 frac(lmi(1),lmi(2),icdr) = 1
                 cidx = cidx+1
               endif
-            endif
-            if (frac(lmi(1),lmi(2),icdr) ==1 ) then
-               if (rmask(lmi(1),lmi(2))==0) then
-                  print *, "release on dry point", icdr
-               elseif (rmask(lmi(1),lmi(2))==1) then
-                  print *, "release on wet point", icdr
-               end if
-            end if
-
-
-c$$$            end if
-c$$$            if ((rmask(lmi(1),lmi(2))==0) .and.
-c$$$     &           (frac(lmi(1),lmi(2),icdr) == 1)) then
-c$$$               print *, 'release on land:', icdr
-c$$$              !error stop 'ERROR: CDR release is on land.'
-c$$$            elseif (frac(lmi(1),lmi(2),icdr)==1) then
-c$$$               print *, 'release at sea', icdr
-c$$$            endif
-
-
+           endif
           endif ! cdr_hsc(icdr) = 0
-          cidx_start = cidx
 
-        enddo ! icdr
+          ! Check for releases on land
+          if ((frac(lmi(1),lmi(2),icdr) ==1 ) .and.
+     &         (rmask(lmi(1),lmi(2))==0)) then
+             bad_releases(icdr) = .true.
+          end if
+          
+          cidx_start = cidx
+       enddo                    ! icdr
+       
+! Report any releases on land and stop
+       call MPI_Allreduce(MPI_IN_PLACE, bad_releases, ncdr, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierr)
+
+!     Now every rank has the same bad_releases array
+       if (any(bad_releases)) then
+          if (mynode == 0) then
+             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+             print *, "ERROR: the following CDR releases are on land"
+             print *, "(Note 1-indexing):",
+     &            pack([(i,i=1,ncdr)], bad_releases)
+             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)             
+          end if
+          call MPI_Barrier(MPI_COMM_WORLD, ierr)
+       end if
+c$$$       if (any(bad_releases)) then
+c$$$          
+c$$$          print *, "ERROR the following CDR releases are on land",
+c$$$     &            pack([(i,i=1,ncdr)], bad_releases)
+c$$$          error stop
+c$$$       end if
+
+            
 
         cdr_nprf = cidx
 
