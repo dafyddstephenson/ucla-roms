@@ -574,8 +574,8 @@
       integer :: ivar,nvars,xtype
       character(len=50) :: vname
       type(ncstructure)  :: ncinfo
-      character(len=10),dimension(5)  ::dname
-      integer         ,dimension(5)  ::dsize
+      character(len=10),dimension(10)  ::dname
+      integer         ,dimension(10)  ::dsize
       character(len=20),dimension(10) ::attname
       character(len=200),dimension(10)::attvalue
       real,dimension(10)              ::attparam
@@ -1191,12 +1191,12 @@
       integer :: ivar,nvars,xtype
       type(ncstructure)  :: ncinfo
       character(len=50) :: vname
-      character(len=7),dimension(5)  :: dname
-      integer         ,dimension(5)  :: dsize
-      integer         ,dimension(5)  :: did
-      integer         ,dimension(5)  :: csizes
-      character(len=20),dimension(5) :: attname
-      character(len=200),dimension(8):: attvalue
+      character(len=7),dimension(10)  :: dname
+      integer         ,dimension(10)  :: dsize
+      integer         ,dimension(10)  :: did
+      integer         ,dimension(10)  :: csizes
+      character(len=20),dimension(10) :: attname
+      character(len=200),dimension(10):: attvalue
       real,dimension(10)             ::attparam
       integer :: ierr, ncid,npid
       integer :: natts,idm,vid
@@ -1612,7 +1612,33 @@
                   is = i0; ie = i1
                   startw = (/1,record,1,1/)
                 endif
-              end select
+
+             case('u')          ! e.g. ubar_west, ubar_east
+                if ((bryvariable=='w').or.(bryvariable=='e')) then
+                   allocate(var3d(lj0:lj1,1,1))
+                   allocate(tmp3d(lj0:lj1,1,1))
+                   is = j0; ie = j1
+                   startw = (/lj0,record,1,1/)
+                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                   allocate(var3d(gnx-1,1,1))
+                   allocate(tmp3d(gnx-1,1,1))
+                   is = i0u; ie = i1u
+                   startw = (/1,record,1,1/)
+                endif
+
+             case('v')          ! e.g. vbar_south, vbar_north
+                if ((bryvariable=='w').or.(bryvariable=='e')) then
+                   allocate(var3d(lj0v:lj1v,1,1))
+                   allocate(tmp3d(lj0v:lj1v,1,1))
+                   is = j0v; ie = j1v
+                   startw = (/lj0v,record,1,1/)
+                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                   allocate(var3d(gnx,1,1))
+                   allocate(tmp3d(gnx,1,1))
+                   is = i0; ie = i1
+                   startw = (/1,record,1,1/)
+                endif
+             end select
               startr = (/1,record,1,1/)
             else
               select case(ncinfo%vartype(ivar))
@@ -1640,11 +1666,24 @@
             if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
               select case(ncinfo%vartype(ivar))
               case('r')
-                allocate(var3d(gnx,lj0:lj1,1))
-                is = i0; ie = i1
-                js = j0; je = j1
-                startw = (/1,lj0,record,1/)
+                if ((bryvariable=='w').or.(bryvariable=='e')) then
+                  allocate(var3d(lj0:lj1,1,1))
+                  allocate(tmp3d(lj0:lj1,1,1))
+                  is = j0; ie = j1
+                  startw = (/lj0,1,record,1/)
+                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                  allocate(var3d(gnx,1,1))
+                  allocate(tmp3d(gnx,1,1))
+                  is = i0; ie = i1
+                  startw = (/1,1,record,1/)
+                else
+                   allocate(var3d(gnx,lj0:lj1,1))
+                   is = i0; ie = i1
+                   js = j0; je = j1
+                   startw = (/1,lj0,record,1/)
+                endif
               case('u')
+
                 allocate(var3d(gnx-1,lj0:lj1,1))
                 is = i0u; ie = i1u
                 js = j0; je = j1
@@ -1847,7 +1886,7 @@
       character(len=10)  :: dname
       character(len=50) :: vname
       integer :: ierr, i, xtype,natts,dsize
-      integer,dimension(5) :: dimids
+      integer,dimension(10) :: dimids
       integer :: dimid,ndims,ivar,nvars
       integer :: nrecords
 
