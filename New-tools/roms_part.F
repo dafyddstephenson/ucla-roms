@@ -1382,6 +1382,7 @@
       real,dimension(:),allocatable :: var1d
       integer :: sz1,sz2,sz3,ndims
       integer :: RSS,i
+      real :: minv
 
       integer,dimension(:),allocatable :: jparts
       integer                          :: jsize
@@ -1667,13 +1668,13 @@
               select case(ncinfo%vartype(ivar))
               case('r')
                 if ((bryvariable=='w').or.(bryvariable=='e')) then
-                  allocate(var3d(lj0:lj1,1,1))
-                  allocate(tmp3d(lj0:lj1,1,1))
+                  allocate(var3d(lj0:lj1,nz,1))
+                  allocate(tmp3d(lj0:lj1,nz,1))
                   is = j0; ie = j1
                   startw = (/lj0,1,record,1/)
                 elseif ((bryvariable=='s').or.(bryvariable=='n')) then
-                  allocate(var3d(gnx,1,1))
-                  allocate(tmp3d(gnx,1,1))
+                  allocate(var3d(gnx,nz,1))
+                  allocate(tmp3d(gnx,nz,1))
                   is = i0; ie = i1
                   startw = (/1,1,record,1/)
                 else
@@ -1683,16 +1684,39 @@
                    startw = (/1,lj0,record,1/)
                 endif
               case('u')
-
-                allocate(var3d(gnx-1,lj0:lj1,1))
-                is = i0u; ie = i1u
-                js = j0; je = j1
-                startw = (/1,lj0,record,1/)
+                if ((bryvariable=='w').or.(bryvariable=='e')) then
+                   allocate(var3d(lj0:lj1,nz,1))
+                   allocate(tmp3d(lj0:lj1,nz,1))
+                   is = j0; ie = j1
+                   startw = (/lj0,1,record,1/)
+                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                   allocate(var3d(gnx-1,nz,1))
+                   allocate(tmp3d(gnx-1,nz,1))
+                   is = i0u; ie = i1u
+                   startw = (/1,1,record,1/)
+                else
+                   allocate(var3d(gnx-1,lj0:lj1,1))
+                   is = i0u; ie = i1u
+                   js = j0; je = j1
+                   startw = (/1,lj0,record,1/)
+                endif
               case('v')
-                allocate(var3d(gnx,lj0v:lj1v,1))
-                is = i0; ie = i1
-                js = j0v; je = j1v
-                startw = (/1,lj0v,record,1/)
+                if ((bryvariable=='w').or.(bryvariable=='e')) then
+                   allocate(var3d(lj0v:lj1v,nz,1))
+                   allocate(tmp3d(lj0v:lj1v,nz,1))
+                   is = j0v; ie = j1v
+                   startw = (/lj0v,1,record,1/)
+                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                   allocate(var3d(gnx,nz,1))
+                   allocate(tmp3d(gnx,nz,1))
+                   is = i0; ie = i1
+                   startw = (/1,1,record,1/)
+                else
+                   allocate(var3d(gnx,lj0v:lj1v,1))
+                   is = i0; ie = i1
+                   js = j0v; je = j1v
+                   startw = (/1,lj0v,record,1/)
+                 endif
               end select
               startr = (/1,1,record,1/)
             else
@@ -1762,7 +1786,16 @@
             ! since var3d is added to for ncwrite, we use a temporary array to see if this
             ! bry variable is present in current partition. If not, then we skip and do not
             ! overwrite var3d with empty data.
-            if (minval(tmp3d(is(part):ie(part),:,:))==maxval(tmp3d(is(part):ie(part),:,:))) cycle
+C
+            ! If this partition has all equal values that are not data, then not a bry - skip:
+            if (minval(tmp3d(is(part):ie(part),:,:))==
+     &           maxval(tmp3d(is(part):ie(part),:,:))) then
+               if ((minval(tmp3d(is(part):ie(part),:,:)) == 0) .or.
+     &              (minval(tmp3d(is(part):ie(part),:,:)) > 1.e35)) then
+                  cycle
+               end if
+            end if
+
             var3d(is(part):ie(part),:,:)=tmp3d(is(part):ie(part),:,:)
           enddo
           else
