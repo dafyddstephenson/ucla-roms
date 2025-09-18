@@ -1867,6 +1867,26 @@ C
                 is = 1; ie = sz1
                 js = 1; je = sz2
               endif
+            case(3)
+               if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
+                startr = (/1,1,record,1/)
+                startw = (/1,1,record,1/)
+                sz1 = ncinfo%dims(ivar)%dimsizes(1)
+                sz2 = ncinfo%dims(ivar)%dimsizes(2)
+                allocate(var3d(sz1,sz2,1))
+                is = 1; ie = sz1
+                js = 1; je = sz2
+              else
+                if (record>1) continue
+                startr = (/1,1,1,1/)
+                startw = (/1,1,1,1/)
+                sz1 = ncinfo%dims(ivar)%dimsizes(1)
+                sz2 = ncinfo%dims(ivar)%dimsizes(2)
+                sz3 = ncinfo%dims(ivar)%dimsizes(3)
+                allocate(var3d(sz1,sz2,sz3))
+                is = 1; ie = sz1
+                js = 1; je = sz2
+              endif
             end select
 
             var3d = 0
