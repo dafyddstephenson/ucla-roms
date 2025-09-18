@@ -1650,13 +1650,13 @@
                 startw = (/1,lj0,record,1/)
               case('u')
                 allocate(var3d(gnx-1,lj0:lj1,1))
-                is = i0; ie = i1
+                is = i0u; ie = i1u
                 js = j0; je = j1
                 startw = (/1,lj0,record,1/)
               case('v')
                 allocate(var3d(gnx,lj0v:lj1v,1))
                 is = i0; ie = i1
-                js = j0; je = j1
+                js = j0v; je = j1v
                 startw = (/1,lj0,record,1/)
               case('j')
                 print*,vname,'psi variables skipped'; cycle
