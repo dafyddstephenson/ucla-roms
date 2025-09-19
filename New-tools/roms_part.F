@@ -74,6 +74,7 @@
       type,public :: dimstruct
         character(len=10),dimension(:),allocatable  ::dimnames
         integer,         dimension(:),allocatable   ::dimsizes
+        integer :: t_dimid ! index of time dimension (0 if none)
       end type dimstruct
 
       type,public :: attstruct
@@ -740,14 +741,15 @@
       character(len=1) :: charvar
       character(len=50) :: vname
       character(len=1)  :: bry
-      type(ncstructure)  :: ncinfo
+      type(ncstructure)  :: ncinfo, src_ncinfo
+      integer :: t_dimid
       integer,dimension(:),allocatable :: is,ie,js,je,
      &                                    bs,be         ! boundary
 
 
       integer :: part0,part1,myparts,part
       integer :: varid,ivar
-      integer :: record,nrecords
+      integer :: record
       integer,dimension(4) :: startr,startw,startwr
       real,dimension(:),allocatable :: var1d
       integer :: sz1,sz2,sz3,ndims
@@ -821,35 +823,22 @@
 
       ierr = nf90_open(trim(srcfile),nf90_nowrite,ncid)
       if (ierr/=0) call handle_ierr(ierr,'opening: ',trim(srcfile))
+      call get_nc_info(ncid, src_ncinfo)
 
-      ierr = nf90_inq_dimid(ncid,'time',dimid)
-      if (ierr /= nf90_noerr) then
-        ierr = nf90_inq_dimid(ncid,'rec_time',dimid)    ! backwards compatibility for bry files
-        if (ierr /= nf90_noerr) then
-          ierr = nf90_inq_dimid(ncid,tdim,dimid)        ! backwards compatibility for sample input data
-          if (ierr /= nf90_noerr) then
-            print *,'no time dim'
-            nrecords=1
-          else
-            ierr = nf90_inquire_dimension(ncid,dimid,len=nrecords)
-            if (ierr /= nf90_noerr) call handle_ierr(ierr)
-          endif
-        else
-            ierr = nf90_inquire_dimension(ncid,dimid,len=nrecords)
-            if (ierr /= nf90_noerr) call handle_ierr(ierr)
-        endif
-      else
-        ierr = nf90_inquire_dimension(ncid,dimid,len=nrecords)
-        if (ierr /= nf90_noerr) call handle_ierr(ierr)
-      endif
+      print *,'nrecords: ',src_ncinfo%nrecords
 
-      print *,'nrecords: ',nrecords
-
-      do record = 1,nrecords
+      do record = 1,src_ncinfo%nrecords
 
         if (mynode==0) print *,'Processing record: ',record
 
       do ivar=1,ncinfo%nvars
+
+         t_dimid = src_ncinfo%dims(ivar)%t_dimid
+         if (t_dimid >0) then
+            if (src_ncinfo%dims(ivar)%dimsizes(t_dimid) < record) then
+               cycle
+            end if
+         end if
 
         vname = ncinfo%varname(ivar)
 
@@ -1373,6 +1362,7 @@
       character(len=50) :: vname
       integer,dimension(:),allocatable :: is,ie,js,je
       type(ncstructure)  :: ncinfo
+      integer :: t_dimid
       character(len=7) :: ldname
       integer :: ldsize
 
@@ -1570,8 +1560,15 @@
         if (mynode==0) print *,'Processing record: ',record
 
         do ivar=1,ncinfo%nvars
+           t_dimid = ncinfo%dims(ivar)%t_dimid
 
-          vname = ncinfo%varname(ivar)
+           if (t_dimid >0) then
+              if (ncinfo%dims(ivar)%dimsizes(t_dimid) < record) then
+                 cycle
+              end if
+           end if
+
+           vname = ncinfo%varname(ivar)
 
           ! check if bry var
           bryvariable=ncinfo%bryvar(ivar)
@@ -1960,6 +1957,8 @@ C
       allocate(dnames(ndims))
       ncinfo%varpart = .false.
 
+      ncinfo%nrecords = 1
+
       ! append info to allocated arrays apart of derived type
       do ivar = 1,nvars
 
@@ -1968,6 +1967,9 @@ C
 
         ! name of variable
         ncinfo%varname(ivar) = vname
+
+        ! Default time dimension index to 0
+        ncinfo%dims(ivar)%t_dimid = 0
 
         ! check variable to determine boundary
         if (index(vname,'_west')>0) then
@@ -1992,6 +1994,7 @@ C
         ncinfo%ndims(ivar) = ndims
         allocate(ncinfo%dims(ivar)%dimsizes(ndims))
         allocate(ncinfo%dims(ivar)%dimnames(ndims))
+
         do i = 1,ndims
           ierr = nf90_inquire_dimension(ncid,dimids(i),dname,dsize)
           ncinfo%dims(ivar)%dimnames(i) = dname
@@ -2025,9 +2028,10 @@ C
 !            ncinfo%gsize(3) = dsize
           endif
           if (index(dname,'time')>0) then
-            ncinfo%nrecords = dsize
-          else
-            ncinfo%nrecords = 1
+             ncinfo%dims(ivar)%t_dimid = i
+             if (dsize > ncinfo%nrecords) then
+                ncinfo%nrecords = dsize
+             end if
           endif
 
         enddo
