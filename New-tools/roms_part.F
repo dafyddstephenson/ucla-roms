@@ -861,7 +861,8 @@
             ! save for later
           case(2)
             ! ----- BOUNDARIES ONLY ----- ![
-            if (index(ncinfo%dims(ivar)%dimnames(2),'tim')>0) then
+             if (ncinfo%dims(ivar)%t_dimid == 2) then
+c$$$            if (index(ncinfo%dims(ivar)%dimnames(2),'tim')>0) then
               if ((bry=='w').or.(bry=='e')) then
                 select case(ncinfo%vartype(ivar))
                 case('r')
@@ -916,7 +917,8 @@
 
           case(3)
             ! ----- BOUNDARIES ONLY ----- ![
-            if ((index(ncinfo%dims(ivar)%dimnames(3),'tim')>0).and.(bry/='i')) then
+             if ((ncinfo%dims(ivar)%t_dimid ==3) .and. (bry/='i')) then
+c$$$             if ((index(ncinfo%dims(ivar)%dimnames(3),'tim')>0).and.(bry/='i')) then
               nz = ncinfo%dims(ivar)%dimsizes(2)
               if ((bry=='w').or.(bry=='e')) then
                 select case(ncinfo%vartype(ivar))
@@ -943,7 +945,8 @@
               endif
               startw = (/1,1,record,1/)
             ! --------------------------- !]
-            elseif (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
+           elseif (ncinfo%dims(ivar)%t_dimid == 3) then
+c$$$           elseif (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
               select case(ncinfo%vartype(ivar))
               case('r')
                 allocate(var3d(li0:li1,lj0:lj1,1))
@@ -1020,58 +1023,61 @@
           select case(ndims)
           case(0) ! needed to handle single value variables
             goto 98
-          case(1)
-            if (index(ncinfo%dims(ivar)%dimnames(1),'time')>0) then
-              startr = (/record,1,1,1/)
-              startw = (/record,1,1,1/)
-              allocate(var3d(1,1,1))
-              is = 1; ie = 1
-              js = 1; je = 1
+         case(1)
+            if (ncinfo%dims(ivar)%t_dimid == 1) then
+c$$$            if (index(ncinfo%dims(ivar)%dimnames(1),'time')>0) then
+               startr = (/record,1,1,1/)
+               startw = (/record,1,1,1/)
+               allocate(var3d(1,1,1))
+               is = 1; ie = 1
+               js = 1; je = 1
             else
-              if (record>1) continue
-              startr = (/1,1,1,1/)
-              startw = (/1,1,1,1/)
-              sz1 = ncinfo%dims(ivar)%dimsizes(1)
-              allocate(var3d(sz1,1,1))
-              is = 1; ie = sz1
-              js = 1; je = 1
+               if (record>1) continue
+               startr = (/1,1,1,1/)
+               startw = (/1,1,1,1/)
+               sz1 = ncinfo%dims(ivar)%dimsizes(1)
+               allocate(var3d(sz1,1,1))
+               is = 1; ie = sz1
+               js = 1; je = 1
             endif
-          case(2)
-            if (index(ncinfo%dims(ivar)%dimnames(2),'time')>0) then
-              startr = (/1,record,1,1/)
-              startw = (/1,record,1,1/)
-              sz1 = ncinfo%dims(ivar)%dimsizes(1)
-              allocate(var2d(sz1,1))
-              is = 1; ie = sz1
-              js = 1; je = 1
+         case(2)
+            if (ncinfo%dims(ivar)%t_dimid == 2) then
+c$$$            if (index(ncinfo%dims(ivar)%dimnames(2),'time')>0) then
+               startr = (/1,record,1,1/)
+               startw = (/1,record,1,1/)
+               sz1 = ncinfo%dims(ivar)%dimsizes(1)
+               allocate(var2d(sz1,1))
+               is = 1; ie = sz1
+               js = 1; je = 1
             else
-              if (record>1) continue
-              startr = (/1,1,1,1/)
-              startw = (/1,1,1,1/)
-              sz1 = ncinfo%dims(ivar)%dimsizes(1)
-              sz2 = ncinfo%dims(ivar)%dimsizes(2)
-              allocate(var2d(sz1,sz2))
-              is = 1; ie = sz1
-              js = 1; je = sz2
+               if (record>1) continue
+               startr = (/1,1,1,1/)
+               startw = (/1,1,1,1/)
+               sz1 = ncinfo%dims(ivar)%dimsizes(1)
+               sz2 = ncinfo%dims(ivar)%dimsizes(2)
+               allocate(var2d(sz1,sz2))
+               is = 1; ie = sz1
+               js = 1; je = sz2
             endif
-          case(3)
-            if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
-              startr = (/1,1,record,1/)
-              startw = (/1,1,record,1/)
-              sz1 = ncinfo%dims(ivar)%dimsizes(1)
-              sz2 = ncinfo%dims(ivar)%dimsizes(2)
-              allocate(var3d(sz1,sz2,1))
-              is = 1; ie = sz1
-              js = 1; je = sz2
+         case(3)
+            if (ncinfo%dims(ivar)%t_dimid == 3) then
+c$$$            if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
+               startr = (/1,1,record,1/)
+               startw = (/1,1,record,1/)
+               sz1 = ncinfo%dims(ivar)%dimsizes(1)
+               sz2 = ncinfo%dims(ivar)%dimsizes(2)
+               allocate(var3d(sz1,sz2,1))
+               is = 1; ie = sz1
+               js = 1; je = sz2
             else
-              startr = (/1,1,1,1/)
-              startw = (/1,1,1,1/)
-              sz1 = ncinfo%dims(ivar)%dimsizes(1)
-              sz2 = ncinfo%dims(ivar)%dimsizes(2)
-              sz3 = ncinfo%dims(ivar)%dimsizes(3)
-              allocate(var3d(sz1,sz2,sz3))
-              is = 1; ie = sz1
-              js = 1; je = sz2
+               startr = (/1,1,1,1/)
+               startw = (/1,1,1,1/)
+               sz1 = ncinfo%dims(ivar)%dimsizes(1)
+               sz2 = ncinfo%dims(ivar)%dimsizes(2)
+               sz3 = ncinfo%dims(ivar)%dimsizes(3)
+               allocate(var3d(sz1,sz2,sz3))
+               is = 1; ie = sz1
+               js = 1; je = sz2
             endif
           end select
         endif
@@ -1596,19 +1602,20 @@
           case(1)
             ! save for later
           case(2)
-            if (index(ncinfo%dims(ivar)%dimnames(2),'time')>0) then
-              select case(ncinfo%vartype(ivar))
-              case('r')
+             if (ncinfo%dims(ivar)%t_dimid == 2) then
+c$$$             if (index(ncinfo%dims(ivar)%dimnames(2),'time')>0) then
+                select case(ncinfo%vartype(ivar))
+             case('r')
                 if ((bryvariable=='w').or.(bryvariable=='e')) then
-                  allocate(var3d(lj0:lj1,1,1))
-                  allocate(tmp3d(lj0:lj1,1,1))
-                  is = j0; ie = j1
-                  startw = (/lj0,record,1,1/)
+                   allocate(var3d(lj0:lj1,1,1))
+                   allocate(tmp3d(lj0:lj1,1,1))
+                   is = j0; ie = j1
+                   startw = (/lj0,record,1,1/)
                 elseif ((bryvariable=='s').or.(bryvariable=='n')) then
-                  allocate(var3d(gnx,1,1))
-                  allocate(tmp3d(gnx,1,1))
-                  is = i0; ie = i1
-                  startw = (/1,record,1,1/)
+                   allocate(var3d(gnx,1,1))
+                   allocate(tmp3d(gnx,1,1))
+                   is = i0; ie = i1
+                   startw = (/1,record,1,1/)
                 endif
 
              case('u')          ! e.g. ubar_west, ubar_east
@@ -1664,112 +1671,113 @@
               startr = (/1,1,record,1/)
             endif
           case(3)
-            if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
-              select case(ncinfo%vartype(ivar))
-              case('r')
-                if ((bryvariable=='w').or.(bryvariable=='e')) then
-                  allocate(var3d(lj0:lj1,nz,1))
-                  allocate(tmp3d(lj0:lj1,nz,1))
-                  is = j0; ie = j1
-                  startw = (/lj0,1,record,1/)
-                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
-                  allocate(var3d(gnx,nz,1))
-                  allocate(tmp3d(gnx,nz,1))
-                  is = i0; ie = i1
-                  startw = (/1,1,record,1/)
-                else
-                   allocate(var3d(gnx,lj0:lj1,1))
+c$$$            if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
+             if (ncinfo%dims(ivar)%t_dimid == 3) then
+                select case(ncinfo%vartype(ivar))
+                case('r')
+                   if ((bryvariable=='w').or.(bryvariable=='e')) then
+                      allocate(var3d(lj0:lj1,nz,1))
+                      allocate(tmp3d(lj0:lj1,nz,1))
+                      is = j0; ie = j1
+                      startw = (/lj0,1,record,1/)
+                   elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                      allocate(var3d(gnx,nz,1))
+                      allocate(tmp3d(gnx,nz,1))
+                      is = i0; ie = i1
+                      startw = (/1,1,record,1/)
+                   else
+                      allocate(var3d(gnx,lj0:lj1,1))
+                      is = i0; ie = i1
+                      js = j0; je = j1
+                      startw = (/1,lj0,record,1/)
+                   endif
+                case('u')
+                   if ((bryvariable=='w').or.(bryvariable=='e')) then
+                      allocate(var3d(lj0:lj1,nz,1))
+                      allocate(tmp3d(lj0:lj1,nz,1))
+                      is = j0; ie = j1
+                      startw = (/lj0,1,record,1/)
+                   elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                      allocate(var3d(gnx-1,nz,1))
+                      allocate(tmp3d(gnx-1,nz,1))
+                      is = i0u; ie = i1u
+                      startw = (/1,1,record,1/)
+                   else
+                      allocate(var3d(gnx-1,lj0:lj1,1))
+                      is = i0u; ie = i1u
+                      js = j0; je = j1
+                      startw = (/1,lj0,record,1/)
+                   endif
+                case('v')
+                   if ((bryvariable=='w').or.(bryvariable=='e')) then
+                      allocate(var3d(lj0v:lj1v,nz,1))
+                      allocate(tmp3d(lj0v:lj1v,nz,1))
+                      is = j0v; ie = j1v
+                      startw = (/lj0v,1,record,1/)
+                   elseif ((bryvariable=='s').or.(bryvariable=='n')) then
+                      allocate(var3d(gnx,nz,1))
+                      allocate(tmp3d(gnx,nz,1))
+                      is = i0; ie = i1
+                      startw = (/1,1,record,1/)
+                   else
+                      allocate(var3d(gnx,lj0v:lj1v,1))
+                      is = i0; ie = i1
+                      js = j0v; je = j1v
+                      startw = (/1,lj0v,record,1/)
+                   endif
+                end select
+                startr = (/1,1,record,1/)
+             else
+                if (record>1) continue
+                select case(ncinfo%vartype(ivar))
+                case('r')
+                   allocate(var3d(gnx,lj0:lj1,nz))
                    is = i0; ie = i1
                    js = j0; je = j1
-                   startw = (/1,lj0,record,1/)
-                endif
-              case('u')
-                if ((bryvariable=='w').or.(bryvariable=='e')) then
-                   allocate(var3d(lj0:lj1,nz,1))
-                   allocate(tmp3d(lj0:lj1,nz,1))
-                   is = j0; ie = j1
-                   startw = (/lj0,1,record,1/)
-                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
-                   allocate(var3d(gnx-1,nz,1))
-                   allocate(tmp3d(gnx-1,nz,1))
-                   is = i0u; ie = i1u
-                   startw = (/1,1,record,1/)
-                else
-                   allocate(var3d(gnx-1,lj0:lj1,1))
+                   startw = (/1,lj0,1,record/)
+                case('u')
+                   allocate(var3d(gnx-1,lj0:lj1,nz))
                    is = i0u; ie = i1u
                    js = j0; je = j1
-                   startw = (/1,lj0,record,1/)
-                endif
-              case('v')
-                if ((bryvariable=='w').or.(bryvariable=='e')) then
-                   allocate(var3d(lj0v:lj1v,nz,1))
-                   allocate(tmp3d(lj0v:lj1v,nz,1))
-                   is = j0v; ie = j1v
-                   startw = (/lj0v,1,record,1/)
-                elseif ((bryvariable=='s').or.(bryvariable=='n')) then
-                   allocate(var3d(gnx,nz,1))
-                   allocate(tmp3d(gnx,nz,1))
-                   is = i0; ie = i1
-                   startw = (/1,1,record,1/)
-                else
-                   allocate(var3d(gnx,lj0v:lj1v,1))
+                   startw = (/1,lj0,1,record/)
+                case('v')
+                   allocate(var3d(gnx,lj0v:lj1v,nz))
                    is = i0; ie = i1
                    js = j0v; je = j1v
-                   startw = (/1,lj0v,record,1/)
-                 endif
-              end select
-              startr = (/1,1,record,1/)
-            else
-              if (record>1) continue
-              select case(ncinfo%vartype(ivar))
-              case('r')
-                allocate(var3d(gnx,lj0:lj1,nz))
-                is = i0; ie = i1
-                js = j0; je = j1
-                startw = (/1,lj0,1,record/)
-              case('u')
-                allocate(var3d(gnx-1,lj0:lj1,nz))
-                is = i0u; ie = i1u
-                js = j0; je = j1
-                startw = (/1,lj0,1,record/)
-              case('v')
-                allocate(var3d(gnx,lj0v:lj1v,nz))
-                is = i0; ie = i1
-                js = j0v; je = j1v
-                startw = (/1,lj0v,1,record/)
-              case('w') ! vertical components
-                allocate(var3d(gnx,lj0:lj1,nz+1))
-                is = i0; ie = i1
-                js = j0; je = j1
-                startw = (/1,lj0,1,record/)
-              end select
-              startr = (/1,1,1,record/)
-            ! save for later (not present in pachug_rst.nc)
-            endif
+                   startw = (/1,lj0v,1,record/)
+                case('w')       ! vertical components
+                   allocate(var3d(gnx,lj0:lj1,nz+1))
+                   is = i0; ie = i1
+                   js = j0; je = j1
+                   startw = (/1,lj0,1,record/)
+                end select
+                startr = (/1,1,1,record/)
+! save for later (not present in pachug_rst.nc)
+             endif
           case(4)
-              select case(ncinfo%vartype(ivar))
-              case('r')
+             select case(ncinfo%vartype(ivar))
+             case('r')
                 allocate(var3d(gnx,lj0:lj1,nz))
                 is = i0; ie = i1
                 js = j0; je = j1
                 startw = (/1,lj0,1,record/)
-              case('u')
+             case('u')
                 allocate(var3d(gnx-1,lj0:lj1,nz))
                 is = i0u; ie = i1u
                 js = j0; je = j1
                 startw = (/1,lj0,1,record/)
-              case('v')
+             case('v')
                 allocate(var3d(gnx,lj0v:lj1v,nz))
                 is = i0; ie = i1
                 js = j0v; je = j1v
                 startw = (/1,lj0v,1,record/)
-              case('w') ! vertical components
+             case('w')          ! vertical components
                 allocate(var3d(gnx,lj0:lj1,nz+1))
                 is = i0; ie = i1
                 js = j0; je = j1
                 startw = (/1,lj0,1,record/)
-              end select
-              startr = (/1,1,1,record/)
+             end select
+             startr = (/1,1,1,record/)
           end select
 
           var3d = 0
@@ -2045,7 +2053,8 @@ C
             ncinfo%vartype(ivar) = 'w'
 !            ncinfo%gsize(3) = dsize
           endif
-          if (index(dname,'time')>0) then
+          if ((index(dname,'time')>0) .or.
+     &         (index(dname,'tide')>0)) then
              ncinfo%dims(ivar)%t_dimid = i
              if (dsize > ncinfo%nrecords) then
                 ncinfo%nrecords = dsize
