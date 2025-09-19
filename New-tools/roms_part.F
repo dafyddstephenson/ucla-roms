@@ -911,7 +911,6 @@
                 is = i0u; ie = i1u
                 js = j0v; je = j1v
               end select
-              startwr = (/i0,js,record,1/)
               startw  = (/1,1,record,1/)
             endif
 
@@ -1076,6 +1075,7 @@
             endif
           end select
         endif
+
 
         ! variables that need to be saved once
 !        if ((index(ncinfo%dims(ivar)%dimnames(1),'nriver')>0)
@@ -1359,7 +1359,9 @@
       integer,dimension(:),allocatable :: j0v,j1v
       integer :: lnx,lny,li0,li1,lj0,lj1,li0u,li1u,lj0v,lj1v
       real,dimension(:,:,:),allocatable :: var3d,tmp3d
+      real :: var0d
       character(len=50) :: vname
+      character(len=1) :: charvar
       integer,dimension(:),allocatable :: is,ie,js,je
       type(ncstructure)  :: ncinfo
       integer :: t_dimid
@@ -1576,9 +1578,7 @@
           if (mynode==0) print *,'Processing: ',trim(vname)
 
           ndims = ncinfo%ndims(ivar)
-
         if (ncinfo%varpart(ivar)) then
-
           if (ndims>=2) then
             li0 = minval(i0)
             li1 = maxval(i1)
@@ -1803,7 +1803,6 @@ C
             call ncread(npid,vname,var3d(is(part):ie(part),js(part):je(part),:),startr)
           enddo
           endif
-
           call MPI_Barrier(write_comm,ierr)
 
           ierr = nf90_open_par(trim(joinfile),nf90_write,write_comm,MPI_Info_Null,ncid)
@@ -1822,14 +1821,36 @@ C
           if (allocated(tmp3d)) deallocate(tmp3d)
 
         else !not-partitionable
-
-          if (ncinfo%xtype(ivar).eq.nf90_char) cycle
-
           if (mynode==0) then
-            print *,trim(vname),' is NOT partitionable '
+            print *,trim(vname),' is NOT partitionable'
+
+            partfile = partfiles(rp0)
+            ierr = nf90_open(trim(partfile), nf90_nowrite, npid)
+            if (ierr/=nf90_noerr)
+     &        call handle_ierr(ierr,'opening file: ',trim(partfile))
+            ierr = nf90_open(trim(joinfile),nf90_write,ncid)
+            if (ierr/=nf90_noerr)
+     &        call handle_ierr(ierr,'opening file: ',trim(joinfile) )
+
             select case(ndims)
             case(0)
-              cycle
+               if (ncinfo%xtype(ivar).eq.nf90_char) then
+                  ierr = nf90_inq_varid(npid,vname,varid)
+                  ierr = nf90_get_var(npid,varid,charvar)
+                  ierr = nf90_close(npid)
+                  ierr = nf90_put_var(ncid,varid,charvar)
+                  if (ierr/=nf90_noerr) call handle_ierr(ierr)
+                  ierr = nf90_close(ncid)
+                  cycle
+               elseif (ncinfo%xtype(ivar).eq.nf90_double) then
+                  ierr = nf90_inq_varid(npid,vname,varid)
+                  ierr = nf90_get_var(npid,varid,var0d)
+                  ierr = nf90_close(npid)
+                  ierr = nf90_put_var(ncid,varid,var0d)
+                  if (ierr/=nf90_noerr) call handle_ierr(ierr)
+                  ierr = nf90_close(ncid)
+                  cycle
+               end if
             case(1)
               if (index(ncinfo%dims(ivar)%dimnames(1),'time')>0) then
                 startr = (/record,1,1,1/)
@@ -1887,16 +1908,11 @@ C
             end select
 
             var3d = 0
-            partfile = partfiles(rp0)
-            ierr = nf90_open(trim(partfile), nf90_nowrite, npid)
-            if (ierr/=nf90_noerr)
-     &        call handle_ierr(ierr,'opening file: ',trim(partfile))
+
+
             call ncread(npid,trim(vname),var3d(is(rp0):ie(rp0),js(rp0):je(rp0),:),startr)
             ierr = nf90_close(npid)
 
-            ierr = nf90_open(trim(joinfile),nf90_write,ncid)
-            if (ierr/=nf90_noerr)
-     &        call handle_ierr(ierr,'opening file: ',trim(joinfile) )
             call ncwrite(ncid,vname,var3d,startw)
             ierr = nf90_close(ncid)
 
@@ -1904,8 +1920,7 @@ C
 
           endif !mynode=0
 
-        endif
-
+        endif ! partitionable
       enddo  ! ivars
 
       enddo ! records
