@@ -1656,7 +1656,10 @@
                 js = j0v; je = j1v
                 startw = (/1,lj0,record,1/)
               case('j')
-                print*,vname,'psi variables skipped'; cycle
+                 allocate(var3d(gnx-1,lj0v:lj1v,1))
+                 is = i0u; ie = i1u
+                 js = j0v; je = j1v
+                 startw = (/1,lj0,record,1/)
               end select
               startr = (/1,1,record,1/)
             endif
