@@ -544,22 +544,22 @@
 
 ! Append buffers with data from the array to be send
 !----------------------------------------------
-      if (west_msg_exch) then
+      if (p_w>=0) then
         sendW(szW+1:szW+szEW) = reshape(A(1:hl,jl0:jl1,:),(/szEW/))
         szW = szW+szEW
       endif
 
-      if (east_msg_exch) then
+      if (p_e>=0) then
         sendE(szE+1:szE+szEW) = reshape(A(nxl+1-hl:nxl,jl0:jl1,:),(/szEW/))
         szE = szE+szEW
       endif
 
-      if (south_msg_exch) then
+      if (p_s>=0) then
         sendS(szS+1:szS+szNS) = reshape(A(il0:il1,1:hl,:),(/szNS/))
         szS = szS+szNS
       endif
 
-      if (north_msg_exch) then
+      if (p_n>=0) then
         sendN(szN+1:szN+szNS) = reshape(A(il0:il1,nyl+1-hl:nyl,:),(/szNS/))
         szN = szN+szNS
       endif
@@ -613,32 +613,32 @@
 
 ! Unpack data from exchanged buffers into array
 !----------------------------------------------
-      if (west_msg_exch) then
+      if (p_w>=0) then
         A(1-hl:0,jl0:jl1,:) = reshape(recvW(szW+1:szW+szEW),shEW)
         szW = szW+szEW
       elseif (inode>0) then
         A(1-hl:0,jl0:jl1,:) = A(1:hl,jl0:jl1,:)
       endif
 
-      if (east_msg_exch) then
+      if (p_e>=0) then
         A(nxl+1:nxl+hl,jl0:jl1,:) = reshape(recvE(szE+1:szE+szEW),shEW)
         szE = szE+szEW
       elseif (inode<npx-1) then
         A(nxl+1:nxl+hl,jl0:jl1,:) =  A(nxl+1-hl:nxl,jl0:jl1,:)
       endif
 
-      if (south_msg_exch) then
+      if (p_s>=0) then
         A(il0:il1,1-hl:0,:) = reshape(recvS(szS+1:szS+szNS),shNS)
         szS = szS+szNS
       elseif (jnode>0) then
         A(il0:il1,1-hl:0,:) = A(il0:il1,1:hl,:)
       endif
 
-      if (north_msg_exch) then
+      if (p_n>=0) then
         A(il0:il1,nyl+1:nyl+hl,:) = reshape(recvN(szN+1:szN+szNS),shNS)
         szN = szN+szNS
       elseif (jnode<npy-1) then
-        A(il0:il1,nyl+1:nyl+hl,:) = A(il0:il1,nyl+1-1:nyl,:)
+        A(il0:il1,nyl+1:nyl+hl,:) = A(il0:il1,nyl+1-hl:nyl,:)
       endif
 
       if (p_sw>=0.and.do_corners) then
@@ -695,45 +695,41 @@
       enddo          !         2  6  4        1  5  3
 
 ! Prepare to receive:
-      if (west_msg_exch) then
+      if (p_w>=0) then
         call MPI_Irecv (recvW, szW, MPI_DOUBLE_PRECISION,
      &          p_W, 8, ocean_grid_comm, req(1), ierr)
         comm(1)=1
       endif
-      if (east_msg_exch) then
+      if (p_e>=0) then
         call MPI_Irecv (recvE, szE, MPI_DOUBLE_PRECISION,
      &          p_E, 7, ocean_grid_comm, req(2), ierr)
         comm(2)=2
       endif
-      if (south_msg_exch) then
+      if (p_s>=0) then
         call MPI_Irecv (recvS, szS, MPI_DOUBLE_PRECISION,
      &          p_S, 6, ocean_grid_comm, req(3), ierr)
         comm(3)=3
       endif
-      if (north_msg_exch) then
+      if (p_n>=0) then
         call MPI_Irecv (recvN, szN, MPI_DOUBLE_PRECISION,
      &          p_N, 5, ocean_grid_comm, req(4), ierr)
         comm(4)=4
       endif
-!     if (west_msg_exch.and.south_msg_exch) then
       if (p_sw>=0) then
         call MPI_Irecv (recvSW, szSW, MPI_DOUBLE_PRECISION,
      &            p_SW, 2, ocean_grid_comm, req(5), ierr)
         comm(5)=5
       endif
-!     if (east_msg_exch.and.north_msg_exch) then
       if (p_ne>=0) then
         call MPI_Irecv (recvNE, szNE, MPI_DOUBLE_PRECISION,
      &            p_NE, 1, ocean_grid_comm, req(6), ierr)
         comm(6)=6
       endif
-!     if (east_msg_exch.and.south_msg_exch) then
       if (p_se>=0) then
         call MPI_Irecv (recvSE, szSE, MPI_DOUBLE_PRECISION,
      &            p_SE, 4, ocean_grid_comm, req(7), ierr)
         comm(7)=7
       endif
-!     if (west_msg_exch.and.north_msg_exch) then
       if (p_nw>=0) then
         call MPI_Irecv (recvNW, szNW, MPI_DOUBLE_PRECISION,
      &            p_NW, 3, ocean_grid_comm, req(8), ierr)
@@ -742,45 +738,41 @@
 
 ! Send everything
 !----------------------------------------------
-      if (west_msg_exch) then
+      if (p_w>=0) then
         call MPI_Isend (sendW, szW, MPI_DOUBLE_PRECISION,
      &            p_W,7,ocean_grid_comm, req(9), ierr)
         comm(9)=9
       endif
-      if (east_msg_exch) then
+      if (p_e>=0) then
         call MPI_Isend (sendE, szE, MPI_DOUBLE_PRECISION,
      &             p_E,8,ocean_grid_comm, req(10), ierr)
         comm(10)=10
       endif
-      if (south_msg_exch) then
+      if (p_s>=0) then
         call MPI_Isend (sendS, szS, MPI_DOUBLE_PRECISION,
      &         p_S, 5, ocean_grid_comm, req(11), ierr)
         comm(11)=11
       endif
-      if (north_msg_exch) then
+      if (p_n>=0) then
         call MPI_Isend (sendN, szN, MPI_DOUBLE_PRECISION,
      &         p_N, 6, ocean_grid_comm, req(12), ierr)
         comm(12)=12
       endif
-!     if (west_msg_exch.and.south_msg_exch) then
       if (p_sw>=0) then
         call MPI_Isend (sendSW, szSW, MPI_DOUBLE_PRECISION,
      &           p_SW, 1, ocean_grid_comm, req(13), ierr)
         comm(13)=13
       endif
-!     if (east_msg_exch.and.north_msg_exch) then
       if (p_ne>=0) then
         call MPI_Isend (sendNE, szNE, MPI_DOUBLE_PRECISION,
      &           p_NE, 2, ocean_grid_comm, req(14), ierr)
         comm(14)=14
       endif
-!     if (east_msg_exch.and.south_msg_exch) then
       if (p_se>=0) then
         call MPI_Isend (sendSE, szSE, MPI_DOUBLE_PRECISION,
      &           p_SE, 3, ocean_grid_comm, req(15), ierr)
         comm(15)=15
       endif
-!     if (west_msg_exch.and.north_msg_exch) then
       if (p_nw>=0) then
         call MPI_Isend (sendNW, szNW, MPI_DOUBLE_PRECISION,
      &           p_NW, 4, ocean_grid_comm, req(16), ierr)
@@ -808,5 +800,6 @@
       enddo
 
       end subroutine mpi_buffer_exchange !]
+! ----------------------------------------------------------------------
 
       end module mpi_exchanges

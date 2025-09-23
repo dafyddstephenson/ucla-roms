@@ -17,6 +17,7 @@
 !                   [=0, if there is no unlimited dimension].
 
       use param
+      use dimensions !TODO check if needed
       use netcdf
       use roms_read_write
       use nc_read_write
@@ -230,6 +231,9 @@
       else                                 ! has the corresponding
         chk_Cs_r=.false.                   ! vertical dimension
       endif
+
+      chk_Cs_r = .false. !TODO copied from 51a77ff661df11673ff137b82c35e0ac4a818440 unsure why
+      chk_Cs_w = .false.
 
       icount=0
       lfile=lenstr(fname)
