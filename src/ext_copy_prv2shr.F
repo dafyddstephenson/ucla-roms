@@ -5,6 +5,7 @@
       subroutine ext_copy_prv2shr_2d_tile (istr,iend,jstr,jend, A,B)
       use param
       use dimensions
+      use hidden_mpi_vars, only: inode,jnode
       implicit none
       integer istr,iend,jstr,jend, i,j
       real A(PRIVATE_2D_SCRATCH_ARRAY)
@@ -23,6 +24,8 @@
       subroutine ext_copy_prv2shr_tile (istr,iend,jstr,jend, A,B,nmax)
       use param
       use dimensions
+      use hidden_mpi_vars, only: inode,jnode
+
       implicit none
       integer istr,iend,jstr,jend, nmax, i,j,k
       real A(PRIVATE_2D_SCRATCH_ARRAY,nmax)
@@ -43,6 +46,8 @@
       subroutine ext_copy_prv2shr_1Dslb_tile (istr,iend,j, A,B,nmax)
       use param
       use dimensions
+      use hidden_mpi_vars
+
       implicit none
       integer istr,iend, nmax, i,j,k
       real A(PRIVATE_1D_SCRATCH_ARRAY,nmax)
