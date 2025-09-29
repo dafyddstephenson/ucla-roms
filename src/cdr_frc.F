@@ -413,9 +413,6 @@
       real, dimension(N_src+1) :: z_orig_interfaces
       real, dimension(N_src) :: H_orig
       real, dimension(nz) :: H_new
-      ! These are the total fluxes/m^2 in this column. These arrays are mostly used for checking
-      ! that the remapping is conservative
-      real, dimension(2) :: total_conc_new
       real :: H_new_tot
       real :: H_orig_tot
       real :: tot_dist
@@ -438,11 +435,12 @@
       real, dimension(2,nz) :: cdrflx_tmp
 
       ! Array to hold the tracer mass in each cell
-      real, dimension(2,nz) :: cellwise_conc
+      real, dimension(2) :: total_tracer_orig
+      real, dimension(2) :: total_tracer_new
+      real, dimension(2) :: total_tracer_diff
+      real :: cellwise_mass_frac
 
-      real :: cc_new, cc_old1, cc_old2
 
-      total_conc_new = 0.0
       H_new_tot = 0.0
       H_orig_tot = 0.0
       tot_dist = 0.0
@@ -452,7 +450,6 @@
 
       definite_integral(:,:) = 0.0
       cdrflx_tmp(:,:) = 0.0
-      cellwise_conc(:,:) = 0.0
 
 
       call calc_interface_values(cdr_flx3d(icdr,:,:), cdr_hz(icdr,:), interface_values)
@@ -467,11 +464,13 @@
         total_depth_src = total_depth_src + cdr_hz(icdr,k)
       enddo
 
+      total_tracer_orig(:) = 0.0
       do trc=1,2
         do k=1,N_src
           a0(trc,k) = interface_values(trc,k)
           a1(trc,k) = 6*cdr_flx3d(icdr,trc,k) - 4*interface_values(trc,k) - 2*interface_values(trc,k+1)
-          a2(trc,k) = 3*interface_values(trc,k) + interface_values(trc,k+1) - 2*cdr_flx3d(icdr,trc,k)
+          a2(trc,k) = 3*(interface_values(trc,k) + interface_values(trc,k+1) - 2*cdr_flx3d(icdr,trc,k))
+          total_tracer_orig(trc) = total_tracer_orig(trc) + cdr_hz(icdr,k)*cdr_flx3d(icdr,trc,k)
         enddo
       enddo
 
@@ -529,6 +528,7 @@
       tgt_index_end(nz) = N_src
       tgt_frac_end(nz)  = 1
 
+      total_tracer_new(:) = 0
       do trc = 1,2
         do k = 1,nz
 
@@ -551,42 +551,33 @@
 
           enddo
           cdrflx_tmp(trc,k) = definite_integral(trc,k) / tot_dist
-
+          total_tracer_new(trc) = total_tracer_new(trc) + H_new(k)*cdrflx_tmp(trc,k)
         enddo
       enddo
 
+      ! Correction to ensure exact tracer conservation in the remapping
+      ! We distribute the correction over the entire column, where the cellwise amount
+      ! depends on how much of the column mass the cell contains
+      total_tracer_diff(:) = total_tracer_new(:) - total_tracer_orig(:)
 
+      do trc = 1,2
+        if (total_tracer_new(trc) /= 0.0) then
+          do k = 1,nz
+            cellwise_mass_frac = cdrflx_tmp(trc,k) / total_tracer_new(trc)
+            cdrflx_tmp(trc,k) = cdrflx_tmp(trc,k) - total_tracer_diff(trc)*cellwise_mass_frac
+          enddo
+        endif
+      enddo
 
-!        do k = 1,nz
-!          cc_new = cc_new + cdrflx_tmp(1,k) * H_new(k)
-!          cc_old1 = cc_old1 + cdr_flx3d(icdr,1,k)*cdr_hz(icdr,k)
-!          cc_old2 = cc_old2 + cdr_flx3d(icdr,1,k)*H_orig(k)
-!        enddo
-!
-!        print *, "COMPARE", mynode, cc_new, cc_old1, cc_old2
+      do trc = 1,2
+        do k = 1,nz
+          cdr_prf(cidx,cdr_inds(trc),k) = cdrflx_tmp(trc,k)
+        enddo
+      enddo
 
-       do trc = 1,2
-         do k = 1,nz
-           cdr_prf(cidx,cdr_inds(trc),k) = cdrflx_tmp(trc,k)
-         enddo
-       enddo
-!      do trc = 1,2
-!        do k = 1,nz
-!          cellwise_conc(trc,k) = cdrflx_tmp(trc,k) * H_new(k) / (pm(i,j)*pn(i,j))
-!          total_conc_new(trc) = total_conc_new(trc) + cellwise_conc(trc,k)
-!        enddo
-!
-!        if (total_conc_new(trc) /= 0) then
-!          do k = 1,nz
-!            cdr_prf(cidx,cdr_inds(trc),k) = cellwise_conc(trc,k) / total_conc_new(trc)
-!         enddo
-!        endif
-!
-!      enddo
-       cdr_flx(icdr,iALK) = 1.0 !cdr_tot_mass(icdr,1)
-       cdr_flx(icdr,iDIC) = 1.0 !cdr_tot_mass(icdr,2)
+      cdr_flx(icdr,iALK) = 1.0 !cdr_tot_mass(icdr,1)
+      cdr_flx(icdr,iDIC) = 1.0 !cdr_tot_mass(icdr,2)
 
-!      print *, "YAY", mynode, cdr_inds(1), iALK, cdr_flx(icdr,iALK), cdr_prf(cidx,cdr_inds(1),:)
 
       end subroutine remap_src_to_grid
 ! ----------------------------------------------------------------------
