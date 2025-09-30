@@ -98,15 +98,17 @@
       public :: write_partial_files
       public :: make_joined_file
       public :: write_joined_file
+      public :: show_use_optimal
 
       contains
 ! ----------------------------------------------------------------------
-      subroutine cmd_args_optimal(cores,grdfile)  ![
+      subroutine cmd_args_optimal(cores,grdfile,min_part_size)  ![
       implicit none
 
 !     import/export
       real,intent(out)            :: cores
       character(len=128),intent(out) :: grdfile
+      integer,intent(out)            :: min_part_size
 
 !     local
       integer            :: nargs
@@ -122,6 +124,18 @@
 !     grdfile
       call get_command_argument(2,arg);
       grdfile = arg
+
+      call get_command_argument(3,arg)
+      if (index(arg,'-min_part_size')) then
+        print *, 'Optional min_part_size flag detected.'
+        print *, 'Applying a minimum value for the number of tiles '
+        print *, 'in each dimension.'
+        print *, ''
+        call get_command_argument(4,arg);
+        read(arg, *) min_part_size
+      else
+        min_part_size = 1
+      endif
 
       end subroutine cmd_args_optimal !]
 ! ----------------------------------------------------------------------
@@ -334,10 +348,25 @@
       subroutine show_use_optimal ![
       implicit none
 
-      print *, 'Usage of optimal should be: ',
-     &         'optimal_part cores grdfile.nc'
+      print *, 'OPTIMAL is a tool to inform the user about how to '
+      print *, 'partition their domain (NP_XI, NP_ETA) to optimize '
+      print *, 'the number of computational cores that are assigned to '
+      print *, 'tiles containing wet points. '
+      print *, ''
+      print *, 'Usage of optimal should be: '
+      print *, ' optimal_part cores grdfile.nc'
+      print *, ' or'
+      print *, ' optimal_part cores grdfile.nc -min_part_size (integer)'
+      print *, ''
+      print *, 'It is generally desirable that the resulting number of'
+      print *, 'cores used is as close (or equal) to the value of the'
+      print *, '`cores` argument as possible. Also, larger values of '
+      print *, 'NP_XI * NP_ETA generally yield better performance, as'
+      print *, 'it implies that each computational core has less points'
+      print *, 'to work on.'
+      print *, ''
 
-      stop
+!      stop
 
       end subroutine show_use_optimal !]
 ! ----------------------------------------------------------------------

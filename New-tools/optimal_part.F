@@ -21,6 +21,7 @@
      &           npx0,npx1,npy0,npy1,  ! loop ranges
      &           npx,npy,i,k
       real                              :: cores,ocean,ar
+      integer                           :: min_part_size
       real,dimension(:,:),allocatable   :: msk,active
 
       character(len=7) :: vname
@@ -28,8 +29,10 @@
       integer,dimension(2)          :: dsize
       integer                       :: varid
 
+      call show_use_optimal
+
       ! Get available cores and grid file through command line argument
-      call cmd_args_optimal(cores,grdfile)
+      call cmd_args_optimal(cores,grdfile,min_part_size)
 
       ! read in data for global domains
       ierr = nf90_open(trim(adjustl(grdfile)), nf90_nowrite, ncid)
@@ -40,7 +43,7 @@
        if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','xi_rho')
       ierr = nf90_inquire_dimension(ncid, dimid, len=gnx)
        if (ierr/=0) call handle_ierr(ierr,'getting dimension: ','xi_rho')
-        
+
       ierr = nf90_inq_dimid(ncid,'eta_rho',dimid)
        if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','eta_rho')
       ierr = nf90_inquire_dimension(ncid, dimid, len=gny)
@@ -51,7 +54,7 @@
       gny = gny-2
 
       ! mask rho
-      allocate(msk(0:gnx+1,0:gny+1)); msk=1 
+      allocate(msk(0:gnx+1,0:gny+1)); msk=1
       call ncread(ncid,'mask_rho',msk)
 
       ierr = nf90_close(ncid)
@@ -72,21 +75,26 @@
 
       ! first guess of x,y partition that gives roughly square subdomains
       ! and should exceed the number of available cores by a bit.
-      npx1 = ceiling(sqrt(cores*ar/ocean))
-      npy1 = ceiling(sqrt(cores/ar/ocean))
+!      npx1 = ceiling(sqrt(cores*ar/ocean))
+!      npy1 = ceiling(sqrt(cores/ar/ocean))
+      npx1 = ceiling(cores/ocean)
+      npy1 = ceiling(cores/ocean)
 
+!      npx0 = max(npx1-7,1)
+!      npy0 = max(npy1-7,1)
+      npx0 = min_part_size
+      npy0 = min_part_size
 
-      npx0 = max(npx1-7,1)
-      npy0 = max(npy1-7,1)
-
-      allocate(active(1:56,1:3))
+!      allocate(active(1:56,1:3))
+      allocate(active(1:(npx1*npy1),1:3)); active(:,:) = 0
       i = 0
       do npy = npy0,npy1
         do npx = npx0,npx1
-          if ((npx*npy>=cores).and.(npx*npy<=cores/ocean)) then
+          if ((npx*npy>=cores).and.(npx*npy<=cores/ocean).and.(npx<gnx).and.(npy<gny)) then
             call check_mask(npx,npy,gnx,gny,msk)
-            i = i+1
+!            i = i+1
             if (nparts<=cores) then
+              i=i+1
               active(i,1) = nparts
               active(i,2) = npx
               active(i,3) = npy
@@ -96,15 +104,17 @@
       enddo
 
       ierr = nf90_close(npid)
-                     
+
       call sort(active)
 
-      do k = 1,10
-        print *,'---',int(active(k,2)),'x',int(active(k,3)),'---'
-        print *,int(active(k,1)),'cores out of',int(cores),'used'
+      do k = 1,min(10,i-1)
+        write(*,'(a8,i0,a3,i0)') 'Tiling: ',int(active(k,2)),' x ',int(active(k,3))
+!        print *,int(active(k,1)),'cores out of',int(cores),'used'
+        write(*,'(i0,a14,i0,a6)') int(active(k,1)),' cores out of ',int(cores),' used.'
+        write(*,*)
       enddo
 
-      deallocate(active)
+!      deallocate(active)
 
       contains
 
