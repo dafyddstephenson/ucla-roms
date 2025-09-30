@@ -56,7 +56,8 @@
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
         logical                           :: ungridded = .false.
-        character(len=100)                 :: ungridded_forcing_file=''
+        character(len=100)                :: ungridded_forcing_file=''
+        logical                           :: time_interpolation = .true.
       end type ncforce
 
       integer, target :: test_var
@@ -342,16 +343,20 @@
 
       ! Temporal interpolation
 
-      vtimes  = nc%times
-      cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
-      cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
+      if (nc%time_interpolation) then
+        vtimes  = nc%times
+        cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
+        cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
 
-      var1d = cff1*nc%vdata(:,1,it1) + cff2*nc%vdata(:,1,it2)
+        var1d = cff1*nc%vdata(:,1,it1) + cff2*nc%vdata(:,1,it2)
 
-      if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
-        print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-        print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-        error stop 'ERROR: set_frc_data :: time interpolation error'
+        if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
+          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
+          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
+          error stop 'ERROR: set_frc_data :: time interpolation error'
+        endif
+      else
+        var1d = nc%vdata(:,1,it1)
       endif
 
       end subroutine set_frc_data_1d  !]
@@ -418,17 +423,20 @@
       nc%it2 = it2
 
       ! Temporal interpolation
+      if (nc%time_interpolation) then
+        vtimes  = nc%times
+        cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
+        cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
 
-      vtimes  = nc%times
-      cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
-      cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
+        var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
-      var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
-
-      if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
-        print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-        print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-        error stop 'ERROR: set_frc_data :: time interpolation error'
+        if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
+          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
+          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
+          error stop 'ERROR: set_frc_data :: time interpolation error'
+        endif
+      else
+        var2d = nc%vdata(:,:,it1)
       endif
 
       end subroutine set_frc_data_2d  !]
@@ -493,18 +501,20 @@
       nc%it2 = it2
 
       ! Temporal interpolation
+      if (nc%time_interpolation) then
+        vtimes  = nc%times
+        cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
+        cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
 
-      vtimes  = nc%times
-      cff1=( vtimes(it2)-modtime )/( vtimes(it2)-vtimes(it1) )
-      cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
+        var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
-      var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
-
-!     if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
-      if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
-        print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-        print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-        error stop 'ERROR: set_frc_data :: time interpolation error'
+        if (vtimes(it1)>modtime.or.vtimes(it2)<modtime) then
+          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
+          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
+          error stop 'ERROR: set_frc_data :: time interpolation error'
+        endif
+      else
+        var2d = nc%vdata(:,:,it1)
       endif
 
       end subroutine set_frc_data_surf  !]
