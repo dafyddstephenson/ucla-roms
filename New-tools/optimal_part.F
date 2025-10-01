@@ -21,7 +21,8 @@
      &           npx0,npx1,npy0,npy1,  ! loop ranges
      &           npx,npy,i,k
       real                              :: cores,ocean,ar
-      integer                           :: min_part_size
+      !integer                           :: min_part_size
+      real :: prct
       real,dimension(:,:),allocatable   :: msk,active
 
       character(len=7) :: vname
@@ -32,7 +33,8 @@
       call show_use_optimal
 
       ! Get available cores and grid file through command line argument
-      call cmd_args_optimal(cores,grdfile,min_part_size)
+      !call cmd_args_optimal(cores,grdfile,min_part_size)
+      call cmd_args_optimal(cores,grdfile,prct)
 
       ! read in data for global domains
       ierr = nf90_open(trim(adjustl(grdfile)), nf90_nowrite, ncid)
@@ -82,8 +84,8 @@
 
 !      npx0 = max(npx1-7,1)
 !      npy0 = max(npy1-7,1)
-      npx0 = min_part_size
-      npy0 = min_part_size
+      npx0 = 1 !min_part_size
+      npy0 = 1 !min_part_size
 
 !      allocate(active(1:56,1:3))
       allocate(active(1:(npx1*npy1),1:4)); active(:,:) = 0
@@ -93,7 +95,7 @@
           if ((npx*npy>=cores).and.(npx*npy<=cores/ocean).and.(npx<gnx).and.(npy<gny)) then
             call check_mask(npx,npy,gnx,gny,msk)
 !            i = i+1
-            if (nparts<=cores) then
+            if ((nparts<=cores).and.(nparts>=(cores*prct))) then
               i=i+1
               active(i,1) = nparts
               active(i,2) = npx
@@ -108,7 +110,7 @@
 
       call sort(active)
 
-      do k = 1,min(20,i-1)
+      do k = 1,min(10,i-1)
         write(*,'(a8,i0,a3,i0)') 'Tiling: ',int(active(k,2)),' x ',int(active(k,3))
         write(*,'(i0,a16,i0,a7)') int(active(k,1)),' cores used for ',int(active(k,2)*active(k,3)),' tiles.'
         write(*,'(a7,F5.3)') "Ratio: ", active(k,4)

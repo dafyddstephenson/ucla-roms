@@ -102,13 +102,13 @@
 
       contains
 ! ----------------------------------------------------------------------
-      subroutine cmd_args_optimal(cores,grdfile,min_part_size)  ![
+      subroutine cmd_args_optimal(cores,grdfile,prct)  ![
       implicit none
 
 !     import/export
       real,intent(out)            :: cores
       character(len=128),intent(out) :: grdfile
-      integer,intent(out)            :: min_part_size
+      real,intent(out)            :: prct
 
 !     local
       integer            :: nargs
@@ -126,15 +126,15 @@
       grdfile = arg
 
       call get_command_argument(3,arg)
-      if (index(arg,'-min_part_size')) then
-        print *, 'Optional min_part_size flag detected.'
-        print *, 'Applying a minimum value for the number of tiles '
-        print *, 'in each dimension.'
+      if (index(arg,'-min_percentage')) then
+        print *, 'Optional min_percentage flag detected.'
+        print *, 'Applying a min value for the number of cores used.'
         print *, ''
         call get_command_argument(4,arg);
-        read(arg, *) min_part_size
+        read(arg, *) prct
+        prct = prct / 100.0
       else
-        min_part_size = 1
+        prct = 0
       endif
 
       end subroutine cmd_args_optimal !]
@@ -354,15 +354,19 @@
       print *, 'tiles containing wet points. '
       print *, ''
       print *, 'Usage of optimal should be: '
-      print *, ' optimal_part cores grdfile.nc'
+      print *, ' optimal_part cores grid.nc'
       print *, ' or'
-      print *, ' optimal_part cores grdfile.nc -min_part_size (integer)'
+      print *, ' optimal_part cores grid.nc -min_percentage XX'
       print *, ''
       print *, 'The results are sorted such that the most efficient '
       print *, 'tilings are presented first. Here efficiency is defined'
       print *, 'as the number of tiles used divided by the number of'
       print *, 'cores needed.'
       print *, ''
+      print *, 'The optional -min_percentage argument tells the program'
+      print *, 'to only display results that use a number of cores >='
+      print *, 'than XX percent of the "cores" argument. XX should be a'
+      print *, 'real number between 0 and 100.'
 
 !      stop
 
