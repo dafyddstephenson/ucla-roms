@@ -348,26 +348,33 @@
       subroutine show_use_optimal ![
       implicit none
 
-      print *, 'OPTIMAL is a tool to inform the user about how to '
+      print *, 'OPTIMAL_PART is a tool to inform the user about how to '
       print *, 'partition their domain (NP_XI, NP_ETA) to optimize '
       print *, 'the number of computational cores that are assigned to '
       print *, 'tiles containing wet points. '
       print *, ''
-      print *, 'Usage of optimal should be: '
-      print *, ' optimal_part cores grid.nc'
+      print *, 'Usage of OPTIMAL_PART should be: '
+      print *, ' optimal_part avail_cores grid.nc'
       print *, ' or'
-      print *, ' optimal_part cores grid.nc -min_percentage XX'
+      print *, ' optimal_part avail_cores grid.nc -min_percentage XX'
       print *, ''
       print *, 'The results are sorted such that the most efficient '
       print *, 'tilings are presented first. Here efficiency is defined'
       print *, 'as the number of tiles used divided by the number of'
       print *, 'cores needed.'
       print *, ''
+      print *, 'The argument avail_cores represents that maximum number'
+      print *, 'of cores the user wishes to use.'
+      print *, ''
       print *, 'The optional -min_percentage argument tells the program'
       print *, 'to only display results that use a number of cores >='
-      print *, 'than XX percent of the "cores" argument. XX should be a'
-      print *, 'real number between 0 and 100.'
-
+      print *, 'than XX percent of the "avail_cores" argument. XX'
+      print *, 'should be a real number between 0 and 100. If the'
+      print *, '-min_percentage argument is omitted the program will'
+      print *, 'examine all possible numbers of cores, and will display'
+      print *, 'the most efficient results even if they use'
+      print *, 'significantly less cores than "avail_cores".'
+      print *, ''
 !      stop
 
       end subroutine show_use_optimal !]

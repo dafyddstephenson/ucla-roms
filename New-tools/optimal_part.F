@@ -110,7 +110,7 @@
 
       call sort(active)
 
-      do k = 1,min(10,i-1)
+      do k = 1,min(10,i)
         write(*,'(a8,i0,a3,i0)') 'Tiling: ',int(active(k,2)),' x ',int(active(k,3))
         write(*,'(i0,a16,i0,a7)') int(active(k,1)),' cores used for ',int(active(k,2)*active(k,3)),' tiles.'
         write(*,'(a7,F5.3)') "Ratio: ", active(k,4)
