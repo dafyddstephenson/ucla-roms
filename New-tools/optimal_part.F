@@ -86,7 +86,7 @@
       npy0 = min_part_size
 
 !      allocate(active(1:56,1:3))
-      allocate(active(1:(npx1*npy1),1:3)); active(:,:) = 0
+      allocate(active(1:(npx1*npy1),1:4)); active(:,:) = 0
       i = 0
       do npy = npy0,npy1
         do npx = npx0,npx1
@@ -98,6 +98,7 @@
               active(i,1) = nparts
               active(i,2) = npx
               active(i,3) = npy
+              active(i,4) = real(npx*npy) / nparts
             endif
           endif
         enddo
@@ -107,10 +108,10 @@
 
       call sort(active)
 
-      do k = 1,min(10,i-1)
+      do k = 1,min(20,i-1)
         write(*,'(a8,i0,a3,i0)') 'Tiling: ',int(active(k,2)),' x ',int(active(k,3))
-!        print *,int(active(k,1)),'cores out of',int(cores),'used'
-        write(*,'(i0,a14,i0,a6)') int(active(k,1)),' cores out of ',int(cores),' used.'
+        write(*,'(i0,a16,i0,a7)') int(active(k,1)),' cores used for ',int(active(k,2)*active(k,3)),' tiles.'
+        write(*,'(a7,F5.3)') "Ratio: ", active(k,4)
         write(*,*)
       enddo
 
@@ -133,7 +134,7 @@
 
         ! Shift elements to the right
         do while ((j >= 1))
-          if (active(j,1) < key(1)) then
+          if (active(j,4) < key(4)) then
             active(j+1,:) = active(j,:)
             j = j - 1
           else

@@ -358,12 +358,10 @@
       print *, ' or'
       print *, ' optimal_part cores grdfile.nc -min_part_size (integer)'
       print *, ''
-      print *, 'It is generally desirable that the resulting number of'
-      print *, 'cores used is as close (or equal) to the value of the'
-      print *, '`cores` argument as possible. Also, larger values of '
-      print *, 'NP_XI * NP_ETA generally yield better performance, as'
-      print *, 'it implies that each computational core has less points'
-      print *, 'to work on.'
+      print *, 'The results are sorted such that the most efficient '
+      print *, 'tilings are presented first. Here efficiency is defined'
+      print *, 'as the number of tiles used divided by the number of'
+      print *, 'cores needed.'
       print *, ''
 
 !      stop
