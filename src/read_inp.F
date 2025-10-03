@@ -641,5 +641,3 @@ c**       write(*,'(1x,A,1x,A)') 'Recognized: ', kwds(is:ie-1)
         endif
       enddo
       end
-
-
