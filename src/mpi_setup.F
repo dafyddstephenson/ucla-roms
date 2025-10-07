@@ -174,7 +174,7 @@
 ! into periodicity domain, if there is periodicity in either direction,
 ! but only if the number of subdomains is greater than one (hence
 ! periodicity must go through message passing).
-
+      use param, only: np_xi, np_eta
       implicit none
 
       ! import/export
