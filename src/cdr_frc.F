@@ -332,6 +332,7 @@
 
       ! Need to get names of tracers
       use tracers, only: t, t_vname, t_lname, t_units
+      use param
 
       implicit none
 
