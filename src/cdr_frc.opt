@@ -30,14 +30,11 @@
       ! READ IN VERTICAL PROFILES FROM FILE ****************************
       ! Layer thicknesses for a vertical profile [m]
       type (ncforce)   :: nc_cdrhz  = ncforce( vname='cdr_layer_thickness', tname='cdr_time')
-!      ! Total mass to be added in each column
-!      type (ncforce)   :: nc_tot_mass  = ncforce( vname='total_mass', tname='cdr_time')
       ! Layerwise additionality
       type (ncforce3d) :: nc_cdrflx3d = ncforce3d( vname='cdr_trcflx_profile', tname='cdr_time')
 
-
       ! SPECIAL FLAG FOR UPSCALING (I.E. ADD ALK AND DIC VIA VERTICAL PROFILES
-      logical,parameter,public :: cdr_upscaling  = .true.  ! Should be false if not using CDR forcing
+      logical,parameter,public :: cdr_upscaling  = .false.
 
 
       ! end user inputs

@@ -54,7 +54,7 @@
       !!! Variables used only For vertical profiles
       real, allocatable, dimension(:,:,:)        :: cdr_flx3d   ! cdr tracer flux (layerwise)
       real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
-!      real, allocatable, dimension(:,:)          :: cdr_tot_mass      ! layer thicknesses of CDR release
+      real, allocatable, dimension(:,:,:)        :: cdr_flx3d_h   ! cdr tracer flux times thickness (layerwise)
       integer                                    :: ncdr_prof   ! number of release locations
       integer                                    :: N_src       ! number of layers from source file
 
@@ -100,7 +100,6 @@
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         else
           call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
-!          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! set total mass of ALK and DIC to be added at current time
           call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
 
           call create_cdr_vertical_structure
@@ -167,6 +166,7 @@
 
           ncdr = ncdr_prof
           allocate(cdr_flx3d(ncdr,2,N_src)); cdr_flx3d(:,:,:) = 0
+          allocate(cdr_flx3d_h(ncdr,2,N_src)); cdr_flx3d_h(:,:,:) = 0
           allocate(cdr_hz(ncdr,N_src));       cdr_hz(:,:) = 0
 !          allocate(cdr_tot_mass(ncdr,2));       cdr_tot_mass(:,:) = 0
         else
@@ -272,7 +272,6 @@
 
         if (depth_profiles == 'T') then
           call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
-!          call set_frc_data(nc_tot_mass,var2d=cdr_tot_mass) ! initialize total mass of ALK and DIC to be added at current time
           call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
         endif
 
@@ -470,7 +469,7 @@
           a0(trc,k) = interface_values(trc,k)
           a1(trc,k) = 6*cdr_flx3d(icdr,trc,k) - 4*interface_values(trc,k) - 2*interface_values(trc,k+1)
           a2(trc,k) = 3*(interface_values(trc,k) + interface_values(trc,k+1) - 2*cdr_flx3d(icdr,trc,k))
-          total_tracer_orig(trc) = total_tracer_orig(trc) + cdr_hz(icdr,k)*cdr_flx3d(icdr,trc,k)
+          total_tracer_orig(trc) = total_tracer_orig(trc) + cdr_flx3d(icdr,trc,k)
         enddo
       enddo
 
@@ -551,7 +550,7 @@
 
           enddo
           cdrflx_tmp(trc,k) = definite_integral(trc,k) / tot_dist
-          total_tracer_new(trc) = total_tracer_new(trc) + H_new(k)*cdrflx_tmp(trc,k)
+          total_tracer_new(trc) = total_tracer_new(trc) + cdrflx_tmp(trc,k)
         enddo
       enddo
 
@@ -569,15 +568,15 @@
         endif
       enddo
 
+      total_tracer_new(:) = 0
       do trc = 1,2
         do k = 1,nz
           cdr_prf(cidx,cdr_inds(trc),k) = cdrflx_tmp(trc,k)
         enddo
       enddo
 
-      cdr_flx(icdr,iALK) = 1.0 !cdr_tot_mass(icdr,1)
-      cdr_flx(icdr,iDIC) = 1.0 !cdr_tot_mass(icdr,2)
-
+      cdr_flx(icdr,iALK) = 1.0
+      cdr_flx(icdr,iDIC) = 1.0
 
       end subroutine remap_src_to_grid
 ! ----------------------------------------------------------------------
@@ -785,10 +784,12 @@
           allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
           nc_cdrhz%ungridded = .true.
           nc_cdrhz%ungridded_forcing_file = cdr_file
+          nc_cdrhz%time_interpolation = .false.
 !          nc_tot_mass%ungridded = .true.
 !          nc_tot_mass%ungridded_forcing_file = cdr_file
           nc_cdrflx3d%ungridded = .true.
           nc_cdrflx3d%ungridded_forcing_file = cdr_file
+          nc_cdrflx3d%time_interpolation = .false.
         endif
           allocate(nc_cdrflx%vdata(ncdr,nt,2))
           nc_cdrflx%ungridded = .true.
