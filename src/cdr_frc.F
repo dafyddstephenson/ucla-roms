@@ -317,9 +317,7 @@
         endif
 
         ! Get tracer indices for ALK and DIC; generally only used for upscaling
-#if defined BIOLOGY_BEC2 || defined MARBL
-          call get_tracer_indices
-#endif
+        call get_tracer_indices
 
         call create_cdr_vertical_structure
 
@@ -338,6 +336,7 @@
 
       integer :: idx, itot
 
+#if defined BIOLOGY_BEC2 || defined MARBL
       itot = 0
       do idx=1,ntrc_bio
          itot=itot+1
@@ -351,6 +350,7 @@
 
       cdr_inds(1) = iALK
       cdr_inds(2) = iDIC
+#endif
 
       end subroutine get_tracer_indices  !]
 ! ----------------------------------------------------------------------
