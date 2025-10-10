@@ -165,11 +165,11 @@
       if (depth_profiles == 'T') then
 
         ! Make sure that we have all the necessary CPP keys and settings to use depth profiles
-        #if defined BIOLOGY_BEC2 || defined MARBL
+#if defined BIOLOGY_BEC2 || defined MARBL
           ierr = 0
-        #else
+#else
           ierr = 1
-        #endif
+#endif
         if (ierr == 1) then
           error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
         endif
@@ -317,9 +317,9 @@
         endif
 
         ! Get tracer indices for ALK and DIC; generally only used for upscaling
-        #if defined BIOLOGY_BEC2 || defined MARBL
+#if defined BIOLOGY_BEC2 || defined MARBL
           call get_tracer_indices
-        #endif
+#endif
 
         call create_cdr_vertical_structure
 
