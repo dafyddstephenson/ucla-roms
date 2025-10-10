@@ -48,6 +48,7 @@
       character(len=11) :: cdr_trc_name = 'cdr_tracer'!! stored in a forcing file
       character(len=9)  :: cdr_tim_name = 'cdr_time'  !! stored in a forcing file
 
+      logical :: time_interpolation
 
       logical :: init_cdr_done = .false.
 
@@ -109,6 +110,7 @@
       integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
       logical, dimension(ncdr)  :: bad_releases
       integer, dimension(2) :: lmi
+      integer :: varid
       real :: vint,arg
       real :: local_int,global_int
       real, dimension(nz) :: arg_nz
@@ -119,6 +121,12 @@
       real,dimension(:,:,:),allocatable :: frac
 
       bad_releases(:) = .false.
+
+      ierr=nf90_inq_varid (ncid, 'time_interpolation', varid)
+      if (ierr == nf90_noerr) then
+        ierr=nf90_get_var(ncid, varid, time_interpolation)
+      endif
+
       call init_arrays_cdr
 
       if (cdr_analytical) then
@@ -312,10 +320,15 @@
 
           nc_cdrtrc%ungridded = .true.
           nc_cdrtrc%ungridded_forcing_file = cdr_file
+
+          nc_cdrvol%time_interpolation = time_interpolation
+          nc_cdrtrc%time_interpolation = time_interpolation
         else
           allocate(nc_cdrflx%vdata(ncdr,nt,2))
           nc_cdrflx%ungridded = .true.
           nc_cdrflx%ungridded_forcing_file = cdr_file
+
+          nc_cdrflx%time_interpolation = time_interpolation
         endif
       endif
 
