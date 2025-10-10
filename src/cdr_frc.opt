@@ -33,9 +33,5 @@
       ! Layerwise additionality
       type (ncforce3d) :: nc_cdrflx3d = ncforce3d( vname='cdr_trcflx_profile', tname='cdr_time')
 
-      ! SPECIAL FLAG FOR UPSCALING (I.E. ADD ALK AND DIC VIA VERTICAL PROFILES
-      logical,parameter,public :: cdr_upscaling  = .false.
-
-
       ! end user inputs
       ! ****************************************************************

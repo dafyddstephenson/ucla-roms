@@ -34,7 +34,8 @@
       real,dimension(:,:,:),allocatable           :: frac         ! array for determining how to distribute release spatially
 
       character(len=1)                            :: depth_profiles    ! T if this file contains depth profiles,
-                                                                     ! F if parameterizing using idealized Gaussian profiles
+                                                                       ! F if parameterizing using idealized Gaussian profiles
+
       real, allocatable, dimension(:)             :: cdr_lon    ! longitude of cdr release
       real, allocatable, dimension(:)             :: cdr_lat    ! latitude of cdr location
       integer                                     :: ncdr       ! Total number of CDR releases
@@ -132,6 +133,7 @@
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
 
+      ! Determine whether the CDR forcing should use time interpolation
       ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
       if (ierr == nf90_noerr) then
         ierr=nf90_get_var(ncid, varid, time_interpolation)
@@ -139,64 +141,78 @@
         time_interpolation = 'F'
       endif
 
-        ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
-        if(ierr/=0)
-     &      call handle_ierr(ierr,
-     &       'init_cdr_frc:: Cant open cdr forcing file')
+      ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
+      if(ierr/=0)
+     &    call handle_ierr(ierr,
+     &     'init_cdr_frc:: Cant open cdr forcing file')
 
-        ierr=nf90_inq_varid (ncid, 'depth_profiles', varid)
-        if (ierr == nf90_noerr) then
-          ierr=nf90_get_var(ncid, varid, depth_profiles)
-          if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
-            error stop 'ERROR: while reading CDR forcing file, invalid value found for variable depth_profiles (must be T or F)'
-          endif
-        else
-          ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
-          mpi_nonexit_warn print *, ' --- WARNING: ',
-     &    'variable depth_profiles not found in CDR forcing file, so we will treat it is being False and will look for inputs ',
-     &    'to initialize Gaussian profiles.'
-          depth_profiles='F'
+      ! Determine whether we are using depth profiles for upscaling, or a parameterized forcing
+      ierr=nf90_inq_varid (ncid, 'depth_profiles', varid)
+      if (ierr == nf90_noerr) then
+        ierr=nf90_get_var(ncid, varid, depth_profiles)
+        if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
+          error stop 'ERROR: while reading CDR forcing file, invalid value found for variable depth_profiles (must be T or F)'
+        endif
+      else
+        ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
+        mpi_nonexit_warn print *, ' --- WARNING: ',
+     &  'variable depth_profiles not found in CDR forcing file, so we will treat it is being False and will look for inputs ',
+     &  'to initialize Gaussian profiles.'
+        depth_profiles='F'
+      endif
+
+      ! If using depth profiles, read the input file and determine how many to use
+      if (depth_profiles == 'T') then
+
+        ! Make sure that we have all the necessary CPP keys and settings to use depth profiles
+        #if defined BIOLOGY_BEC2 || defined MARBL
+          ierr = 0
+        #else
+          ierr = 1
+        #endif
+        if (ierr == 1) then
+          error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
         endif
 
-        if (depth_profiles == 'T') then
-          ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
-          if (ierr /= nf90_noerr) then
-            error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
-          endif
-          ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
-
-          ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
-          if (ierr /= nf90_noerr) then
-            error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
-          endif
-          ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
-
-          ncdr = ncdr_prof
-          allocate(cdr_flx3d(ncdr,2,N_src));   cdr_flx3d(:,:,:) = 0
-          allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
-        else
-          ncdr = ncdr_parm
-          call ncread(ncid,cdr_loc_dep,cdr_dep)
-          call ncread(ncid,cdr_scl_hor,cdr_hsc)
-          call ncread(ncid,cdr_scl_vrt,cdr_vsc)
+        ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
+        if (ierr /= nf90_noerr) then
+          error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
         endif
+        ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
 
-        allocate(bad_releases(ncdr)); bad_releases(:) = .false.
-        allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
-        allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
-        allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
-        allocate(cdr_nloc(0:ncdr));   cdr_nloc(:)=0
+        ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
+        if (ierr /= nf90_noerr) then
+          error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
+        endif
+        ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
-        call init_arrays_cdr
+        ncdr = ncdr_prof
+        allocate(cdr_flx3d(ncdr,2,N_src));   cdr_flx3d(:,:,:) = 0
+        allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
+      else
+        ncdr = ncdr_parm
+        call ncread(ncid,cdr_loc_dep,cdr_dep)
+        call ncread(ncid,cdr_scl_hor,cdr_hsc)
+        call ncread(ncid,cdr_scl_vrt,cdr_vsc)
+      endif
 
-        call ncread(ncid,cdr_loc_lon,cdr_lon)
-        call ncread(ncid,cdr_loc_lat,cdr_lat)
+      ! Allocate memory and initialize arrays to read in forcing
+      allocate(bad_releases(ncdr)); bad_releases(:) = .false.
+      allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
+      allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
+      allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
+      allocate(cdr_nloc(0:ncdr));   cdr_nloc(:)=0
 
-        ierr = nf90_close(ncid)
+      call init_arrays_cdr
+
+      call ncread(ncid,cdr_loc_lon,cdr_lon)
+      call ncread(ncid,cdr_loc_lat,cdr_lat)
+
+      ierr = nf90_close(ncid)
 
 
-
-        ! find fractional cdr fluxes for this subdomain
+        ! Figure out where to apply CDR forcing
+        ! Find fractional cdr fluxes for this subdomain
         allocate(dist(GLOBAL_2D_ARRAY)); dist = 1e6 ! Some large number so we don't get single-point releases in the halos
         allocate(frac(GLOBAL_2D_ARRAY,ncdr)); frac = 0
 
@@ -300,9 +316,10 @@
           call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
         endif
 
-        if (cdr_upscaling) then
+        ! Get tracer indices for ALK and DIC; generally only used for upscaling
+        #if defined BIOLOGY_BEC2 || defined MARBL
           call get_tracer_indices
-        endif
+        #endif
 
         call create_cdr_vertical_structure
 
