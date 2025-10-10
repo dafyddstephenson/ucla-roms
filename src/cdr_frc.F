@@ -29,18 +29,18 @@
       integer,public,allocatable,dimension(:)     :: cdr_jloc     ! cdr local j location
       real   ,public,allocatable,dimension(:)     :: cdr_icdr     ! cdr release number
 
-      integer,public                            :: icdr,cidx    ! index for looping through cdr locations
-      integer,allocatable,dimension(:)          :: cdr_nloc     ! number of active grid points for cdr
+      integer,allocatable,dimension(:)            :: cdr_nloc     ! number of active grid points for cdr
 
-      real,dimension(:,:)  ,allocatable         :: dist         ! array of distances from target release location
-      real,dimension(:,:,:),allocatable         :: frac         ! array for determining how to distribute release spatially
+      real,dimension(:,:,:),allocatable           :: frac         ! array for determining how to distribute release spatially
 
-      character(len=1)                          :: depth_profiles    ! T if this file contains depth profiles,
+      character(len=1)                            :: depth_profiles    ! T if this file contains depth profiles,
                                                                      ! F if parameterizing using idealized Gaussian profiles
-      real, allocatable, dimension(:)                  :: cdr_lon    ! longitude of cdr release
-      real, allocatable, dimension(:)                  :: cdr_lat    ! latitude of cdr location
-      integer                                          :: ncdr       ! Total number of CDR releases
-      real,public,allocatable,dimension(:,:)           :: cdr_flx      ! cdr tracer flux
+      real, allocatable, dimension(:)             :: cdr_lon    ! longitude of cdr release
+      real, allocatable, dimension(:)             :: cdr_lat    ! latitude of cdr location
+      integer                                     :: ncdr       ! Total number of CDR releases
+      real,public,allocatable,dimension(:,:)      :: cdr_flx      ! cdr tracer flux
+
+      character(len=1)                            :: time_interpolation
 
       logical :: init_cdr_done = .false.
 
@@ -54,7 +54,6 @@
       !!! Variables used only For vertical profiles
       real, allocatable, dimension(:,:,:)        :: cdr_flx3d   ! cdr tracer flux (layerwise)
       real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
-      real, allocatable, dimension(:,:,:)        :: cdr_flx3d_h   ! cdr tracer flux times thickness (layerwise)
       integer                                    :: ncdr_prof   ! number of release locations
       integer                                    :: N_src       ! number of layers from source file
 
@@ -80,8 +79,7 @@
       implicit none
 
       ! local
-      integer :: i,j
-      integer :: ierr
+      integer :: i,j, ierr, icdr
 
       if (.not. init_cdr_done) call init_cdr_frc
 
@@ -123,19 +121,28 @@
       implicit none
 
       ! local
-      integer :: ierr,ncid,i,j,k
+      integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
       integer :: id,ndims,dimid, varid
+      logical, dimension(:), allocatable  :: bad_releases
+      integer, dimension(2) :: lmi
+      real :: vint,arg
       real :: local_int,global_int
       real :: local_min_val
-      integer, dimension(2) :: lmi
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
-      integer :: cidx_start
-      character(len=16) dname
+      real,dimension(:,:)  ,allocatable :: dist
+
+      ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
+      if (ierr == nf90_noerr) then
+        ierr=nf90_get_var(ncid, varid, time_interpolation)
+      else
+        time_interpolation = 'F'
+      endif
 
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
         if(ierr/=0)
-     &      call handle_ierr(ierr,'init_cdr_frc:: Cant open cdr forcing file')
+     &      call handle_ierr(ierr,
+     &       'init_cdr_frc:: Cant open cdr forcing file')
 
         ierr=nf90_inq_varid (ncid, 'depth_profiles', varid)
         if (ierr == nf90_noerr) then
@@ -165,10 +172,8 @@
           ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
           ncdr = ncdr_prof
-          allocate(cdr_flx3d(ncdr,2,N_src)); cdr_flx3d(:,:,:) = 0
-          allocate(cdr_flx3d_h(ncdr,2,N_src)); cdr_flx3d_h(:,:,:) = 0
-          allocate(cdr_hz(ncdr,N_src));       cdr_hz(:,:) = 0
-!          allocate(cdr_tot_mass(ncdr,2));       cdr_tot_mass(:,:) = 0
+          allocate(cdr_flx3d(ncdr,2,N_src));   cdr_flx3d(:,:,:) = 0
+          allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
         else
           ncdr = ncdr_parm
           call ncread(ncid,cdr_loc_dep,cdr_dep)
@@ -176,10 +181,11 @@
           call ncread(ncid,cdr_scl_vrt,cdr_vsc)
         endif
 
-        allocate(cdr_flx(ncdr,nt)); cdr_flx(:,:) = 0
-        allocate(cdr_lon(ncdr)); cdr_lon(:) = 0
-        allocate(cdr_lat(ncdr)); cdr_lat(:) = 0
-        allocate(cdr_nloc(0:ncdr)); cdr_nloc(:)=0
+        allocate(bad_releases(ncdr)); bad_releases(:) = .false.
+        allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
+        allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
+        allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
+        allocate(cdr_nloc(0:ncdr));   cdr_nloc(:)=0
 
         call init_arrays_cdr
 
@@ -223,9 +229,6 @@
             print *, 'at point', lmi
             print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
             print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
-            if ((rmask(lmi(1),lmi(2))==0) .and. (cdr_hsc(icdr) == 0)) then
-              error stop 'ERROR: single-point CDR release requested on a land point'
-            endif
           endif
 
 
@@ -254,12 +257,34 @@
                 frac(lmi(1),lmi(2),icdr) = 1
                 cidx = cidx+1
               endif
-            endif
-
+           endif
           endif ! cdr_hsc(icdr) = 0
-          cidx_start = cidx
 
-        enddo ! icdr
+          ! Check for releases on land
+          if ((frac(lmi(1),lmi(2),icdr) ==1 ) .and.
+     &         (rmask(lmi(1),lmi(2))==0)) then
+             bad_releases(icdr) = .true.
+          end if
+
+          cidx_start = cidx
+       enddo                    ! icdr
+
+       ! Report any releases on land and stop
+       call MPI_Allreduce(MPI_IN_PLACE, bad_releases, ncdr, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierr)
+
+       ! Now every rank has the same bad_releases array
+       if (any(bad_releases)) then
+          if (mynode == 0) then
+             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+             print *, "ERROR: the following CDR releases are on land"
+             print *, "(Note 1-indexing):",
+     &            pack([(i,i=1,ncdr)], bad_releases)
+             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+          end if
+          call MPI_Barrier(MPI_COMM_WORLD, ierr)
+       end if
+
 
         cdr_nprf = cidx
 
@@ -318,6 +343,7 @@
 
       ! local
       integer :: ierr,ncid,i,j,k
+      integer :: icdr, cidx
       real :: vint,arg
       real :: local_int,global_int
       real, dimension(nz) :: arg_nz
@@ -364,13 +390,7 @@
                    endif
                  ! VERTICAL STRUCTURE FROM DATA
                  else
-!                  if (icdr == 235) then
-!                  print *, "YAY", mynode, icdr
-!                  call flush()
                   call remap_src_to_grid(i,j,icdr,cidx)
-!                  endif
-!                    ! cdr_flx should be the total mass in the column
-!                    ! cdr_prf should be determined by remapping the vertical structure
                  endif
 
                endif
@@ -777,24 +797,34 @@
 
         nc_cdrtrc%ungridded = .true.
         nc_cdrtrc%ungridded_forcing_file = cdr_file
+
+        if (time_interpolation == 'T') then
+          nc_cdrvol%time_interpolation = .true.
+          nc_cdrtrc%time_interpolation = .true.
+        endif
       else
         if (depth_profiles=='T') then
           allocate(nc_cdrhz%vdata(ncdr,N_src,2))
-!          allocate(nc_tot_mass%vdata(ncdr,2,2))
-          allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
           nc_cdrhz%ungridded = .true.
           nc_cdrhz%ungridded_forcing_file = cdr_file
-          nc_cdrhz%time_interpolation = .false.
-!          nc_tot_mass%ungridded = .true.
-!          nc_tot_mass%ungridded_forcing_file = cdr_file
+
+          allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
           nc_cdrflx3d%ungridded = .true.
           nc_cdrflx3d%ungridded_forcing_file = cdr_file
-          nc_cdrflx3d%time_interpolation = .false.
-        endif
-          allocate(nc_cdrflx%vdata(ncdr,nt,2))
-          nc_cdrflx%ungridded = .true.
-          nc_cdrflx%ungridded_forcing_file = cdr_file
 
+          if (time_interpolation == 'T') then
+            nc_cdrhz%time_interpolation = .true.
+            nc_cdrflx3d%time_interpolation = .true.
+          endif
+        endif
+
+        allocate(nc_cdrflx%vdata(ncdr,nt,2))
+        nc_cdrflx%ungridded = .true.
+        nc_cdrflx%ungridded_forcing_file = cdr_file
+
+        if (time_interpolation == 'T') then
+          nc_cdrflx%time_interpolation = .true.
+        endif
       endif
 
       ! Print user options (cdr_frc.opt) to netcdf attributes

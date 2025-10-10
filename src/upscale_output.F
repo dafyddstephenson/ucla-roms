@@ -633,6 +633,7 @@
       use tracers
       use dimensions
       use roms_read_write
+      use netcdf
       use scalars
       use ocean_vars
 
@@ -640,7 +641,7 @@
 
       private
 
-#include "upscale.opt"
+#include "upscale_output.opt"
 
       ! Public functions
       public init_upscale
