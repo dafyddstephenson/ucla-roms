@@ -48,7 +48,7 @@
       character(len=11) :: cdr_trc_name = 'cdr_tracer'!! stored in a forcing file
       character(len=9)  :: cdr_tim_name = 'cdr_time'  !! stored in a forcing file
 
-      logical :: time_interpolation
+      character(len=1) :: time_interpolation
 
       logical :: init_cdr_done = .false.
 
@@ -321,14 +321,14 @@
           nc_cdrtrc%ungridded = .true.
           nc_cdrtrc%ungridded_forcing_file = cdr_file
 
-          nc_cdrvol%time_interpolation = time_interpolation
-          nc_cdrtrc%time_interpolation = time_interpolation
+!          nc_cdrvol%time_interpolation = time_interpolation
+!          nc_cdrtrc%time_interpolation = time_interpolation
         else
           allocate(nc_cdrflx%vdata(ncdr,nt,2))
           nc_cdrflx%ungridded = .true.
           nc_cdrflx%ungridded_forcing_file = cdr_file
 
-          nc_cdrflx%time_interpolation = time_interpolation
+!          nc_cdrflx%time_interpolation = time_interpolation
         endif
       endif
 
