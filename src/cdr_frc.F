@@ -133,6 +133,11 @@
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
 
+      ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
+      if(ierr/=0)
+     &    call handle_ierr(ierr,
+     &     'init_cdr_frc:: Cant open cdr forcing file')
+
       ! Determine whether the CDR forcing should use time interpolation
       ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
       if (ierr == nf90_noerr) then
@@ -140,11 +145,6 @@
       else
         time_interpolation = 'F'
       endif
-
-      ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
-      if(ierr/=0)
-     &    call handle_ierr(ierr,
-     &     'init_cdr_frc:: Cant open cdr forcing file')
 
       ! Determine whether we are using depth profiles for upscaling, or a parameterized forcing
       ierr=nf90_inq_varid (ncid, 'depth_profiles', varid)
