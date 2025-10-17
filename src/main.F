@@ -38,16 +38,8 @@ C$    ierr=0
       tstart=MPI_Wtime()
       if (ierr == 0) then
 # endif
-#ifdef BIOLOGY_BEC2
-!     When using BEC, BGC tracer indices are set in init_tracers
-!     then used in init_scalars, so this order must be maintained
-         call init_tracers
-         call init_scalars(ierr)
-#else
         call init_scalars(ierr)          ! Initialize global scalars,
-                                         ! model tunable parameters,
         call init_tracers
-#endif
         if (ierr == 0) then
 C$        call omp_set_dynamic(.false.)
 C$OMP PARALLEL                           ! fast-time averaging weights
@@ -222,8 +214,6 @@ CR      write(*,*) ' -6' MYID
 #endif
 
 # if defined(BIOLOGY_BEC2)
-!     pH is initialized to 0 in ecosys_init
-!     FIXME: if using MARBL with diagnostics then this call is skipped and diagnostics arrays are not initialised to 0
       call ecosys2_init
 # endif /*BIOLOGY_BEC2*/
 

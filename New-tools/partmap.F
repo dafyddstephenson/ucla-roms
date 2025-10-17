@@ -70,7 +70,7 @@
       varid=nccreate(npid,vname2,dname,dsize)
       vname3='jnode'
       varid=nccreate(npid,vname3,dname,dsize)
-      
+
       ! Set up subdomain indices
       nx = ceiling(1.0*gnx/npx)
       ny = ceiling(1.0*gny/npy)

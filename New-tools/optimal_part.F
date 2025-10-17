@@ -40,7 +40,7 @@
        if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','xi_rho')
       ierr = nf90_inquire_dimension(ncid, dimid, len=gnx)
        if (ierr/=0) call handle_ierr(ierr,'getting dimension: ','xi_rho')
-        
+
       ierr = nf90_inq_dimid(ncid,'eta_rho',dimid)
        if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','eta_rho')
       ierr = nf90_inquire_dimension(ncid, dimid, len=gny)
@@ -51,7 +51,7 @@
       gny = gny-2
 
       ! mask rho
-      allocate(msk(0:gnx+1,0:gny+1)); msk=1 
+      allocate(msk(0:gnx+1,0:gny+1)); msk=1
       call ncread(ncid,'mask_rho',msk)
 
       ierr = nf90_close(ncid)
@@ -96,7 +96,7 @@
       enddo
 
       ierr = nf90_close(npid)
-                     
+
       call sort(active)
 
       do k = 1,10

@@ -1,6 +1,6 @@
       program ncjoin
 
-      ! To distinguish between the partitions and the nodes of this 
+      ! To distinguish between the partitions and the nodes of this
       ! code, we'll use mynode,nnodes for the mpi-nodes that this
       ! application uses and npart,part for the number of partitions
 
@@ -9,12 +9,12 @@
       use mpi
       use roms_part
 
-      ! ----- Allocation ----- 
+      ! ----- Allocation -----
       implicit none
 
       ! Local
-!     type(ncstructure) :: ncinfo            ! structure to access netcdf info  
-!     integer :: ierr,ncgrd,count,dimid ! netcdf 
+!     type(ncstructure) :: ncinfo            ! structure to access netcdf info
+!     integer :: ierr,ncgrd,count,dimid ! netcdf
 !     integer :: gnx,gny                     ! Global domain dimensions
 !     integer :: loc_x,loc_y,lnx,lny         ! partition lengths
 !     integer :: ifile
@@ -27,7 +27,7 @@
 
       call MPI_Init(ierr)
 
-      ! Set up nodes 
+      ! Set up nodes
       part_comm = MPI_COMM_WORLD
       call MPI_Comm_rank(part_comm, mynode, ierr)
       call MPI_Comm_size(part_comm, nnodes, ierr)
@@ -41,7 +41,7 @@
       if (MOD(i,2)/=0) then
       stridx=file_indices(i); endidx=file_indices(i+1)
       allocate(partfiles(0:endidx-stridx))
-      
+
       !print*,'number of files: ', size(partfiles)
       ! with new set of files, set definitions
       partfiles=allfiles(stridx:endidx)
@@ -56,7 +56,7 @@
       call make_joined_file
 
       call MPI_Barrier(part_comm, ierr)
-     
+
       if (mynode==0) print *, 'Writing joined file'
 
       call write_joined_file
