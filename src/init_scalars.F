@@ -85,8 +85,4 @@ c      write(*,*) 'kmp_stacksize =', size
 
       endif
 
-#ifdef BIOLOGY_BEC2
-        call init_scalars_bec2
-#endif
-
       end
