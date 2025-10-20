@@ -176,12 +176,14 @@
           error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
         endif
 
+        ! Figure out how many release points there are
         ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
         if (ierr /= nf90_noerr) then
           error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
         endif
         ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
 
+        ! Get number of vertical levels from source grid
         ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
         if (ierr /= nf90_noerr) then
           error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
@@ -330,7 +332,8 @@
 ! ----------------------------------------------------------------------
       subroutine get_tracer_indices  ![
 
-      ! Need to get names of tracers
+      ! Figure out which indices in the tracer array correspond
+      ! to ALK and DIC, and save those values in an array
       use tracers, only: t, t_vname, t_lname, t_units
       use param
 
@@ -358,6 +361,9 @@
 ! ----------------------------------------------------------------------
       subroutine create_cdr_vertical_structure  ![
 
+      ! Either figure out vertical structure of parameterized releases, or
+      ! perform conservative remapping for depth profiles.
+
       use mpi
       implicit none
 
@@ -372,7 +378,7 @@
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
 
-        ! populate the profiles with fractional releases
+        ! Populate the profiles with fractional releases
         cidx = 0
         do icdr= 1,ncdr
           do j=1,ny
@@ -409,6 +415,7 @@
                      cdr_prf(cidx,:,:) = frac(i,j,icdr)*cdr_prf(cidx,:,:)/vint
                    endif
                  ! VERTICAL STRUCTURE FROM DATA
+                 ! Conservatively remap the fluxes from the source grid to the current grid
                  else
                   call remap_src_to_grid(i,j,icdr,cidx)
                  endif
@@ -435,9 +442,12 @@
 
       end subroutine create_cdr_vertical_structure  !]
 ! ----------------------------------------------------------------------
-      ! This routine will populate cdr_prf using the data that is read from file
 
       subroutine remap_src_to_grid(i,j,icdr,cidx)
+
+      ! This routine will populate cdr_prf using the data that is read from file
+      ! Perform conservative remapping of a depth profile from the source grid to the
+      ! target (current) grid using piecewise parabolic reconstruction.
 
       use mpi
       implicit none
@@ -490,9 +500,10 @@
       definite_integral(:,:) = 0.0
       cdrflx_tmp(:,:) = 0.0
 
-
+      ! Calculate flux values at interfaces between grid cells
       call calc_interface_values(cdr_flx3d(icdr,:,:), cdr_hz(icdr,:), interface_values)
 
+      ! Compare total depths and expand/contract current grid to match original depth
       total_depth_src = 0
       total_depth_tgt = 0
       do k=1,nz
@@ -547,6 +558,7 @@
       curr_src_height = H_orig(1)
       curr_src_index = 1
 
+      ! Sort the source and target cell heights so we know how to perform the integration
       do k_new = 1,nz-1
 
         do while (curr_tgt_height > curr_src_height)
@@ -564,6 +576,7 @@
 
       enddo
 
+      ! Remap by integrating the piecewise parabolas from the source grid
       tgt_index_end(nz) = N_src
       tgt_frac_end(nz)  = 1
 
@@ -621,6 +634,7 @@
       end subroutine remap_src_to_grid
 ! ----------------------------------------------------------------------
       real function integrate(a0, a1, a2, z0, z1) ![
+      ! Definite integration of a parabola
 
       implicit none
 
@@ -632,8 +646,9 @@
 
       end function integrate !]
 ! ----------------------------------------------------------------------
-
       subroutine calc_interface_values(arr, H, int_vals)  ![
+
+      ! Interpolate/extrapolate values from cell centers to the cell interfaces
 
       implicit none
 
@@ -710,6 +725,9 @@
 ! ----------------------------------------------------------------------
       real function gauss(M, b, ord) ![
 
+      !! This routine uses Gaussian Elimination to reduce the matrix M to row-echelon form (lower triangular).
+      !! It only returns the first element of the solution vector.
+
       implicit none
 
       real, dimension(0:3,0:3), intent(inout) :: M
@@ -717,9 +735,6 @@
       integer, intent(in) :: ord
       real :: ratio
       integer :: i,j,k
-
-      !! This routine uses Gaussian Elimination to reduce the matrix M to row-echelon form (lower triangular).
-      !! It only returns the first element of the solution vector.
 
       !! Starting from the last row, we're going to work upwards to
       !! make M a lower triangular matrix
@@ -742,6 +757,9 @@
       end function gauss !]
 ! ----------------------------------------------------------------------
       subroutine thomas_PPM(Ts_bot, Ts_top, arr, H, int_vals)  ![
+
+      ! Extremely efficient tridiagonal matrix solver for cases where we
+      ! have a diagonally dominant input matrix
 
       implicit none
 
@@ -793,10 +811,7 @@
         enddo
         dp(n) = (d(n) - a(n)*dp(n-1)) / (b(n) - a(n)*cp(n-1))
 
-        !int_vals(t,n) = dp(n)
-        !int_vals(t,1) = Ts_bot(t)
         int_vals(t,n) = d(n)
-        !do k = (n-1),1,-1
         do k = (n-1),1,-1
           int_vals(t,k) = dp(k) - cp(k)*int_vals(t,k+1)
         enddo
@@ -805,6 +820,9 @@
       end subroutine thomas_PPM !]
 ! ----------------------------------------------------------------------
       subroutine init_arrays_cdr  ![
+
+      ! Initialize arrays to hold the NetCDF input
+
       implicit none
 
       character(len=30) :: string
