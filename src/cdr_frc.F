@@ -126,7 +126,6 @@
       integer :: id,ndims,dimid, varid
       logical, dimension(:), allocatable  :: bad_releases
       integer, dimension(2) :: lmi
-      integer :: varid
       real :: vint,arg
       real :: local_int,global_int
       real :: local_min_val
