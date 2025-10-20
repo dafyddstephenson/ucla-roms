@@ -126,6 +126,7 @@
       integer :: id,ndims,dimid, varid
       logical, dimension(:), allocatable  :: bad_releases
       integer, dimension(2) :: lmi
+      integer :: varid
       real :: vint,arg
       real :: local_int,global_int
       real :: local_min_val
@@ -137,6 +138,8 @@
       if(ierr/=0)
      &    call handle_ierr(ierr,
      &     'init_cdr_frc:: Cant open cdr forcing file')
+
+      bad_releases(:) = .false.
 
       ! Determine whether the CDR forcing should use time interpolation
       ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
@@ -834,14 +837,15 @@
             nc_cdrhz%time_interpolation = .true.
             nc_cdrflx3d%time_interpolation = .true.
           endif
-        endif
+        else
+          allocate(nc_cdrflx%vdata(ncdr,nt,2))
+          nc_cdrflx%ungridded = .true.
+          nc_cdrflx%ungridded_forcing_file = cdr_file
 
-        allocate(nc_cdrflx%vdata(ncdr,nt,2))
-        nc_cdrflx%ungridded = .true.
-        nc_cdrflx%ungridded_forcing_file = cdr_file
+          if (time_interpolation == 'T') then
+            nc_cdrflx%time_interpolation = .true.
+          endif
 
-        if (time_interpolation == 'T') then
-          nc_cdrflx%time_interpolation = .true.
         endif
       endif
 
