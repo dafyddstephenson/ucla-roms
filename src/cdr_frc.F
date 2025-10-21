@@ -138,8 +138,6 @@
      &    call handle_ierr(ierr,
      &     'init_cdr_frc:: Cant open cdr forcing file')
 
-      bad_releases(:) = .false.
-
       ! Determine whether the CDR forcing should use time interpolation
       ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
       if (ierr == nf90_noerr) then
