@@ -90,12 +90,14 @@
       ! Or: .... if analytical, define the river fluxes in this
       ! subroutine
       use netcdf
+      use mpi
       implicit none
 
       ! local
       integer :: i,j
       integer :: ierr,ncid,varid
       real  :: riv_cells,riv_east,riv_west
+      real  :: local_maxval, global_maxval
 
       allocate( riv_uflx(GLOBAL_2D_ARRAY) ); riv_uflx = 0.
       allocate( riv_vflx(GLOBAL_2D_ARRAY) ); riv_vflx = 0.
@@ -146,6 +148,22 @@
             call ncread(ncid, "river_index", ridx_real(i0:i1,j0:j1))
             call ncread(ncid, "river_fraction", rfrc(i0:i1,j0:j1))
             ierr = nf90_close(ncid)
+
+            ! Check if any river indices are greater than the chosen
+            ! value for nriv, in which case we could get a segfault
+            local_maxval = MAXVAL(ridx_real)
+
+            ! Find global maximum
+            call MPI_Reduce( local_maxval, global_maxval, 1, mpi_double_precision,
+     &      mpi_max, 0, ocean_grid_comm, ierr)
+
+            if (global_maxval > nriv) then
+              write(*,*) 'ERROR: nriv=', nriv,
+     &       'but index ', global_maxval,
+     &       ' found in river input file.'
+              stop
+            endif
+
 !     Check for non-integer values
             ridx(i0:i1, j0:j1) = int(ridx_real(i0:i1, j0:j1))
             if (any(abs(ridx_real(i0:i1,j0:j1) - ridx(i0:i1,j0:j1)) > 1.0e-6)) then
