@@ -99,6 +99,15 @@
         month_at_prev_timestep = date(2)
       endif
 
+#ifndef DIAGNOSTICS
+      if (diag_pflx) then
+           mpi_nonexit_warn write(*,*)
+     &           'WARNING: diag_pflx is set to .true.',
+     & ', but DIAGNOSTICS is not defined. Variables associated',
+     & ' with diag_pflx will not be saved to restart files.'
+      endif
+#endif
+
       end subroutine init_restarts !]
 !----------------------------------------------------------------------
       subroutine init_avg_arrays  ![
@@ -624,8 +633,12 @@
 !       call ncwrite(ncid,'Akt',Akt(i0:i1,j0:j1,:,itemp),start)
 !       call ncwrite(ncid,'Aks',Akt(i0:i1,j0:j1,:,isalt),start)
 
+#ifdef SPONGE_TUNE
         if (ub_tune)   call wrt_rst_ub(ncid,rec_rst)
+#endif
+#ifdef DIAGNOSTICS
         if (diag_pflx) call wrt_rst_diag_slow(ncid,rec_rst)
+#endif
 
 #ifdef MARBL
         call marbldrv_write_ss_vars_to_rst(ncid,rec_rst)
@@ -932,6 +945,8 @@
       ierr = nf90_put_att(ncid,varid,'units',vname(3,indxHbbl))
 # endif
 
+
+#ifdef DIAGNOSTICS
       if (diag_pflx) then
         varid = nccreate(ncid,'u_slow',(/dn_xu,dn_yr,dn_zr,dn_tm/),
      &                               (/xi_u,eta_rho,N,0/),nf90_double)
@@ -950,6 +965,7 @@
      &                               'time filtered pressure')
         ierr = nf90_put_att(ncid,varid,'units','Pa??')
       endif
+#endif
 #ifdef SPONGE_TUNE
        if (ub_tune) then
          varid = nccreate(ncid,'ub_west',

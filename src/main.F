@@ -462,7 +462,9 @@ CR      write(*,*)  ' -2' MYID
       call wrt_avg_ocean_vars
       if (do_extract) call do_extract_data
 
+#ifdef SPONGE_TUNE
       if (ub_tune)    call adjust_orlanski
+#endif
 
       if (floats)     call do_particles
 
