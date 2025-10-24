@@ -150,7 +150,7 @@
             ierr = nf90_close(ncid)
 
             ! Check if any river indices are greater than the chosen
-            ! value for nriv, in which case we could get a segfault 
+            ! value for nriv, in which case we could get a segfault
             local_maxval = MAXVAL(ridx_real)
 
             ! Find global maximum
@@ -158,7 +158,7 @@
      &      mpi_max, 0, ocean_grid_comm, ierr)
 
             if (global_maxval > nriv) then
-              write(*,*) 'ERROR: nriv=', nriv, 
+              write(*,*) 'ERROR: nriv=', nriv,
      &       'but index ', global_maxval,
      &       ' found in river input file.'
               stop
