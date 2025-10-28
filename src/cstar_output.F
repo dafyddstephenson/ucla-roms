@@ -65,11 +65,138 @@
       real,allocatable,dimension(:,:,:) :: DIC_source_avg
       real,allocatable,dimension(:,:,:) :: DIC_alt_source_avg
 
+      type CStarOutputVariable
+        character(len=32)              :: name
+        character(len=32), dimension(4) :: dimnames = ''  ! e.g. (/dn_xr,dn_yr,dn_tm/)
+        integer, dimension(4)          :: dimsizes = 0    ! matching sizes
+        character(len=128)             :: long_name
+        character(len=32)              :: units
+      end type CStarOutputVariable
+      
+
+      type(CStarOutputVariable), allocatable, save :: cstar_varlist(:) ! TODO save? nah
+      
       ! Public functions
       public wrt_cstar,init_cstar
 
-      contains
+      
 !----------------------------------------------------------------------
+
+      contains
+      subroutine add_cstar_output_variable(list, name, dimnames, dims,
+     &                                     long_name, units)
+        type(CStarOutputVariable), allocatable, intent(inout) :: list(:)
+        character(len=*), intent(in) :: name, long_name, units
+        character(len=*), dimension(:), intent(in) :: dimnames
+        integer, dimension(:), intent(in) :: dims
+        type(CStarOutputVariable), allocatable :: tmp(:)
+        integer :: n, nd
+
+        n = size(list)
+        allocate(tmp(n+1))
+        if (n .gt. 0) tmp(1:n) = list
+
+        tmp(n+1)%name      = name
+        tmp(n+1)%long_name = long_name
+        tmp(n+1)%units     = units
+
+        tmp(n+1)%dimnames = ''   ! clear
+        tmp(n+1)%dimsizes = 0    ! clear
+
+        nd = size(dimnames)
+        tmp(n+1)%dimnames(1:nd) = dimnames
+
+        nd = size(dims)
+        tmp(n+1)%dimsizes(1:nd) = dims
+
+        call move_alloc(tmp, list)
+      end subroutine add_cstar_output_variable
+!======================================================================
+      subroutine define_cstar_output_variables
+!======================================================================
+      if (.not. allocated(cstar_varlist)) allocate(cstar_varlist(0))
+
+      call add_cstar_output_variable(cstar_varlist, 'zeta',
+     &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
+     &      'free-surface elevation','meters')
+
+      call add_cstar_output_variable(cstar_varlist, 'temp',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'potential temperature','degrees Celsius')
+
+      call add_cstar_output_variable(cstar_varlist, 'salt',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'salinity','PSU')
+
+      call add_cstar_output_variable(cstar_varlist, 'ALK',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      t_lname(iALK), t_units(iALK))
+
+      call add_cstar_output_variable(cstar_varlist, 'DIC',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      t_lname(iDIC), t_units(iDIC))
+
+      call add_cstar_output_variable(cstar_varlist, 'ALK_ALT_CO2',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      t_lname(iALK_alt), t_units(iALK_alt))
+
+      call add_cstar_output_variable(cstar_varlist, 'DIC_ALT_CO2',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      t_lname(iDIC_alt), t_units(iDIC_alt))
+
+      call add_cstar_output_variable(cstar_varlist, 'hALK',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'thickness-weighted ' // trim(t_lname(iALK)),
+     &      'meters ' // trim(t_units(iALK)))
+
+      call add_cstar_output_variable(cstar_varlist, 'hDIC',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'thickness-weighted ' // trim(t_lname(iDIC)),
+     &      'meters ' // trim(t_units(iDIC)))
+
+      call add_cstar_output_variable(cstar_varlist, 'hALK_ALT_CO2',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'thickness-weighted ' // trim(t_lname(iALK_alt)),
+     &      'meters ' // trim(t_units(iALK_alt)))
+
+      call add_cstar_output_variable(cstar_varlist, 'hDIC_ALT_CO2',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'thickness-weighted ' // trim(t_lname(iDIC_alt)),
+     &      'meters ' // trim(t_units(iDIC_alt)))
+
+      call add_cstar_output_variable(cstar_varlist, 'pH',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      vname_marbl_ss_3d(2,iPH), vname_marbl_ss_3d(3,iPH))
+
+      call add_cstar_output_variable(cstar_varlist, 'pH_ALT_CO2',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      vname_marbl_ss_3d(2,iPH_alt), vname_marbl_ss_3d(3,iPH_alt))
+
+      call add_cstar_output_variable(cstar_varlist, 'FG_CO2',
+     &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
+     &      vname_bgc_diag_2d(2,iFG), vname_bgc_diag_2d(3,iFG))
+
+      call add_cstar_output_variable(cstar_varlist, 'FG_ALT_CO2',
+     &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
+     &      vname_bgc_diag_2d(2,iFG_alt), vname_bgc_diag_2d(3,iFG_alt))
+
+      if (cdr_source) then
+         call add_cstar_output_variable(cstar_varlist, 'ALK_source',
+     &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &        'ALK source from CDR module','meq/s')
+         call add_cstar_output_variable(cstar_varlist, 'ALK_ALT_source',
+     &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &        'alt ALK source from CDR module','meq/s')
+         call add_cstar_output_variable(cstar_varlist, 'DIC_source',
+     &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &        'DIC source from CDR module','mmol/s')
+         call add_cstar_output_variable(cstar_varlist, 'DIC_ALT_source',
+     &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &        'alt DIC source from CDR module','mmol/s')
+      endif
+
+      end subroutine define_cstar_output_variables
+      
       subroutine init_cstar ![
       ! Allocate and initialize arrays.
       implicit none
@@ -101,6 +228,8 @@
 
       if (mynode==0) print *,'init cstar'
 
+      !  Get tracer indices
+      ! --------------------------------------------------------------------------------
       ! Loop over MARBL tracers...
       ! ...but use itot as index (to include other tracers)
       do idx=1,ntrc_bio
@@ -206,8 +335,9 @@
         hDIC_alt_tmp(:,:,:)=0
       endif
 
-      if (mynode==0) print *,'init cstar'
-
+      call define_cstar_output_variables
+      call display_cstar_output_settings_to_terminal
+      
       end subroutine init_cstar  !]
 !----------------------------------------------------------------------
       subroutine calc_average ![
@@ -332,117 +462,24 @@
       end subroutine calc_cdr_source !]
 
 ! ----------------------------------------------------------------------
+      subroutine create_cstar_output_variables(ncid)
+        implicit none
+        integer, intent(in) :: ncid
+        integer :: varid, ierr, idx, nd
 
-      subroutine def_vars_cstar(ncid)  ![
-      implicit none
-
-      ! input
-      integer,intent(in) :: ncid
-      ! local
-      integer                        :: ierr, varid
-
-      varid = nccreate(ncid,'zeta',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',
-     & 'free-surface elevation')
-      ierr = nf90_put_att(ncid,varid,'units','meters')
-
-      varid = nccreate(ncid,'temp',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',
-     & 'potential temperature')
-      ierr = nf90_put_att(ncid,varid,'units','degrees Celsius')
-
-      varid = nccreate(ncid,'salt',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','salinity')
-      ierr = nf90_put_att(ncid,varid,'units','PSU')
-
-      varid = nccreate(ncid,'ALK',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iALK))
-      ierr = nf90_put_att(ncid,varid,'units',t_units(iALK))
-
-      varid = nccreate(ncid,'DIC',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iDIC))
-      ierr = nf90_put_att(ncid,varid,'units',t_units(iDIC))
-
-      varid = nccreate(ncid,'ALK_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iALK_alt))
-      ierr = nf90_put_att(ncid,varid,'units',t_units(iALK_alt))
-
-      varid = nccreate(ncid,'DIC_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',t_lname(iDIC_alt))
-      ierr = nf90_put_att(ncid,varid,'units',t_units(iDIC_alt))
-
-      varid = nccreate(ncid,'hALK',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iALK)))
-      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iALK)))
-
-      varid = nccreate(ncid,'hDIC',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iDIC)))
-      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC)))
-
-      varid = nccreate(ncid,'hALK_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iALK_alt)))
-      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iALK_alt)))
-
-      varid = nccreate(ncid,'hDIC_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iDIC_alt)))
-      ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC_alt)))
-
-      varid = nccreate(ncid,'pH',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',vname_marbl_ss_3d(2,iPH))
-      ierr = nf90_put_att(ncid,varid,'units',vname_marbl_ss_3d(3,iPH))
-
-      varid = nccreate(ncid,'pH_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',vname_marbl_ss_3d(2,iPH_alt))
-      ierr = nf90_put_att(ncid,varid,'units',vname_marbl_ss_3d(3,iPH_alt))
-
-      varid = nccreate(ncid,'FG_CO2',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',vname_bgc_diag_2d(2,iFG))
-      ierr = nf90_put_att(ncid,varid,'units',vname_bgc_diag_2d(3,iFG))
-
-      varid = nccreate(ncid,'FG_ALT_CO2',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),nf90_double)
-      ierr = nf90_put_att(ncid,varid,'long_name',vname_bgc_diag_2d(2,iFG_alt))
-      ierr = nf90_put_att(ncid,varid,'units',vname_bgc_diag_2d(3,iFG_alt))
-
-      if (cdr_source) then
-        varid = nccreate(ncid,'ALK_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','ALK source from '//
-     &     'CDR module')
-        ierr = nf90_put_att(ncid,varid,'units','meq/s')
-
-        varid = nccreate(ncid,'ALK_ALT_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','alt ALK source '//
-     &    'from CDR module')
-        ierr = nf90_put_att(ncid,varid,'units','meq/s')
-
-        varid = nccreate(ncid,'DIC_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','DIC source from '//
-     &      'CDR module')
-        ierr = nf90_put_att(ncid,varid,'units','mmol/s')
-
-        varid = nccreate(ncid,'DIC_ALT_source',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name','alt DIC source '//
-     &      'from CDR module')
-        ierr = nf90_put_att(ncid,varid,'units','mmol/s')
-      endif
-
-
-
-      if (do_avg) then
-        varid = nccreate(ncid,'avg_begin_time',(/dn_tm/),(/0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at '//
-     &    'beginning of averaging period')
-        ierr = nf90_put_att(ncid,varid,'units','seconds' )
-
-        varid = nccreate(ncid,'avg_end_time',(/dn_tm/),(/0/),nf90_double)
-        ierr = nf90_put_att(ncid,varid,'long_name', 'Time at end of '//
-     &     'averaging period')
-        ierr = nf90_put_att(ncid,varid,'units','seconds' )
-
-        ierr=nf90_put_att(ncid,nf90_global,'averaging',
-     &      'All variables are averaged in time')
-      endif
-
-      end subroutine def_vars_cstar  !]
+        do idx=1,size(cstar_varlist)
+          nd = count(cstar_varlist(idx)%dimnames /= '')
+          varid = nccreate(ncid,
+     &                     trim(cstar_varlist(idx)%name),
+     &                     cstar_varlist(idx)%dimnames(1:nd),
+     &                     cstar_varlist(idx)%dimsizes(1:nd),
+     &                     nf90_double)
+          ierr = nf90_put_att(ncid,varid,'long_name',
+     &                        trim(cstar_varlist(idx)%long_name))
+          ierr = nf90_put_att(ncid,varid,'units',
+     &                        trim(cstar_varlist(idx)%units))
+        end do
+        end subroutine create_cstar_output_variables
 !----------------------------------------------------------------------
       subroutine wrt_cstar  ![
       ! Check whether it is time to write to file
@@ -483,7 +520,7 @@
       if (record==nrpf) then
           call create_file('_cstar',fname)
           ierr=nf90_open(fname,nf90_write,ncid)
-          call def_vars_cstar(ncid)
+          call create_cstar_output_variables(ncid)
           ierr = nf90_close(ncid)
           record = 0
       endif
@@ -577,11 +614,41 @@
         navg = 0
 
 !
-      end subroutine wrt_output !]
+        end subroutine wrt_output !]
+
+        subroutine display_cstar_output_settings_to_terminal
+           if (mynode /= 0) return
+        
+           ! Basic header
+           write(*,'(/7x,A)') 'cstar_output settings:'
+           
+           ! Averaging mode
+           if (.not. do_avg) then
+              write(*,'(9x,A)') 'averaging: none'
+           else if (monthly_averages) then
+              write(*,'(9x,A)') 'averaging: monthly'
+           else
+              write(*,'(9x,A)') 'averaging: regular'
+           end if
+           
+           ! Only show output_period if relevant
+           if  (.not. monthly_averages) then
+              write(*,'(9x,A,F6.1)') 'output_period = ', output_period
+           end if
+           
+           ! Always show nrpf
+           write(*,'(9x,A,I4)') 'recs/file = ', nrpf
+           
+           write(*,'(9x,A)') 'variables:'
+           do idx=1,size(cstar_varlist)
+              write(*,'(11x,A)') trim(cstar_varlist(idx)%name)
+           end do
+           
+        end subroutine display_cstar_output_settings_to_terminal
+
 !----------------------------------------------------------------------
 
 #else /* MARBL && MARBL_DIAGS */
-
 !----------------------------------------------------------------------
       use param
       use tracers
@@ -615,7 +682,7 @@
 
       end subroutine init_cstar !]
 !----------------------------------------------------------------------
-
+      
 #endif /* MARBL && MARBL_DIAGS */
 
       end module cstar_output
