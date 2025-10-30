@@ -316,8 +316,20 @@ c--#define VERBOSE
 
       start=1; start(3)=record                                       ! 2D vars
 
-      call ncread(ncid,'riv_umask',riv_umask(1:i1,j0:j1),start)
-      call ncread(ncid,'riv_vmask',riv_vmask(i0:i1,1:j1),start)
+      ierr=nf90_inq_varid(ncid, 'riv_umask', varid)
+      if (ierr /= nf90_noerr) then
+        call ncread(ncid,'riv_umask',riv_umask(1:i1,j0:j1),start)
+      else
+        write(*,*) 'riv_umask not found in initial file. Initializing',
+     & 'to zero.'
+      endif   
+      ierr=nf90_inq_varid(ncid, 'riv_vmask', varid)
+      if (ierr /= nf90_noerr) then
+        call ncread(ncid,'riv_vmask',riv_vmask(i0:i1,1:j1),start)
+      else
+        write(*,*) 'riv_vmask not found in initial file. Initializing',
+     & 'to zero.'
+      endif 
 
 ! Free-surface and barotropic 2D momentuma, XI- and ETA-components
 
