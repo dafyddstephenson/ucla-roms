@@ -68,6 +68,8 @@
 #endif
       if (ierr /= 0) return
       mpi_master_only call print_switches
+!     Git hash
+      mpi_master_only write(*,'(/1x,2A)') "Git hash: ", git_hash
 
 ! Use pre-set default startup filename for known applications, or
 ! get it as an argument from command line via iargc-getarg (override
@@ -118,8 +120,7 @@
        if (is > 1) keyword(1:kwlen)=keyword(is:is+kwlen-1)
 
 ! Read input parameters according to the keyword:
-!----- ----- ---------- --------- --- ---- -------
-
+!----- ----- ---------- --------- --- ---- -------       
 ! Title
 
         if (keyword(1:kwlen) == 'title') then
