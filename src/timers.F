@@ -1,3 +1,10 @@
+      module timers
+      
+      use param
+      use comm_vars
+      use scalars
+
+      
 #include "cppdefs.opt"
 #ifndef NO_COMPILER_SUPPORT_FOR_TIMING
 ! Most modern compilers recognize "cpu_time" and OpenMP "omp_get_wtime"
@@ -24,11 +31,8 @@
 #  define OMP_GET_WTIME
 # endif
 
+      contains
       subroutine start_timers
-
-      use param
-      use comm_vars
-      use scalars
 
       implicit none
       integer getpid, trd
@@ -193,3 +197,4 @@ C$OMP END CRITICAL(trap_cr_rgn)
       subroutine stop_timers()
       end
 #endif
+      end module /*timers*/

@@ -59,6 +59,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars
       use ocean_vars
       use basic_output
+      use timers
 
       implicit none
 
