@@ -3,8 +3,12 @@
       use param
       use comm_vars
       use scalars
-
       
+      implicit none
+
+! Make them globally visible
+      real :: tstart = 0.
+      real :: tend   = 0.
 #include "cppdefs.opt"
 #ifndef NO_COMPILER_SUPPORT_FOR_TIMING
 ! Most modern compilers recognize "cpu_time" and OpenMP "omp_get_wtime"
