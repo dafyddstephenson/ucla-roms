@@ -116,10 +116,6 @@ c # TODO marbldrve_configure_diagnostics for pointers example
         if (wrt_bgc_diag_2d(idiag)) then
            nr_bgc_wrdiag_2d=nr_bgc_wrdiag_2d+1
            idx_bgc_diag_2d(idiag)=nr_bgc_wrdiag_2d
-           if (mynode == 0) then
-              write(*,'(7x,A,I3,I3,A,A)') '2D BGC diags :: ',
-     &        nr_bgc_wrdiag_2d, idiag, ' ', vname_bgc_diag_2d(1,idiag)
-           endif
         else
            idx_bgc_diag_2d(idiag)=0
         endif
@@ -130,10 +126,6 @@ c # TODO marbldrve_configure_diagnostics for pointers example
         if (wrt_bgc_diag_3d(idiag)) then
            nr_bgc_wrdiag_3d=nr_bgc_wrdiag_3d+1
            idx_bgc_diag_3d(idiag)=nr_bgc_wrdiag_3d
-           if (mynode == 0) then
-              write(*,'(7x,A,I3,I3,A,A)') '3D BGC diags :: ',
-     &        nr_bgc_wrdiag_3d, idiag, ' ',vname_bgc_diag_3d(1,idiag)
-           endif
         else
            idx_bgc_diag_3d(idiag)=0
         endif
@@ -190,11 +182,12 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
       subroutine display_bgc_output_settings_to_terminal()
       implicit none
-      integer :: idx, tidx, lineidx, n_bgc_fields
+      integer :: idx, tidx, lineidx, n_bgc_fields, n_bgc_wrt_fields
       character(len=200), allocatable :: stdoutlines(:)
       character(len=200) :: stdoutline
 
       n_bgc_fields = ntrc_bio
+      n_bgc_wrt_fields = 0
 #if defined(MARBL_DIAGS) || defined(BEC2_DIAG)
       n_bgc_fields=n_bgc_fields+nr_bgc_diag_2d+nr_bgc_diag_3d
 #endif /* BEC2_DIAG || MARBL_DIAGS */      
@@ -205,10 +198,11 @@ c # TODO marbldrve_configure_diagnostics for pointers example
       ! BGC tracers
       do idx = 1, ntrc_bio
          tidx = t_idx(idx)      ! Tracer index corresponding to this BGC tracer
-         write(stdoutline, '(11X, A, T60, L1, 4X, A)')
+         write(stdoutline, '(11X, A, T50, L1, 4X, A)')
      &        trim(t_vname(tidx)), ! vname
      &        wrt_t(tidx),      !Write (T/F)
      &        trim(t_lname(tidx)) ! Long name
+         if (wrt_t(tidx)) n_bgc_wrt_fields=n_bgc_wrt_fields + 1
          stdoutlines(lineidx) = stdoutline
          lineidx=lineidx+1
       end do
@@ -216,20 +210,22 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #if defined(MARBL_DIAGS) || defined(BEC2_DIAG)
       ! BGC 2D diagnostics
       do idx = 1, nr_bgc_diag_2d
-         write(stdoutline, '(11X, A, T60, L1, 4X, A)')
+         write(stdoutline, '(11X, A, T50, L1, 4X, A)')
      &        trim(vname_bgc_diag_2d(1,idx)), ! Short name
      &        wrt_bgc_diag_2d(idx), !Write (T/F)
      &        trim(vname_bgc_diag_2d(2,idx)) ! Long name
+         if (wrt_bgc_diag_2d(idx)) n_bgc_wrt_fields=n_bgc_wrt_fields + 1
          stdoutlines(lineidx) = stdoutline         
          lineidx=lineidx+1
       end do
 
       ! BGC 3D diagnostics
       do idx = 1, nr_bgc_diag_3d
-         write(stdoutline, '(11X, A, T60, L1, 4X, A)')
+         write(stdoutline, '(11X, A, T50, L1, 4X, A)')
      &        trim(vname_bgc_diag_3d(1,idx)), ! Short name
      &        wrt_bgc_diag_3d(idx), ! Write (T/F)
      &        trim(vname_bgc_diag_3d(2,idx)) ! Long name
+         if (wrt_bgc_diag_3d(idx)) n_bgc_wrt_fields=n_bgc_wrt_fields + 1         
          stdoutlines(lineidx) = stdoutline         
          lineidx=lineidx+1
       end do
@@ -239,23 +235,27 @@ c # TODO marbldrve_configure_diagnostics for pointers example
          if (wrt_his) then
             write(*,'(/7x,2A,F6.1,2x,A,I4)') ! write to terminal output in simulation pre-amble text which
      &           'bgc :: history file ', ! result variables are being stored
-     &           'ouput_period =', output_period_his,
+     &           'output_period =', output_period_his,
      &           'recs/file =', nrpf_his
          end if
          if (wrt_avg) then
             write(*,'(/7x,2A,F6.1,2x,A,I4)') ! write to terminal output in simulation pre-amble text which
      &        'bgc :: average file ', ! result variables are being stored
-     &        'ouput_period =', output_period_avg,
+     &        'output_period =', output_period_avg,
      &        'recs/file =', nrpf_avg
          end if
-         write(*,'(A)') 'BGC output fields'
-         write(*,'(11x,A)') repeat('-',100)                  
+         write(*,'(9x,A)') 'bgc fields to be saved (T/F)'
+         write(*,'(11x,A)') repeat('-',62) 
          write(*, '(11x,A,T40,A,T64,A)')
-     &        "Short name","write to output (T/F)","long name"
-         write(*,'(11x,A)') repeat('-',100)
+     &        "Name","Write (T/F)","Long name"
+         write(*,'(11x,A/)') repeat('-',62)
          do idx = 1,lineidx-1
             write (*, '(A)') trim(stdoutlines(idx))
          end do
+         write(*,'(11x,A)') repeat('-',62)          
+         write(*,'(11x,A,I3)') 'TOTAL NO. OF BGC FIELDS: ', n_bgc_fields
+         write(*,'(11x,A,I3)') 'FIELDS TO WRITE: ', n_bgc_wrt_fields
+         write(*,'(11x,A)') repeat('-',62) 
       end if
       
       deallocate(stdoutlines)

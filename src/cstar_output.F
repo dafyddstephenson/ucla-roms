@@ -617,33 +617,47 @@
         end subroutine wrt_output !]
 
         subroutine display_cstar_output_settings_to_terminal
-           if (mynode /= 0) return
-        
-           ! Basic header
-           write(*,'(/7x,A)') 'cstar_output settings:'
-           
-           ! Averaging mode
+!     Basic header
+        character(len=120) :: stdout_str
+        if (mynode==0) then
            if (.not. do_avg) then
-              write(*,'(9x,A)') 'averaging: none'
-           else if (monthly_averages) then
-              write(*,'(9x,A)') 'averaging: monthly'
+              write(stdout_str,'(7x,A)') 
+     &             'cstar_output :: history file '
            else
-              write(*,'(9x,A)') 'averaging: regular'
+              write(stdout_str,'(7x,A)') 
+     &             'cstar_output :: average file '
            end if
            
-           ! Only show output_period if relevant
-           if  (.not. monthly_averages) then
-              write(*,'(9x,A,F6.1)') 'output_period = ', output_period
+           write(stdout_str,'(2(A,2x),I4)')
+     &          trim(stdout_str), 'recs/file = ', nrpf
+           
+           if (monthly_averages) then
+              write(stdout_str,'(2(A,2x),1L)')
+     &             trim(stdout_str), 'monthly_averages= ', monthly_averages
+           else
+              write(stdout_str,'(2(A,2x),F6.1)')
+     &             trim(stdout_str), 'output_period =', output_period 
            end if
+           write(*, '(7x,A)'), trim(stdout_str)           
+           if (.not. do_avg) then
+              write(*, '(/7x,A)') 'his fields to be saved: (T/F)'
+           else
+              write(*, '(/7x,A)') 'avg fields to be saved: (T/F)'              
+           end if
+
+           write(*,'(9x,A)')  repeat('-',62)
+           write(*, '(11x,A,T20,A,T36,A)')
+     &          "Name","Write (T/F)","Long name"
+           write(*,'(9x,A)')  repeat('-',62)          
            
-           ! Always show nrpf
-           write(*,'(9x,A,I4)') 'recs/file = ', nrpf
-           
-           write(*,'(9x,A)') 'variables:'
            do idx=1,size(cstar_varlist)
-              write(*,'(11x,A)') trim(cstar_varlist(idx)%name)
+              write(*,'(11x,A,T30,L1,T36,A)')
+     &             trim(cstar_varlist(idx)%name),
+     &             .true.,      ! all variables are written by C-Star by default
+     &             trim(cstar_varlist(idx)%long_name)
            end do
-           
+           write(*,'(9x,A)')  repeat('-',62)                     
+        end if
         end subroutine display_cstar_output_settings_to_terminal
 
 !----------------------------------------------------------------------
