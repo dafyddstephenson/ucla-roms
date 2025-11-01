@@ -50,7 +50,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
       logical, target :: wrt_bgc_diag_3d(nr_bgc_diag_3d)
       integer, target :: idx_bgc_diag_2d(nr_bgc_diag_2d)
       integer, target :: idx_bgc_diag_3d(nr_bgc_diag_3d)
-      ! Arrays storing information (name, unit, fill value) about each diagnostic variable:
+      ! Arrays storing information (name, unit, longname, fill value) about each diagnostic variable:
       character*72, target ::  vname_bgc_diag_2d(4,nr_bgc_diag_2d)
       character*72, target ::  vname_bgc_diag_3d(4,nr_bgc_diag_3d)
 
@@ -61,6 +61,24 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
       contains
 
+      integer function bgc_idx(t_idx)
+      ! Takes a tracer array tracer index t(:,:,:,:,t_idx) and returns
+      ! the corresponding bgc tracer index.
+      ! Were previously harcoded individually as, e.g.
+      ! po4_ind_t     = iPO4-iTandS-nt_passive
+      integer, intent(in) :: t_idx
+      bgc_idx = t_idx-iTandS-nt_passive
+
+      end function bgc_idx
+
+      real function t_idx(b_idx)
+      ! Takes a bgc tracer index (e.g. dtracer_module(:,:,:,b_idx)) and
+      ! returns the corresponding tracer array index t(:,:,:,:,t_idx)
+      integer, intent(in) ::b_idx
+      t_idx = b_idx+iTandS+nt_passive
+      end function t_idx
+
+      
 #if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       subroutine find_write_bgc_diag
       implicit none
@@ -132,7 +150,8 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #if defined(BEC2_DIAG) || defined (MARBL_DIAGS)
 
       call find_write_bgc_diag
-
+      call display_bgc_output_settings_to_terminal
+      
       allocate( bgc_diag_3d(GLOBAL_2D_ARRAY,N,nr_bgc_wrdiag_3d) )
       allocate( bgc_diag_2d(GLOBAL_2D_ARRAY,nr_bgc_wrdiag_2d) )
 
@@ -169,5 +188,78 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
       end subroutine init_arrays_bgc_shared_vars
 
+      subroutine display_bgc_output_settings_to_terminal()
+      implicit none
+      integer :: idx, tidx, lineidx, n_bgc_fields
+      character(len=200), allocatable :: stdoutlines(:)
+      character(len=200) :: stdoutline
+
+      n_bgc_fields = ntrc_bio
+#if defined(MARBL_DIAGS) || defined(BEC2_DIAG)
+      n_bgc_fields=n_bgc_fields+nr_bgc_diag_2d+nr_bgc_diag_3d
+#endif /* BEC2_DIAG || MARBL_DIAGS */      
+      allocate(stdoutlines(n_bgc_fields))
+      stdoutlines=''
+      lineidx=1
+            
+      ! BGC tracers
+      do idx = 1, ntrc_bio
+         tidx = t_idx(idx)      ! Tracer index corresponding to this BGC tracer
+         write(stdoutline, '(11X, A, T60, L1, 4X, A)')
+     &        trim(t_vname(tidx)), ! vname
+     &        wrt_t(tidx),      !Write (T/F)
+     &        trim(t_lname(tidx)) ! Long name
+         stdoutlines(lineidx) = stdoutline
+         lineidx=lineidx+1
+      end do
+      
+#if defined(MARBL_DIAGS) || defined(BEC2_DIAG)
+      ! BGC 2D diagnostics
+      do idx = 1, nr_bgc_diag_2d
+         write(stdoutline, '(11X, A, T60, L1, 4X, A)')
+     &        trim(vname_bgc_diag_2d(1,idx)), ! Short name
+     &        wrt_bgc_diag_2d(idx), !Write (T/F)
+     &        trim(vname_bgc_diag_2d(2,idx)) ! Long name
+         stdoutlines(lineidx) = stdoutline         
+         lineidx=lineidx+1
+      end do
+
+      ! BGC 3D diagnostics
+      do idx = 1, nr_bgc_diag_3d
+         write(stdoutline, '(11X, A, T60, L1, 4X, A)')
+     &        trim(vname_bgc_diag_3d(1,idx)), ! Short name
+     &        wrt_bgc_diag_3d(idx), ! Write (T/F)
+     &        trim(vname_bgc_diag_3d(2,idx)) ! Long name
+         stdoutlines(lineidx) = stdoutline         
+         lineidx=lineidx+1
+      end do
+#endif /* BEC2_DIAG || MARBL_DIAGS */
+      
+      if (mynode==0) then
+         if (wrt_his) then
+            write(*,'(/7x,2A,F6.1,2x,A,I4)') ! write to terminal output in simulation pre-amble text which
+     &           'bgc :: history file ', ! result variables are being stored
+     &           'ouput_period =', output_period_his,
+     &           'recs/file =', nrpf_his
+         end if
+         if (wrt_avg) then
+            write(*,'(/7x,2A,F6.1,2x,A,I4)') ! write to terminal output in simulation pre-amble text which
+     &        'bgc :: average file ', ! result variables are being stored
+     &        'ouput_period =', output_period_avg,
+     &        'recs/file =', nrpf_avg
+         end if
+         write(*,'(A)') 'BGC output fields'
+         write(*,'(11x,A)') repeat('-',100)                  
+         write(*, '(11x,A,T40,A,T64,A)')
+     &        "Short name","write to output (T/F)","long name"
+         write(*,'(11x,A)') repeat('-',100)
+         do idx = 1,lineidx-1
+            write (*, '(A)') trim(stdoutlines(idx))
+         end do
+      end if
+      
+      deallocate(stdoutlines)
+      
+      end subroutine display_bgc_output_settings_to_terminal
 #endif  /* BIOLOGY_BEC2 || MARBL  */
       end module bgc_shared_vars
