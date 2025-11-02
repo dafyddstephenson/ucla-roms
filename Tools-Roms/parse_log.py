@@ -4,14 +4,14 @@ from pathlib import Path
 from typing import Callable
 
 
-_parser_registry: list[Callable] = []
+_parser_registry: list[tuple[Callable, tuple[str, ...]]] = []
 
-
-def register_logparser(func: Callable) -> Callable:
-    """Decorator to register a parser function"""
-    _parser_registry.append(func)
-    return func
-
+def register_logparser(*attribute_names: str):
+    """Decorator to register a parser function and the attributes it sets"""
+    def decorator(func: Callable) -> Callable:
+        _parser_registry.append((func, attribute_names))
+        return func
+    return decorator
 
 class ROMSSimulationLog:
     def __init__(self,
@@ -20,21 +20,14 @@ class ROMSSimulationLog:
         self.log_file = log_file
         with open(self.log_file, "r") as f:
             self.lines = f.readlines()
-
-        # storage
-        self.cppdefs: list[str] = []
-        self.ntimes: int | None = None
-        self.dt: float | None = None
-        self.ndtfast: int | None = None
-        self.ninfo: int | None = None
-        self.theta_s: float | None = None
-        self.theta_b: float | None = None
-        self.hc: float | None = None
-
-        self.grid_file: Path | None = None
-        self.forcing_files: list[Path] = []
-        self.initial_condition_rec: int | None = None
-        self.initial_condition_file: Path | None = None
+        # Automatically initialize all attributes declared by parsers
+        for _, attrs in _parser_registry:
+            for attr in attrs:
+                if not hasattr(self, attr):
+                    if attr.endswith("s") or attr.endswith("_files") or attr.startswith("output_variables"):
+                        setattr(self, attr, [])
+                    else:
+                        setattr(self, attr, None)
 
         self._parse_logfile()
         self.jobid=jobid
@@ -44,14 +37,18 @@ class ROMSSimulationLog:
     def _parse_logfile(self):
         current_line = 0
         while current_line < len(self.lines):
-            for parser in _parser_registry:
-                next_line = parser(self, current_line)
+            for parser_func, _ in _parser_registry:
+                next_line = parser_func(self, current_line)
                 if next_line != current_line:
                     current_line = next_line
                     break
             else:
                 current_line += 1
 
+    @classmethod
+    def list_attributes(cls) -> list[str]:
+        return [attr for _, attrs in _parser_registry for attr in attrs]
+                
     def _query_jobid(self):
         pass
 
@@ -59,7 +56,7 @@ class ROMSSimulationLog:
     def ntracers(self):
         return len(self.tracers)
 
-@register_logparser
+@register_logparser("git_hash")
 def parse_git_hash(log, i):
     line = log.lines[i].strip().lower()
     if "git hash" in line:
@@ -67,7 +64,7 @@ def parse_git_hash(log, i):
         return i+1
     return i
 
-@register_logparser
+@register_logparser("job_id","job_task_id")
 def parse_job_id(log, i):
     line = log.lines[i].strip()
 
@@ -83,7 +80,7 @@ def parse_job_id(log, i):
 
     return i
     
-@register_logparser
+@register_logparser("cppdefs")
 def parse_cppdefs(log: ROMSSimulationLog, current_line: int) -> int:
     line = log.lines[current_line]
     if "<cppdefs.opt>" not in line:
@@ -101,7 +98,7 @@ def parse_cppdefs(log: ROMSSimulationLog, current_line: int) -> int:
 KV_PARAMS = {"ntimes", "dt", "ndtfast", "ninfo", "theta_s", "theta_b", "hc", "rho0","visc2"}
 
 
-@register_logparser
+@register_logparser("ntimes","dt","ndtfast","ninfo","theta_s","theta_b","hc","rho0","visc2")
 def parse_key_value_params(log: "ROMSSimulationLog", current_line: int) -> int:
     line = log.lines[current_line]
     if "=" not in line:
@@ -124,7 +121,7 @@ def parse_key_value_params(log: "ROMSSimulationLog", current_line: int) -> int:
     return current_line + 1
 
 
-@register_logparser
+@register_logparser("grid_file")
 def parse_grid_file(log: "ROMSSimulationLog", current_line: int) -> int:
     line = log.lines[current_line]
     if not line.strip().startswith("grid file:"):
@@ -133,7 +130,7 @@ def parse_grid_file(log: "ROMSSimulationLog", current_line: int) -> int:
     return current_line + 1
 
 
-@register_logparser
+@register_logparser("forcing_files")
 def parse_forcing_files(log: "ROMSSimulationLog", current_line: int) -> int:
     line = log.lines[current_line]
     if not line.strip().startswith("forcing data file(s):"):
@@ -152,7 +149,7 @@ def parse_forcing_files(log: "ROMSSimulationLog", current_line: int) -> int:
     return j
 
 
-@register_logparser
+@register_logparser("initial_condition_rec","initial_condition_file")
 def parse_initial_condition(log: "ROMSSimulationLog", current_line: int) -> int:
     line = log.lines[current_line]
     if not line.strip().startswith("initial condition"):
@@ -167,7 +164,7 @@ def parse_initial_condition(log: "ROMSSimulationLog", current_line: int) -> int:
         log.initial_condition_file = Path(tokens[idx + 2].strip("'"))
     return current_line + 1
 
-@register_logparser
+@register_logparser("ncpus","np_xi","np_eta","nx","ny","nz")
 def parse_node_grid_info(log: "ROMSSimulationLog", current_line: int) -> int:
     line = log.lines[current_line].strip()
 
@@ -196,7 +193,7 @@ def parse_node_grid_info(log: "ROMSSimulationLog", current_line: int) -> int:
 
     return current_line + 1
 
-@register_logparser
+@register_logparser("tracers")
 def parse_tracers(log: "ROMSSimulationLog", current_line: int) -> int:
     line = log.lines[current_line].strip()
     if not line.startswith("TRACER NO.:"):
@@ -226,7 +223,7 @@ def parse_tracers(log: "ROMSSimulationLog", current_line: int) -> int:
 
 ################################################################################
 # OUTPUT SETTINGS:
-@register_logparser
+@register_logparser("output_period_rst","nrpf_rst")
 def parse_rst(log, i):
     if "ocean_vars :: restart file" not in log.lines[i]:
         return i
@@ -324,7 +321,7 @@ def _parse_output_block(log, start_i: int,
 
 # ------------------- ocean vars -------------------
 
-@register_logparser
+@register_logparser("output_period_phys_his","nrpf_phys_his","output_variables_phys")
 def parse_phys_his(log, i):
     if "ocean_vars :: history file" not in log.lines[i]:
         return i
@@ -335,7 +332,7 @@ def parse_phys_his(log, i):
         vars_attr="output_variables_phys"
     )
 
-@register_logparser
+@register_logparser("output_period_phys_avg","output_nrpf_phys_avg","output_variables_phys")
 def parse_phys_avg(log, i):
     if "ocean_vars :: average file" not in log.lines[i]:
         return i
@@ -348,7 +345,7 @@ def parse_phys_avg(log, i):
 
 # ------------------- bgc -------------------
 
-@register_logparser
+@register_logparser("output_period_bgc_his", "output_nrpf_bgc_his", "output_variables_bgc")
 def parse_bgc_his(log, i):
     if "bgc :: history file" not in log.lines[i].strip().lower():
         return i
@@ -359,7 +356,8 @@ def parse_bgc_his(log, i):
         vars_attr="output_variables_bgc"
     )
 
-@register_logparser
+
+@register_logparser("output_period_bgc_avg", "output_nrpf_bgc_avg", "output_variables_bgc")
 def parse_bgc_avg(log, i):
     if "bgc :: average file" not in log.lines[i].strip().lower():
         return i
@@ -372,7 +370,7 @@ def parse_bgc_avg(log, i):
 
 # ------------------- cstar -------------------
 
-@register_logparser
+@register_logparser("output_period_cstar", "output_nrpf_cstar", "output_variables_cstar")
 def parse_cstar(log, i):
     if "cstar_output ::" not in log.lines[i]:
         return i
@@ -383,7 +381,7 @@ def parse_cstar(log, i):
         vars_attr="output_variables_cstar"
     )
 
-@register_logparser
+@register_logparser("cdr_releases")
 def parse_cdr_releases(log: "ROMSSimulationLog", i: int) -> int:
     line = log.lines[i]
     if not line.lstrip().startswith("The minimum distance to Release"):
@@ -440,10 +438,76 @@ def parse_cdr_releases(log: "ROMSSimulationLog", i: int) -> int:
     # advance past this 5–6 line block
     return i + 5
 
+def _fix_fort_float(s: str) -> str:
+    # ex: "4.21568551562-03" -> "4.21568551562E-03"
+    # only patch if pattern is <digits>.<digits><sign><digits>
+    # and there is no "E" already
+    if ("E" not in s) and ("e" not in s):
+        # last + or - that splits mantissa/exponent occurs after at least 2 digits
+        # safe simple: if final +/-### pattern is present, insert 'E'
+        m = re.search(r"([0-9])([+-][0-9]+)$", s)
+        if m:
+            return re.sub(r"([0-9])([+-][0-9]+)$", r"\1E\2", s)
+    return s
+
+@register_logparser(
+    "steps",
+    "time_days", "kinetic_energy", "barotropic_ke",
+    "max_adv_cfl", "max_vert_cfl",
+    "i_cx", "j_cx", "k_c",
+    "walltime"
+)
+def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
+    line = log.lines[i].strip()
+
+    # detect the header
+    if not (line.startswith("STEP") and "KINETIC_ENRG" in line):
+        return i
+
+    # initialise storage
+    log.steps = []
+    log.time_days = []
+    log.kinetic_energy = []
+    log.barotropic_ke = []
+    log.max_adv_cfl = []
+    log.max_vert_cfl = []
+    log.i_cx = []
+    log.j_cx = []
+    log.k_c = []
+    log.walltime = []
+
+    j = i + 1
+
+    # loop until EOF
+    while j < len(log.lines):
+        s = log.lines[j].strip()
+        parts = s.split()
+        parts = [_fix_fort_float(p) for p in parts]
+        # candidate line: 10 columns, first is int
+        if len(parts) == 10 and parts[0].isdigit():
+            try:
+                log.steps.append(int(parts[0]))
+                log.time_days.append(float(parts[1]))
+                log.kinetic_energy.append(float(parts[2]))
+                log.barotropic_ke.append(float(parts[3]))
+                log.max_adv_cfl.append(float(parts[4]))
+                log.max_vert_cfl.append(float(parts[5]))
+                log.i_cx.append(int(parts[6]))
+                log.j_cx.append(int(parts[7]))
+                log.k_c.append(int(parts[8]))
+                log.walltime.append(float(parts[9]))
+            except ValueError:
+                pass   # silently ignore malformed rows
+
+        j += 1
+
+    return j  # consumed through EOF
+
+
 if __name__ == "__main__":
-    log = ROMSSimulationLog(Path(sys.argv[1]))
+    # log = ROMSSimulationLog(Path(sys.argv[1]))
     # log = ROMSSimulationLog(Path("roms_out.o14209895"))
-    #log = ROMSSimulationLog(Path("../Examples/bgc_real/marbl.log"))
+    log = ROMSSimulationLog(Path("../Examples/bgc_real/marbl.log"))
 
     
 
