@@ -55,7 +55,7 @@ class ROMSSimulationLog:
         parsed_attrs = [attr for _, attrs in _parser_registry for attr in attrs]
         slurm_attrs = ["slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu"]
         return parsed_attrs + slurm_attrs
-                
+
     @property
     def ntracers(self):
         return len(self.tracers)
@@ -110,7 +110,7 @@ class ROMSSimulationLog:
         self.slurm_state = state
         self.slurm_exitcode = exitcode
         self.slurm_totalcpu = totalcpu
-    
+
 @register_logparser("git_hash")
 def parse_git_hash(log, i):
     line = log.lines[i].strip().lower()
@@ -134,7 +134,7 @@ def parse_job_id(log, i):
         return i+1
 
     return i
-    
+
 @register_logparser("cppdefs")
 def parse_cppdefs(log: ROMSSimulationLog, current_line: int) -> int:
     line = log.lines[current_line]
@@ -558,7 +558,7 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
 
 if __name__ == "__main__":
     log = ROMSSimulationLog(Path(sys.argv[1]))
-    
-    
 
-    
+
+
+

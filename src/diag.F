@@ -512,7 +512,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
 
 #ifdef SOLVE3D
 # if defined MAX_ADV_CFL
-          
+
           !WALLTIME0 is MPI_Wtime() on node 0
           walltime0 = MPI_Wtime()-tstart
           if (first_time==0) then
@@ -525,7 +525,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
                write(*,1) 'STEP', 'time[DAYS]',
      &              'KINETIC_ENRG', !  Normal log file output
      &                'BAROTR_KE', 'MAX_ADV_CFL', 'MAX_VERT_CFL',
-     &              'i_cx', 'j_cx', 'k_c', 'WALLTIME0' 
+     &              'i_cx', 'j_cx', 'k_c', 'WALLTIME0'
 
             endif
           endif

@@ -72,14 +72,14 @@
         character(len=128)             :: long_name
         character(len=32)              :: units
       end type CStarOutputVariable
-      
+
 
       type(CStarOutputVariable), allocatable, save :: cstar_varlist(:) ! TODO save? nah
-      
+
       ! Public functions
       public wrt_cstar,init_cstar
 
-      
+
 !----------------------------------------------------------------------
 
       contains
@@ -196,7 +196,7 @@
       endif
 
       end subroutine define_cstar_output_variables
-      
+
       subroutine init_cstar ![
       ! Allocate and initialize arrays.
       implicit none
@@ -337,7 +337,7 @@
 
       call define_cstar_output_variables
       call display_cstar_output_settings_to_terminal
-      
+
       end subroutine init_cstar  !]
 !----------------------------------------------------------------------
       subroutine calc_average ![
@@ -621,42 +621,42 @@
         character(len=120) :: stdout_str
         if (mynode==0) then
            if (.not. do_avg) then
-              write(stdout_str,'(7x,A)') 
+              write(stdout_str,'(7x,A)')
      &             'cstar_output :: history file '
            else
-              write(stdout_str,'(7x,A)') 
+              write(stdout_str,'(7x,A)')
      &             'cstar_output :: average file '
            end if
-           
+
            write(stdout_str,'(2(A,2x),I4)')
      &          trim(stdout_str), 'recs/file = ', nrpf
-           
+
            if (monthly_averages) then
               write(stdout_str,'(2(A,2x),1L)')
      &             trim(stdout_str), 'monthly_averages= ', monthly_averages
            else
               write(stdout_str,'(2(A,2x),F6.1)')
-     &             trim(stdout_str), 'output_period =', output_period 
+     &             trim(stdout_str), 'output_period =', output_period
            end if
-           write(*, '(7x,A)'), trim(stdout_str)           
+           write(*, '(7x,A)'), trim(stdout_str)
            if (.not. do_avg) then
               write(*, '(/7x,A)') 'his fields to be saved: (T/F)'
            else
-              write(*, '(/7x,A)') 'avg fields to be saved: (T/F)'              
+              write(*, '(/7x,A)') 'avg fields to be saved: (T/F)'
            end if
 
            write(*,'(9x,A)')  repeat('-',62)
            write(*, '(11x,A,T20,A,T36,A)')
      &          "Name","Write (T/F)","Long name"
-           write(*,'(9x,A)')  repeat('-',62)          
-           
+           write(*,'(9x,A)')  repeat('-',62)
+
            do idx=1,size(cstar_varlist)
               write(*,'(11x,A,T30,L1,T36,A)')
      &             trim(cstar_varlist(idx)%name),
      &             .true.,      ! all variables are written by C-Star by default
      &             trim(cstar_varlist(idx)%long_name)
            end do
-           write(*,'(9x,A)')  repeat('-',62)                     
+           write(*,'(9x,A)')  repeat('-',62)
         end if
         end subroutine display_cstar_output_settings_to_terminal
 
@@ -696,7 +696,7 @@
 
       end subroutine init_cstar !]
 !----------------------------------------------------------------------
-      
+
 #endif /* MARBL && MARBL_DIAGS */
 
       end module cstar_output

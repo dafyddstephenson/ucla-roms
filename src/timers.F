@@ -1,9 +1,9 @@
       module timers
-      
+
       use param
       use comm_vars
       use scalars
-      
+
       implicit none
 
 ! Make them globally visible

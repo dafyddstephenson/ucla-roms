@@ -121,7 +121,7 @@
        if (is > 1) keyword(1:kwlen)=keyword(is:is+kwlen-1)
 
 ! Read input parameters according to the keyword:
-!----- ----- ---------- --------- --- ---- -------       
+!----- ----- ---------- --------- --- ---- -------
 ! Title
 
         if (keyword(1:kwlen) == 'title') then
@@ -647,7 +647,7 @@ c**       write(*,'(1x,A,1x,A)') 'Recognized: ', kwds(is:ie-1)
       subroutine print_jobid()
 
       use param
-      
+
       implicit none
 
       character(len=100) :: jobid, taskid

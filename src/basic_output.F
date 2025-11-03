@@ -249,7 +249,7 @@
 
       ! NOTE: call this here to prevent output in between timesteps which would break code
 ! checking script.
-      if (wrt_file_rst) call display_output_settings_to_terminal_rst      
+      if (wrt_file_rst) call display_output_settings_to_terminal_rst
       if (wrt_file_his) call display_output_settings_to_terminal_his
       if (wrt_file_avg) call display_output_settings_to_terminal_avg
 
@@ -1116,7 +1116,7 @@
          write(*,'(9x,A)')  repeat('-',62)
          write(*, '(11x,A,T20,A,T36,A)')
      &        "Name","Write (T/F)","Long name"
-         write(*,'(9x,A)')  repeat('-',62)          
+         write(*,'(9x,A)')  repeat('-',62)
          write(*,'(13(/11x,A,T30,L1,T36,A))') ! 13(....) repeats formatting 11 times.
      &        'zeta',   wrt_Z,    vname(2,indxZ)
      &        , 'ubar',   wrt_Ub,   vname(2,indxUb)
@@ -1124,11 +1124,11 @@
 #ifdef SOLVE3D
      &        , 'u',      wrt_U,    vname(2,indxU)
      &        , 'v',      wrt_V,    vname(2,indxV)
-         
+
      &        , 'rho',    wrt_R,    vname(2,indxR)
      &        , 'Omega',  wrt_O,    vname(2,indxO)
      &        , 'W',      wrt_W,    vname(2,indxW)
-         
+
      &        , 'Akv',    wrt_Akv,  vname(2,indxAkv)
      &        , 'Akt',    wrt_Akt,  vname(2,indxAkt)
 # ifdef SALINITY
@@ -1144,7 +1144,7 @@
             write(*,'(11x,A,I2,A,T30,L1,T36,A)') 't(',
      &        itrc, ')', wrt_t(itrc), t_vname(itrc)
          enddo
-         write(*,'(9x,A)')  repeat('-',62)                   
+         write(*,'(9x,A)')  repeat('-',62)
       end if
 #endif /* SOLVE3D */
 
@@ -1167,19 +1167,19 @@
          write(*,'(9x,A)')  repeat('-',62)
          write(*, '(11x,A,T20,A,T36,A)')
      &        "Name","Write (T/F)","Long name"
-         write(*,'(9x,A)')  repeat('-',62)          
-         write(*,'(13(/11x,A,T30,L1,T36,A))') ! 13(....) repeats formatting 11 times.         
+         write(*,'(9x,A)')  repeat('-',62)
+         write(*,'(13(/11x,A,T30,L1,T36,A))') ! 13(....) repeats formatting 11 times.
      &     , 'zeta',   wrt_avg_Z,    vname(2,indxZ)
      &     , 'ubar',   wrt_avg_Ub,   vname(2,indxUb)
      &     , 'vbar',   wrt_avg_Vb,   vname(2,indxVb)
 #ifdef SOLVE3D
      &     , 'u',      wrt_avg_U,    vname(2,indxU)
      &     , 'v',      wrt_avg_V,    vname(2,indxV)
-      
+
      &     , 'rho',    wrt_avg_R,    vname(2,indxR)
      &     , 'Omega',  wrt_avg_O,    vname(2,indxO)
      &     , 'W',      wrt_avg_W,    vname(2,indxW)
-      
+
      &     , 'Akv',    wrt_avg_Akv,  vname(2,indxAkv)
      &     , 'Akt',    wrt_avg_Akt,  vname(2,indxAkt)
 # ifdef SALINITY
@@ -1192,10 +1192,10 @@
      &     , 'hbbl',   wrt_avg_Hbbl, vname(2,indxHbbl)
 # endif
          do itrc=1,iTandS+nt_passive
-            write(*,'(11x,A,I2,A,T30,L1,T36,A)') 't(',            
+            write(*,'(11x,A,I2,A,T30,L1,T36,A)') 't(',
      &        itrc, ')', wrt_t_avg(itrc), t_vname(itrc)
          enddo
-         write(*,'(9x,A)')  repeat('-',62)                   
+         write(*,'(9x,A)')  repeat('-',62)
       end if ! (mynode==0)
 #endif /* SOLVE3D */
 
@@ -1205,18 +1205,18 @@
       character(len=120) :: stdout_str
       character(len=120) :: period_info
       if (mynode==0) then
-         write(stdout_str,'(7x,A,2x,A,I4)') 
+         write(stdout_str,'(7x,A,2x,A,I4)')
      &        'ocean_vars :: restart file ', ! result variables are being stored
      &        'recs/file = ', nrpf_rst
          if (monthly_restarts) then
             write(period_info,'(A,1L)')
-     &           'monthly_restarts = ', monthly_restarts         
+     &           'monthly_restarts = ', monthly_restarts
          else
             write(period_info,'(7x,A,F6.1)')
-     &           'output_period_rst =', output_period_rst         
+     &           'output_period_rst =', output_period_rst
          end if
          write(*,'(A,2x,A)'),trim(stdout_str),trim(period_info)
       end if
       end subroutine display_output_settings_to_terminal_rst
-      
+
       end module basic_output
