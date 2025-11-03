@@ -1,10 +1,10 @@
 
       ! ****************************************************************
       ! user inputs
-      logical,parameter :: wrt_file_rst      = .true.     ! t/f to write module history file
-      real,parameter    :: output_period_rst = 10*40        ! output period in seconds
+      logical,parameter :: wrt_file_rst      = .false.     ! t/f to write module history file
+      real,parameter    :: output_period_rst = 2000        ! output period in seconds
       logical,parameter :: monthly_restarts = .false.      ! This overrides output_period
-      integer,parameter :: nrpf_rst          =  50          ! total recs per file
+      integer,parameter :: nrpf_rst          =  2          ! total recs per file
 
       logical,parameter :: wrt_file_his      = .true.      ! t/f to write module history file
       real,parameter    :: output_period_his = 10*40       ! output period in seconds
@@ -23,9 +23,9 @@
      &                     wrt_Hbls=.true.,
      &                     wrt_Hbbl=.true.
 
-      logical,parameter :: wrt_file_avg      = .true.     ! t/f to write module averages file
-      real,parameter    :: output_period_avg = 10*40         ! output averaging period in seconds
-      integer,parameter :: nrpf_avg          = 50          ! total recs per file
+      logical,parameter :: wrt_file_avg      = .false.     ! t/f to write module averages file
+      real,parameter    :: output_period_avg = 100         ! output averaging period in seconds
+      integer,parameter :: nrpf_avg          = 10          ! total recs per file
       logical,parameter :: wrt_avg_Z =.true.,
      &                     wrt_avg_Ub=.true.,
      &                     wrt_avg_Vb=.true.,
