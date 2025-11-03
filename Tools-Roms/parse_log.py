@@ -1,5 +1,6 @@
 import re
 import sys
+import subprocess
 from pathlib import Path
 from typing import Callable
 
@@ -15,8 +16,7 @@ def register_logparser(*attribute_names: str):
 
 class ROMSSimulationLog:
     def __init__(self,
-                 log_file: Path,
-                 jobid: int | None = None):
+                 log_file: Path):
         self.log_file = log_file
         with open(self.log_file, "r") as f:
             self.lines = f.readlines()
@@ -30,9 +30,14 @@ class ROMSSimulationLog:
                         setattr(self, attr, None)
 
         self._parse_logfile()
-        self.jobid=jobid
-        if self.jobid:
-            self._query_jobid()
+
+        # Query remaining attrs from Slurm
+        self.slurm_maxrss = None
+        self.slurm_elapsed = None
+        self.slurm_state = None
+        self.slurm_exitcode = None
+        self.slurm_totalcpu = None
+        self._query_job_id()
 
     def _parse_logfile(self):
         current_line = 0
@@ -47,15 +52,65 @@ class ROMSSimulationLog:
 
     @classmethod
     def list_attributes(cls) -> list[str]:
-        return [attr for _, attrs in _parser_registry for attr in attrs]
+        parsed_attrs = [attr for _, attrs in _parser_registry for attr in attrs]
+        slurm_attrs = ["slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu"]
+        return parsed_attrs + slurm_attrs
                 
-    def _query_jobid(self):
-        pass
-
     @property
     def ntracers(self):
         return len(self.tracers)
 
+    def _query_job_id(self):
+        if not self.job_id:
+            return
+
+        try:
+            result = subprocess.run(
+                [
+                    "sacct", "-j", str(self.job_id),
+                    "--format=JobIDRaw,MaxRSS,Elapsed,State,ExitCode,TotalCPU",
+                    "--parsable2", "--noheader"
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"[slurm query failed] {e.stderr.strip()}")
+            return
+
+        lines = result.stdout.strip().splitlines()
+        if not lines:
+            return
+
+        top_level = None
+        batch_step = None
+
+        for line in lines:
+            parts = line.strip().split('|')
+            if len(parts) < 6:
+                continue  # malformed line
+
+            jobid_raw = parts[0]
+
+            if jobid_raw.endswith(".batch"):
+                batch_step = parts
+            elif '.' not in jobid_raw:
+                top_level = parts
+
+        source = batch_step or top_level
+        if not source:
+            return  # nothing usable found
+
+        jobid_raw, maxrss, elapsed, state, exitcode, totalcpu = source[:6]
+
+        self.slurm_maxrss = maxrss
+        self.slurm_elapsed = elapsed
+        self.slurm_state = state
+        self.slurm_exitcode = exitcode
+        self.slurm_totalcpu = totalcpu
+    
 @register_logparser("git_hash")
 def parse_git_hash(log, i):
     line = log.lines[i].strip().lower()
@@ -451,11 +506,10 @@ def _fix_fort_float(s: str) -> str:
     return s
 
 @register_logparser(
-    "steps",
     "time_days", "kinetic_energy", "barotropic_ke",
     "max_adv_cfl", "max_vert_cfl",
     "i_cx", "j_cx", "k_c",
-    "walltime"
+    "timestep_walltime"
 )
 def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
     line = log.lines[i].strip()
@@ -465,7 +519,6 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
         return i
 
     # initialise storage
-    log.steps = []
     log.time_days = []
     log.kinetic_energy = []
     log.barotropic_ke = []
@@ -474,7 +527,7 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
     log.i_cx = []
     log.j_cx = []
     log.k_c = []
-    log.walltime = []
+    log.timestep_walltime = []
 
     j = i + 1
 
@@ -486,7 +539,6 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
         # candidate line: 10 columns, first is int
         if len(parts) == 10 and parts[0].isdigit():
             try:
-                log.steps.append(int(parts[0]))
                 log.time_days.append(float(parts[1]))
                 log.kinetic_energy.append(float(parts[2]))
                 log.barotropic_ke.append(float(parts[3]))
@@ -495,7 +547,7 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
                 log.i_cx.append(int(parts[6]))
                 log.j_cx.append(int(parts[7]))
                 log.k_c.append(int(parts[8]))
-                log.walltime.append(float(parts[9]))
+                log.timestep_walltime.append(float(parts[9]))
             except ValueError:
                 pass   # silently ignore malformed rows
 
@@ -505,10 +557,8 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
 
 
 if __name__ == "__main__":
-    # log = ROMSSimulationLog(Path(sys.argv[1]))
-    # log = ROMSSimulationLog(Path("roms_out.o14209895"))
-    log = ROMSSimulationLog(Path("../Examples/bgc_real/marbl.log"))
-
+    log = ROMSSimulationLog(Path(sys.argv[1]))
+    
     
 
     
