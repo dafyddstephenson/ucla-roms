@@ -519,8 +519,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
             first_time=1
             if (code_check) then
               write(*,3) 'STEP',  'KINETIC_ENRG',                  ! Special for code checks
-     &              'BAROTR_KE', 'MAX_ADV_CFL', 'MAX_VERT_CFL',
-     &              'WALLTIME0'
+     &              'BAROTR_KE', 'MAX_ADV_CFL', 'MAX_VERT_CFL'
             else
                write(*,1) 'STEP', 'time[DAYS]',
      &              'KINETIC_ENRG', !  Normal log file output
@@ -530,7 +529,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
             endif
           endif
           if (code_check) then
-            write(*,4) iic, avke,  avke2b, Cu_Adv, Cu_W, walltime0
+            write(*,4) iic, avke,  avke2b, Cu_Adv, Cu_W
           else
              write(check_line,2,iostat=ierr)
      &            avke,  avke2b,  Cu_Adv,
