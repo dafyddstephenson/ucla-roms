@@ -336,7 +336,7 @@
       endif
 
       call define_cstar_output_variables
-      call display_cstar_output_settings_to_terminal
+      call display_cstar_output_settings_to_terminal_cstar
 
       end subroutine init_cstar  !]
 !----------------------------------------------------------------------
@@ -616,7 +616,7 @@
 !
         end subroutine wrt_output !]
 
-        subroutine display_cstar_output_settings_to_terminal
+        subroutine display_cstar_output_settings_to_terminal_cstar
 !     Basic header
         character(len=120) :: stdout_str
         if (mynode==0) then
@@ -658,7 +658,7 @@
            end do
            write(*,'(9x,A)')  repeat('-',62)
         end if
-        end subroutine display_cstar_output_settings_to_terminal
+        end subroutine display_cstar_output_settings_to_terminal_cstar
 
 !----------------------------------------------------------------------
 
