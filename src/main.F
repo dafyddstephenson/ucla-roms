@@ -238,9 +238,11 @@ CR      write(*,*) ' -6' MYID
 
                                   ! Set initial model clock: at this
       time=start_time             ! moment "start_time" (global scalar)
-      tdays=time*sec2day          ! is set by get_init or analytically
+                                  ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
+      tdays = (time-0.5*dt)*sec2day
       call set_forces
+      tdays = time*sec2day
       call set_depth(0)
 
 !----------------------------------------------------------------------
