@@ -169,6 +169,8 @@
         DIC_avg(:,:,:)=0
         allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) )
         hDIC_avg(:,:,:)=0
+        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_tmp(:,:,:)=0
         allocate(ALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
         ALK_alt_avg(:,:,:)=0
         allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
@@ -177,6 +179,8 @@
         DIC_alt_avg(:,:,:)=0
         allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
         hDIC_alt_avg(:,:,:)=0
+        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hDIC_alt_tmp(:,:,:)=0
         allocate(pH_avg(GLOBAL_2D_ARRAY,1:N) )
         pH_avg(:,:,:)=0
         allocate(pH_alt_avg(GLOBAL_2D_ARRAY,1:N) )
@@ -379,6 +383,18 @@
       ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iDIC)))
       ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC)))
 
+      if (do_avg) then
+        varid = nccreate(ncid,'hDIC_inst',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name','instantaneous '//
+     &     'thickness-weighted '/ /trim(t_lname(iDIC)))
+        ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC)))
+
+        varid = nccreate(ncid,'hDIC_ALT_CO2_inst',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name','instantaneous '//
+     &     'thickness-weighted '/ /trim(t_lname(iDIC_alt)))
+        ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iDIC_alt)))
+      endif
+
       varid = nccreate(ncid,'hALK_ALT_CO2',(/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/),nf90_double)
       ierr = nf90_put_att(ncid,varid,'long_name','thickness-weighted '/ /trim(t_lname(iALK_alt)))
       ierr = nf90_put_att(ncid,varid,'units','meters '/ /trim(t_units(iALK_alt)))
@@ -494,6 +510,8 @@
         if (ierr/=nf90_noerr)
      &      call handle_ierr(ierr,'wrt_cstar, opening: ',fname)
 
+        call multiply_by_thickness
+
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
@@ -518,10 +536,14 @@
           hALK_avg(:,:,:)=0
           call ncwrite(ncid,'hDIC',hDIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hDIC_avg(:,:,:)=0
+          hDIC_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iDIC)*Hz(i0:i1,j0:j1,:)
+          call ncwrite(ncid,'hDIC_inst',hDIC_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
           call ncwrite(ncid,'hALK_ALT_CO2',hALK_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hALK_alt_avg(:,:,:)=0
           call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hDIC_alt_avg(:,:,:)=0
+          hDIC_alt_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iDIC_alt)*Hz(i0:i1,j0:j1,:)
+          call ncwrite(ncid,'hDIC_ALT_CO2_inst',hDIC_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
           call ncwrite(ncid,'pH',pH_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           pH_avg(:,:,:)=0
           call ncwrite(ncid,'pH_ALT_CO2',pH_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
@@ -541,8 +563,6 @@
             DIC_alt_source_avg(:,:,:)=0
           endif
         else
-          call multiply_by_thickness
-
           call ncwrite(ncid,'zeta'  ,zeta(i0:i1,j0:j1,knew),(/1,1,record/))
           call ncwrite(ncid,'temp',t(i0:i1,j0:j1,:,nnew,itemp),(/1,1,1,record/))
           call ncwrite(ncid,'salt',t(i0:i1,j0:j1,:,nnew,isalt),(/1,1,1,record/))
