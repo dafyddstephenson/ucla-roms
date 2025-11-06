@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 import re
 
 def find_first_use_statement(file_path):
@@ -13,16 +14,155 @@ def find_first_use_statement(file_path):
             # Store the original indent so it never changes
             indent = line[:len(line) - len(line.lstrip())]
             return i, line, indent
-            # Get full statement for debugging
-            # j=i
-            # statement_lines=[line,]
-            # while j < len(module_lines):
-            #    if len(module_lines[j+1] >=6) and module_lines[j+1][5] == "&":
-            #        statement_lines.append(module_lines[j+1])
-            #        j=j+1
-            # return j , statement_lines, indent
         
     return None, None, None
+
+def run_make_and_find_missing_symbols(file_path):
+    clean_process = subprocess.run(['make','compile_clean'], capture_output=True, text=True)    
+    process = subprocess.run(['make','KEEP_PPSRC=true'], capture_output=True, text=True)
+    output = process.stdout + process.stderr
+    output_lines = output.split("\n")
+    compiler_error_blocks = find_compiler_error_blocks(output_lines, file_path.stem)
+    linker_error_blocks = find_linker_error_blocks(output_lines)
+
+    if compiler_error_blocks:
+        error_block = compiler_error_blocks[0]
+        missing_symbol_implicit = extract_symbol_from_implicit_type_error(error_block)
+        if missing_symbol_implicit:
+            return [error_block], [missing_symbol_implicit], process.returncode
+
+        missing_symbol_expression = extract_symbol_from_expression_expected_error(error_block)
+        if missing_symbol_expression:
+            return [error_block], [missing_symbol_expression], process.returncode
+
+        missing_symbol_allocate = extract_symbol_from_allocate_object_error(error_block)
+        if missing_symbol_allocate:
+            return [error_block], [missing_symbol_allocate], process.returncode
+        
+    if linker_error_blocks:
+        error_block = linker_error_blocks[0]
+        missing_symbol_linker = extract_symbol_from_linker_error(error_block)
+        if missing_symbol_linker:
+            return [error_block], [missing_symbol_linker], process.returncode
+
+    
+    # If no "IMPLICIT type" error found, but non-zero exit code, raise
+    if process.returncode != 0:
+        raise RuntimeError(
+            "Build failed and no missing symbol type was detected.\n"
+            f"Output: {'\n'.join(error_block)}"
+        )
+
+    # If build succeeded or no errors, return normally
+    return [], [], process.returncode
+
+def find_compiler_error_blocks(output_lines, filename_stem):
+    blocks = []
+    n = len(output_lines)
+    i = 0
+    while i < n:
+        line = output_lines[i].lower().strip()
+        
+        if line.startswith("error:"):
+            # Walk back to filename
+            block_start = i
+            while block_start > 0 and filename_stem not in output_lines[block_start]:
+                block_start -= 1
+            # Now capture from filename to current 'Error:' line, inclusive
+            block = output_lines[block_start:i+1]
+            blocks.append(block)
+        i += 1
+    return blocks
+
+def find_linker_error_blocks(output_lines):
+    blocks = []
+    n = len(output_lines)
+    i = 0
+    while i < n:
+        line = output_lines[i].lower().strip()
+        
+        if line.startswith("ld:") and ("ld: warning:" not in line):
+            # Walk back to filename
+            block_start = i
+            while block_start > 0 and "Undefined symbols" not in output_lines[block_start]:
+                block_start -= 1
+            # Now capture from filename to current 'Error:' line, inclusive
+            block = output_lines[block_start:i+1]
+            blocks.append(block)
+        i += 1
+    return blocks
+
+
+def extract_symbol_from_implicit_type_error(error_block):
+    for line in error_block:
+        if 'has no IMPLICIT type' in line:
+            m = re.search(r"'([^']+)'", line)
+            if m:
+                return m.group(1)
+    return None
+
+def extract_symbol_from_linker_error(error_block):
+    # Matches e.g., "_handle_ierr_"
+    for line in error_block:
+        m = re.search(r'"(_+.*?_+)"', line)
+        if m:
+            symbol = m.group(1)
+            # Remove leading/trailing underscores
+            symbol = symbol.strip('_')
+            # For module procedures: __modulename_MOD_procname
+            modproc = re.match(r'__([a-zA-Z0-9_]+)_MOD_([a-zA-Z0-9_]+)', symbol)
+            if modproc:
+                # Return procname for use import
+                return modproc.group(2).lower()
+            else:
+                return symbol.lower()
+    return None
+
+
+def extract_symbol_from_caret_error(error_block):
+    if len(error_block) < 3:
+        return None  # Not enough context
+    code_line = error_block[-3]
+    caret_line = error_block[-2]
+    # Find the column by length of caret line (skip whitespace)
+    caret_pos = len(caret_line) - len(caret_line.lstrip())
+    # Now extract the word starting at caret_pos in code_line
+    code_fragment = code_line[caret_pos:]
+    # Match the first Fortran-like identifier
+    m = re.match(r'([a-zA-Z_][a-zA-Z0-9_]*)', code_fragment)
+    if m:
+        return m.group(1)
+    return None
+
+def extract_symbol_from_expression_expected_error(error_block):
+    # Look for the error type
+    for i, line in enumerate(error_block):
+        if 'expression expected' in line:
+            # The symbol is usually on the previous or a marked line
+            # Try the line above for a variable declaration or usage
+            if i > 1:
+                caret_line = error_block[i-1]
+                code_line = error_block[i-2]
+                code_fragment = code_line[len(caret_line):]
+                m = re.match(r'([a-zA-Z_][a-zA-Z0-9_]*)', code_fragment)
+                if m:
+                    return m.group(1)
+    return None
+
+def extract_symbol_from_allocate_object_error(error_block):
+    # Look for the error type
+    for i, line in enumerate(error_block):
+        if 'Allocate-object' in line:
+            # The symbol is usually on the previous or a marked line
+            # Try the line above for a variable declaration or usage
+            if i > 1:
+                caret_line = error_block[i-1]
+                code_line = error_block[i-2]
+                code_fragment = code_line[len(caret_line):]
+                m = re.match(r'([a-zA-Z_][a-zA-Z0-9_]*)', code_fragment)
+                if m:
+                    return m.group(1)
+    return None
 
 
 def update_use_statement(file_path, start_line, missing, indent):
@@ -75,7 +215,7 @@ def wrap_fixed_form_use_statement(base, objlist, indent):
 
     output_lines.append(current_line.rstrip() + "\n")
     return output_lines
-        
+
 def comment_line(file_path, line_num):
     with open(file_path, 'r') as f:
         lines = f.readlines()
@@ -91,46 +231,37 @@ def uncomment_line(file_path, line_num):
         lines[line_num] = lines[line_num][1:]
     with open(file_path, 'w') as f:
         f.writelines(lines)
+
+def delete_line(file_path, line_num):
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+    lines[line_num]=''
+    with open(file_path, 'w') as f:
+        f.writelines(lines)
         
 
-def run_make_and_report_first_error():
-    process = subprocess.run(['make'], capture_output=True, text=True)
-    output = process.stdout + process.stderr
-
-    for line in output.splitlines():
-        if 'has no IMPLICIT type' in line:
-            m = re.search(r"'([^']+)'", line)
-            if m:
-                return [line], [m.group(1)], process.returncode
-
-    # If no "IMPLICIT type" error found, but non-zero exit code, raise
-    if process.returncode != 0:
-        raise RuntimeError(
-            "Build failed and no missing implicit type was detected.\n"
-            f"Output: {output}"
-        )
-
-    # If build succeeded or no errors, return normally
-    return [], [], process.returncode
-
 if __name__ == "__main__":
-    file_path = "basic_output.F"
-    line_num, use_statement_first_line, indent = find_first_use_statement(file_path)
-    print(f"Found use statement at line {line_num}: {use_statement_first_line} (...)")
-    comment_line(file_path,line_num)
-    # print(f"found {original_use} at line {line_num}")
-    if line_num is None:
-        print("No non-explicit use statement found.")
-        exit(1)
-    while True:
-        error_lines, missing, code = run_make_and_report_first_error()
-        print("First error:", error_lines)
-        print("Missing symbols:", missing)
-        print("Make exit code:", code)
-        uncomment_line(file_path, line_num)
-        if code == 0 or not missing:
-            print(f"make completed successfully, `{use_statement_first_line.strip()}` updated")
-            break
-        update_use_statement(file_path, line_num, missing, indent)
-
-# TODO this just looks for the word "error" which is a red herring - we should be finding 'no IMPLICIT type' errors only, and raising only if there's an exit code 1 and we didn't have any
+    for filenum in range(8):
+        file_path = Path("basic_output.F")
+        line_num, use_statement_first_line, indent = find_first_use_statement(file_path)
+        print(f"Found use statement at line {line_num}: {use_statement_first_line} (...)")
+        comment_line(file_path, line_num)
+        # print(f"found {original_use} at line {line_num}")
+        if line_num is None:
+            print("No non-explicit use statement found.")
+            exit(1)
+        first_make=True            
+        while True:
+            error_lines, missing, code = run_make_and_find_missing_symbols(file_path)
+            print("First error:", error_lines)
+            print("Missing symbols:", missing)
+            print("Make exit code:", code)
+            if (code!=0):
+                uncomment_line(file_path, line_num)
+                update_use_statement(file_path, line_num, missing, indent)
+                first_make=False
+            else:
+                if first_make: # import was never needed
+                    delete_line(file_path, line_num)
+                    print(f"make completed successfully, `{use_statement_first_line.strip()}` updated")
+                break
