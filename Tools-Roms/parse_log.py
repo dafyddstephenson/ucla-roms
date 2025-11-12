@@ -1,5 +1,8 @@
+import os
 import re
 import sys
+import json
+import inspect
 import subprocess
 from pathlib import Path
 from typing import Callable
@@ -32,12 +35,14 @@ class ROMSSimulationLog:
         self._parse_logfile()
 
         # Query remaining attrs from Slurm
-        self.slurm_maxrss = None
-        self.slurm_elapsed = None
-        self.slurm_state = None
-        self.slurm_exitcode = None
-        self.slurm_totalcpu = None
         self._query_job_id()
+        rcac = os.environ.get("RCAC_CLUSTER", "").lower()
+        lmod = os.environ.get("LMOD_SYSHOST", "").lower()
+        if rcac == "anvil":
+            self.machine = "anvil"
+        elif lmod == "perlmutter":
+            self.machine = "perlmutter"
+        
 
     def _parse_logfile(self):
         current_line = 0
@@ -56,13 +61,25 @@ class ROMSSimulationLog:
         # slurm_attrs = ["slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu"]
         slurm_attrs = [
             "slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu",
-            "slurm_job_name","slurm_user","slurm_partition","slurm_start_time","slurm_end_time","slurm_hostlist"
+            "slurm_job_name","slurm_user","slurm_partition","slurm_start_time","slurm_end_time",
         ]
         return parsed_attrs + slurm_attrs
 
     @property
     def ntracers(self):
         return len(self.tracers)
+
+    @property
+    def walltime(self):
+        return self.timestep_walltime[-1]
+
+    @property
+    def npoints(self):
+        return self.nx * self.ny * self.nz
+    
+    @property
+    def performance_number(self):
+        return (self.ncpus * self.walltime) / (self.ntimes * self.npoints)
 
     def _query_job_id(self):
         if not self.job_id:
@@ -116,20 +133,55 @@ class ROMSSimulationLog:
             jobid_raw, job_name, user, partition,
             maxrss, elapsed, start, end, state, exitcode, totalcpu, nodelist
         ) = job_info[:12]
-        
-        import pdb;pdb.set_trace()
-        self.slurm_job_name = job_name
-        self.slurm_user = user
-        self.slurm_partition = partition
-        self.slurm_start_time = start
-        self.slurm_end_time = end
-        self.slurm_hostlist = nodelist.split(",")
 
-        self.slurm_maxrss = maxrss
-        self.slurm_elapsed = elapsed
-        self.slurm_state = state
-        self.slurm_exitcode = exitcode
-        self.slurm_totalcpu = totalcpu
+        self.slurm_job_name = job_name or None
+        self.slurm_user = user or None
+        self.slurm_partition = partition or None
+        self.slurm_start_time = start or None
+        self.slurm_end_time = end or None
+        self.slurm_maxrss = maxrss or None
+        self.slurm_elapsed = elapsed or None
+        self.slurm_state = state or None
+        self.slurm_exitcode = exitcode or None
+        self.slurm_totalcpu = totalcpu or None
+
+    
+    def _to_serializable(self,obj):
+        """recursively make sure Paths etc become plain serializable types"""
+        if isinstance(obj, Path):
+            return str(obj)
+        if isinstance(obj, dict):
+            return {k: self._to_serializable(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self._to_serializable(v) for v in obj]
+        return obj
+
+    def to_dict(self):
+        """Return all serializable attributes and properties."""
+        attrs = {}
+
+        # include normal attributes
+        for name in self.list_attributes():
+            if hasattr(self, name):
+                attrs[name] = self._to_serializable(getattr(self, name))
+
+        # include class-level @property attributes
+        for name, attr in inspect.getmembers(type(self)):
+            if isinstance(attr, property) and not name.startswith("_"):
+                try:
+                    attrs[name] = self._to_serializable(getattr(self, name))
+                except Exception:
+                    pass  # ignore properties that fail to compute
+
+        return attrs
+
+    def to_json(self, path: Path | None = None, indent: int = 2):
+        data = json.dumps(self.to_dict(), indent=indent)
+        if path:
+            Path(path).write_text(data)
+        return data
+    
+        
 
 @register_logparser("git_hash")
 def parse_git_hash(log, i):
@@ -577,8 +629,14 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
 
 
 if __name__ == "__main__":
-    log = ROMSSimulationLog(Path(sys.argv[1]))
-
+    fpath = Path(sys.argv[1])
+    log = ROMSSimulationLog(fpath)
+    if log.job_id in str(fpath):
+        log.to_json(fpath.with_name(fpath.name + ".json"))
+    else:
+        log.to_json(fpath.parent/fpath.stem/self.job_id.json)
+                
+    
 
 
 
