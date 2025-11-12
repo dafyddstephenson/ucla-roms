@@ -337,9 +337,9 @@
       hALK_tmp(:,:,:)=0
       allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
       hALK_alt_tmp(:,:,:)=0
-      
 
-      
+
+
       call define_cstar_output_variables
       call display_cstar_output_settings_to_terminal_cstar
 
@@ -605,9 +605,9 @@ rd/))
             call ncwrite(ncid,'DIC_ALT_source',DIC_alt_source(i0:i1,j0:j1,:),(/1,1,1,record/))
           endif
        endif
-       ! Always write instantaneous hDIC vars 
-       call ncwrite(ncid,'hDIC',hDIC_tmp(i0:i1,j0:j1,:),(/1,1,1,record/)) 
-       call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,reco       
+       ! Always write instantaneous hDIC vars
+       call ncwrite(ncid,'hDIC',hDIC_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
+       call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,reco
 
         ierr=nf90_close (ncid)
 
