@@ -641,6 +641,9 @@
         if (diag_pflx) call wrt_rst_diag_slow(ncid,rec_rst)
 #endif
 
+        call ncwrite(ncid,'riv_umask',    riv_umask( 1:i1,j0:j1),start)
+        call ncwrite(ncid,'riv_vmask',    riv_vmask(i0:i1, 1:j1),start)
+
 #ifdef MARBL
         call marbldrv_write_ss_vars_to_rst(ncid,rec_rst)
 #endif
@@ -991,6 +994,17 @@
      &                               'south bc tuning coeff')
        endif
 #endif
+        varid = nccreate(ncid,'riv_umask',(/dn_xu,dn_yr,dn_tm/),
+     &                               (/xi_u,eta_rho,0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &    'river mask at u points')
+        ierr = nf90_put_att(ncid,varid,'units','nondim')
+
+        varid = nccreate(ncid,'riv_vmask',(/dn_xr,dn_yv,dn_tm/),
+     &                               (/xi_rho,eta_v,0/),nf90_double)
+        ierr = nf90_put_att(ncid,varid,'long_name',
+     &    'river mask at v points')
+        ierr = nf90_put_att(ncid,varid,'units','nondim')
 
 #endif /* SOLVE3D */
 

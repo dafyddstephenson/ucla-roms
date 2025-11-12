@@ -234,10 +234,22 @@
             endif
             ! 10*iriver needed because uflx/vflx can be positive or negative around
             ! the iriver number, and hence nearest integer is safest done with 10*.
-            if (rmask(i-1,j)>0 ) riv_uflx(i  ,j) =-(rfrc(i,j))/faces + 10*ridx(i,j)
-            if (rmask(i+1,j)>0 ) riv_uflx(i+1,j) = (rfrc(i,j))/faces + 10*ridx(i,j)
-            if (rmask(i,j-1)>0 ) riv_vflx(i,j  ) =-(rfrc(i,j))/faces + 10*ridx(i,j)
-            if (rmask(i,j+1)>0 ) riv_vflx(i,j+1) = (rfrc(i,j))/faces + 10*ridx(i,j)
+            if (rmask(i-1,j)>0 ) then
+              riv_uflx(i,j) =-(rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_umask(i,j) = 1.0
+            endif
+            if (rmask(i+1,j)>0 ) then
+              riv_uflx(i+1,j) = (rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_umask(i+1,j) = 1.0
+            endif
+            if (rmask(i,j-1)>0 ) then
+              riv_vflx(i,j) =-(rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_vmask(i,j) = 1.0
+            endif
+            if (rmask(i,j+1)>0 ) then
+              riv_vflx(i,j+1) = (rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_vmask(i,j+1) = 1.0
+            endif
 #endif
           endif
         enddo
