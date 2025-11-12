@@ -42,7 +42,7 @@ class ROMSSimulationLog:
             self.machine = "anvil"
         elif lmod == "perlmutter":
             self.machine = "perlmutter"
-        
+
 
     def _parse_logfile(self):
         current_line = 0
@@ -76,7 +76,7 @@ class ROMSSimulationLog:
     @property
     def npoints(self):
         return self.nx * self.ny * self.nz
-    
+
     @property
     def performance_number(self):
         return (self.ncpus * self.walltime) / (self.ntimes * self.npoints)
@@ -145,7 +145,7 @@ class ROMSSimulationLog:
         self.slurm_exitcode = exitcode or None
         self.slurm_totalcpu = totalcpu or None
 
-    
+
     def _to_serializable(self,obj):
         """recursively make sure Paths etc become plain serializable types"""
         if isinstance(obj, Path):
@@ -180,8 +180,8 @@ class ROMSSimulationLog:
         if path:
             Path(path).write_text(data)
         return data
-    
-        
+
+
 
 @register_logparser("git_hash")
 def parse_git_hash(log, i):
@@ -635,8 +635,8 @@ if __name__ == "__main__":
         log.to_json(fpath.with_name(fpath.name + ".json"))
     else:
         log.to_json(fpath.parent/fpath.stem/self.job_id.json)
-                
-    
+
+
 
 
 
