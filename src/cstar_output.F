@@ -151,7 +151,7 @@
 
       call add_cstar_output_variable(cstar_varlist, 'hDIC',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
-     &      'thickness-weighted ' // trim(t_lname(iDIC)),
+     &      'instantaneous thickness-weighted ' // trim(t_lname(iDIC)),
      &      'meters ' // trim(t_units(iDIC)))
 
       call add_cstar_output_variable(cstar_varlist, 'hALK_ALT_CO2',
@@ -161,7 +161,7 @@
 
       call add_cstar_output_variable(cstar_varlist, 'hDIC_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
-     &      'thickness-weighted ' // trim(t_lname(iDIC_alt)),
+     &      'instantaneous thickness-weighted ' // trim(t_lname(iDIC_alt)),
      &      'meters ' // trim(t_units(iDIC_alt)))
 
       call add_cstar_output_variable(cstar_varlist, 'pH',
@@ -324,17 +324,22 @@
           allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
           DIC_alt_source_avg(:,:,:)=0
         endif
-      else
-        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hALK_tmp(:,:,:)=0
-        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hDIC_tmp(:,:,:)=0
-        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hALK_alt_tmp(:,:,:)=0
-        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hDIC_alt_tmp(:,:,:)=0
       endif
 
+      ! Always output instantaneous hDIC
+      allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
+      hDIC_tmp(:,:,:)=0
+      allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+      hDIC_alt_tmp(:,:,:)=0
+
+      ! These have to be allocated for multiply_by_thickness call
+      allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
+      hALK_tmp(:,:,:)=0
+      allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+      hALK_alt_tmp(:,:,:)=0
+      
+
+      
       call define_cstar_output_variables
       call display_cstar_output_settings_to_terminal_cstar
 
@@ -531,6 +536,7 @@
         if (ierr/=nf90_noerr)
      &      call handle_ierr(ierr,'wrt_cstar, opening: ',fname)
 
+        call multiply_by_thickness
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
@@ -553,11 +559,11 @@
           DIC_alt_avg(:,:,:)=0
           call ncwrite(ncid,'hALK',hALK_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hALK_avg(:,:,:)=0
-          call ncwrite(ncid,'hDIC',hDIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          call ncwrite(ncid,'hDIC_avg',hDIC_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hDIC_avg(:,:,:)=0
           call ncwrite(ncid,'hALK_ALT_CO2',hALK_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hALK_alt_avg(:,:,:)=0
-          call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
+          call ncwrite(ncid,'hDIC_ALT_CO2_avg',hDIC_alt_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           hDIC_alt_avg(:,:,:)=0
           call ncwrite(ncid,'pH',pH_avg(i0:i1,j0:j1,:),(/1,1,1,record/))
           pH_avg(:,:,:)=0
@@ -578,8 +584,6 @@
             DIC_alt_source_avg(:,:,:)=0
           endif
         else
-          call multiply_by_thickness
-
           call ncwrite(ncid,'zeta'  ,zeta(i0:i1,j0:j1,knew),(/1,1,record/))
           call ncwrite(ncid,'temp',t(i0:i1,j0:j1,:,nnew,itemp),(/1,1,1,record/))
           call ncwrite(ncid,'salt',t(i0:i1,j0:j1,:,nnew,isalt),(/1,1,1,record/))
@@ -588,9 +592,8 @@
           call ncwrite(ncid,'ALK_ALT_CO2',t(i0:i1,j0:j1,:,nnew,iALK_alt),(/1,1,1,record/))
           call ncwrite(ncid,'DIC_ALT_CO2',t(i0:i1,j0:j1,:,nnew,iDIC_alt),(/1,1,1,record/))
           call ncwrite(ncid,'hALK',hALK_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
-          call ncwrite(ncid,'hDIC',hDIC_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
           call ncwrite(ncid,'hALK_ALT_CO2',hALK_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
-          call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,record/))
+rd/))
           call ncwrite(ncid,'pH',marbl_saved_state_3d(i0:i1,j0:j1,:,iPH),(/1,1,1,record/))
           call ncwrite(ncid,'pH_ALT_CO2',marbl_saved_state_3d(i0:i1,j0:j1,:,iPH_alt),(/1,1,1,record/))
           call ncwrite(ncid,'FG_CO2'  ,bgc_diag_2d(i0:i1,j0:j1,iFG),(/1,1,record/))
@@ -601,7 +604,10 @@
             call ncwrite(ncid,'DIC_source',DIC_source(i0:i1,j0:j1,:),(/1,1,1,record/))
             call ncwrite(ncid,'DIC_ALT_source',DIC_alt_source(i0:i1,j0:j1,:),(/1,1,1,record/))
           endif
-        endif
+       endif
+       ! Always write instantaneous hDIC vars 
+       call ncwrite(ncid,'hDIC',hDIC_tmp(i0:i1,j0:j1,:),(/1,1,1,record/)) 
+       call ncwrite(ncid,'hDIC_ALT_CO2',hDIC_alt_tmp(i0:i1,j0:j1,:),(/1,1,1,reco       
 
         ierr=nf90_close (ncid)
 
