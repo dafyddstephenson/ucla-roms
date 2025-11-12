@@ -53,7 +53,11 @@ class ROMSSimulationLog:
     @classmethod
     def list_attributes(cls) -> list[str]:
         parsed_attrs = [attr for _, attrs in _parser_registry for attr in attrs]
-        slurm_attrs = ["slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu"]
+        # slurm_attrs = ["slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu"]
+        slurm_attrs = [
+            "slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu",
+            "slurm_job_name","slurm_user","slurm_partition","slurm_start_time","slurm_end_time","slurm_hostlist"
+        ]
         return parsed_attrs + slurm_attrs
 
     @property
@@ -68,7 +72,7 @@ class ROMSSimulationLog:
             result = subprocess.run(
                 [
                     "sacct", "-j", str(self.job_id),
-                    "--format=JobIDRaw,MaxRSS,Elapsed,State,ExitCode,TotalCPU",
+                    "--format=JobIDRaw,JobName,User,Partition,MaxRSS,Elapsed,Start,End,State,ExitCode,TotalCPU,Nodelist",
                     "--parsable2", "--noheader"
                 ],
                 stdout=subprocess.PIPE,
@@ -99,11 +103,27 @@ class ROMSSimulationLog:
             elif '.' not in jobid_raw:
                 top_level = parts
 
-        source = batch_step or top_level
-        if not source:
+        job_info = batch_step or top_level
+
+        # if we have both, merge them; otherwise fall back to whichever we have
+        if top_level and batch_step:
+            # overwrite user/jobname/partition from top-level
+            job_info[1:4] = top_level[1:4]
+        if not job_info:
             return  # nothing usable found
 
-        jobid_raw, maxrss, elapsed, state, exitcode, totalcpu = source[:6]
+        (
+            jobid_raw, job_name, user, partition,
+            maxrss, elapsed, start, end, state, exitcode, totalcpu, nodelist
+        ) = job_info[:12]
+        
+        import pdb;pdb.set_trace()
+        self.slurm_job_name = job_name
+        self.slurm_user = user
+        self.slurm_partition = partition
+        self.slurm_start_time = start
+        self.slurm_end_time = end
+        self.slurm_hostlist = nodelist.split(",")
 
         self.slurm_maxrss = maxrss
         self.slurm_elapsed = elapsed
