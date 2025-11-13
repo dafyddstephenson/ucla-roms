@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 import os
 import re
 import sys
 import json
 import inspect
+import datetime
 import subprocess
 from pathlib import Path
 from typing import Callable
@@ -42,6 +45,8 @@ class ROMSSimulationLog:
             self.machine = "anvil"
         elif lmod == "perlmutter":
             self.machine = "perlmutter"
+        else:
+            self.machine = None
 
 
     def _parse_logfile(self):
@@ -178,6 +183,7 @@ class ROMSSimulationLog:
     def to_json(self, path: Path | None = None, indent: int = 2):
         data = json.dumps(self.to_dict(), indent=indent)
         if path:
+            Path(path.parent).mkdir(parents=True, exist_ok=True)
             Path(path).write_text(data)
         return data
 
@@ -631,10 +637,15 @@ def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
 if __name__ == "__main__":
     fpath = Path(sys.argv[1])
     log = ROMSSimulationLog(fpath)
-    if log.job_id in str(fpath):
+    if log.job_id:
+        identifier = log.job_id
+    else:
+        identifier = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+    if identifier in str(fpath):
         log.to_json(fpath.with_name(fpath.name + ".json"))
     else:
-        log.to_json(fpath.parent/fpath.stem/self.job_id.json)
+        log.to_json(fpath.parent/f"{fpath.stem}_{identifier}.json")
 
 
 
