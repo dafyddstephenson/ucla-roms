@@ -1,4 +1,24 @@
 #!/usr/bin/env python3
+"""
+ROMS simulation output log parser returning json-format run info.
+
+Usage
+-----
+Call using `parse_log my_output_log.txt` to produce output `my_output_log_<identifier>.json`,
+where <identifier> is a SLURM jobID or the current date.
+
+Details
+-------
+This script provides a modular parser for ROMS stdout files.
+Each section of the ROMS output is parsed by a different function,
+decorated with the `@register_logparser("attr0",...)` decorator.
+A class `ROMSSimulationLog` is populated by these functions.
+Applying the decorator to a new function causes the script to pass the output
+file through that function to extract any relevant info and append it to the class.
+The decorator should specify any attrs on the class it intends to define.
+The script then dumps all the collected info to a json file with a
+unique identifier (either the SLURM jobID or current date.)
+"""
 
 import os
 import re
@@ -10,7 +30,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable
 
-
+# Initialize list of parsers registered by the `register_logparser` decorator:
 _parser_registry: list[tuple[Callable, tuple[str, ...]]] = []
 
 def register_logparser(*attribute_names: str):
@@ -23,6 +43,14 @@ def register_logparser(*attribute_names: str):
 class ROMSSimulationLog:
     def __init__(self,
                  log_file: Path):
+        """Initialize this ROMSSimulationLog instance.
+
+        Population is in three steps:
+        1. parses the provided log file.
+        2. query SLURM for additional info using `sacct` on the jobID extracted from the file.
+        3. Determine the calling machine's name from an environment variable.
+        """
+
         self.log_file = log_file
         with open(self.log_file, "r") as f:
             self.lines = f.readlines()
@@ -30,15 +58,21 @@ class ROMSSimulationLog:
         for _, attrs in _parser_registry:
             for attr in attrs:
                 if not hasattr(self, attr):
-                    if attr.endswith("s") or attr.endswith("_files") or attr.startswith("output_variables"):
+                    if (
+                            attr.endswith("s") or
+                            attr.endswith("_files") or
+                            attr.startswith("output_variables")
+                    ):
                         setattr(self, attr, [])
                     else:
                         setattr(self, attr, None)
 
         self._parse_logfile()
 
-        # Query remaining attrs from Slurm
+        # Query most remaining attrs from Slurm
         self._query_job_id()
+
+        # Lastly, get machine info
         rcac = os.environ.get("RCAC_CLUSTER", "").lower()
         lmod = os.environ.get("LMOD_SYSHOST", "").lower()
         if rcac == "anvil":
@@ -50,6 +84,10 @@ class ROMSSimulationLog:
 
 
     def _parse_logfile(self):
+        """Read the logfile by line, passing each line to each parser.
+
+        The parser returns a new line to move to.
+        """
         current_line = 0
         while current_line < len(self.lines):
             for parser_func, _ in _parser_registry:
@@ -68,28 +106,35 @@ class ROMSSimulationLog:
             "slurm_maxrss","slurm_elapsed","slurm_state","slurm_exitcode","slurm_totalcpu",
             "slurm_job_name","slurm_user","slurm_partition","slurm_start_time","slurm_end_time",
         ]
-        return parsed_attrs + slurm_attrs
+        return parsed_attrs + slurm_attrs + ["machine",]
 
     @property
     def ntracers(self):
+        """The number of tracers in the simulation."""
         return len(self.tracers)
 
     @property
     def walltime(self):
+        """The walltime determined within ROMS."""
         return self.timestep_walltime[-1]
 
     @property
     def npoints(self):
+        """The number of gridpoints in the ROMS domain."""
         return self.nx * self.ny * self.nz
 
     @property
     def performance_number(self):
+        """Diagnostic to estimate system performance based on other attrs."""
         return (self.ncpus * self.walltime) / (self.ntimes * self.npoints)
 
     def _query_job_id(self):
+        """Determine further information from SLURM's sacct function.
+
+        Uses the `job_id` attr extracted from `_parse_logfile`
+        """
         if not self.job_id:
             return
-
         try:
             result = subprocess.run(
                 [
@@ -181,6 +226,7 @@ class ROMSSimulationLog:
         return attrs
 
     def to_json(self, path: Path | None = None, indent: int = 2):
+        """Dump the output of `to_dict` to json format, optionally to file."""
         data = json.dumps(self.to_dict(), indent=indent)
         if path:
             Path(path.parent).mkdir(parents=True, exist_ok=True)
@@ -191,6 +237,7 @@ class ROMSSimulationLog:
 
 @register_logparser("git_hash")
 def parse_git_hash(log, i):
+    """Get the git hash of the ROMS repo from the logfile."""
     line = log.lines[i].strip().lower()
     if "git hash" in line:
         log.git_hash = line.split(":")[-1].strip()
@@ -199,6 +246,7 @@ def parse_git_hash(log, i):
 
 @register_logparser("job_id","job_task_id")
 def parse_job_id(log, i):
+    """Get the SLURM or PBS job ID from the logfile."""
     line = log.lines[i].strip()
 
     # job id: SLURM Job ID: <id>   OR   PBS Job ID: <id>
@@ -215,6 +263,7 @@ def parse_job_id(log, i):
 
 @register_logparser("cppdefs")
 def parse_cppdefs(log: ROMSSimulationLog, current_line: int) -> int:
+    """Get the list of C preprocessor keys from the logfile."""
     line = log.lines[current_line]
     if "<cppdefs.opt>" not in line:
         return current_line
@@ -230,9 +279,10 @@ def parse_cppdefs(log: ROMSSimulationLog, current_line: int) -> int:
 
 KV_PARAMS = {"ntimes", "dt", "ndtfast", "ninfo", "theta_s", "theta_b", "hc", "rho0","visc2"}
 
-
-@register_logparser("ntimes","dt","ndtfast","ninfo","theta_s","theta_b","hc","rho0","visc2")
+@register_logparser(*KV_PARAMS)
 def parse_key_value_params(log: "ROMSSimulationLog", current_line: int) -> int:
+    """Parse a selection of related parameters formatted as `key = value` in the logfile."""
+
     line = log.lines[current_line]
     if "=" not in line:
         return current_line
@@ -256,6 +306,7 @@ def parse_key_value_params(log: "ROMSSimulationLog", current_line: int) -> int:
 
 @register_logparser("grid_file")
 def parse_grid_file(log: "ROMSSimulationLog", current_line: int) -> int:
+    """Parse the grid file path from the logfile."""
     line = log.lines[current_line]
     if not line.strip().startswith("grid file:"):
         return current_line
@@ -265,6 +316,7 @@ def parse_grid_file(log: "ROMSSimulationLog", current_line: int) -> int:
 
 @register_logparser("forcing_files")
 def parse_forcing_files(log: "ROMSSimulationLog", current_line: int) -> int:
+    """Parse the list of forcing file paths from the logfile."""
     line = log.lines[current_line]
     if not line.strip().startswith("forcing data file(s):"):
         return current_line
@@ -284,6 +336,7 @@ def parse_forcing_files(log: "ROMSSimulationLog", current_line: int) -> int:
 
 @register_logparser("initial_condition_rec","initial_condition_file")
 def parse_initial_condition(log: "ROMSSimulationLog", current_line: int) -> int:
+    """Parse the initial condition file path from the logfile."""
     line = log.lines[current_line]
     if not line.strip().startswith("initial condition"):
         return current_line
@@ -299,6 +352,7 @@ def parse_initial_condition(log: "ROMSSimulationLog", current_line: int) -> int:
 
 @register_logparser("ncpus","np_xi","np_eta","nx","ny","nz")
 def parse_node_grid_info(log: "ROMSSimulationLog", current_line: int) -> int:
+    """Parse the CPU distribution info from the logfile."""
     line = log.lines[current_line].strip()
 
     if not line.startswith("NUMBER OF NODES:"):
@@ -328,6 +382,7 @@ def parse_node_grid_info(log: "ROMSSimulationLog", current_line: int) -> int:
 
 @register_logparser("tracers")
 def parse_tracers(log: "ROMSSimulationLog", current_line: int) -> int:
+    """Parse the list of tracers from the logfile."""
     line = log.lines[current_line].strip()
     if not line.startswith("TRACER NO.:"):
         return current_line
@@ -358,6 +413,7 @@ def parse_tracers(log: "ROMSSimulationLog", current_line: int) -> int:
 # OUTPUT SETTINGS:
 @register_logparser("output_period_rst","nrpf_rst")
 def parse_rst(log, i):
+    """ Parse the restart file output settings from the logfile."""
     if "ocean_vars :: restart file" not in log.lines[i]:
         return i
 
@@ -383,7 +439,9 @@ def _parse_output_block(log, start_i: int,
                         nrpf_attr: str,
                         vars_attr: str | None):
     """
-    generic reader
+    Helper function to parse related output settings sections from the logfile.
+
+    Determines shared values:
     - period_attr: attribute on log to store output period (float or "monthly")
     - nrpf_attr: attribute on log to store recs/file (int)
     - vars_attr: attribute to store list of var names (list[str]) — or None to skip
@@ -456,6 +514,8 @@ def _parse_output_block(log, start_i: int,
 
 @register_logparser("output_period_phys_his","nrpf_phys_his","output_variables_phys")
 def parse_phys_his(log, i):
+    """Parse the 'history' file (instantaneous output) settings from the logfile.
+    """
     if "ocean_vars :: history file" not in log.lines[i]:
         return i
     return _parse_output_block(
@@ -467,6 +527,7 @@ def parse_phys_his(log, i):
 
 @register_logparser("output_period_phys_avg","output_nrpf_phys_avg","output_variables_phys")
 def parse_phys_avg(log, i):
+    """Parse the averaged output file settings from the logfile."""
     if "ocean_vars :: average file" not in log.lines[i]:
         return i
     return _parse_output_block(
@@ -480,6 +541,7 @@ def parse_phys_avg(log, i):
 
 @register_logparser("output_period_bgc_his", "output_nrpf_bgc_his", "output_variables_bgc")
 def parse_bgc_his(log, i):
+    """Parse the biogeochemistry history file (instantaneous output) settings from the logfile."""
     if "bgc :: history file" not in log.lines[i].strip().lower():
         return i
     return _parse_output_block(
@@ -492,6 +554,7 @@ def parse_bgc_his(log, i):
 
 @register_logparser("output_period_bgc_avg", "output_nrpf_bgc_avg", "output_variables_bgc")
 def parse_bgc_avg(log, i):
+    """Parse the biogeochemistry averaged output file settings from the logfile."""
     if "bgc :: average file" not in log.lines[i].strip().lower():
         return i
     return _parse_output_block(
@@ -505,6 +568,7 @@ def parse_bgc_avg(log, i):
 
 @register_logparser("output_period_cstar", "output_nrpf_cstar", "output_variables_cstar")
 def parse_cstar(log, i):
+    """Parse the settings associated with the custom cstar_output module from the logfile."""
     if "cstar_output ::" not in log.lines[i]:
         return i
     return _parse_output_block(
@@ -516,6 +580,7 @@ def parse_cstar(log, i):
 
 @register_logparser("cdr_releases")
 def parse_cdr_releases(log: "ROMSSimulationLog", i: int) -> int:
+    """Parse information on Carbon Dioxide Removal (CDR) perturbations from the logfile."""
     line = log.lines[i]
     if not line.lstrip().startswith("The minimum distance to Release"):
         return i
@@ -572,6 +637,7 @@ def parse_cdr_releases(log: "ROMSSimulationLog", i: int) -> int:
     return i + 5
 
 def _fix_fort_float(s: str) -> str:
+    """Patch Fortran floats missing an exponent marker."""
     # ex: "4.21568551562-03" -> "4.21568551562E-03"
     # only patch if pattern is <digits>.<digits><sign><digits>
     # and there is no "E" already
@@ -590,6 +656,7 @@ def _fix_fort_float(s: str) -> str:
     "timestep_walltime"
 )
 def parse_step_block(log: "ROMSSimulationLog", i: int) -> int:
+    """Parse the timestep-by-timestep output columns (under "STEP") from the logfile."""
     line = log.lines[i].strip()
 
     # detect the header
