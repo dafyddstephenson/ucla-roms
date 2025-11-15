@@ -132,6 +132,7 @@
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
+      character(len=200) :: error_msg
 
       ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
       if(ierr/=0)
@@ -151,13 +152,18 @@
       if (ierr == nf90_noerr) then
         ierr=nf90_get_var(ncid, varid, depth_profiles)
         if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
-          error stop 'ERROR: while reading CDR forcing file, invalid value found for variable depth_profiles (must be T or F)'
+        write(error_msg, '(a,a,a)')
+     &       "ERROR while reading the CDR forcing file: \n",
+     &       cdr_file,
+     &       "\nvariable depth_profiles must have value 'T' or 'F'"
+          error stop trim(error_msg)
         endif
       else
         ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
         mpi_nonexit_warn print *, ' --- WARNING: ',
-     &  'variable depth_profiles not found in CDR forcing file, so we will treat it is being False and will look for inputs ',
-     &  'to initialize Gaussian profiles.'
+     &        'variable depth_profiles not found in CDR forcing file,',
+     &        'so we will treat it is being False and ',
+     &        'will look for inputs to initialize Gaussian profiles.'
         depth_profiles='F'
       endif
 
@@ -170,21 +176,31 @@
 #else
           ierr = 1
 #endif
-        if (ierr == 1) then
-          error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
-        endif
+          if (ierr == 1) then
+             write (error_msg, '(a)')
+     &            "ERROR: CDR forcing file is using ",
+     &            "depth profiles (upscaling), but neither ",
+     &            "'MARBL' or 'BIOLOGY_BEC2' cppkeys are active"
+             error stop trim(error_msg)
+          endif
 
         ! Figure out how many release points there are
         ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
         if (ierr /= nf90_noerr) then
-          error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
+           write (error_msg, '(a)')
+     &          'ERROR: CDR forcing file is ',
+     &          'missing necessary dimension ncdr_prof.'
+          error stop trim(error_msg)
         endif
         ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
 
         ! Get number of vertical levels from source grid
         ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
         if (ierr /= nf90_noerr) then
-          error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
+           write (error_msg, '(a)')
+     &          'ERROR: CDR forcing file is ',
+     &          'missing necessary dimension s_rho.'
+          error stop trim(error_msg)
         endif
         ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 

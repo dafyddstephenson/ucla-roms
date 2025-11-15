@@ -165,17 +165,26 @@
 
       ! local
       character(len=max_name_size),save :: fname_his,fname_avg
+      character(len=200) :: error_msg
       integer                :: itrc, itavg, ierr
       logical,save           :: first_step_avg=.true.
       logical,save           :: first_step_his=.true.
 
-      if (wrt_his .and. mod(output_period_his,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor of output_period_his!'
-      endif
-      if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor of output_period_avg!'
+      if (wrt_file_his .and. mod(output_period_his, dt) /= 0) then
+         write(error_msg, '(a, i0, a, i0)')
+     &        "ERROR in bgc.opt: dt (", dt, &
+     &        ") is not a factor of output_period_his (",
+     &        output_period_his, ")"
+         error stop trim(error_msg)
       endif
 
+      if (wrt_file_avg .and. mod(output_period_avg,dt) /= 0) then
+         write(error_msg, '(a, i0, a, i0)')
+     &        "ERROR in bgc.opt: dt (", dt,
+     &        ") is not a factor of output_period_avg (",
+     &        output_period_avg, ")"
+         error stop trim(error_msg)
+      endif
 
       if (avg) then
 
@@ -271,17 +280,25 @@
 #if defined (BEC2_DIAG) || defined (MARBL_DIAGS)
       ! local
       character(len=max_name_size),save :: fname_his,fname_avg
+      character(len=200) :: error_msg
       integer                :: itrc, ierr, idiag
       logical,save           :: first_step_dia_avg=.true.
       logical,save           :: first_step_dia_his=.true.
 
       if (wrt_his_dia .and. mod(output_period_his_dia,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor ' //
-     &        'of output_period_his_dia for diagnostics!'
+         write(error_msg, '(a, i0, a, i0)')
+     &        "ERROR in bgc.opt: dt (", dt, &
+     &        ") is not a factor of output_period_his_dia (",
+     &        output_period_his, ")"
+         error stop trim(error_msg)
       endif
+
       if (wrt_avg_dia .and. mod(output_period_avg_dia,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor' //
-     &        'of output_period_avg_dia for diagnostics!'
+         write(error_msg, '(a, i0, a, i0)')
+     &        "ERROR in bgc.opt: dt (", dt,
+     &        ") is not a factor of output_period_avg_dia (",
+     &        output_period_avg, ")"
+         error stop trim(error_msg)
       endif
 
 
