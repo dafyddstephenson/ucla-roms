@@ -165,6 +165,8 @@
         ALK_avg(:,:,:)=0
         allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) )
         hALK_avg(:,:,:)=0
+        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hALK_tmp(:,:,:)=0
         allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) )
         DIC_avg(:,:,:)=0
         allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) )
@@ -175,6 +177,8 @@
         ALK_alt_avg(:,:,:)=0
         allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
         hALK_alt_avg(:,:,:)=0
+        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
+        hALK_alt_tmp(:,:,:)=0
         allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
         DIC_alt_avg(:,:,:)=0
         allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
@@ -199,15 +203,6 @@
           allocate(DIC_alt_source_avg(GLOBAL_2D_ARRAY,1:N) )
           DIC_alt_source_avg(:,:,:)=0
         endif
-      else
-        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hALK_tmp(:,:,:)=0
-        allocate(hDIC_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hDIC_tmp(:,:,:)=0
-        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hALK_alt_tmp(:,:,:)=0
-        allocate(hDIC_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hDIC_alt_tmp(:,:,:)=0
       endif
 
       if (mynode==0) print *,'init cstar'
@@ -294,13 +289,13 @@
       use param
       implicit none
 
-      hALK_tmp(:,:,:) = t(i0:i1,j0:j1,:,knew,iALK)*Hz(i0:i1,j0:j1,:)
+      hALK_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iALK)*Hz(i0:i1,j0:j1,:)
 
-      hDIC_tmp(:,:,:) = t(i0:i1,j0:j1,:,knew,iDIC)*Hz(i0:i1,j0:j1,:)
+      hDIC_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iDIC)*Hz(i0:i1,j0:j1,:)
 
-      hALK_alt_tmp(:,:,:) = t(i0:i1,j0:j1,:,knew,iALK_alt)*Hz(i0:i1,j0:j1,:)
+      hALK_alt_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iALK_alt)*Hz(i0:i1,j0:j1,:)
 
-      hDIC_alt_tmp(:,:,:) = t(i0:i1,j0:j1,:,knew,iDIC_alt)*Hz(i0:i1,j0:j1,:)
+      hDIC_alt_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iDIC_alt)*Hz(i0:i1,j0:j1,:)
 
       end subroutine multiply_by_thickness !]
 !----------------------------------------------------------------------
