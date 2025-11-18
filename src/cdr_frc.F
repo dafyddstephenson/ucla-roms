@@ -19,7 +19,7 @@
       implicit none
 
       private
-
+      character(len=7) :: module_name="cdr_frc"
 #include "cdr_frc.opt"
 
       !!! Variables used for all releases
@@ -119,9 +119,10 @@
 
       use netcdf
       use mpi
+      use error_handling, only: global_failure_condition_exit
       implicit none
-
-      ! local
+! local
+      character(len=12) :: sr_name = "init_cdr_frc"
       integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
       integer :: id,ndims,dimid, varid
       logical, dimension(:), allocatable  :: bad_releases
@@ -132,7 +133,7 @@
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
-      character(len=200) :: error_msg
+      character(len=200) :: error_info
 
       ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
       if(ierr/=0)
@@ -152,11 +153,14 @@
       if (ierr == nf90_noerr) then
         ierr=nf90_get_var(ncid, varid, depth_profiles)
         if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
-        write(error_msg, '(a,a,a)')
-     &       "ERROR while reading the CDR forcing file: \n",
+        write(error_info, '(a,a,a)')
+     &       "Invalid data in CDR forcing file: \n",
      &       cdr_file,
      &       "\nvariable depth_profiles must have value 'T' or 'F'"
-          error stop trim(error_msg)
+         call global_failure_condition_exit(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
+
         endif
       else
         ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
@@ -177,30 +181,39 @@
           ierr = 1
 #endif
           if (ierr == 1) then
-             write (error_msg, '(a)')
-     &            "ERROR: CDR forcing file is using ",
+             write (error_info, '(a)')
+     &            "CDR forcing file is using ",
      &            "depth profiles (upscaling), but neither ",
      &            "'MARBL' or 'BIOLOGY_BEC2' cppkeys are active"
-             error stop trim(error_msg)
+
+         call global_failure_condition_exit(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
+
           endif
 
         ! Figure out how many release points there are
         ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
         if (ierr /= nf90_noerr) then
-           write (error_msg, '(a)')
-     &          'ERROR: CDR forcing file is ',
+           write (error_info, '(a)')
+     &          'CDR forcing file is ',
      &          'missing necessary dimension ncdr_prof.'
-          error stop trim(error_msg)
+         call global_failure_condition_exit(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
+
         endif
         ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
 
         ! Get number of vertical levels from source grid
         ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
         if (ierr /= nf90_noerr) then
-           write (error_msg, '(a)')
-     &          'ERROR: CDR forcing file is ',
+           write (error_info, '(a)')
+     &          'CDR forcing file is ',
      &          'missing necessary dimension s_rho.'
-          error stop trim(error_msg)
+         call global_failure_condition_exit(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
         endif
         ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
@@ -308,15 +321,13 @@
 
        ! Now every rank has the same bad_releases array
        if (any(bad_releases)) then
-          if (mynode == 0) then
-             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             print *, "ERROR: the following CDR releases are on land"
-             print *, "(Note 1-indexing):",
+          write (error_info, '(A, *(I0))')
+     &         "User specified CDR releases that are on land (invalid):",
      &            pack([(i,i=1,ncdr)], bad_releases)
-             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-          end if
-          call MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+         call global_failure_condition_exit(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
        end if
 
 
