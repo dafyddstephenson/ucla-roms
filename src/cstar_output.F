@@ -116,6 +116,14 @@
 !======================================================================
       if (.not. allocated(cstar_varlist)) allocate(cstar_varlist(0))
 
+      call add_cstar_output_variable(cstar_varlist, 'avg_begin_time',
+     &      (/dn_tm/), (/0/),
+     &      'Time at beginning of averaging period','seconds')
+
+      call add_cstar_output_variable(cstar_varlist, 'avg_end_time',
+     &      (/dn_tm/), (/0/),
+     &      'Time at end of averaging period','seconds')
+
       call add_cstar_output_variable(cstar_varlist, 'zeta',
      &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
      &      'free-surface elevation','meters')
@@ -193,6 +201,18 @@
          call add_cstar_output_variable(cstar_varlist, 'DIC_ALT_source',
      &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &        'alt DIC source from CDR module','mmol/s')
+      endif
+
+      if (do_avg) then
+       call add_cstar_output_variable(cstar_varlist, 'hDIC_avg',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'time-averaged thickness-weighted ' // trim(t_lname(iDIC)),
+     &      'meters ' // trim(t_units(iDIC)))
+
+       call add_cstar_output_variable(cstar_varlist, 'hDIC_ALT_CO2_avg',
+     &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
+     &      'time-averaged thickness-weighted ' // trim(t_lname(iDIC)),
+     &      'meters ' // trim(t_units(iDIC)))
       endif
 
       end subroutine define_cstar_output_variables
@@ -294,8 +314,6 @@
         ALK_avg(:,:,:)=0
         allocate(hALK_avg(GLOBAL_2D_ARRAY,1:N) )
         hALK_avg(:,:,:)=0
-        allocate(hALK_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hALK_tmp(:,:,:)=0
         allocate(DIC_avg(GLOBAL_2D_ARRAY,1:N) )
         DIC_avg(:,:,:)=0
         allocate(hDIC_avg(GLOBAL_2D_ARRAY,1:N) )
@@ -304,8 +322,6 @@
         ALK_alt_avg(:,:,:)=0
         allocate(hALK_alt_avg(GLOBAL_2D_ARRAY,1:N) )
         hALK_alt_avg(:,:,:)=0
-        allocate(hALK_alt_tmp(GLOBAL_2D_ARRAY,1:N) )
-        hALK_alt_tmp(:,:,:)=0
         allocate(DIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
         DIC_alt_avg(:,:,:)=0
         allocate(hDIC_alt_avg(GLOBAL_2D_ARRAY,1:N) )
