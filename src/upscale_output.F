@@ -258,7 +258,7 @@
 
         if ((itrc == iALK) .or. (itrc == iALK_alt) .or. (itrc == iDIC) .or. (itrc == iDIC_alt)) then
 
-#ifdef OBC_NORTH                
+#ifdef OBC_NORTH
         ! North boundary
         if (NORTHERN_EDGE) then
           do i=istr,iend
@@ -306,7 +306,7 @@
         endif
 #endif
 
-#ifdef OBC_WEST        
+#ifdef OBC_WEST
             ! West boundary
         if (WESTERN_EDGE) then
           do j=jstr,jend
