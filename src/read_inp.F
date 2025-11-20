@@ -278,7 +278,7 @@
 
 #ifdef SOLVE3D
 !# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
-                         && !defined MY2_MIXING && !defined MY25_MIXING
+!                         && !defined MY2_MIXING && !defined MY25_MIXING
 
 ! Background vertical viscosity and mixing coefficients for tracers.
 
