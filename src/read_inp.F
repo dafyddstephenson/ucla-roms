@@ -277,7 +277,7 @@
 #endif
 
 #ifdef SOLVE3D
-# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
+!# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
                          && !defined MY2_MIXING && !defined MY25_MIXING
 
 ! Background vertical viscosity and mixing coefficients for tracers.
@@ -293,7 +293,7 @@
      &                     'background vertical mixing [m^2/s] for ',
      &        vname(2,indxT+itrc-1)(1:lenstr(vname(2,indxT+itrc-1)))
           enddo
-# endif
+!# endif
 # ifdef MY25_MIXING
 ! Mellor-Yamada Level 2.5 turbulent closure parameters.
 
