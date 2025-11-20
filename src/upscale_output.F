@@ -252,7 +252,7 @@
       integer, intent(in) :: itrc,k
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY), intent(in) :: FX,FE
       integer, intent(in) :: istr, iend, jstr, jend
- 
+
       ! local
       integer :: i,j
 
