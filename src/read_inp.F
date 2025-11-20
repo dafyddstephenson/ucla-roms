@@ -277,8 +277,8 @@
 #endif
 
 #ifdef SOLVE3D
-# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
-                         && !defined MY2_MIXING && !defined MY25_MIXING
+!# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
+!                         && !defined MY2_MIXING && !defined MY25_MIXING
 
 ! Background vertical viscosity and mixing coefficients for tracers.
 
@@ -293,7 +293,7 @@
      &                     'background vertical mixing [m^2/s] for ',
      &        vname(2,indxT+itrc-1)(1:lenstr(vname(2,indxT+itrc-1)))
           enddo
-# endif
+!# endif
 # ifdef MY25_MIXING
 ! Mellor-Yamada Level 2.5 turbulent closure parameters.
 
@@ -630,9 +630,14 @@ c**       write(*,'(1x,A,1x,A)') 'Recognized: ', kwds(is:ie-1)
           do while (kwds(ie:ie)/=' ' .and. ie<max_opt_size)
             ie=ie+1
           enddo
-          ierr=ierr+1
-          write(*,'(/1x,A,1x,A/)') '### ERROR: keyword not found:',
+            if (kwds(is:ie-1) == 'vertical_mixing') then
+              write(*,'(/1x,A,1x,A/)') '### WARNING: keyword not found:',
      &                                               kwds(is:ie-1)
+            else
+              ierr=ierr+1
+              write(*,'(/1x,A,1x,A/)') '### ERROR: keyword not found:',
+     &                                               kwds(is:ie-1)
+            endif
           is=ie
         endif
       enddo
