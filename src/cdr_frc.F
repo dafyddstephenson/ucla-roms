@@ -307,21 +307,16 @@
       implicit none
 
       ! local
-      integer :: ierr_dp, ierr_3d
-      integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
-      integer :: id,ndims,dimid, varid
-      logical, dimension(:), allocatable  :: bad_releases
+      integer :: icdr, cidx, cidx_start, ierr
       integer, dimension(2) :: lmi
-      real :: vint,arg
-      real :: local_int,global_int
+      logical, dimension(ncdr) :: bad_releases
+      real,dimension(:,:)  ,allocatable :: dist
       real :: local_min_val
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
-      real,dimension(:,:)  ,allocatable :: dist
 
 
-      ! Allocate memory and initialize arrays to read in forcing
-      allocate(bad_releases(ncdr)); bad_releases(:) = .false.
+      bad_releases(:) = .false.
 
       call init_arrays_cdr
 
