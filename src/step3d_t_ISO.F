@@ -55,8 +55,8 @@ c--# define CONST_TRACERS
 
       use param
       use pipe_frc
-      use cdr_frc, only: cdr_nprf, cdr_icdr,
-     &     cdr_source, cdr_iloc, cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d
+      use cdr_frc, only: cdr_nprf, cdr_icdr, cdr_source, cdr_iloc,
+     &      cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d, forcing_3d, ncdr
       use river_frc
       use surf_flux, only: stflx, srflx
       use tracers

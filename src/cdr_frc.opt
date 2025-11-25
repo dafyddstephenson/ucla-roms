@@ -9,9 +9,9 @@
       integer,parameter,public :: ncdr_parm=1   !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 
       ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
-      logical                            :: forcing_depth_profiles = .false.     ! T if this file contains depth profiles
-      logical                            :: forcing_3d             = .false.     ! T if this file contains 3d forcing
-      logical                            :: forcing_parameterized  = .true.      ! T if forcing with idealized Gaussian profiles
+      logical,public                     :: forcing_depth_profiles = .false.     ! T if this file contains depth profiles
+      logical,public                     :: forcing_3d             = .false.     ! T if this file contains 3d forcing
+      logical,public                     :: forcing_parameterized  = .true.      ! T if forcing with idealized Gaussian profiles
 
       ! INTERPOLATE FORCING IN TIME, OR NO?
       logical                            :: time_interpolation = .false.   ! T if using time interpolation; if F, forcing is linearly

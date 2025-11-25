@@ -32,8 +32,7 @@
       !!! Variables used for (1), (2), and (3)
       integer,public                              :: ncdr         ! Total number of CDR releases
       real,public,allocatable,dimension(:,:)      :: cdr_flx      ! cdr tracer flux
-      real   ,public,allocatable,dimension(:,:,:) :: cdr_prf      ! cdr fractions as a function of tracer
-      logical                                     :: time_interpolation
+      real,public,allocatable,dimension(:,:,:)    :: cdr_prf      ! cdr fractions as a function of tracer
 
       !!! Variables used for (1) and (2)
       integer,public                              :: cdr_nprf     ! number of locations with a release
@@ -65,7 +64,7 @@
       integer, dimension(2) :: cdr_inds                           ! Array to hold those indices
 
       !!! Variables used only for (3)
-      real, allocatable, dimension(:,:,:,:,:)        :: cdr_flx_3d    ! cdr tracer flux (3d, for each tracer)
+      real,public,allocatable,dimension(:,:,:,:,:)   :: cdr_flx_3d    ! cdr tracer flux (3d, for each tracer)
 
 
       public set_cdr_frc
@@ -153,20 +152,9 @@
         error stop 'ERROR: cdr_source set to true, but no forcing type selected.'
       endif
 
-      if (ierr>1) then
-        error stop 'ERROR: More than one CDR forcing type selected.'
+      if (ierr>1)
+     &   error stop 'ERROR: More than one CDR forcing type selected.'
 
-      ! Determine whether the CDR forcing should use time interpolation
-      ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
-      if (ierr == nf90_noerr) then
-        ierr1=nf90_get_var(ncid, varid, tmp1)
-        if .not. ((tmp1 == 'F') .or. (tmp1 == 'T')) then
-          error stop 'ERROR: Invalid value for "time_interpolation" in CDR file.'
-        endif
-      endif
-      if ((ierr1 /= nf90_noerr) .or. (tmp1 == 'F')) then
-        time_interpolation = .false.
-      endif
 
       if (forcing_depth_profiles) then
         call init_cdr_frc_dp(ncid)
@@ -232,7 +220,7 @@
       ! Determine release points
       call ncread(ncid,cdr_loc_lon,cdr_lon)
       call ncread(ncid,cdr_loc_lat,cdr_lat)
-      call find_release_locations(ncid)
+      call find_release_locations
 
       ! Initial read of input data
       call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! Get layer thicknesses for all cdrs at current time
@@ -307,6 +295,7 @@
       implicit none
 
       ! local
+      integer :: i,j
       integer :: icdr, cidx, cidx_start, ierr
       integer, dimension(2) :: lmi
       logical, dimension(ncdr) :: bad_releases
