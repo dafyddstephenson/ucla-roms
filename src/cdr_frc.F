@@ -22,9 +22,21 @@
 
 #include "cdr_frc.opt"
 
-      !!! Variables used for all releases
-      integer,public                              :: cdr_nprf     ! number of locations with a release
+      !!! (1) Parameterized releases
+      !!! (2) Vertical profiles (upscaling)
+      !!! (3) 3D forcing
+
+      !!! Switches
+      logical                                     :: init_cdr_done = .false.
+
+      !!! Variables used for (1), (2), and (3)
+      integer,public                              :: ncdr         ! Total number of CDR releases
+      real,public,allocatable,dimension(:,:)      :: cdr_flx      ! cdr tracer flux
       real   ,public,allocatable,dimension(:,:,:) :: cdr_prf      ! cdr fractions as a function of tracer
+      logical                                     :: time_interpolation
+
+      !!! Variables used for (1) and (2)
+      integer,public                              :: cdr_nprf     ! number of locations with a release
       integer,public,allocatable,dimension(:)     :: cdr_iloc     ! cdr local i location
       integer,public,allocatable,dimension(:)     :: cdr_jloc     ! cdr local j location
       real   ,public,allocatable,dimension(:)     :: cdr_icdr     ! cdr release number
@@ -33,38 +45,30 @@
 
       real,dimension(:,:,:),allocatable           :: frac         ! array for determining how to distribute release spatially
 
-      character(len=1)                            :: depth_profiles    ! T if this file contains depth profiles,
-      character(len=1)                            :: forcing_3d        ! T if this file contains 3d forcing
+      real, allocatable, dimension(:)             :: cdr_lon      ! longitude of cdr release
+      real, allocatable, dimension(:)             :: cdr_lat      ! latitude of cdr location
 
-      real, allocatable, dimension(:)             :: cdr_lon    ! longitude of cdr release
-      real, allocatable, dimension(:)             :: cdr_lat    ! latitude of cdr location
-      integer                                     :: ncdr       ! Total number of CDR releases
-      real,public,allocatable,dimension(:,:)      :: cdr_flx      ! cdr tracer flux
 
-      character(len=1)                            :: time_interpolation
+      !!! Variables used only for (1)
+      real,public,dimension(ncdr_parm)           :: cdr_vol       ! cdr volume
+      real,public,dimension(ncdr_parm,nt)        :: cdr_trc       ! cdr tracer concentration
+      real,dimension(ncdr_parm)                  :: cdr_hsc       ! cdr horizontal scale
+      real,dimension(ncdr_parm)                  :: cdr_vsc       ! cdr vertical scale
+      real,dimension(ncdr_parm)                  :: cdr_dep       ! cdr depth
 
-      logical :: init_cdr_done = .false.
+      !!! Variables used only for (2)
+      real, allocatable, dimension(:,:,:)        :: cdr_flx_dp    ! cdr tracer flux (depth profile)
+      real, allocatable, dimension(:,:)          :: cdr_hz        ! layer thicknesses of CDR release
+      integer                                    :: ncdr_prof     ! number of release locations
+      integer                                    :: N_src         ! number of layers from source file
+      integer :: iALK, iDIC                                       ! Tracer indices for ALK and DIC
+      integer, dimension(2) :: cdr_inds                           ! Array to hold those indices
 
-      !!! Variables used only for parameterized releases
-      real,public,dimension(ncdr_parm)           :: cdr_vol      ! cdr volume
-      real,public,dimension(ncdr_parm,nt)        :: cdr_trc      ! cdr tracer concentration
-      real,dimension(ncdr_parm)                  :: cdr_hsc      ! cdr horizontal scale
-      real,dimension(ncdr_parm)                  :: cdr_vsc      ! cdr vertical scale
-      real,dimension(ncdr_parm)                  :: cdr_dep      ! cdr depth
-
-      !!! Variables used only For vertical profiles
-      real, allocatable, dimension(:,:,:)        :: cdr_flx_dp  ! cdr tracer flux (depth profile)
-      real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
-      integer                                    :: ncdr_prof   ! number of release locations
-      integer                                    :: N_src       ! number of layers from source file
-
-      !!! Variables used only if we are using the module for upscaling (adding ALK and DIC)
-      integer :: iALK, iDIC
-      integer, dimension(2) :: cdr_inds
+      !!! Variables used only for (3)
+      real, allocatable, dimension(:,:,:,:,:)        :: cdr_flx_3d    ! cdr tracer flux (3d, for each tracer)
 
 
       public set_cdr_frc
-      public init_cdr_frc
 
       contains
 
@@ -80,22 +84,27 @@
       implicit none
 
       ! local
-      integer :: i,j, ierr, icdr
+      integer :: i,j, ierr, itrc, icdr
 
       if (.not. init_cdr_done) call init_cdr_frc
 
       call MPI_Barrier(ocean_grid_comm, ierr)
 
-      if (depth_profiles == 'T') then
+      if (forcing_depth_profiles) then
         call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
         call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
         call create_cdr_vertical_structure
 
-      else if (forcing_3d == 'T') then
-        call set_frc_data(nc_cdrflx_3d,var3d=cdr_flx_3d)
+      else if (forcing_3d) then
+
+        do icdr=1,ncdr
+          do itrc=1,nt
+            call set_frc_data(nc_cdrflx_3d,var3d=cdr_flx_3d(icdr,itrc,:,:,:))
+          enddo
+        enddo
         call create_cdr_vertical_structure
 
-      else
+      else if (forcing_parameterized) then
 
         if (cdr_volume) then
           call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
@@ -109,6 +118,8 @@
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         endif
 
+        call create_cdr_vertical_structure
+
       endif
 
 
@@ -117,10 +128,179 @@
       subroutine init_cdr_frc  ![
 
       ! Initialize cdr forcing:
-      ! Read in a grid file with locations of cdrs and flux contribution per cell.
-      ! Done only once as cdr position does not change.
-      ! Realistic case - stored as one value in NetCDF file where
-      ! cdr grid point value = pidx + cdr_fraction
+      ! Open the NetCDF file and check which forcing mode we're using
+
+      use netcdf
+      use mpi
+      implicit none
+
+      ! local
+      integer      :: ierr, ierr1 =0
+      integer      :: ncid
+      character(1) :: tmp1
+
+      ! Open file
+      ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
+      if(ierr/=0)
+     &    call handle_ierr(ierr,
+     &     'init_cdr_frc:: Cant open cdr forcing file')
+
+      if (forcing_depth_profiles) ierr = ierr+1
+      if (forcing_3d)             ierr = ierr+1
+      if (forcing_parameterized)  ierr = ierr+1
+
+      if (ierr==0) then
+        error stop 'ERROR: cdr_source set to true, but no forcing type selected.'
+      endif
+
+      if (ierr>1) then
+        error stop 'ERROR: More than one CDR forcing type selected.'
+
+      ! Determine whether the CDR forcing should use time interpolation
+      ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
+      if (ierr == nf90_noerr) then
+        ierr1=nf90_get_var(ncid, varid, tmp1)
+        if .not. ((tmp1 == 'F') .or. (tmp1 == 'T')) then
+          error stop 'ERROR: Invalid value for "time_interpolation" in CDR file.'
+        endif
+      endif
+      if ((ierr1 /= nf90_noerr) .or. (tmp1 == 'F')) then
+        time_interpolation = .false.
+      endif
+
+      if (forcing_depth_profiles) then
+        call init_cdr_frc_dp(ncid)
+      else if (forcing_3d) then
+        call init_cdr_frc_3d(ncid)
+      else if (forcing_parameterized) then
+        call init_cdr_frc_parm(ncid)
+      endif
+
+      ierr = nf90_close(ncid)
+
+      init_cdr_done = .true.
+      if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
+
+      end subroutine init_cdr_frc  !]
+! ----------------------------------------------------------------------
+      subroutine init_cdr_frc_dp(ncid)  ![
+
+      use netcdf
+      use mpi
+      implicit none
+
+      ! Initialize cdr forcing (depth profiles):
+      integer, intent(in) :: ncid
+
+      ! local
+      integer :: ierr
+      integer :: dimid
+
+      ! Make sure that we have all the necessary CPP keys and settings to use depth profiles
+#if defined BIOLOGY_BEC2 || defined MARBL
+        ierr = 0
+#else
+        ierr = 1
+#endif
+      if (ierr == 1) then
+        error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
+      endif
+
+      ! Check how many vertical profiles (i.e. tracer releases) we will use
+      ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
+      if (ierr /= nf90_noerr) then
+        error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
+      endif
+      ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
+
+      ! How many vertical levels did the child/source grid have?
+      ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
+      if (ierr /= nf90_noerr) then
+        error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
+      endif
+      ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
+
+      ncdr = ncdr_prof
+
+      allocate(cdr_flx_dp(ncdr,2,N_src));  cdr_flx_dp(:,:,:) = 0
+      allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
+      allocate(cdr_lon(ncdr));             cdr_lon(:) = 0
+      allocate(cdr_lat(ncdr));             cdr_lat(:) = 0
+      allocate(cdr_flx(ncdr,nt));          cdr_flx(:,:) = 0
+      allocate(cdr_nloc(0:ncdr));          cdr_nloc(:)=0
+
+      ! Determine release points
+      call ncread(ncid,cdr_loc_lon,cdr_lon)
+      call ncread(ncid,cdr_loc_lat,cdr_lat)
+      call find_release_locations(ncid)
+
+      ! Initial read of input data
+      call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! Get layer thicknesses for all cdrs at current time
+      call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)  ! Get tracer fluxes for all columns at current time
+
+      ! Get tracer indices for ALK and DIC
+      call get_tracer_indices
+
+!!!      call create_cdr_vertical_structure
+
+      end subroutine init_cdr_frc_dp  !]
+! ----------------------------------------------------------------------
+      subroutine init_cdr_frc_3d(ncid)  ![
+
+      use netcdf
+      use mpi
+      implicit none
+
+      ! Initialize cdr forcing (depth profiles):
+      integer, intent(in) :: ncid
+
+      ! local
+      integer :: ierr
+      integer :: dimid
+
+      ncdr = ncdr_parm
+
+      allocate(cdr_flx_3d(ncdr,nt,GLOBAL_2D_ARRAY,N));  cdr_flx_3d(:,:,:,:,:) = 0
+
+      end subroutine init_cdr_frc_3d  !]
+! ----------------------------------------------------------------------
+      subroutine init_cdr_frc_parm(ncid)  ![
+
+      use netcdf
+      use mpi
+      implicit none
+
+      ! Initialize cdr forcing (depth profiles):
+      integer, intent(in) :: ncid
+
+      ! local
+
+      ncdr = ncdr_parm
+
+      allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
+      allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
+      allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
+      allocate(cdr_nloc(0:ncdr));   cdr_nloc(:)=0
+
+      ! Determine release points
+      call ncread(ncid,cdr_loc_lon,cdr_lon)
+      call ncread(ncid,cdr_loc_lat,cdr_lat)
+      call ncread(ncid,cdr_loc_dep,cdr_dep)
+      call ncread(ncid,cdr_scl_hor,cdr_hsc)
+      call ncread(ncid,cdr_scl_vrt,cdr_vsc)
+      call find_release_locations
+
+      ! Get tracer indices for ALK and DIC
+      call get_tracer_indices
+
+!!!      call create_cdr_vertical_structure
+
+      end subroutine init_cdr_frc_parm  !]
+! ----------------------------------------------------------------------
+      subroutine find_release_locations  ![
+
+      ! Determine where tracer releases will take place
+      ! (for depth profiles and parameterized releases):
 
       use netcdf
       use mpi
@@ -139,217 +319,117 @@
       real, dimension(2) :: global_minloc
       real,dimension(:,:)  ,allocatable :: dist
 
-      ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
-      if(ierr/=0)
-     &    call handle_ierr(ierr,
-     &     'init_cdr_frc:: Cant open cdr forcing file')
-
-      ! Determine whether the CDR forcing should use time interpolation
-      ierr=nf90_inq_varid(ncid, 'time_interpolation', varid)
-      if (ierr == nf90_noerr) then
-        ierr=nf90_get_var(ncid, varid, time_interpolation)
-      else
-        time_interpolation = 'F'
-      endif
-
-      ! Determine whether we are using depth profiles for upscaling, or a parameterized forcing
-      ierr_dp=nf90_inq_varid(ncid, 'depth_profiles', varid)
-      if (ierr_dp == nf90_noerr) then
-        ierr=nf90_get_var(ncid, varid, depth_profiles)
-        if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
-          error stop 'ERROR: while reading CDR forcing file, invalid value found for variable depth_profiles (must be T or F)'
-        endif
-      endif
-
-      ierr_3d=nf90_inq_varid (ncid, 'forcing_3d', varid)
-      if (ierr_3d == nf90_noerr) then
-        ierr=nf90_get_var(ncid, varid, forcing_3d)
-        if (.not. ((forcing_3d == 'F') .or. (forcing_3d == 'T'))) then
-          error stop 'ERROR: while reading CDR forcing file, invalid value found for variable forcing_3d (must be T or F)'
-        endif
-      endif
-
-      if ((depth_profiles == 'T') .and. (forcing_3d == 'T')) then
-        error stop 'ERROR: while reading CDR forcing file, variables forcing_3d and depth_profiles cannot both be T.'
-      endif
-
-      if ((ierr_dp /= nf90_noerr) .and. (ierr_3d /= nf90_noerr)) then
-        ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
-        mpi_nonexit_warn print *, ' --- WARNING: ',
-     &  'Variables depth_profiles and forcing_3d not found in CDR forcing file, so we will treat them as being False and will look for inputs ',
-     &  'to initialize Gaussian profiles.'
-        depth_profiles='F'
-        forcing_3d='F'
-      endif
-
-      ! If using depth profiles, read the input file and determine how many to use
-      if (depth_profiles == 'T') then
-
-        ! Make sure that we have all the necessary CPP keys and settings to use depth profiles
-#if defined BIOLOGY_BEC2 || defined MARBL
-          ierr = 0
-#else
-          ierr = 1
-#endif
-        if (ierr == 1) then
-          error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
-        endif
-
-        ! Figure out how many release points there are
-        ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
-        if (ierr /= nf90_noerr) then
-          error stop 'ERROR: CDR forcing file is missing necessary dimension ncdr_prof.'
-        endif
-        ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
-
-        ! Get number of vertical levels from source grid
-        ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
-        if (ierr /= nf90_noerr) then
-          error stop 'ERROR: CDR forcing file is missing necessary dimension s_rho.'
-        endif
-        ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
-
-        ncdr = ncdr_prof
-        allocate(cdr_flx_dp(ncdr,2,N_src));  cdr_flx_dp(:,:,:) = 0
-        allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
-      else if (forcing_3d == 'T') then
-        ncdr = ncdr_parm
-      else
-        ncdr = ncdr_parm
-        call ncread(ncid,cdr_loc_dep,cdr_dep)
-        call ncread(ncid,cdr_scl_hor,cdr_hsc)
-        call ncread(ncid,cdr_scl_vrt,cdr_vsc)
-      endif
 
       ! Allocate memory and initialize arrays to read in forcing
       allocate(bad_releases(ncdr)); bad_releases(:) = .false.
-      allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
-      allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
-      allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
-      allocate(cdr_nloc(0:ncdr));   cdr_nloc(:)=0
 
       call init_arrays_cdr
 
-      call ncread(ncid,cdr_loc_lon,cdr_lon)
-      call ncread(ncid,cdr_loc_lat,cdr_lat)
+      ! Figure out where to apply CDR forcing
+      ! Find fractional cdr fluxes for this subdomain
+      allocate(dist(GLOBAL_2D_ARRAY)); dist = 1e6 ! Some large number so we don't get single-point releases in the halos
+      allocate(frac(GLOBAL_2D_ARRAY,ncdr)); frac = 0
 
-      ierr = nf90_close(ncid)
+      cidx = 0
+      cidx_start = 0
+      do icdr= 1,ncdr
+
+        call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
+
+        local_min_val = MINVAL(dist)
+        ! Find local index that is closest to release location
+        lmi = MINLOC(dist)
+        ! Adjust index to account for the fact that GLOBAL_ARRAY does not start at index 1
+        lmi(:) = lmi(:) + lbound(dist) - 1
+
+        ! Pack local minimum and MPI rank into a vector
+        local_minloc(1) = local_min_val
+        local_minloc(2) = dble(mynode)
+
+        ! Find global minimum and rank where the minimum occurs
+        call MPI_Reduce( local_minloc, global_minloc, 1, mpi_2double_precision,
+     &  mpi_minloc, 0, ocean_grid_comm, ierr)
+
+        ! Broadcast rank where minimum occurs to all processes
+        call MPI_Bcast(global_minloc, 2,mpi_double_precision,0,ocean_grid_comm,ierr)
+
+        if (mynode == int(global_minloc(2))) then
+          print *, 'The minimum distance to Release', icdr, 'is', global_minloc(1)
+          print *, 'This is on rank:', mynode
+          print *, 'at point', lmi
+          print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
+          print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
+        endif
 
 
-        ! Figure out where to apply CDR forcing
-        ! Find fractional cdr fluxes for this subdomain
-        allocate(dist(GLOBAL_2D_ARRAY)); dist = 1e6 ! Some large number so we don't get single-point releases in the halos
-        allocate(frac(GLOBAL_2D_ARRAY,ncdr)); frac = 0
-
-        cidx = 0
-        cidx_start = 0
-        do icdr= 1,ncdr
-
-          call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
-
-          local_min_val = MINVAL(dist)
-          ! Find local index that is closest to release location
-          lmi = MINLOC(dist)
-          ! Adjust index to account for the fact that GLOBAL_ARRAY does not start at index 1
-          lmi(:) = lmi(:) + lbound(dist) - 1
-
-          ! Pack local minimum and MPI rank into a vector
-          local_minloc(1) = local_min_val
-          local_minloc(2) = dble(mynode)
-
-          ! Find global minimum and rank where the minimum occurs
-          call MPI_Reduce( local_minloc, global_minloc, 1, mpi_2double_precision,
-     &    mpi_minloc, 0, ocean_grid_comm, ierr)
-
-          ! Broadcast rank where minimum occurs to all processes
-          call MPI_Bcast(global_minloc, 2,mpi_double_precision,0,ocean_grid_comm,ierr)
-
-          if (mynode == int(global_minloc(2))) then
-            print *, 'The minimum distance to Release', icdr, 'is', global_minloc(1)
-            print *, 'This is on rank:', mynode
-            print *, 'at point', lmi
-            print *, 'The intended release location was Lon:', cdr_lon(icdr), 'Lat:', cdr_lat(icdr)
-            print *, 'The release will take place at Lon:', lonr(lmi(1),lmi(2)), 'Lat:', latr(lmi(1),lmi(2))
+        ! Handler for single-point release
+        if ((cdr_hsc(icdr) == 0) .or. (forcing_depth_profiles)) then
+          if (mynode == global_minloc(2)) then
+            frac(lmi(1),lmi(2),icdr) = 1
+            cidx = cidx+1
           endif
+        ! Handler for nonzero hscl
+        else
+          call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
+          frac(:,:,icdr) = exp(-(dist/cdr_hsc(icdr))**2)
 
+          do j=1,ny
+            do i=1,nx
+              if (frac(i,j,icdr) >1e-3.and.rmask(i,j)>0) then
+                cidx = cidx+1
+              endif
+            enddo
+          enddo
 
-          ! Handler for single-point release
-          if ((cdr_hsc(icdr) == 0) .or. (depth_profiles=='T')) then
-            if (mynode == int(global_minloc(2))) then
+          ! Handler for really small values of hscl
+          if (mynode == global_minloc(2)) then
+            if (cidx == cidx_start) then
               frac(lmi(1),lmi(2),icdr) = 1
               cidx = cidx+1
             endif
-          ! Handler for nonzero hscl
-          else
-            call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
-            frac(:,:,icdr) = exp(-(dist/cdr_hsc(icdr))**2)
+         endif
+        endif ! cdr_hsc(icdr) = 0
 
-            do j=1,ny
-              do i=1,nx
-                if (frac(i,j,icdr) >1e-3.and.rmask(i,j)>0) then
-                  cidx = cidx+1
-                endif
-              enddo
-            enddo
+        ! Check for releases on land
+        if ((frac(lmi(1),lmi(2),icdr) ==1 ) .and.
+     &  (rmask(lmi(1),lmi(2))==0)) then
+           bad_releases(icdr) = .true.
+        end if
 
-            ! Handler for really small values of hscl
-            if (mynode == global_minloc(2)) then
-              if (cidx == cidx_start) then
-                frac(lmi(1),lmi(2),icdr) = 1
-                cidx = cidx+1
-              endif
-           endif
-          endif ! cdr_hsc(icdr) = 0
+        cidx_start = cidx
+      enddo                    ! icdr
 
-          ! Check for releases on land
-          if ((frac(lmi(1),lmi(2),icdr) ==1 ) .and.
-     &         (rmask(lmi(1),lmi(2))==0)) then
-             bad_releases(icdr) = .true.
-          end if
+      ! Report any releases on land and stop
+      call MPI_Allreduce(MPI_IN_PLACE, bad_releases, ncdr, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierr)
 
-          cidx_start = cidx
-       enddo                    ! icdr
-
-       ! Report any releases on land and stop
-       call MPI_Allreduce(MPI_IN_PLACE, bad_releases, ncdr, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierr)
-
-       ! Now every rank has the same bad_releases array
-       if (any(bad_releases)) then
-          if (mynode == 0) then
-             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             print *, "ERROR: the following CDR releases are on land"
-             print *, "(Note 1-indexing):",
-     &            pack([(i,i=1,ncdr)], bad_releases)
-             print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-          end if
-          call MPI_Barrier(MPI_COMM_WORLD, ierr)
-       end if
+      ! Now every rank has the same bad_releases array
+      if (any(bad_releases)) then
+        if (mynode == 0) then
+          print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          print *, "ERROR: the following CDR releases are on land"
+          print *, "(Note 1-indexing):", pack([(i,i=1,ncdr)], bad_releases)
+          print *, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+        end if
+        call MPI_Barrier(MPI_COMM_WORLD, ierr)
+      end if
 
 
-        cdr_nprf = cidx
+      cdr_nprf = cidx
 
-        ! allocate total number of profiles for all releases
-        allocate(cdr_prf(cdr_nprf,nt,nz))
-        cdr_prf(:,:,:) = 0
-        allocate(cdr_icdr(cdr_nprf))
-        allocate(cdr_iloc(cdr_nprf))
-        allocate(cdr_jloc(cdr_nprf))
+      ! allocate total number of profiles for all releases
+      allocate(cdr_prf(cdr_nprf,nt,nz))
+      cdr_prf(:,:,:) = 0
+      allocate(cdr_icdr(cdr_nprf))
+      allocate(cdr_iloc(cdr_nprf))
+      allocate(cdr_jloc(cdr_nprf))
 
-        if (depth_profiles == 'T') then
-          call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
-          call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
-        endif
+      if (forcing_depth_profiles) then
+        call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
+        call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
+      endif
 
-        ! Get tracer indices for ALK and DIC; generally only used for upscaling
-        call get_tracer_indices
-
-        call create_cdr_vertical_structure
-
-        init_cdr_done = .true.
-        if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
-
-      end subroutine init_cdr_frc  !]
+      end subroutine find_release_locations  !]
 ! ----------------------------------------------------------------------
       subroutine get_tracer_indices  ![
 
@@ -413,7 +493,7 @@
                  cdr_jloc(cidx) = j
 
                  ! PARAMETERIZED VERTICAL STRUCTURE
-                 if (depth_profiles == 'F') then
+                 if (forcing_depth_profiles) then
                    ! figure vertical profile, depths are relative to surface
                    ! prf = exp( - ((z-d)/vsc )^2)
                    if (cdr_vsc(icdr) == 0) then
@@ -447,7 +527,7 @@
 
           ! Normalize cdr_prf to make sure injection rate exactly equals cdr_trcflx
           ! Only do this step for analytical forcing
-          if (depth_profiles=='F') then
+          if (forcing_depth_profiles) then
           cdr_nloc(icdr) = cidx
 
           ! Do this once for ALK and again for DIC
@@ -472,7 +552,6 @@
 
       end subroutine create_cdr_vertical_structure  !]
 ! ----------------------------------------------------------------------
-
       subroutine remap_src_to_grid(i,j,icdr,cidx)
 
       ! This routine will populate cdr_prf using the data that is read from file
@@ -856,7 +935,7 @@
 
       character(len=30) :: string
 
-      if (depth_profiles=='T') then
+      if (forcing_depth_profiles) then
         allocate(nc_cdrhz%vdata(ncdr,N_src,2))
         nc_cdrhz%ungridded = .true.
         nc_cdrhz%ungridded_forcing_file = cdr_file
@@ -865,14 +944,18 @@
         nc_cdrflx_dp%ungridded = .true.
         nc_cdrflx_dp%ungridded_forcing_file = cdr_file
 
-        if (time_interpolation == 'T') then
+        if (time_interpolation) then
           nc_cdrhz%time_interpolation = .true.
           nc_cdrflx_dp%time_interpolation = .true.
         endif
 
-      else if (forcing_3d=='T') then
+      else if (forcing_3d) then
         allocate(nc_cdrflx_3d%vdata(ncdr,nt,N,2))
         nc_cdrflx_3d%ungridded = .false.
+
+        if (time_interpolation) then
+          nc_cdrflx_3d%time_interpolation = .true.
+        endif
 
       else
 
@@ -885,7 +968,7 @@
           nc_cdrtrc%ungridded = .true.
           nc_cdrtrc%ungridded_forcing_file = cdr_file
 
-          if (time_interpolation == 'T') then
+          if (time_interpolation) then
             nc_cdrvol%time_interpolation = .true.
             nc_cdrtrc%time_interpolation = .true.
           endif
@@ -894,7 +977,7 @@
           nc_cdrflx%ungridded = .true.
           nc_cdrflx%ungridded_forcing_file = cdr_file
 
-          if (time_interpolation == 'T') then
+          if (time_interpolation) then
             nc_cdrflx%time_interpolation = .true.
           endif
         endif
