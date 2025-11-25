@@ -34,7 +34,7 @@
       real,dimension(:,:,:),allocatable           :: frac         ! array for determining how to distribute release spatially
 
       character(len=1)                            :: depth_profiles    ! T if this file contains depth profiles,
-                                                                       ! F if parameterizing using idealized Gaussian profiles
+      character(len=1)                            :: forcing_3d        ! T if this file contains 3d forcing
 
       real, allocatable, dimension(:)             :: cdr_lon    ! longitude of cdr release
       real, allocatable, dimension(:)             :: cdr_lat    ! latitude of cdr location
@@ -53,7 +53,7 @@
       real,dimension(ncdr_parm)                  :: cdr_dep      ! cdr depth
 
       !!! Variables used only For vertical profiles
-      real, allocatable, dimension(:,:,:)        :: cdr_flx3d   ! cdr tracer flux (layerwise)
+      real, allocatable, dimension(:,:,:)        :: cdr_flx_dp  ! cdr tracer flux (depth profile)
       real, allocatable, dimension(:,:)          :: cdr_hz      ! layer thicknesses of CDR release
       integer                                    :: ncdr_prof   ! number of release locations
       integer                                    :: N_src       ! number of layers from source file
@@ -86,22 +86,27 @@
 
       call MPI_Barrier(ocean_grid_comm, ierr)
 
-      if (cdr_volume) then
-        call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
-        call set_frc_data(nc_cdrtrc,var2d=cdr_trc)          ! set cdr tracers conc. for all cdrs at current time
+      if (depth_profiles == 'T') then
+        call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
+        call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
+        call create_cdr_vertical_structure
 
-        do icdr=1,ncdr
-          cdr_flx(icdr,:) = cdr_vol(icdr)*cdr_trc(icdr,:)
-        enddo
+      else if (forcing_3d == 'T') then
+        call set_frc_data(nc_cdrflx_3d,var3d=cdr_flx_3d)
+        call create_cdr_vertical_structure
 
       else
-        if (depth_profiles == 'F') then
-          call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
-        else
-          call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
-          call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
 
-          call create_cdr_vertical_structure
+        if (cdr_volume) then
+          call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
+          call set_frc_data(nc_cdrtrc,var2d=cdr_trc)          ! set cdr tracers conc. for all cdrs at current time
+
+          do icdr=1,ncdr
+            cdr_flx(icdr,:) = cdr_vol(icdr)*cdr_trc(icdr,:)
+          enddo
+
+        else
+          call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         endif
 
       endif
@@ -122,6 +127,7 @@
       implicit none
 
       ! local
+      integer :: ierr_dp, ierr_3d
       integer :: ierr,ncid,i,j,k, icdr, cidx, cidx_start
       integer :: id,ndims,dimid, varid
       logical, dimension(:), allocatable  :: bad_releases
@@ -147,18 +153,33 @@
       endif
 
       ! Determine whether we are using depth profiles for upscaling, or a parameterized forcing
-      ierr=nf90_inq_varid (ncid, 'depth_profiles', varid)
-      if (ierr == nf90_noerr) then
+      ierr_dp=nf90_inq_varid(ncid, 'depth_profiles', varid)
+      if (ierr_dp == nf90_noerr) then
         ierr=nf90_get_var(ncid, varid, depth_profiles)
         if (.not. ((depth_profiles == 'F') .or. (depth_profiles == 'T'))) then
           error stop 'ERROR: while reading CDR forcing file, invalid value found for variable depth_profiles (must be T or F)'
         endif
-      else
+      endif
+
+      ierr_3d=nf90_inq_varid (ncid, 'forcing_3d', varid)
+      if (ierr_3d == nf90_noerr) then
+        ierr=nf90_get_var(ncid, varid, forcing_3d)
+        if (.not. ((forcing_3d == 'F') .or. (forcing_3d == 'T'))) then
+          error stop 'ERROR: while reading CDR forcing file, invalid value found for variable forcing_3d (must be T or F)'
+        endif
+      endif
+
+      if ((depth_profiles == 'T') .and. (forcing_3d == 'T')) then
+        error stop 'ERROR: while reading CDR forcing file, variables forcing_3d and depth_profiles cannot both be T.'
+      endif
+
+      if ((ierr_dp /= nf90_noerr) .and. (ierr_3d /= nf90_noerr)) then
         ! This is mostly for backward compatibility, for old CDR files that may not include depth_profiles.
         mpi_nonexit_warn print *, ' --- WARNING: ',
-     &  'variable depth_profiles not found in CDR forcing file, so we will treat it is being False and will look for inputs ',
+     &  'Variables depth_profiles and forcing_3d not found in CDR forcing file, so we will treat them as being False and will look for inputs ',
      &  'to initialize Gaussian profiles.'
         depth_profiles='F'
+        forcing_3d='F'
       endif
 
       ! If using depth profiles, read the input file and determine how many to use
@@ -189,8 +210,10 @@
         ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
         ncdr = ncdr_prof
-        allocate(cdr_flx3d(ncdr,2,N_src));   cdr_flx3d(:,:,:) = 0
+        allocate(cdr_flx_dp(ncdr,2,N_src));  cdr_flx_dp(:,:,:) = 0
         allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
+      else if (forcing_3d == 'T') then
+        ncdr = ncdr_parm
       else
         ncdr = ncdr_parm
         call ncread(ncid,cdr_loc_dep,cdr_dep)
@@ -315,7 +338,7 @@
 
         if (depth_profiles == 'T') then
           call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
-          call set_frc_data(nc_cdrflx3d,var3d=cdr_flx3d)
+          call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
         endif
 
         ! Get tracer indices for ALK and DIC; generally only used for upscaling
@@ -507,8 +530,7 @@
       definite_integral(:,:) = 0.0
       cdrflx_tmp(:,:) = 0.0
 
-      ! Calculate flux values at interfaces between grid cells
-      call calc_interface_values(cdr_flx3d(icdr,:,:), cdr_hz(icdr,:), interface_values)
+      call calc_interface_values(cdr_flx_dp(icdr,:,:), cdr_hz(icdr,:), interface_values)
 
       ! Compare total depths and expand/contract current grid to match original depth
       total_depth_src = 0
@@ -525,9 +547,9 @@
       do trc=1,2
         do k=1,N_src
           a0(trc,k) = interface_values(trc,k)
-          a1(trc,k) = 6*cdr_flx3d(icdr,trc,k) - 4*interface_values(trc,k) - 2*interface_values(trc,k+1)
-          a2(trc,k) = 3*(interface_values(trc,k) + interface_values(trc,k+1) - 2*cdr_flx3d(icdr,trc,k))
-          total_tracer_orig(trc) = total_tracer_orig(trc) + cdr_flx3d(icdr,trc,k)
+          a1(trc,k) = 6*cdr_flx_dp(icdr,trc,k) - 4*interface_values(trc,k) - 2*interface_values(trc,k+1)
+          a2(trc,k) = 3*(interface_values(trc,k) + interface_values(trc,k+1) - 2*cdr_flx_dp(icdr,trc,k))
+          total_tracer_orig(trc) = total_tracer_orig(trc) + cdr_flx_dp(icdr,trc,k)
         enddo
       enddo
 
@@ -834,32 +856,38 @@
 
       character(len=30) :: string
 
-      if (cdr_volume) then
-        allocate(nc_cdrvol%vdata(ncdr,1 ,2))
-        allocate(nc_cdrtrc%vdata(ncdr,nt,2))
-        nc_cdrvol%ungridded = .true.
-        nc_cdrvol%ungridded_forcing_file = cdr_file
+      if (depth_profiles=='T') then
+        allocate(nc_cdrhz%vdata(ncdr,N_src,2))
+        nc_cdrhz%ungridded = .true.
+        nc_cdrhz%ungridded_forcing_file = cdr_file
 
-        nc_cdrtrc%ungridded = .true.
-        nc_cdrtrc%ungridded_forcing_file = cdr_file
+        allocate(nc_cdrflx_dp%vdata(ncdr,2,N_src,2))
+        nc_cdrflx_dp%ungridded = .true.
+        nc_cdrflx_dp%ungridded_forcing_file = cdr_file
 
         if (time_interpolation == 'T') then
-          nc_cdrvol%time_interpolation = .true.
-          nc_cdrtrc%time_interpolation = .true.
+          nc_cdrhz%time_interpolation = .true.
+          nc_cdrflx_dp%time_interpolation = .true.
         endif
-      else
-        if (depth_profiles=='T') then
-          allocate(nc_cdrhz%vdata(ncdr,N_src,2))
-          nc_cdrhz%ungridded = .true.
-          nc_cdrhz%ungridded_forcing_file = cdr_file
 
-          allocate(nc_cdrflx3d%vdata(ncdr,2,N_src,2))
-          nc_cdrflx3d%ungridded = .true.
-          nc_cdrflx3d%ungridded_forcing_file = cdr_file
+      else if (forcing_3d=='T') then
+        allocate(nc_cdrflx_3d%vdata(ncdr,nt,N,2))
+        nc_cdrflx_3d%ungridded = .false.
+
+      else
+
+        if (cdr_volume) then
+          allocate(nc_cdrvol%vdata(ncdr,1 ,2))
+          allocate(nc_cdrtrc%vdata(ncdr,nt,2))
+          nc_cdrvol%ungridded = .true.
+          nc_cdrvol%ungridded_forcing_file = cdr_file
+
+          nc_cdrtrc%ungridded = .true.
+          nc_cdrtrc%ungridded_forcing_file = cdr_file
 
           if (time_interpolation == 'T') then
-            nc_cdrhz%time_interpolation = .true.
-            nc_cdrflx3d%time_interpolation = .true.
+            nc_cdrvol%time_interpolation = .true.
+            nc_cdrtrc%time_interpolation = .true.
           endif
         else
           allocate(nc_cdrflx%vdata(ncdr,nt,2))
@@ -869,7 +897,6 @@
           if (time_interpolation == 'T') then
             nc_cdrflx%time_interpolation = .true.
           endif
-
         endif
       endif
 
