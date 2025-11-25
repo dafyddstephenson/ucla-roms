@@ -222,9 +222,9 @@
       call ncread(ncid,cdr_loc_lat,cdr_lat)
       call find_release_locations
 
-      ! Initial read of input data
-      call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! Get layer thicknesses for all cdrs at current time
-      call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)  ! Get tracer fluxes for all columns at current time
+!      ! Initial read of input data
+!      call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! Get layer thicknesses for all cdrs at current time
+!      call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)  ! Get tracer fluxes for all columns at current time
 
       ! Get tracer indices for ALK and DIC
       call get_tracer_indices
@@ -408,10 +408,10 @@
       allocate(cdr_iloc(cdr_nprf))
       allocate(cdr_jloc(cdr_nprf))
 
-      if (forcing_depth_profiles) then
-        call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
-        call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
-      endif
+!      if (forcing_depth_profiles) then
+!        call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
+!        call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
+!      endif
 
       end subroutine find_release_locations  !]
 ! ----------------------------------------------------------------------
@@ -478,6 +478,10 @@
 
                  ! PARAMETERIZED VERTICAL STRUCTURE
                  if (forcing_depth_profiles) then
+                 ! VERTICAL STRUCTURE FROM DATA
+                 ! Conservatively remap the fluxes from the source grid to the current grid
+                   call remap_src_to_grid(i,j,icdr,cidx)
+                 else
                    ! figure vertical profile, depths are relative to surface
                    ! prf = exp( - ((z-d)/vsc )^2)
                    if (cdr_vsc(icdr) == 0) then
@@ -499,10 +503,6 @@
                      vint = cdr_vsc(icdr) * SQRT(pi)
                      cdr_prf(cidx,:,:) = frac(i,j,icdr)*cdr_prf(cidx,:,:)/vint
                    endif
-                 ! VERTICAL STRUCTURE FROM DATA
-                 ! Conservatively remap the fluxes from the source grid to the current grid
-                 else
-                  call remap_src_to_grid(i,j,icdr,cidx)
                  endif
 
                endif
