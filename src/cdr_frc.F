@@ -117,7 +117,7 @@
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         endif
 
-        call create_cdr_vertical_structure
+!!!        call create_cdr_vertical_structure
 
       endif
 
@@ -281,7 +281,7 @@
       ! Get tracer indices for ALK and DIC
       call get_tracer_indices
 
-!!!      call create_cdr_vertical_structure
+      call create_cdr_vertical_structure
 
       end subroutine init_cdr_frc_parm  !]
 ! ----------------------------------------------------------------------
@@ -459,9 +459,6 @@
       real :: local_int,global_int
       real, dimension(nz) :: arg_nz
       real :: local_min_val
-      integer, dimension(2) :: lmi
-      real, dimension(2) :: local_minloc
-      real, dimension(2) :: global_minloc
 
         ! Populate the profiles with fractional releases
         cidx = 0
@@ -511,25 +508,25 @@
 
           ! Normalize cdr_prf to make sure injection rate exactly equals cdr_trcflx
           ! Only do this step for analytical forcing
-          if (forcing_depth_profiles) then
-          cdr_nloc(icdr) = cidx
+          if (forcing_parameterized) then
+            cdr_nloc(icdr) = cidx
 
-          ! Do this once for ALK and again for DIC
-          local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iALK,:))
-          call MPI_Reduce(local_int,global_int,1,
-     %           mpi_double_precision,mpi_sum,0,ocean_grid_comm,ierr)
-          call MPI_Bcast(global_int,1,mpi_double_precision,0,ocean_grid_comm,ierr)
+            ! Do this once for ALK and again for DIC
+            local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iALK,:))
+            call MPI_Reduce(local_int,global_int,1,
+     &           mpi_double_precision,mpi_sum,0,ocean_grid_comm,ierr)
+            call MPI_Bcast(global_int,1,mpi_double_precision,0,ocean_grid_comm,ierr)
 
-          cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iALK,:) =
-     %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iALK,:)/global_int
+            cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iALK,:) =
+     &        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iALK,:)/global_int
 
-          local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iDIC,:))
-          call MPI_Reduce(local_int,global_int,1,
-     %           mpi_double_precision,mpi_sum,0,ocean_grid_comm,ierr)
-          call MPI_Bcast(global_int,1,mpi_double_precision,0,ocean_grid_comm,ierr)
+            local_int = sum(cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iDIC,:))
+            call MPI_Reduce(local_int,global_int,1,
+     &           mpi_double_precision,mpi_sum,0,ocean_grid_comm,ierr)
+            call MPI_Bcast(global_int,1,mpi_double_precision,0,ocean_grid_comm,ierr)
 
-          cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iDIC,:) =
-     %        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iDIC,:)/global_int
+            cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iDIC,:) =
+     &        cdr_prf(cdr_nloc(icdr-1)+1:cdr_nloc(icdr),iDIC,:)/global_int
           endif
 
         enddo
