@@ -101,7 +101,6 @@
             call set_frc_data(nc_cdrflx_3d,var3d=cdr_flx_3d(icdr,itrc,:,:,:))
           enddo
         enddo
-        call create_cdr_vertical_structure
 
       else if (forcing_parameterized) then
 
@@ -116,8 +115,6 @@
         else
           call set_frc_data(nc_cdrflx,var2d=cdr_flx)          ! set cdr tracer flux for all cdrs at current time
         endif
-
-!!!        call create_cdr_vertical_structure
 
       endif
 
@@ -222,14 +219,8 @@
       call ncread(ncid,cdr_loc_lat,cdr_lat)
       call find_release_locations
 
-!      ! Initial read of input data
-!      call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! Get layer thicknesses for all cdrs at current time
-!      call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)  ! Get tracer fluxes for all columns at current time
-
       ! Get tracer indices for ALK and DIC
       call get_tracer_indices
-
-!!!      call create_cdr_vertical_structure
 
       end subroutine init_cdr_frc_dp  !]
 ! ----------------------------------------------------------------------
@@ -407,11 +398,6 @@
       allocate(cdr_icdr(cdr_nprf))
       allocate(cdr_iloc(cdr_nprf))
       allocate(cdr_jloc(cdr_nprf))
-
-!      if (forcing_depth_profiles) then
-!        call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! initialize layer thicknesses for all cdrs at current time
-!        call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
-!      endif
 
       end subroutine find_release_locations  !]
 ! ----------------------------------------------------------------------
