@@ -239,7 +239,8 @@
 
       ncdr = ncdr_parm
 
-      allocate(cdr_flx_3d(ncdr,nt,GLOBAL_2D_ARRAY,N));  cdr_flx_3d(:,:,:,:,:) = 0
+      allocate(cdr_flx_3d(ncdr,nt,GLOBAL_2D_ARRAY,N))
+      cdr_flx_3d(:,:,:,:,:) = 0
 
       end subroutine init_cdr_frc_3d  !]
 ! ----------------------------------------------------------------------
