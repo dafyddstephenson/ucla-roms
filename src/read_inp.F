@@ -18,7 +18,7 @@
      &     , marbl_diag_list_fname
 #endif
 #endif
-
+      use keyword_registry, only: init_registry, register_keyword, report_missing_or_extra
       implicit none
       integer ierr, ios
 
@@ -93,6 +93,76 @@
       endif
       call MPI_Bcast(fname,max_fname,MPI_BYTE, 0, ocean_grid_comm, ierr)
 #endif
+
+      call init_registry()
+
+!––––– REGISTER ALL KEYWORDS EXPECTED IN THE FILE –––––
+      call register_keyword(name="title",expected=1)
+      call register_keyword(name="time_stepping",expected=1)
+#ifdef MARBL
+      call register_keyword(name="MARBL_biogeochemistry",expected=1)
+#endif
+#ifdef SOLVE3D
+      call register_keyword(name="S-coord",expected=1)
+      call register_keyword(name="rho0",expected=1)
+#endif
+#ifndef NONLIN_EOS
+      call register_keyword(name="lin_rho_eos",expected=1)
+#endif
+#ifdef UV_VIS2
+      call register_keyword(name="lateral_visc",expected=1)
+#if !defined EW_PERIODIC || !defined NS_PERIODIC
+      call register_keyword(name="gamma2",expected=1)
+#endif
+#endif
+#ifdef TS_DIF2
+      call register_keyword(name="tracer_diff2",expected=1)
+#endif
+      call register_keyword(name="bottom_drag",expected=1)
+
+#ifdef SOLVE3D
+#if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
+                         && !defined MY2_MIXING && !defined MY25_MIXING
+      call register_keyword(name="vertical_mixing",expected=1)
+#endif
+#ifdef MY25_MIXING
+      call register_keyword(name="MY_bak_mixing",expected=1)
+#endif
+#if defined SFLX_CORR && defined SALINITY
+      call register_keyword(name="SSS_correction",expected=1)
+#endif
+#ifdef QCORRECTION
+      call register_keyword(name="SST_correction",expected=1)
+#endif
+#endif /* SOLVE3D */
+
+#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
+  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
+                       || defined M3NUDGING  || defined WKB_FRC_BRY
+      call register_keyword(name="ubind",expected=1)
+#endif
+#ifdef SPONGE
+      call register_keyword(name="v_sponge",expected=1)
+#endif
+#ifndef ANA_GRID
+      call register_keyword(name="grid",expected=1)
+#endif
+      call register_keyword(name="initial",expected=1)
+      call register_keyword(name="forcing",expected=1)
+#if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
+                        defined T_FRC_BRY )) && !defined ANA_TCLIMA
+                        call register_keyword(name="climatology",expected=1)
+#endif
+      call register_keyword(name="output_root_name",expected=1)
+
+!––––– FIRST PASS –––––
+      call first_pass_check(fname, ierr)
+      call report_missing_or_extra(ierr)
+      if (ierr /= 0) then
+         write(*,'("CONFIGURATION ERRORS DETECTED IN FIRST PASS")')
+         return
+      end if
+
 
 ! Read in keyword name: keep trying, until keyword is found.
 !----- -- ------- ----- ---- ------- ------ ------- ---------
@@ -678,6 +748,47 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
       call MPI_Barrier (ocean_grid_comm, ierr)
 #endif
       end subroutine read_inp
+
+      subroutine first_pass_check(fname, ierr)
+      use keyword_registry
+      implicit none
+
+      character(len=*), intent(in) :: fname
+      integer, intent(inout) :: ierr
+
+      integer :: unit, ios, kwlen, idx
+      character(len=256) :: keyword
+      logical :: eof
+
+      open(newunit=unit, file=fname, status='old', action='read', iostat=ios)
+      if (ios /= 0) then
+         mpi_master_only write(*,*)
+     &        "ERROR opening file in first_pass_check:", trim(fname)
+         ierr = ierr + 1
+         return
+      end if
+
+      eof = .false.
+      do while(.not.eof)
+         call extract_keyword(unit, keyword, kwlen, eof, ierr)
+         if (eof) exit
+         if (kwlen == 0) cycle
+         if (keyword == "end") exit
+
+         idx = lookup_keyword(keyword)
+         mpi_master_only write(*,*) "FOUND KW ",keyword," AT IDX ",idx,
+     &        " IN REGISTRY AS", registry(idx)%name
+
+         if (idx > 0) then
+            registry(idx)%found = registry(idx)%found + 1
+         else
+            mpi_master_only write(*,
+     &           '("WARNING: unregistered keyword encountered: ",A)') trim(keyword)
+         end if
+      end do
+
+      close(unit)
+      end subroutine first_pass_check
 
       subroutine report_opening_error(fname, mynode, ierr)
       implicit none
