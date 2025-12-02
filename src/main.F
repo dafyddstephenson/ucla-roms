@@ -10,12 +10,12 @@
       use tracers, only: init_tracers
       use mpi
       use sponge_tune
-
+      use timers, only: tstart, tend
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.
 # ifdef MPI
-      real*8 tstart, tend
+c$$$      real*8 tstart, tend
 C$    integer level,req_lev
 
 c**   call system('uname -nmr')
@@ -67,6 +67,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars
       use ocean_vars
       use basic_output
+      use timers
 
       implicit none
 
@@ -106,6 +107,7 @@ C$OMP END MASTER                         ! is in uniform state]. This
       use boundary
       use particles
       use cstar_output
+      use upscale_output
       use random_output
       use cstar_output
       use cdr_frc
@@ -217,9 +219,6 @@ CR      write(*,*) ' -6' MYID
       call ecosys2_init
 # endif /*BIOLOGY_BEC2*/
 
-      ! we should have a grid and z_r by now
-      if (cdr_source) call init_cdr_frc
-
 #ifdef ANA_INITIAL
                                     ! Set initial conditions for
       call set_forces               ! model prognostic variables,
@@ -248,9 +247,11 @@ CR      write(*,*) ' -6' MYID
 
                                   ! Set initial model clock: at this
       time=start_time             ! moment "start_time" (global scalar)
-      tdays=time*sec2day          ! is set by get_init or analytically
+                                  ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
+      tdays = (time-0.5*dt)*sec2day
       call set_forces
+      tdays = time*sec2day
       call set_depth(0)
 
 !----------------------------------------------------------------------
@@ -279,6 +280,9 @@ CR      write(*,*)  ' -2' MYID
         call init_particles
       endif
 
+      ! we should have a grid and z_r by now
+!      if (cdr_source) call init_cdr_frc
+
 #if defined SPONGE
       call set_nudgcof(0)
 #endif
@@ -291,6 +295,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
+      if (do_upscale) call init_upscale
 
       if (may_day_flag /=0 ) goto 99     !-->  EXIT
 
@@ -468,7 +473,9 @@ CR      write(*,*)  ' -2' MYID
       call wrt_avg_ocean_vars
       if (do_extract) call do_extract_data
 
+#ifdef SPONGE_TUNE
       if (ub_tune)    call adjust_orlanski
+#endif
 
       if (floats)     call do_particles
 
