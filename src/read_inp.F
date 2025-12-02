@@ -34,6 +34,7 @@
 #ifdef INT_IARGC
       integer iargc
 #endif
+      logical :: eof = .false.
 
 ! Check CPP-switches for consistency. This operation is split into
 ! multiple stages because the first subroutine, "check_switches1", is
@@ -98,27 +99,13 @@
 
       call setup_kwds(ierr)
       open(input, file=fname, status='old', form='formatted', err=97)
-   1   keyword='                                '
-       read(input,'(A)',err=1,end=99) keyword
-       if (keyword(1:1) == '!') goto 1
-       is=1
-   2   if (is == max_kwsize) then
-         goto 1
-       elseif (keyword(is:is) == ' ') then
-         is=is+1
-         goto 2
-       endif
-       ie=is
-   3   if (keyword(ie:ie) == ':') then
-         keyword(ie:ie)=' '
-         goto 4           !--> recognized keyword.
-       elseif (keyword(ie:ie) /= ' ' .and. ie < max_kwsize) then
-         ie=ie+1
-         goto 3
-       endif
-       goto 1
-   4   kwlen=ie-is
-       if (is > 1) keyword(1:kwlen)=keyword(is:is+kwlen-1)
+
+
+
+      do
+         call extract_keyword(input, keyword, kwlen, eof, ierr)
+         if (eof) goto 99
+         if (kwlen == 0) cycle      ! no keyword on this line → read next
 
 ! Read input parameters according to the keyword:
 !----- ----- ---------- --------- --- ---- -------
@@ -502,7 +489,7 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
                 mpi_master_only write(*,'(1x,2A/12x,2A/)')
      &          '### ERROR: read_inp :: Too many forcing files are ',
      &          'specified in input script.',  'Increase parameter ',
-     &                '''max_frc_files'' in roms_read_write and recompile.'
+     &           '''max_frc_files'' in roms_read_write and recompile.'
                 ierr=ierr+1
               endif
             endif
@@ -547,7 +534,7 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
      &                                      ''' --> DISREGARDED.'
         endif
        if (keyword(1:kwlen) == end_signal) goto 99
-      goto 1
+      end do
 
 ! Error while reading input parameters.
 
@@ -556,8 +543,9 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
       ierr=ierr+1
       goto 99
   97  lstr=lenstr(fname)
-      write(*,'(/i4,1x,4A/)') mynode,'### ERROR: read_inp :: Cannot find ',
-     &                     'input file ''', fname(1:lstr), '''.'
+      write(*,'(/i4,1x,4A/)') mynode,
+     &     '### ERROR: read_inp :: Cannot find ',
+     &     'input file ''', fname(1:lstr), '''.'
       ierr=ierr+1
   99  close (input)
 
@@ -574,7 +562,55 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 #ifdef MPI
       call MPI_Barrier (ocean_grid_comm, ierr)
 #endif
-      end
+      end subroutine read_inp
+
+      subroutine extract_keyword(unit, keyword, kwlen, eof, ierr)
+         implicit none
+         integer, intent(in) :: unit
+         character(len=*), intent(out) :: keyword
+         integer, intent(out) :: kwlen
+         logical, intent(out) :: eof
+         integer, intent(inout) :: ierr
+
+         character(len=256) :: line
+         integer :: ios, start, colon_pos, lenline
+         character(len=:), allocatable :: tmp
+
+         eof = .false.
+         keyword = ''
+         kwlen = 0
+
+         ! read next non-comment line
+         do
+            read(unit,'(A)',iostat=ios) line
+            if (ios < 0) then
+               eof = .true.
+               return
+            else if (ios /= 0) then
+               ierr = ierr + 1
+               return
+            end if
+            if (trim(line) /= '' .and. line(1:1) /= '!') exit
+         end do
+
+         lenline = len_trim(line)
+         if (lenline == 0) return
+
+         start = 1
+         do while (start <= lenline .and. line(start:start) == ' ')
+            start = start + 1
+         end do
+         if (start > lenline) return
+
+         colon_pos = index(line(start:lenline), ':')
+         if (colon_pos == 0) return
+         colon_pos = colon_pos + start - 1
+
+         tmp = adjustl(line(start:colon_pos-1))
+         keyword = tmp
+         kwlen   = len_trim(tmp)
+
+      end subroutine extract_keyword
 
                                             ! Find place in the string
       subroutine cancel_kwd(keyword, ierr)  ! kwds(1:max_opt_size)
