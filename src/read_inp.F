@@ -20,7 +20,7 @@
 #endif
 
       implicit none
-      integer ierr
+      integer ierr, ios
 
       integer, parameter :: input=15, testunit=40,
      &                  max_fname=256, max_kwsize=256
@@ -98,30 +98,47 @@
 !----- -- ------- ----- ---- ------- ------ ------- ---------
 
       call setup_kwds(ierr)
-      open(input, file=fname, status='old', form='formatted', err=97)
+
+      open(input, file=fname, status='old', form='formatted', iostat=ios)
+      if (ios /= 0) then
+         call report_opening_error(fname(1:lstr), mynode, ierr)
+         return
+      end if
 
 
 
-      do
+      do while (.not. eof)
          call extract_keyword(input, keyword, kwlen, eof, ierr)
-         if (eof) goto 99
-         if (kwlen == 0) cycle      ! no keyword on this line → read next
+         if (eof) exit
+         if (kwlen == 0) cycle  ! no keyword on this line → read next
+         if (keyword(1:kwlen) == end_signal) exit
 
 ! Read input parameters according to the keyword:
 !----- ----- ---------- --------- --- ---- -------
 ! Title
 
         if (keyword(1:kwlen) == 'title') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,'(A)',err=95) title
-          lstr=lenstr(title)
-          mpi_master_only write(*,'(/1x,A)') title(1:lstr)
+           call cancel_kwd(keyword(1:kwlen), ierr)
+
+           read(input,'(A)',iostat=ios) title
+           if (ios /= 0) then
+              call report_read_error(keyword, ierr)
+              return
+           end if
+
+           lstr=lenstr(title)
+           mpi_master_only write(*,'(/1x,A)') title(1:lstr)
 
 ! Time-stepping parameters
 
         elseif (keyword(1:kwlen) == 'time_stepping') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) ntimes, dt, ndtfast, ninfo
+           call cancel_kwd(keyword(1:kwlen), ierr)
+           read(input,*,iostat=ios) ntimes, dt, ndtfast, ninfo
+           if (ios /= 0) then
+              call report_read_error(keyword, ierr)
+              return
+           end if
+
           mpi_master_only write(*,
      &  '(5x,A,I10,3x,A/9x,A,F11.4,2x,A/4x,A,I10,3x,A/6x,A,I10,3x,2A)'
      &    ) 'ntimes =',  ntimes, 'total number of 3D timesteps',
@@ -140,18 +157,31 @@
 #ifdef MARBL
         elseif (keyword(1:kwlen) == 'MARBL_biogeochemistry') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,'(A)',err=95) marbl_namelist_fname
+          read(input,'(A)',iostat=ios) marbl_namelist_fname
+           if (ios /= 0) then
+              call report_read_error(keyword, ierr)
+              return
+           end if
           lstr=lenstr(marbl_namelist_fname)
              mpi_master_only write(*,'(1x,A,15x,A)'),
      &            'MARBL namelist file',marbl_namelist_fname(1:lstr)
 
-          read(input,'(A)',err=95) marbl_tracer_list_fname
+             read(input,'(A)',iostat=ios) marbl_tracer_list_fname
+             if (ios /= 0) then
+                call report_read_error(keyword, ierr)
+                return
+             end if
+
           lstr=lenstr(marbl_tracer_list_fname)
              mpi_master_only write(*,'(1x,A,5x,A)'),
      &            'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
 
 #ifdef MARBL_DIAGS
-          read(input,'(A)',err=95) marbl_diag_list_fname
+             read(input,'(A)',iostat=ios) marbl_diag_list_fname
+             if (ios /= 0) then
+                call report_read_error(keyword, ierr)
+                return
+             end if
           lstr=lenstr(marbl_diag_list_fname)
              mpi_master_only write(*,'(1x,A,1x,A)'),
      &            'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
@@ -164,7 +194,11 @@
 #ifdef SOLVE3D
         elseif (keyword(1:kwlen) == 'S-coord') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) theta_s, theta_b, hc
+          read(input,*,iostat=ios) theta_s, theta_b, hc
+             if (ios /= 0) then
+                call report_read_error(keyword, ierr)
+                return
+             end if
           mpi_master_only write(*,'(2(/4x,A,F10.7,2x,A))')
      &    'theta_s =', theta_s, 'vertical S-coordinate surface',
      &    'theta_b =', theta_b, 'and bottom stretching parameters'
@@ -180,7 +214,11 @@
 
         elseif (keyword(1:kwlen) == 'rho0') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) rho0
+          read(input,*,iostat=ios) rho0
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           mpi_master_only write(*,'(7x,A,F10.4,2x,A)')  'rho0 =',
      &            rho0, 'Boussinesq reference density [kg/m^3].'
 
@@ -189,7 +227,12 @@
 
         elseif (keyword(1:kwlen) == 'lin_rho_eos') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) Tcoef, T0
+          read(input,*,iostat=ios) Tcoef, T0
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
+
 #  ifdef SALINITY
      &                       , Scoef, S0
 #  endif
@@ -209,7 +252,12 @@
 
         elseif (keyword(1:kwlen) == 'lateral_visc') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) visc2
+          read(input,*,iostat=ios) visc2
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
+
           mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')   'visc2 =',
      &    visc2, 'horizontal Laplacian kinematic viscosity [m^2/s]'
 
@@ -219,7 +267,12 @@
 
         elseif (keyword(1:kwlen) == 'gamma2') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) gamma2
+          read(input,*,iostat=ios) gamma2
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
+
           mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)') 'gamma2 =',
      &                           gamma2, 'slipperiness parameter: ',
      &                           'free-slip = +1, or no-slip = -1.'
@@ -231,7 +284,11 @@
 
         elseif (keyword(1:kwlen) == 'tracer_diff2') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) (tnu2(itrc),itrc=1,NT)
+          read(input,*,iostat=ios) (tnu2(itrc),itrc=1,NT)
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           do itrc=1,NT
             if (itrc == itemp) then
               mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
@@ -250,7 +307,7 @@
 
         elseif (keyword(1:kwlen) == 'bottom_drag') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) rdrg, rdrg2
+          read(input,*,iostat=ios) rdrg, rdrg2
 #ifdef SOLVE3D
      &                             , Zob
 #endif
@@ -262,6 +319,10 @@
           mpi_master_only write(*,'(8x,A,ES10.3,2x,A)')
      &  ,   'Zob =', Zob,   'bottom roughness height [m]'
 #endif
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
 
 #ifdef SOLVE3D
 # if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
@@ -271,7 +332,11 @@
 
         elseif (keyword(1:kwlen) == 'vertical_mixing') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) Akv_bak,(Akt_bak(itrc),itrc=1,NT)
+          read(input,*,iostat=ios) Akv_bak,(Akt_bak(itrc),itrc=1,NT)
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           mpi_master_only write(*,'(4x,A,ES10.3,2x,A)')  'Akv_bak =',
      &               Akv_bak, 'background vertical viscosity [m^2/s]'
           do itrc=1,NT
@@ -286,7 +351,11 @@
 
         elseif (keyword(1:kwlen) == 'MY_bak_mixing') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) Akq_bak, q2nu2, q2nu4
+          read(input,*,iostat=ios) Akq_bak, q2nu2, q2nu4
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')  'Akq_bak =',
      &        Akq_bak, 'Background vertical mixing for TKE, [m^2/s]'
 #  ifdef Q_DIF2
@@ -303,7 +372,11 @@
 
         elseif (keyword(1:kwlen) == 'SSS_correction') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) dSSSdt
+          read(input,*,iostat=ios) dSSSdt
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           mpi_master_only write(*,'(5x,A,ES10.3,2x,2A/38x,A)')
      &   'dSSSdt =', dSSSdt, 'Sea-Surface Salinity correction ',
      &                       'coefficient expressed',
@@ -318,7 +391,11 @@
 
         elseif (keyword(1:kwlen) == 'SST_correction') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) dSSTdt
+          read(input,*,iostat=ios) dSSTdt
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           mpi_master_only write(*,'(5x,A,ES10.3,2x,2A/38x,A)')
      &   'dSSTdt =', dSSTdt, 'Sea-Surface Temperature correction ',
      &                       'coefficient expressed',
@@ -339,7 +416,11 @@
 
         elseif (keyword(1:kwlen) == 'ubind') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) ubind
+          read(input,*,iostat=ios) ubind
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
             mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
      &     'ubind =', ubind, 'open boundary binding velcity [m/s]'
 
@@ -351,11 +432,15 @@
 
 c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) tauM2_in, tauM2_out, attnM2
+          read(input,*,iostat=ios) tauM2_in, tauM2_out, attnM2
 # ifdef SOLVE3D
      &                       , tauM3_in, tauM3_out
      &                       , tauT_in,  tauT_out
 # endif
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           if (tauM2_in > 0.) then                ! convert relaxation
             tauM2_in =1./(tauM2_in *day2sec)     ! time [units = days]
           endif                                  ! into
@@ -398,7 +483,11 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 
         elseif (keyword(1:kwlen) == 'v_sponge') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) v_sponge
+          read(input,*,iostat=ios) v_sponge
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           mpi_master_only write(*,'(3x,A,F10.2,2x,A)') 'v_sponge =',
      &        v_sponge, 'maximum viscosity in sponge layer [m^2/s]'
 #endif
@@ -411,14 +500,23 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 
         elseif (keyword(1:kwlen) == 'grid') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,'(A)',err=95) fname
+          read(input,'(A)',iostat=ios) fname
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
           lstr=lenstr(fname)
 # if defined MPI && defined PARALLEL_FILES
           call insert_node(fname, lstr, mynode, NNODES, ierr)
 !         call insert_nodes(fname)
 # endif
-          open(testunit,file=fname(1:lstr), status='old', err=97)
+          open(testunit,file=fname(1:lstr), status='old', iostat=ios)
           close(testunit)
+          if (ios /= 0) then
+             call report_opening_error(fname(1:lstr), mynode, ierr)
+             return
+          end if
+
           grdname=fname(1:lstr)
           mpi_master_only write(*,'(1x,2A)') 'grid file: ',
      &                                     grdname(1:lstr)
@@ -430,11 +528,21 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 
         elseif (keyword(1:kwlen) == 'initial') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,err=95) nrrec
+          read(input,*,iostat=ios) nrrec
+          if (ios /= 0) then
+             call report_read_error(keyword, ierr)
+             return
+          end if
+
 #ifdef ANA_INITIAL
           if (nrrec > 0) then
 #endif
-            read(input,'(A)',err=95) fname
+             read(input,'(A)',iostat=ios) fname
+             if (ios /= 0) then
+                call report_read_error(keyword, ierr)
+                return
+             end if
+
             lstr=lenstr(fname)
 #if defined MPI && defined PARALLEL_FILES
             call insert_node(fname, lstr, mynode, NNODES, ierr)
@@ -456,14 +564,23 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
           max_frc=0
           lstr=1
           do while(lstr > 0 .and. max_frc < max_frc_files+1)
-            read(input,'(A)',err=95) fname
+             read(input,'(A)',iostat=ios) fname
+             if (ios /= 0) then
+                call report_read_error(keyword, ierr)
+                return
+             end if
             lstr=lenstr(fname)
             if (lstr > 0) then
 # if defined MPI && defined PARALLEL_FILES
               call insert_node(fname, lstr, mynode, NNODES, ierr)
 # endif
-              open(testunit,file=fname(1:lstr),status='old',err=97)
+              open(testunit,file=fname(1:lstr),status='old',iostat=ios)
               close(testunit)
+              if (ios /= 0) then
+                 call report_opening_error(fname(1:lstr), mynode, ierr)
+                 return
+              end if
+
 
               if (max_frc < max_frc_files) then
                 max_frc=max_frc+1
@@ -512,13 +629,23 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 
         elseif (keyword(1:kwlen) == 'climatology') then
           call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,'(A)',err=95) fname
+          read(input,'(A)',iostat=ios) fname
+          if (ios /= 0) then
+             call report_opening_error(fname(1:lstr), mynode, ierr)
+             return
+          end if
+
           lstr=lenstr(fname)
 # if defined MPI && defined PARALLEL_FILES
           call insert_node(fname, lstr, mynode, NNODES, ierr)
 # endif
-          open(testunit, file=fname(1:lstr), status='old', err=97)
+          open(testunit, file=fname(1:lstr), status='old', iostat=ios)
           close(testunit)
+          if (ios /= 0) then
+             call report_open_error(fname(1:lstr), mynode, ierr)
+             return
+          end if
+
           clm_file=fname(1:lstr)
           mpi_master_only write(*,'(1x,4A)')   'climatology data :: ',
      &                           'file = ''', clm_file(1:lstr), ''''
@@ -533,21 +660,9 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
      &                'Urecognized keyword ''', keyword(1:kwlen),
      &                                      ''' --> DISREGARDED.'
         endif
-       if (keyword(1:kwlen) == end_signal) goto 99
       end do
 
-! Error while reading input parameters.
-
-  95  write(*,'(/1x,4A/)') '### ERROR: read_inp :: Cannot read ',
-     &                       'entry ''', keyword(1:kwlen), '''.'
-      ierr=ierr+1
-      goto 99
-  97  lstr=lenstr(fname)
-      write(*,'(/i4,1x,4A/)') mynode,
-     &     '### ERROR: read_inp :: Cannot find ',
-     &     'input file ''', fname(1:lstr), '''.'
-      ierr=ierr+1
-  99  close (input)
+      close (input)
 
 ! Check that all keywords were canceled, complain about the error,
 ! if some of them left.
@@ -563,6 +678,33 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
       call MPI_Barrier (ocean_grid_comm, ierr)
 #endif
       end subroutine read_inp
+
+      subroutine report_opening_error(fname, mynode, ierr)
+      implicit none
+      character(len=*), intent(in) :: fname
+      integer,          intent(in) :: mynode
+      integer,          intent(inout) :: ierr
+      character(len=:), allocatable :: msg
+
+      msg = "### ERROR: read_inp :: Cannot find input file '" // trim(fname) // "'"
+
+      write(*,'(/i4,1x,A/)') mynode, msg
+
+      ierr = ierr + 1
+      end subroutine report_opening_error
+
+      subroutine report_read_error(keyword, ierr)
+      implicit none
+      character(len=*), intent(in) :: keyword
+      integer,          intent(inout) :: ierr
+      character(len=:), allocatable :: msg
+
+      msg = "### ERROR: read_inp :: Cannot read entry '" // trim(keyword) // "'"
+
+      write(*,'(/A/)') msg
+
+      ierr = ierr + 1
+      end subroutine report_read_error
 
       subroutine extract_keyword(unit, keyword, kwlen, eof, ierr)
          implicit none
