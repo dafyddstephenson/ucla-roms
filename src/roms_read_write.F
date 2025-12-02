@@ -1120,9 +1120,7 @@
       integer           :: ierr = nf90_noerr
       integer,parameter :: input=15
 
-      call cancel_kwd (keyword(1:kwlen), ierr)             ! remove keyword from keyword list for read_inp.F
-                                                           ! to know it's accounted for
-      read(input,'(A)',err=95) output_root_name            ! read & save filename root
+      read(input,'(A)',err=95) output_root_name ! read & save filename root
       goto 100
                                                            ! error for read(input,'(A)',err=95)
   95  write(*,'(/1x,4A/)') '### ERROR: roms_read_write :: Cannot ',

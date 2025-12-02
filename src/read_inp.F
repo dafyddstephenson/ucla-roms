@@ -18,7 +18,7 @@
      &     , marbl_diag_list_fname
 #endif
 #endif
-      use keyword_registry, only: init_registry, register_keyword, report_missing_or_extra
+      use keyword_registry, only: init_registry, register_keyword, report_keyword_mismatch
       implicit none
       integer ierr, ios
 
@@ -156,8 +156,8 @@
       call register_keyword(name="output_root_name",expected=1)
 
 !––––– FIRST PASS –––––
-      call first_pass_check(fname, ierr)
-      call report_missing_or_extra(ierr)
+      call initial_keyword_check(fname, ierr)
+      call report_keyword_mismatch(ierr)
       if (ierr /= 0) then
          write(*,'("CONFIGURATION ERRORS DETECTED IN FIRST PASS")')
          return
@@ -167,7 +167,7 @@
 ! Read in keyword name: keep trying, until keyword is found.
 !----- -- ------- ----- ---- ------- ------ ------- ---------
 
-      call setup_kwds(ierr)
+c$$$      call setup_kwds(ierr)
 
       open(input, file=fname, status='old', form='formatted', iostat=ios)
       if (ios /= 0) then
@@ -188,8 +188,6 @@
 ! Title
 
         if (keyword(1:kwlen) == 'title') then
-           call cancel_kwd(keyword(1:kwlen), ierr)
-
            read(input,'(A)',iostat=ios) title
            if (ios /= 0) then
               call report_read_error(keyword, ierr)
@@ -202,7 +200,6 @@
 ! Time-stepping parameters
 
         elseif (keyword(1:kwlen) == 'time_stepping') then
-           call cancel_kwd(keyword(1:kwlen), ierr)
            read(input,*,iostat=ios) ntimes, dt, ndtfast, ninfo
            if (ios /= 0) then
               call report_read_error(keyword, ierr)
@@ -226,7 +223,6 @@
 
 #ifdef MARBL
         elseif (keyword(1:kwlen) == 'MARBL_biogeochemistry') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,'(A)',iostat=ios) marbl_namelist_fname
            if (ios /= 0) then
               call report_read_error(keyword, ierr)
@@ -263,7 +259,6 @@
 
 #ifdef SOLVE3D
         elseif (keyword(1:kwlen) == 'S-coord') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) theta_s, theta_b, hc
              if (ios /= 0) then
                 call report_read_error(keyword, ierr)
@@ -283,7 +278,6 @@
 !--> Boussinesq  reference density.
 
         elseif (keyword(1:kwlen) == 'rho0') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) rho0
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -296,7 +290,6 @@
 !--> Parameters for linear equations of state.
 
         elseif (keyword(1:kwlen) == 'lin_rho_eos') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) Tcoef, T0
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -321,7 +314,6 @@
 ! Lateral viscosity coefficients.
 
         elseif (keyword(1:kwlen) == 'lateral_visc') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) visc2
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -336,7 +328,6 @@
 ! Lateral boundary slipperness.
 
         elseif (keyword(1:kwlen) == 'gamma2') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) gamma2
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -353,7 +344,6 @@
 ! Horizontal Laplacian mixing coefficients for tracers.
 
         elseif (keyword(1:kwlen) == 'tracer_diff2') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) (tnu2(itrc),itrc=1,NT)
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -376,7 +366,6 @@
 ! Bottom drag coefficients.
 
         elseif (keyword(1:kwlen) == 'bottom_drag') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) rdrg, rdrg2
 #ifdef SOLVE3D
      &                             , Zob
@@ -401,7 +390,6 @@
 ! Background vertical viscosity and mixing coefficients for tracers.
 
         elseif (keyword(1:kwlen) == 'vertical_mixing') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) Akv_bak,(Akt_bak(itrc),itrc=1,NT)
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -420,7 +408,6 @@
 ! Mellor-Yamada Level 2.5 turbulent closure parameters.
 
         elseif (keyword(1:kwlen) == 'MY_bak_mixing') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) Akq_bak, q2nu2, q2nu4
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -441,7 +428,6 @@
 # if defined SFLX_CORR && defined SALINITY
 
         elseif (keyword(1:kwlen) == 'SSS_correction') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) dSSSdt
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -460,7 +446,6 @@
 # if defined QCORRECTION
 
         elseif (keyword(1:kwlen) == 'SST_correction') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) dSSTdt
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -485,7 +470,6 @@
                        || defined M3NUDGING  || defined WKB_FRC_BRY
 
         elseif (keyword(1:kwlen) == 'ubind') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) ubind
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -494,57 +478,6 @@
             mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
      &     'ubind =', ubind, 'open boundary binding velcity [m/s]'
 
-
-/* OBSOLETE --->
-! Parameters for OBC nudging and nudging layers;
-! converted from [days] to [sec^-1]
-
-
-c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
-          read(input,*,iostat=ios) tauM2_in, tauM2_out, attnM2
-# ifdef SOLVE3D
-     &                       , tauM3_in, tauM3_out
-     &                       , tauT_in,  tauT_out
-# endif
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          if (tauM2_in > 0.) then                ! convert relaxation
-            tauM2_in =1./(tauM2_in *day2sec)     ! time [units = days]
-          endif                                  ! into
-          if (tauM2_out > 0.) then               ! nudging coefficient
-            tauM2_out=1./(tauM2_out*day2sec)     ! [units = 1/sec]
-          endif
-# ifdef SOLVE3D
-          if (tauM3_in > 0.) then
-            tauM3_in =1./(tauM3_in *day2sec)
-          endif
-          if (tauM3_out > 0.) then
-            tauM3_out=1./(tauM3_out*day2sec)
-          endif
-          if (tauT_in > 0.) then
-            tauT_in =1./(tauT_in *day2sec)
-          endif
-          if (tauT_out > 0.) then
-            tauT_out=1./(tauT_out*day2sec)
-          endif
-# endif
-          mpi_master_only write(*,'(6x,A,ES10.3,ES10.3,2A)')
-     &          'tauM2 =', tauM2_in, tauM2_out, '(in/out)  Nudging ',
-     &                                   'for barotropic mode [s^-1]'
-          mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)') 'attnM2 =',
-     &    attnM2,'open boundary pressure-gradient attenuation [s^-1]'
-# ifdef SOLVE3D
-          mpi_master_only write(*,'(6x,A,ES10.3,ES10.3,2A)')
-     &          'tauM3 =', tauM3_in, tauM3_out, '(in/out)  Nudging ',
-     &                                   'for baroclinic mode [s^-1]'
-          mpi_master_only write(*,'(7x,A,ES10.3,ES10.3,2A)')
-     &             'tauT =', tauT_in, tauT_out, '(in/out)  Nudging ',
-     &                                          'for tracers [s^-1]'
-# endif
-           <--- OBSOLETE */
 #endif
 
 
@@ -552,7 +485,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 ! Parameters for the sponge layers
 
         elseif (keyword(1:kwlen) == 'v_sponge') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) v_sponge
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -569,7 +501,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 ! Grid file name. Check its availability.
 
         elseif (keyword(1:kwlen) == 'grid') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,'(A)',iostat=ios) fname
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -597,7 +528,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 ! created internally and no file is needed).
 
         elseif (keyword(1:kwlen) == 'initial') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,*,iostat=ios) nrrec
           if (ios /= 0) then
              call report_read_error(keyword, ierr)
@@ -628,7 +558,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 ! Forcing file name. Check its availability.
 
         elseif (keyword(1:kwlen) == 'forcing') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           force_files = ''
           force_info  = ''
           max_frc=0
@@ -698,7 +627,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA
 
         elseif (keyword(1:kwlen) == 'climatology') then
-          call cancel_kwd(keyword(1:kwlen), ierr)
           read(input,'(A)',iostat=ios) fname
           if (ios /= 0) then
              call report_opening_error(fname(1:lstr), mynode, ierr)
@@ -734,10 +662,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 
       close (input)
 
-! Check that all keywords were canceled, complain about the error,
-! if some of them left.
-
-      if (ierr == 0) call check_kwds (ierr)
       if (ierr /= 0) then
         write(*,'(/1x,2A,I3,1x,A/)') '### ERROR: read_inp :: ',
      &  'A total of', ierr, 'configuration errors discovered.'
@@ -749,7 +673,7 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
 #endif
       end subroutine read_inp
 
-      subroutine first_pass_check(fname, ierr)
+      subroutine initial_keyword_check(fname, ierr)
       use keyword_registry
       implicit none
 
@@ -776,9 +700,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
          if (keyword == "end") exit
 
          idx = lookup_keyword(keyword)
-         mpi_master_only write(*,*) "FOUND KW ",keyword," AT IDX ",idx,
-     &        " IN REGISTRY AS", registry(idx)%name
-
          if (idx > 0) then
             registry(idx)%found = registry(idx)%found + 1
          else
@@ -788,7 +709,7 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
       end do
 
       close(unit)
-      end subroutine first_pass_check
+      end subroutine initial_keyword_check
 
       subroutine report_opening_error(fname, mynode, ierr)
       implicit none
@@ -864,68 +785,6 @@ c-->    elseif (keyword(1:kwlen) == 'nudg_cof') then
          kwlen   = len_trim(tmp)
 
       end subroutine extract_keyword
-
-                                            ! Find place in the string
-      subroutine cancel_kwd(keyword, ierr)  ! kwds(1:max_opt_size)
-      use strings
-      implicit none                         ! which matches the input
-
-      character(len=*) keyword              ! keyword name and turn it
-      integer ierr, is,i,ie, lenkw,lenstr   ! into blank. Complain
-      lenkw=lenstr(keyword)                 ! about error if not found.
-      is=1
-      do while (is>0 .and. is<max_opt_size)
-        do while (kwds(is:is)==' ' .and. is<max_opt_size)
-          is=is+1
-        enddo
-        ie=is+1
-        do while (kwds(ie:ie)/=' ' .and. ie<max_opt_size)
-          ie=ie+1
-        enddo
-        if (lenkw==ie-is .and. kwds(is:ie-1)==keyword) then
-c**       write(*,'(1x,A,1x,A)') 'Recognized: ', kwds(is:ie-1)
-          do i=is,ie-1
-            kwds(i:i)=' '
-          enddo
-          is=0         !--> to signal that keyword is found and
-        else           !                      terminate the search
-          is=ie        !--> skip to the next word in "kwds" string
-        endif
-      enddo
-      if (is/=0) then
-        write(*,'(/A)') '##### ERROR #####'
-        write(*,'(2(1x,A,1x,A,1x,A/)/)') 'cancel_kwd:',
-     &         'Can not cancel keyword:',  keyword(1:lenkw),
-     &         'check input script for possible',
-     &         'duplicated keywords.'
-        write(*,'(A/)') '#################'
-        ierr=ierr+1
-      endif
-      end
-
-                                      ! Check that keyword string is
-      subroutine check_kwds (ierr)    ! empty, and if it is not print
-      use strings
-      implicit none                   ! out remaining keyword(s) as
-
-      integer ierr, is,ie             ! an error message and increase
-      is=1                            ! error counter ierr.
-      do while (is<max_opt_size)
-        do while (kwds(is:is)==' ' .and. is<max_opt_size)
-          is=is+1
-        enddo
-        if (is<max_opt_size) then
-          ie=is+1
-          do while (kwds(ie:ie)/=' ' .and. ie<max_opt_size)
-            ie=ie+1
-          enddo
-          ierr=ierr+1
-          write(*,'(/1x,A,1x,A/)') '### ERROR: keyword not found:',
-     &                                               kwds(is:ie-1)
-          is=ie
-        endif
-      enddo
-      end
 
 !***********************************************************************
 !     >  Print SLURM or PBS job ID information (master-only write).
