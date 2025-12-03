@@ -160,7 +160,7 @@
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA
       call register_keyword(name="climatology",handler=read_climatology)
 #endif
-      call register_keyword(name="output_root_name",expected=1)
+      call register_keyword(name="output_root_name",handler=read_output_root_name)
 
 !––––– FIRST PASS –––––
       call initial_keyword_check(fname, ierr)
@@ -207,10 +207,10 @@
          if (keyword(1:kwlen) == 'thiswillneverbeakeyword') then
             cycle
 
-!     Read output file root name using roms_read_write.F module
-         elseif (keyword(1:kwlen).eq.'output_root_name') then
-            call read_output_root_name(keyword, kwlen)
-
+c$$$!     Read output file root name using roms_read_write.F module
+c$$$         elseif (keyword(1:kwlen).eq.'output_root_name') then
+c$$$            call read_output_root_name(keyword, kwlen)
+c$$$
          else
             mpi_master_only write(*,'(/1x,4A/)') 'WARNING: ',
      &           'Urecognized keyword ''', keyword(1:kwlen),
@@ -948,6 +948,29 @@
 
       end subroutine read_climatology
 #endif
+
+      subroutine read_output_root_name(unit, ierr)
+      ! read from .in file the root-name
+      ! for all output netcdf result files
+      ! this is called from read_inp.F
+      ! The following needs to be in the roms.in input file to use this
+      ! subroutine (file name needs to be 5 spaces from left margin):
+      !output_root_name:
+      !     rootname (<- insert desired rootname)
+
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,'(A)',iostat=ios) output_root_name
+      if (ios /= 0) then
+         call report_read_error('output_root_name', ierr)
+         return
+      end if
+
+      end subroutine read_output_root_name
 
       subroutine initial_keyword_check(fname, ierr)
       use keyword_registry
