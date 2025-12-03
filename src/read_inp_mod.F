@@ -1,7 +1,4 @@
-#include "cppdefs.opt"
-                                        ! Read and report model input
-      subroutine read_inp(ierr)         ! parameters from keyword-based
-                                        ! startup file.
+      module read_inp_mod
 
       use param
       use surf_flux
@@ -18,9 +15,19 @@
      &     , marbl_diag_list_fname
 #endif
 #endif
-      use keyword_registry, only: init_registry, register_keyword, report_keyword_mismatch
+      use keyword_registry, only: init_registry, registry, register_keyword, report_keyword_mismatch, lookup_keyword
+
       implicit none
-      integer ierr, ios
+      contains
+
+#include "cppdefs.opt"
+
+                                        ! Read and report model input
+      subroutine read_inp(ierr)         ! parameters from keyword-based
+                                        ! startup file.
+
+      implicit none
+      integer ierr, ios, idx
 
       integer, parameter :: input=15, testunit=40,
      &                  max_fname=256, max_kwsize=256
@@ -97,17 +104,17 @@
       call init_registry()
 
 !––––– REGISTER ALL KEYWORDS EXPECTED IN THE FILE –––––
-      call register_keyword(name="title",expected=1)
-      call register_keyword(name="time_stepping",expected=1)
+      call register_keyword(name="title",handler=read_title)
+      call register_keyword(name="time_stepping",handler=read_time_stepping)
 #ifdef MARBL
-      call register_keyword(name="MARBL_biogeochemistry",expected=1)
+      call register_keyword(name="MARBL_biogeochemistry",handler=read_marbl_bgc)
 #endif
 #ifdef SOLVE3D
-      call register_keyword(name="S-coord",expected=1)
-      call register_keyword(name="rho0",expected=1)
+      call register_keyword(name="S-coord",handler=read_scoord)
+      call register_keyword(name="rho0",handler=read_rho0)
 #endif
 #ifndef NONLIN_EOS
-      call register_keyword(name="lin_rho_eos",expected=1)
+      call register_keyword(name="lin_rho_eos",handler=read_lin_rho_eos)
 #endif
 #ifdef UV_VIS2
       call register_keyword(name="lateral_visc",expected=1)
@@ -182,186 +189,202 @@ c$$$      call setup_kwds(ierr)
          if (eof) exit
          if (kwlen == 0) cycle  ! no keyword on this line → read next
          if (keyword(1:kwlen) == end_signal) exit
+         idx = lookup_keyword(keyword)
+         if (idx==0) then
+            mpi_master_only write(*,
+     &           '("WARNING: unregistered keyword encountered: ",A)') trim(keyword)
+            cycle
+         end if
+         if (associated(registry(idx)%handler)) then
+            call registry(idx)%handler(input, ierr)
+         else
+            write(*,*) "ERROR: No handler registered for keyword ", trim(keyword)
+c$$$            ierr = ierr + 1
+c$$$            return
+c$$$         end if
+         !HERE
+
 
 ! Read input parameters according to the keyword:
 !----- ----- ---------- --------- --- ---- -------
 ! Title
 
-        if (keyword(1:kwlen) == 'title') then
-           read(input,'(A)',iostat=ios) title
-           if (ios /= 0) then
-              call report_read_error(keyword, ierr)
-              return
-           end if
+c$$$        if (keyword(1:kwlen) == 'title') then
+c$$$           read(input,'(A)',iostat=ios) title
+c$$$           if (ios /= 0) then
+c$$$              call report_read_error(keyword, ierr)
+c$$$              return
+c$$$           end if
+c$$$
+c$$$           lstr=lenstr(title)
+c$$$           mpi_master_only write(*,'(/1x,A)') title(1:lstr)
 
-           lstr=lenstr(title)
-           mpi_master_only write(*,'(/1x,A)') title(1:lstr)
+         if (keyword(1:kwlen) == 'thiswillneverbeakeyword') then
+            cycle
+!     Time-stepping parameters
+c$$$         elseif (keyword(1:kwlen) == 'time_stepping') then
+c$$$           read(input,*,iostat=ios) ntimes, dt, ndtfast, ninfo
+c$$$           if (ios /= 0) then
+c$$$              call report_read_error(keyword, ierr)
+c$$$              return
+c$$$           end if
+c$$$
+c$$$          mpi_master_only write(*,
+c$$$     &  '(5x,A,I10,3x,A/9x,A,F11.4,2x,A/4x,A,I10,3x,A/6x,A,I10,3x,2A)'
+c$$$     &    ) 'ntimes =',  ntimes, 'total number of 3D timesteps',
+c$$$     &          'dt =',     dt,  'time step [sec] for 3D equations',
+c$$$     &     'ndtfast =', ndtfast, 'mode-splitting ratio',
+c$$$     &       'ninfo =',   ninfo, 'number of steps between runtime ',
+c$$$     &                                              'diagnostics'
+c$$$
+c$$$          dtfast=dt/dble(ndtfast)     ! set barotropic time step.
+c$$$#ifndef SOLVE3D
+c$$$          dt=dtfast
+c$$$          ntimes=ntimes*ndtfast
+c$$$          ninfo=ninfo*ndtfast
+c$$$#endif
 
-! Time-stepping parameters
-
-        elseif (keyword(1:kwlen) == 'time_stepping') then
-           read(input,*,iostat=ios) ntimes, dt, ndtfast, ninfo
-           if (ios /= 0) then
-              call report_read_error(keyword, ierr)
-              return
-           end if
-
-          mpi_master_only write(*,
-     &  '(5x,A,I10,3x,A/9x,A,F11.4,2x,A/4x,A,I10,3x,A/6x,A,I10,3x,2A)'
-     &    ) 'ntimes =',  ntimes, 'total number of 3D timesteps',
-     &          'dt =',     dt,  'time step [sec] for 3D equations',
-     &     'ndtfast =', ndtfast, 'mode-splitting ratio',
-     &       'ninfo =',   ninfo, 'number of steps between runtime ',
-     &                                              'diagnostics'
-
-          dtfast=dt/dble(ndtfast)     ! set barotropic time step.
-#ifndef SOLVE3D
-          dt=dtfast
-          ntimes=ntimes*ndtfast
-          ninfo=ninfo*ndtfast
-#endif
-
-#ifdef MARBL
-        elseif (keyword(1:kwlen) == 'MARBL_biogeochemistry') then
-          read(input,'(A)',iostat=ios) marbl_namelist_fname
-           if (ios /= 0) then
-              call report_read_error(keyword, ierr)
-              return
-           end if
-          lstr=lenstr(marbl_namelist_fname)
-             mpi_master_only write(*,'(1x,A,15x,A)'),
-     &            'MARBL namelist file',marbl_namelist_fname(1:lstr)
-
-             read(input,'(A)',iostat=ios) marbl_tracer_list_fname
-             if (ios /= 0) then
-                call report_read_error(keyword, ierr)
-                return
-             end if
-
-          lstr=lenstr(marbl_tracer_list_fname)
-             mpi_master_only write(*,'(1x,A,5x,A)'),
-     &            'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
-
-#ifdef MARBL_DIAGS
-             read(input,'(A)',iostat=ios) marbl_diag_list_fname
-             if (ios /= 0) then
-                call report_read_error(keyword, ierr)
-                return
-             end if
-          lstr=lenstr(marbl_diag_list_fname)
-             mpi_master_only write(*,'(1x,A,1x,A)'),
-     &            'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
-#endif
-#endif
+c$$$#ifdef MARBL
+c$$$        elseif (keyword(1:kwlen) == 'MARBL_biogeochemistry') then
+c$$$          read(input,'(A)',iostat=ios) marbl_namelist_fname
+c$$$           if (ios /= 0) then
+c$$$              call report_read_error(keyword, ierr)
+c$$$              return
+c$$$           end if
+c$$$          lstr=lenstr(marbl_namelist_fname)
+c$$$             mpi_master_only write(*,'(1x,A,15x,A)'),
+c$$$     &            'MARBL namelist file',marbl_namelist_fname(1:lstr)
+c$$$
+c$$$             read(input,'(A)',iostat=ios) marbl_tracer_list_fname
+c$$$             if (ios /= 0) then
+c$$$                call report_read_error(keyword, ierr)
+c$$$                return
+c$$$             end if
+c$$$
+c$$$          lstr=lenstr(marbl_tracer_list_fname)
+c$$$             mpi_master_only write(*,'(1x,A,5x,A)'),
+c$$$     &            'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
+c$$$
+c$$$#ifdef MARBL_DIAGS
+c$$$             read(input,'(A)',iostat=ios) marbl_diag_list_fname
+c$$$             if (ios /= 0) then
+c$$$                call report_read_error(keyword, ierr)
+c$$$                return
+c$$$             end if
+c$$$          lstr=lenstr(marbl_diag_list_fname)
+c$$$             mpi_master_only write(*,'(1x,A,1x,A)'),
+c$$$     &            'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
+c$$$#endif
+c$$$#endif
 
 ! Vertical S-coordinates transformation. Note that "hc" may be chosen
 ! to be very large (infinity) if vertically uniform sigma is desired.
 
-#ifdef SOLVE3D
-        elseif (keyword(1:kwlen) == 'S-coord') then
-          read(input,*,iostat=ios) theta_s, theta_b, hc
-             if (ios /= 0) then
-                call report_read_error(keyword, ierr)
-                return
-             end if
-          mpi_master_only write(*,'(2(/4x,A,F10.7,2x,A))')
-     &    'theta_s =', theta_s, 'vertical S-coordinate surface',
-     &    'theta_b =', theta_b, 'and bottom stretching parameters'
-          if (hc < 1000.) then
-            mpi_master_only write(*,'(9x,A,F10.5,2x,2A)')
-     &                   'hc =', hc, 'critical depth [m]'
-          else
-            mpi_master_only write(*,'(9x,A,ES14.5,2x,2A)')
-     &                   'hc =', hc, 'critical depth [m]'
-          endif
+c$$$#ifdef SOLVE3D
+c$$$        elseif (keyword(1:kwlen) == 'S-coord') then
+c$$$          read(input,*,iostat=ios) theta_s, theta_b, hc
+c$$$             if (ios /= 0) then
+c$$$                call report_read_error(keyword, ierr)
+c$$$                return
+c$$$             end if
+c$$$          mpi_master_only write(*,'(2(/4x,A,F10.7,2x,A))')
+c$$$     &    'theta_s =', theta_s, 'vertical S-coordinate surface',
+c$$$     &    'theta_b =', theta_b, 'and bottom stretching parameters'
+c$$$          if (hc < 1000.) then
+c$$$            mpi_master_only write(*,'(9x,A,F10.5,2x,2A)')
+c$$$     &                   'hc =', hc, 'critical depth [m]'
+c$$$          else
+c$$$            mpi_master_only write(*,'(9x,A,ES14.5,2x,2A)')
+c$$$     &                   'hc =', hc, 'critical depth [m]'
+c$$$          endif
 
 !--> Boussinesq  reference density.
+c$$$
+c$$$        elseif (keyword(1:kwlen) == 'rho0') then
+c$$$          read(input,*,iostat=ios) rho0
+c$$$          if (ios /= 0) then
+c$$$             call report_read_error(keyword, ierr)
+c$$$             return
+c$$$          end if
+c$$$          mpi_master_only write(*,'(7x,A,F10.4,2x,A)')  'rho0 =',
+c$$$     &            rho0, 'Boussinesq reference density [kg/m^3].'
 
-        elseif (keyword(1:kwlen) == 'rho0') then
-          read(input,*,iostat=ios) rho0
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          mpi_master_only write(*,'(7x,A,F10.4,2x,A)')  'rho0 =',
-     &            rho0, 'Boussinesq reference density [kg/m^3].'
-
-# ifndef NONLIN_EOS
-!--> Parameters for linear equations of state.
-
-        elseif (keyword(1:kwlen) == 'lin_rho_eos') then
-          read(input,*,iostat=ios) Tcoef, T0
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-
-#  ifdef SALINITY
-     &                       , Scoef, S0
-#  endif
-          mpi_master_only write(*,'(4(6x,A,F10.4,2x,A/))')
-     &      'Tcoef =', Tcoef,  'thermal expansion [kg/m^3/deg C]'
-     &    , '   T0 =',    T0,  'reference temperature [deg C]'
-#  ifdef SALINITY
-     &    , 'Scoef =', Scoef,  'saline contraction [kg/m^3/PSU]'
-     &    , '   S0 =',    S0,  'reference salinity [PSU]'
-#  endif
-# endif
-#endif /* SOLVE3D */
+c$$$# ifndef NONLIN_EOS
+c$$$!--> Parameters for linear equations of state.
+c$$$
+c$$$        elseif (keyword(1:kwlen) == 'lin_rho_eos') then
+c$$$          read(input,*,iostat=ios) Tcoef, T0
+c$$$          if (ios /= 0) then
+c$$$             call report_read_error(keyword, ierr)
+c$$$             return
+c$$$          end if
+c$$$
+c$$$#  ifdef SALINITY
+c$$$     &                       , Scoef, S0
+c$$$#  endif
+c$$$          mpi_master_only write(*,'(4(6x,A,F10.4,2x,A/))')
+c$$$     &      'Tcoef =', Tcoef,  'thermal expansion [kg/m^3/deg C]'
+c$$$     &    , '   T0 =',    T0,  'reference temperature [deg C]'
+c$$$#  ifdef SALINITY
+c$$$     &    , 'Scoef =', Scoef,  'saline contraction [kg/m^3/PSU]'
+c$$$     &    , '   S0 =',    S0,  'reference salinity [PSU]'
+c$$$#  endif
+c$$$# endif
+c$$$#endif /* SOLVE3D */
 
 
 #ifdef UV_VIS2
 ! Lateral viscosity coefficients.
-
-        elseif (keyword(1:kwlen) == 'lateral_visc') then
-          read(input,*,iostat=ios) visc2
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-
-          mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')   'visc2 =',
-     &    visc2, 'horizontal Laplacian kinematic viscosity [m^2/s]'
+c$$$
+c$$$        elseif (keyword(1:kwlen) == 'lateral_visc') then
+c$$$          read(input,*,iostat=ios) visc2
+c$$$          if (ios /= 0) then
+c$$$             call report_read_error(keyword, ierr)
+c$$$             return
+c$$$          end if
+c$$$
+c$$$          mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')   'visc2 =',
+c$$$     &    visc2, 'horizontal Laplacian kinematic viscosity [m^2/s]'
 
 
 # if !defined EW_PERIODIC || !defined NS_PERIODIC
 ! Lateral boundary slipperness.
-
-        elseif (keyword(1:kwlen) == 'gamma2') then
-          read(input,*,iostat=ios) gamma2
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-
-          mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)') 'gamma2 =',
-     &                           gamma2, 'slipperiness parameter: ',
-     &                           'free-slip = +1, or no-slip = -1.'
+c$$$
+c$$$        elseif (keyword(1:kwlen) == 'gamma2') then
+c$$$          read(input,*,iostat=ios) gamma2
+c$$$          if (ios /= 0) then
+c$$$             call report_read_error(keyword, ierr)
+c$$$             return
+c$$$          end if
+c$$$
+c$$$          mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)') 'gamma2 =',
+c$$$     &                           gamma2, 'slipperiness parameter: ',
+c$$$     &                           'free-slip = +1, or no-slip = -1.'
 # endif
 #endif
-#ifdef SOLVE3D
-# ifdef TS_DIF2
-! Horizontal Laplacian mixing coefficients for tracers.
-
-        elseif (keyword(1:kwlen) == 'tracer_diff2') then
-          read(input,*,iostat=ios) (tnu2(itrc),itrc=1,NT)
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          do itrc=1,NT
-            if (itrc == itemp) then
-              mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
-     &         'tnu2(',itrc,') =',tnu2(itrc),'horizontal Laplacian ',
-     &         'kinematic heat conductivity [m^2/s]'
-            else
-              mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
-     &         'tnu2(',itrc,') =',tnu2(itrc),'horizontal Laplacian ',
-     &         'diffusion for tracer ', itrc, ', [m^2/s]'
-            endif
-          enddo
-# endif
-#endif
+c$$$#ifdef SOLVE3D
+c$$$# ifdef TS_DIF2
+c$$$! Horizontal Laplacian mixing coefficients for tracers.
+c$$$
+c$$$        elseif (keyword(1:kwlen) == 'tracer_diff2') then
+c$$$          read(input,*,iostat=ios) (tnu2(itrc),itrc=1,NT)
+c$$$          if (ios /= 0) then
+c$$$             call report_read_error(keyword, ierr)
+c$$$             return
+c$$$          end if
+c$$$          do itrc=1,NT
+c$$$            if (itrc == itemp) then
+c$$$              mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
+c$$$     &         'tnu2(',itrc,') =',tnu2(itrc),'horizontal Laplacian ',
+c$$$     &         'kinematic heat conductivity [m^2/s]'
+c$$$            else
+c$$$              mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
+c$$$     &         'tnu2(',itrc,') =',tnu2(itrc),'horizontal Laplacian ',
+c$$$     &         'diffusion for tracer ', itrc, ', [m^2/s]'
+c$$$            endif
+c$$$          enddo
+c$$$# endif
+c$$$#endif
 
 ! Bottom drag coefficients.
 
@@ -657,9 +680,9 @@ c$$$      call setup_kwds(ierr)
           mpi_master_only write(*,'(/1x,4A/)') 'WARNING: ',
      &                'Urecognized keyword ''', keyword(1:kwlen),
      &                                      ''' --> DISREGARDED.'
-        endif
+       endif
+      end if !/*(associated(registry(idx)%handler))*/
       end do
-
       close (input)
 
       if (ierr /= 0) then
@@ -672,6 +695,282 @@ c$$$      call setup_kwds(ierr)
       call MPI_Barrier (ocean_grid_comm, ierr)
 #endif
       end subroutine read_inp
+
+      subroutine read_title(unit, ierr)
+         integer, intent(in) :: unit
+         integer, intent(inout) :: ierr
+         integer ios
+
+         read(unit,'(A)',iostat=ios) title
+         if (ios /= 0) then
+            call report_read_error("title", ierr)
+            return
+         end if
+         mpi_master_only write(*,'(/1x,A)') trim(title)
+      end subroutine
+
+      subroutine read_time_stepping(unit, ierr)
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in) :: unit
+      integer, intent(inout) :: ierr
+
+      integer :: ios
+      integer :: lstr
+
+! Read ntimes, dt, ndtfast, ninfo
+      read(unit, *, iostat=ios) ntimes, dt, ndtfast, ninfo
+      if (ios /= 0) then
+         call report_read_error("time_stepping", ierr)
+         return
+      end if
+
+      mpi_master_only write(*,
+     &  '(5x,A,I10,3x,A/9x,A,F11.4,2x,A/4x,A,I10,3x,A/6x,A,I10,3x,2A)'
+     &    ) 'ntimes =',  ntimes, 'total number of 3D timesteps',
+     &          'dt =',     dt,  'time step [sec] for 3D equations',
+     &     'ndtfast =', ndtfast, 'mode-splitting ratio',
+     &       'ninfo =',   ninfo, 'number of steps between runtime ',
+     &                                              'diagnostics'
+
+          dtfast=dt/dble(ndtfast)     ! set barotropic time step.
+
+#ifndef SOLVE3D
+      dt     = dtfast
+      ntimes = ntimes * ndtfast
+      ninfo  = ninfo  * ndtfast
+#endif
+
+      end subroutine read_time_stepping
+
+#ifdef MARBL
+      subroutine read_marbl_bgc(unit, ierr)
+      use marbl_driver, only: marbl_namelist_fname, marbl_tracer_list_fname
+#ifdef MARBL_DIAGS
+      use marbl_driver, only: marbl_diag_list_fname
+#endif
+      use mpi
+      implicit none
+
+      integer, intent(in) :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios, lstr
+
+! ---------------------------------------------------------
+! Read MARBL namelist file
+! ---------------------------------------------------------
+      read(unit,'(A)',iostat=ios) marbl_namelist_fname
+      if (ios /= 0) then
+         call report_read_error("MARBL_biogeochemistry", ierr)
+         return
+      end if
+
+      lstr = len_trim(marbl_namelist_fname)
+      mpi_master_only write(*,'(1x,A,15x,A)'),
+     &     'MARBL namelist file',marbl_namelist_fname(1:lstr)
+
+! ---------------------------------------------------------
+! Read tracer list file
+! ---------------------------------------------------------
+      read(unit,'(A)',iostat=ios) marbl_tracer_list_fname
+      if (ios /= 0) then
+         call report_read_error("MARBL_biogeochemistry", ierr)
+         return
+      end if
+
+      lstr = len_trim(marbl_tracer_list_fname)
+      mpi_master_only write(*,'(1x,A,5x,A)'),
+     &     'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
+
+#ifdef MARBL_DIAGS
+! ---------------------------------------------------------
+! Read diagnostics list file
+! ---------------------------------------------------------
+      read(unit,'(A)',iostat=ios) marbl_diag_list_fname
+      if (ios /= 0) then
+         call report_read_error("MARBL_biogeochemistry", ierr)
+         return
+      end if
+
+      lstr = len_trim(marbl_diag_list_fname)
+      mpi_master_only write(*,'(1x,A,1x,A)'),
+     &     'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
+#endif
+
+      end subroutine read_marbl_bgc
+#endif
+
+#ifdef SOLVE3D
+      subroutine read_scoord(unit, ierr)
+!     Vertical S-coordinates transformation. Note that "hc" may be chosen
+!     to be very large (infinity) if vertically uniform sigma is desired.
+      use scoord                ! for theta_s, theta_b, hc
+      use mpi
+      implicit none
+
+      integer, intent(in) :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+! Read three S-coordinate parameters
+      read(unit, *, iostat=ios) theta_s, theta_b, hc
+      if (ios /= 0) then
+         call report_read_error("S-coord", ierr)
+         return
+      end if
+
+          mpi_master_only write(*,'(2(/4x,A,F10.7,2x,A))')
+     &    'theta_s =', theta_s, 'vertical S-coordinate surface',
+     &    'theta_b =', theta_b, 'and bottom stretching parameters'
+          if (hc < 1000.) then
+            mpi_master_only write(*,'(9x,A,F10.5,2x,2A)')
+     &                   'hc =', hc, 'critical depth [m]'
+          else
+            mpi_master_only write(*,'(9x,A,ES14.5,2x,2A)')
+     &                   'hc =', hc, 'critical depth [m]'
+          endif
+
+      end subroutine read_scoord
+
+      subroutine read_rho0(unit, ierr)
+      !--> Boussinesq  reference density.
+      use eos_vars              ! for rho0
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+! Read rho0 (Boussinesq reference density)
+      read(unit, *, iostat=ios) rho0
+      if (ios /= 0) then
+         call report_read_error("rho0", ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(7x,A,F10.4,2x,A)')  'rho0 =',
+     &     rho0, 'Boussinesq reference density [kg/m^3].'
+
+      end subroutine read_rho0
+# ifndef NONLIN_EOS
+      subroutine read_lin_rho_eos(unit, ierr)
+      use eos_vars
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) Tcoef, T0
+#  ifdef SALINITY
+     &                       , Scoef, S0
+#  endif
+      if (ios /= 0) then
+         call report_read_error('lin_rho_eos', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(4(6x,A,F10.4,2x,A/))')
+     &      'Tcoef =', Tcoef,  'thermal expansion [kg/m^3/deg C]'
+     &    , '   T0 =',    T0,  'reference temperature [deg C]'
+#  ifdef SALINITY
+     &    , 'Scoef =', Scoef,  'saline contraction [kg/m^3/PSU]'
+     &    , '   S0 =',    S0,  'reference salinity [PSU]'
+#  endif
+
+      end subroutine read_lin_rho_eos
+# endif
+
+#endif /*SOLVE3D*/
+#ifdef UV_VIS2
+      subroutine read_lateral_visc(unit, ierr)
+!     Lateral viscosity coefficients.
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) visc2
+      if (ios /= 0) then
+         call report_read_error('lateral_visc', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
+     &    'visc2 =', visc2,
+     &    'horizontal Laplacian kinematic viscosity [m^2/s]'
+
+      end subroutine read_lateral_visc
+
+#if !defined EW_PERIODIC || !defined NS_PERIODIC
+      subroutine read_gamma2(unit, ierr)
+!     Lateral boundary slipperness.
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) gamma2
+      if (ios /= 0) then
+         call report_read_error('gamma2', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)')
+     &    'gamma2 =', gamma2,
+     &    'slipperiness parameter: ',
+     &    'free-slip = +1, or no-slip = -1.'
+
+      end subroutine read_gamma2
+#endif
+#endif
+
+#if defined SOLVE3D && defined TS_DIF2
+      subroutine read_tracer_diff2(unit, ierr)
+      use param
+      use scalars
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios, itrc
+
+      read(unit,*,iostat=ios) (tnu2(itrc), itrc=1,NT)
+      if (ios /= 0) then
+         call report_read_error('tracer_diff2', ierr)
+         return
+      end if
+
+      do itrc = 1, NT
+         if (itrc == itemp) then
+            mpi_master_only write(*,
+     & '(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
+     &    'tnu2(',itrc,') =', tnu2(itrc),
+     &    'horizontal Laplacian ',
+     &    'kinematic heat conductivity [m^2/s]'
+         else
+            mpi_master_only write(*,
+     & '(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
+     &    'tnu2(',itrc,') =', tnu2(itrc),
+     &    'horizontal Laplacian ',
+     &    'diffusion for tracer ', itrc, ', [m^2/s]'
+         end if
+      end do
+
+      end subroutine read_tracer_diff2
+#endif
+
 
       subroutine initial_keyword_check(fname, ierr)
       use keyword_registry
@@ -825,3 +1124,5 @@ c$$$      call setup_kwds(ierr)
       end if
          mpi_master_only write(*,'(A)') 'No SLURM or PBS job ID found.'
       end subroutine print_jobid
+
+      end module read_inp_mod
