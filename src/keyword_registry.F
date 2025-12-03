@@ -87,7 +87,7 @@
 !-----------------------------------------------------------------------
          character(len=*), intent(in) :: name
          integer, intent(in), optional :: expected
-         procedure(keyword_handler), pointer, optional :: handler
+         procedure(keyword_handler), optional :: handler
 
          if (kw_idx >= MAX_NUM_KEYWORDS) then
             if (mynode==0) write(*,*)
