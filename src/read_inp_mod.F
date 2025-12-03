@@ -1096,7 +1096,7 @@
      &     iostat=ios)
       close(testunit)
       if (ios /= 0) then
-         call report_open_error(fname(1:lstr), mynode, ierr)
+         call report_opening_error(fname(1:lstr), mynode, ierr)
          return
       end if
       clm_file = fname(1:lstr)
