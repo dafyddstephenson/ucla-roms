@@ -470,15 +470,15 @@
                    ! prf = exp( - ((z-d)/vsc )^2)
                    if (cdr_vsc(icdr) == 0) then
                      do k=1,nz
-                       arg_nz(k) = abs(z_r(i,j,k) + cdr_dep(icdr))
+                       arg_nz(k) = abs(z_r0(i,j,k) + cdr_dep(icdr))
                      enddo
                        arg = minloc(arg_nz,1)
                        cdr_prf(cidx,:,arg) = frac(i,j,icdr)
                    else
                      vint = 0
                      do k=1,nz
-                       arg = ( (z_r(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
-                       cdr_prf(cidx,:,k) = exp(-arg)*Hz(i,j,k)
+                       arg = ( (z_r0(i,j,k) + cdr_dep(icdr) )/cdr_vsc(icdr) )**2
+                       cdr_prf(cidx,:,k) = exp(-arg)*Hz0(i,j,k)
                      enddo
                      ! The 1D integral of exp^(z/cdr_vsc(icdr))**2 is cdr_vsc(icdr)*SQRT(pi),
                      ! so normalizing by this amount will ensure we don't weight the
