@@ -32,14 +32,14 @@
 !
 !     FIELDS:
 !       name      - keyword string as it appears in the input
-!       expected  - expected number of occurrences in settings file (0,1)
+!       required  - whether keyword is required or not
 !       found     - occurrences actually encountered during parse
 !       handler   - procedure pointer to the routine that processes
 !                   this keyword (implements keyword_handler)
 !-----------------------------------------------------------------------
          character(len=:), allocatable :: name
-         integer :: expected = 1 ! expected occurrences (0 or 1)
-         integer :: found    = 0 ! occurrences seen in file
+         logical :: required = .true.
+         integer :: found    = 0      ! occurrences seen in file
          procedure(keyword_handler), pointer, nopass :: handler => null()
       end type keyword_entry
 
@@ -78,15 +78,15 @@
          kw_idx = 0
       end subroutine init_registry
 
-      subroutine register_keyword(name, expected, handler)
+      subroutine register_keyword(name, required, handler)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: register_keyword
 !     DESCRIPTION:
-!     Add a keyword to the registry along with its expected number of
-!     occurences and a pointer to its handler routine
+!     Add a keyword to the registry along with its requirement status
+!     and a pointer to its handler routine
 !-----------------------------------------------------------------------
          character(len=*), intent(in) :: name
-         integer, intent(in), optional :: expected
+         logical, intent(in), optional :: required
          procedure(keyword_handler), optional :: handler
 
          if (kw_idx >= MAX_NUM_KEYWORDS) then
@@ -99,7 +99,7 @@
          registry(kw_idx)%name = trim(name)
          registry(kw_idx)%found = 0
 
-         if (present(expected)) registry(kw_idx)%expected = expected
+         if (present(required)) registry(kw_idx)%required = required
          if (present(handler)) registry(kw_idx)%handler => handler
 
       end subroutine register_keyword
@@ -127,18 +127,22 @@
 !     SUBROUTINE: report_keyword_mismatch
 !     DESCRIPTION:
 !     Increments the error counter and prints a message if a keyword has
-!     not been marked as found in the registry an equal number of times
-!     as `expected`
+!     not been marked as found in the registry when required or was
+!     found multiple times
 !-----------------------------------------------------------------------
          integer, intent(inout) :: ierr
          integer :: i
 
          do i = 1, kw_idx
-            if (registry(i)%found /= registry(i)%expected) then
-               if (mynode==0) write(*,'(A," expected=",I2," found=",I2)')
-     &              "Keyword "//trim(registry(i)%name)//" mismatch: ",
-     &              registry(i)%expected, registry(i)%found
-               ierr = ierr + 1
+            if (registry(i)%required .and. (registry(i)%found==0)) then
+               if (mynode==0) write(*,"(3A)") "Required keyword",
+     &              registry(i)%name, "not found"
+               ierr=ierr+1
+            elseif (registry(i)%found>1) then
+               if (mynode==0) write(*,"(3A,I0)")
+     &              "Multiple instances of keyword", registry(i)%name,
+     &              "found: ", registry(i)%found
+               ierr=ierr+1
             end if
          end do
       end subroutine report_keyword_mismatch
