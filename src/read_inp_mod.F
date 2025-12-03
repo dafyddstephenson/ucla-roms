@@ -199,24 +199,9 @@
             call registry(idx)%handler(input, ierr)
          else
             write(*,*) "ERROR: No handler registered for keyword ", trim(keyword)
-!            ierr = ierr + 1
-!            return
-!         end if
-         !HERE
-
-         if (keyword(1:kwlen) == 'thiswillneverbeakeyword') then
-            cycle
-
-c$$$!     Read output file root name using roms_read_write.F module
-c$$$         elseif (keyword(1:kwlen).eq.'output_root_name') then
-c$$$            call read_output_root_name(keyword, kwlen)
-c$$$
-         else
-            mpi_master_only write(*,'(/1x,4A/)') 'WARNING: ',
-     &           'Urecognized keyword ''', keyword(1:kwlen),
-     &           ''' --> DISREGARDED.'
-         endif                  !thiswillneverbeakeyword
-      end if                    !/*(associated(registry(idx)%handler))*/
+            ierr = ierr + 1
+            return
+         end if
       end do
       close (input)
 
