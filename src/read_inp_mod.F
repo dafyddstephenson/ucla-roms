@@ -117,48 +117,48 @@
       call register_keyword(name="lin_rho_eos",handler=read_lin_rho_eos)
 #endif
 #ifdef UV_VIS2
-      call register_keyword(name="lateral_visc",expected=1)
+      call register_keyword(name="lateral_visc",handler=read_lateral_visc)
 #if !defined EW_PERIODIC || !defined NS_PERIODIC
-      call register_keyword(name="gamma2",expected=1)
+      call register_keyword(name="gamma2",handler=read_gamma2)
 #endif
 #endif
 #ifdef TS_DIF2
-      call register_keyword(name="tracer_diff2",expected=1)
+      call register_keyword(name="tracer_diff2",handler=read_tracer_diff2)
 #endif
-      call register_keyword(name="bottom_drag",expected=1)
+      call register_keyword(name="bottom_drag",handler=read_bottom_drag)
 
 #ifdef SOLVE3D
 #if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
                          && !defined MY2_MIXING && !defined MY25_MIXING
-      call register_keyword(name="vertical_mixing",expected=1)
+      call register_keyword(name="vertical_mixing",handler=read_vertical_mixing)
 #endif
 #ifdef MY25_MIXING
-      call register_keyword(name="MY_bak_mixing",expected=1)
+      call register_keyword(name="MY_bak_mixing",handler=read_my_bak_mixing)
 #endif
 #if defined SFLX_CORR && defined SALINITY
-      call register_keyword(name="SSS_correction",expected=1)
+      call register_keyword(name="SSS_correction",handler=read_sss_correction)
 #endif
 #ifdef QCORRECTION
-      call register_keyword(name="SST_correction",expected=1)
+      call register_keyword(name="SST_correction",handler=read_sst_correction)
 #endif
 #endif /* SOLVE3D */
 
 #if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
   || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
                        || defined M3NUDGING  || defined WKB_FRC_BRY
-      call register_keyword(name="ubind",expected=1)
+      call register_keyword(name="ubind",handler=read_ubind)
 #endif
 #ifdef SPONGE
-      call register_keyword(name="v_sponge",expected=1)
+      call register_keyword(name="v_sponge",handler=read_v_sponge)
 #endif
 #ifndef ANA_GRID
-      call register_keyword(name="grid",expected=1)
+      call register_keyword(name="grid",handler=read_grid)
 #endif
-      call register_keyword(name="initial",expected=1)
-      call register_keyword(name="forcing",expected=1)
+      call register_keyword(name="initial",handler=read_initial)
+      call register_keyword(name="forcing",handler=read_forcing)
 #if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA
-                        call register_keyword(name="climatology",expected=1)
+      call register_keyword(name="climatology",handler=read_climatology)
 #endif
       call register_keyword(name="output_root_name",expected=1)
 
@@ -174,7 +174,7 @@
 ! Read in keyword name: keep trying, until keyword is found.
 !----- -- ------- ----- ---- ------- ------ ------- ---------
 
-c$$$      call setup_kwds(ierr)
+!      call setup_kwds(ierr)
 
       open(input, file=fname, status='old', form='formatted', iostat=ios)
       if (ios /= 0) then
@@ -199,489 +199,24 @@ c$$$      call setup_kwds(ierr)
             call registry(idx)%handler(input, ierr)
          else
             write(*,*) "ERROR: No handler registered for keyword ", trim(keyword)
-c$$$            ierr = ierr + 1
-c$$$            return
-c$$$         end if
+!            ierr = ierr + 1
+!            return
+!         end if
          !HERE
-
-
-! Read input parameters according to the keyword:
-!----- ----- ---------- --------- --- ---- -------
-! Title
-
-c$$$        if (keyword(1:kwlen) == 'title') then
-c$$$           read(input,'(A)',iostat=ios) title
-c$$$           if (ios /= 0) then
-c$$$              call report_read_error(keyword, ierr)
-c$$$              return
-c$$$           end if
-c$$$
-c$$$           lstr=lenstr(title)
-c$$$           mpi_master_only write(*,'(/1x,A)') title(1:lstr)
 
          if (keyword(1:kwlen) == 'thiswillneverbeakeyword') then
             cycle
-!     Time-stepping parameters
-c$$$         elseif (keyword(1:kwlen) == 'time_stepping') then
-c$$$           read(input,*,iostat=ios) ntimes, dt, ndtfast, ninfo
-c$$$           if (ios /= 0) then
-c$$$              call report_read_error(keyword, ierr)
-c$$$              return
-c$$$           end if
-c$$$
-c$$$          mpi_master_only write(*,
-c$$$     &  '(5x,A,I10,3x,A/9x,A,F11.4,2x,A/4x,A,I10,3x,A/6x,A,I10,3x,2A)'
-c$$$     &    ) 'ntimes =',  ntimes, 'total number of 3D timesteps',
-c$$$     &          'dt =',     dt,  'time step [sec] for 3D equations',
-c$$$     &     'ndtfast =', ndtfast, 'mode-splitting ratio',
-c$$$     &       'ninfo =',   ninfo, 'number of steps between runtime ',
-c$$$     &                                              'diagnostics'
-c$$$
-c$$$          dtfast=dt/dble(ndtfast)     ! set barotropic time step.
-c$$$#ifndef SOLVE3D
-c$$$          dt=dtfast
-c$$$          ntimes=ntimes*ndtfast
-c$$$          ninfo=ninfo*ndtfast
-c$$$#endif
 
-c$$$#ifdef MARBL
-c$$$        elseif (keyword(1:kwlen) == 'MARBL_biogeochemistry') then
-c$$$          read(input,'(A)',iostat=ios) marbl_namelist_fname
-c$$$           if (ios /= 0) then
-c$$$              call report_read_error(keyword, ierr)
-c$$$              return
-c$$$           end if
-c$$$          lstr=lenstr(marbl_namelist_fname)
-c$$$             mpi_master_only write(*,'(1x,A,15x,A)'),
-c$$$     &            'MARBL namelist file',marbl_namelist_fname(1:lstr)
-c$$$
-c$$$             read(input,'(A)',iostat=ios) marbl_tracer_list_fname
-c$$$             if (ios /= 0) then
-c$$$                call report_read_error(keyword, ierr)
-c$$$                return
-c$$$             end if
-c$$$
-c$$$          lstr=lenstr(marbl_tracer_list_fname)
-c$$$             mpi_master_only write(*,'(1x,A,5x,A)'),
-c$$$     &            'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
-c$$$
-c$$$#ifdef MARBL_DIAGS
-c$$$             read(input,'(A)',iostat=ios) marbl_diag_list_fname
-c$$$             if (ios /= 0) then
-c$$$                call report_read_error(keyword, ierr)
-c$$$                return
-c$$$             end if
-c$$$          lstr=lenstr(marbl_diag_list_fname)
-c$$$             mpi_master_only write(*,'(1x,A,1x,A)'),
-c$$$     &            'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
-c$$$#endif
-c$$$#endif
+!     Read output file root name using roms_read_write.F module
+         elseif (keyword(1:kwlen).eq.'output_root_name') then
+            call read_output_root_name(keyword, kwlen)
 
-! Vertical S-coordinates transformation. Note that "hc" may be chosen
-! to be very large (infinity) if vertically uniform sigma is desired.
-
-c$$$#ifdef SOLVE3D
-c$$$        elseif (keyword(1:kwlen) == 'S-coord') then
-c$$$          read(input,*,iostat=ios) theta_s, theta_b, hc
-c$$$             if (ios /= 0) then
-c$$$                call report_read_error(keyword, ierr)
-c$$$                return
-c$$$             end if
-c$$$          mpi_master_only write(*,'(2(/4x,A,F10.7,2x,A))')
-c$$$     &    'theta_s =', theta_s, 'vertical S-coordinate surface',
-c$$$     &    'theta_b =', theta_b, 'and bottom stretching parameters'
-c$$$          if (hc < 1000.) then
-c$$$            mpi_master_only write(*,'(9x,A,F10.5,2x,2A)')
-c$$$     &                   'hc =', hc, 'critical depth [m]'
-c$$$          else
-c$$$            mpi_master_only write(*,'(9x,A,ES14.5,2x,2A)')
-c$$$     &                   'hc =', hc, 'critical depth [m]'
-c$$$          endif
-
-!--> Boussinesq  reference density.
-c$$$
-c$$$        elseif (keyword(1:kwlen) == 'rho0') then
-c$$$          read(input,*,iostat=ios) rho0
-c$$$          if (ios /= 0) then
-c$$$             call report_read_error(keyword, ierr)
-c$$$             return
-c$$$          end if
-c$$$          mpi_master_only write(*,'(7x,A,F10.4,2x,A)')  'rho0 =',
-c$$$     &            rho0, 'Boussinesq reference density [kg/m^3].'
-
-c$$$# ifndef NONLIN_EOS
-c$$$!--> Parameters for linear equations of state.
-c$$$
-c$$$        elseif (keyword(1:kwlen) == 'lin_rho_eos') then
-c$$$          read(input,*,iostat=ios) Tcoef, T0
-c$$$          if (ios /= 0) then
-c$$$             call report_read_error(keyword, ierr)
-c$$$             return
-c$$$          end if
-c$$$
-c$$$#  ifdef SALINITY
-c$$$     &                       , Scoef, S0
-c$$$#  endif
-c$$$          mpi_master_only write(*,'(4(6x,A,F10.4,2x,A/))')
-c$$$     &      'Tcoef =', Tcoef,  'thermal expansion [kg/m^3/deg C]'
-c$$$     &    , '   T0 =',    T0,  'reference temperature [deg C]'
-c$$$#  ifdef SALINITY
-c$$$     &    , 'Scoef =', Scoef,  'saline contraction [kg/m^3/PSU]'
-c$$$     &    , '   S0 =',    S0,  'reference salinity [PSU]'
-c$$$#  endif
-c$$$# endif
-c$$$#endif /* SOLVE3D */
-
-
-#ifdef UV_VIS2
-! Lateral viscosity coefficients.
-c$$$
-c$$$        elseif (keyword(1:kwlen) == 'lateral_visc') then
-c$$$          read(input,*,iostat=ios) visc2
-c$$$          if (ios /= 0) then
-c$$$             call report_read_error(keyword, ierr)
-c$$$             return
-c$$$          end if
-c$$$
-c$$$          mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')   'visc2 =',
-c$$$     &    visc2, 'horizontal Laplacian kinematic viscosity [m^2/s]'
-
-
-# if !defined EW_PERIODIC || !defined NS_PERIODIC
-! Lateral boundary slipperness.
-c$$$
-c$$$        elseif (keyword(1:kwlen) == 'gamma2') then
-c$$$          read(input,*,iostat=ios) gamma2
-c$$$          if (ios /= 0) then
-c$$$             call report_read_error(keyword, ierr)
-c$$$             return
-c$$$          end if
-c$$$
-c$$$          mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)') 'gamma2 =',
-c$$$     &                           gamma2, 'slipperiness parameter: ',
-c$$$     &                           'free-slip = +1, or no-slip = -1.'
-# endif
-#endif
-c$$$#ifdef SOLVE3D
-c$$$# ifdef TS_DIF2
-c$$$! Horizontal Laplacian mixing coefficients for tracers.
-c$$$
-c$$$        elseif (keyword(1:kwlen) == 'tracer_diff2') then
-c$$$          read(input,*,iostat=ios) (tnu2(itrc),itrc=1,NT)
-c$$$          if (ios /= 0) then
-c$$$             call report_read_error(keyword, ierr)
-c$$$             return
-c$$$          end if
-c$$$          do itrc=1,NT
-c$$$            if (itrc == itemp) then
-c$$$              mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
-c$$$     &         'tnu2(',itrc,') =',tnu2(itrc),'horizontal Laplacian ',
-c$$$     &         'kinematic heat conductivity [m^2/s]'
-c$$$            else
-c$$$              mpi_master_only write(*,'(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
-c$$$     &         'tnu2(',itrc,') =',tnu2(itrc),'horizontal Laplacian ',
-c$$$     &         'diffusion for tracer ', itrc, ', [m^2/s]'
-c$$$            endif
-c$$$          enddo
-c$$$# endif
-c$$$#endif
-
-! Bottom drag coefficients.
-
-        elseif (keyword(1:kwlen) == 'bottom_drag') then
-          read(input,*,iostat=ios) rdrg, rdrg2
-#ifdef SOLVE3D
-     &                             , Zob
-#endif
-          mpi_master_only write(*,'(7x,A,ES10.3,2x,A)')
-     &     'rdrg =', rdrg,  'linear bottom drag coefficient [m/s]'
-          mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
-     &    'rdrg2 =', rdrg2, 'quadratic bottom drag coefficient, nondim'
-#ifdef SOLVE3D
-          mpi_master_only write(*,'(8x,A,ES10.3,2x,A)')
-     &  ,   'Zob =', Zob,   'bottom roughness height [m]'
-#endif
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-
-#ifdef SOLVE3D
-# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
-                         && !defined MY2_MIXING && !defined MY25_MIXING
-
-! Background vertical viscosity and mixing coefficients for tracers.
-
-        elseif (keyword(1:kwlen) == 'vertical_mixing') then
-          read(input,*,iostat=ios) Akv_bak,(Akt_bak(itrc),itrc=1,NT)
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          mpi_master_only write(*,'(4x,A,ES10.3,2x,A)')  'Akv_bak =',
-     &               Akv_bak, 'background vertical viscosity [m^2/s]'
-          do itrc=1,NT
-            mpi_master_only write(*,'(1x,A,I1,A,ES10.3,2x,2A)')
-     &                     'Akt_bak(',  itrc,  ') =',  Akt_bak(itrc),
-     &                     'background vertical mixing [m^2/s] for ',
-     &        vname(2,indxT+itrc-1)(1:lenstr(vname(2,indxT+itrc-1)))
-          enddo
-# endif
-# ifdef MY25_MIXING
-! Mellor-Yamada Level 2.5 turbulent closure parameters.
-
-        elseif (keyword(1:kwlen) == 'MY_bak_mixing') then
-          read(input,*,iostat=ios) Akq_bak, q2nu2, q2nu4
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')  'Akq_bak =',
-     &        Akq_bak, 'Background vertical mixing for TKE, [m^2/s]'
-#  ifdef Q_DIF2
-          mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')    'q2nu2 =',
-     &         q2nu2, 'Horizontal Laplacian mixing for TKE, [m^2/s]'
-#  endif
-#  ifdef Q_DIF4
-          mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')    'q2nu4 =',
-     &        q2nu4, 'Horizontal biharmonic mixing for TKE, [m^4/s]'
-#  endif
-# endif
-
-# if defined SFLX_CORR && defined SALINITY
-
-        elseif (keyword(1:kwlen) == 'SSS_correction') then
-          read(input,*,iostat=ios) dSSSdt
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          mpi_master_only write(*,'(5x,A,ES10.3,2x,2A/38x,A)')
-     &   'dSSSdt =', dSSSdt, 'Sea-Surface Salinity correction ',
-     &                       'coefficient expressed',
-     &            'kinematically as "piston velocity" [cm/day]'
-
-          dSSSdt=dSSSdt/(100*day2sec)   !<-- Convert cm/day to convert to [m/s]
-          ! This is also defined in put_global_atts so needs to be consistent.
-
-# endif
-
-# if defined QCORRECTION
-
-        elseif (keyword(1:kwlen) == 'SST_correction') then
-          read(input,*,iostat=ios) dSSTdt
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          mpi_master_only write(*,'(5x,A,ES10.3,2x,2A/38x,A)')
-     &   'dSSTdt =', dSSTdt, 'Sea-Surface Temperature correction ',
-     &                       'coefficient expressed',
-     &            'kinematically as "piston velocity" [cm/day]'
-
-          dSSTdt=dSSTdt/(100*day2sec)   !<-- Convert cm/day to convert to [m/s]
-          ! This is also defined in put_global_atts so needs to be consistent.
-
-# endif
-
-#endif /* SOLVE3D */
-
-
-
-#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
-  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
-                       || defined M3NUDGING  || defined WKB_FRC_BRY
-
-        elseif (keyword(1:kwlen) == 'ubind') then
-          read(input,*,iostat=ios) ubind
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-            mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
-     &     'ubind =', ubind, 'open boundary binding velcity [m/s]'
-
-#endif
-
-
-#ifdef SPONGE
-! Parameters for the sponge layers
-
-        elseif (keyword(1:kwlen) == 'v_sponge') then
-          read(input,*,iostat=ios) v_sponge
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          mpi_master_only write(*,'(3x,A,F10.2,2x,A)') 'v_sponge =',
-     &        v_sponge, 'maximum viscosity in sponge layer [m^2/s]'
-#endif
-
-! Input file controls:  grid, initial conditions, surface forcing,
-!----- ----- ---------  lateral boundary forcing data
-
-#ifndef ANA_GRID
-! Grid file name. Check its availability.
-
-        elseif (keyword(1:kwlen) == 'grid') then
-          read(input,'(A)',iostat=ios) fname
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-          lstr=lenstr(fname)
-# if defined MPI && defined PARALLEL_FILES
-          call insert_node(fname, lstr, mynode, NNODES, ierr)
-!         call insert_nodes(fname)
-# endif
-          open(testunit,file=fname(1:lstr), status='old', iostat=ios)
-          close(testunit)
-          if (ios /= 0) then
-             call report_opening_error(fname(1:lstr), mynode, ierr)
-             return
-          end if
-
-          grdname=fname(1:lstr)
-          mpi_master_only write(*,'(1x,2A)') 'grid file: ',
-     &                                     grdname(1:lstr)
-#endif
-
-! Initial conditions file name. Check its availability (in the case
-! of analytical initial conditions and nrrec=0 initial conditions are
-! created internally and no file is needed).
-
-        elseif (keyword(1:kwlen) == 'initial') then
-          read(input,*,iostat=ios) nrrec
-          if (ios /= 0) then
-             call report_read_error(keyword, ierr)
-             return
-          end if
-
-#ifdef ANA_INITIAL
-          if (nrrec > 0) then
-#endif
-             read(input,'(A)',iostat=ios) fname
-             if (ios /= 0) then
-                call report_read_error(keyword, ierr)
-                return
-             end if
-
-            lstr=lenstr(fname)
-#if defined MPI && defined PARALLEL_FILES
-            call insert_node(fname, lstr, mynode, NNODES, ierr)
-#endif
-            ininame=fname(1:lstr)
-            mpi_master_only write(*,'(1x,A,I3,2x,3A)')
-     &       'initial condition :: rec =', nrrec,  'file = ''',
-     &                                   ininame(1:lstr), ''''
-#ifdef ANA_INITIAL
-         endif
-#endif
-
-! Forcing file name. Check its availability.
-
-        elseif (keyword(1:kwlen) == 'forcing') then
-          force_files = ''
-          force_info  = ''
-          max_frc=0
-          lstr=1
-          do while(lstr > 0 .and. max_frc < max_frc_files+1)
-             read(input,'(A)',iostat=ios) fname
-             if (ios /= 0) then
-                call report_read_error(keyword, ierr)
-                return
-             end if
-            lstr=lenstr(fname)
-            if (lstr > 0) then
-# if defined MPI && defined PARALLEL_FILES
-              call insert_node(fname, lstr, mynode, NNODES, ierr)
-# endif
-              open(testunit,file=fname(1:lstr),status='old',iostat=ios)
-              close(testunit)
-              if (ios /= 0) then
-                 call report_opening_error(fname(1:lstr), mynode, ierr)
-                 return
-              end if
-
-
-              if (max_frc < max_frc_files) then
-                max_frc=max_frc+1
-                frcfile(max_frc)=fname(1:lstr)
-# ifdef MPI_SILENT_MODE
-                if (mynode == 0) then
-# endif
-                  if (max_frc == 1) then
-                    write(*,'(1x,2A)') 'forcing data file(s): ',
-     &                                 frcfile(max_frc)(1:lstr)
-                  else
-                    write(*,'(23x,A)') frcfile(max_frc)(1:lstr)
-                  endif
-                  ! add to attributes
-                  if (mynode == 0) then
-                    call store_string_att(force_files, frcfile(max_frc)(1:lstr))
-                  endif
-
-# ifdef MPI_SILENT_MODE
-                endif
-# endif
-              else
-                mpi_master_only write(*,'(1x,2A/12x,2A/)')
-     &          '### ERROR: read_inp :: Too many forcing files are ',
-     &          'specified in input script.',  'Increase parameter ',
-     &           '''max_frc_files'' in roms_read_write and recompile.'
-                ierr=ierr+1
-              endif
-            endif
-          enddo
-
-
-! Climatology file name. Climatology data is needed for (1) to supply
-! boundary data for T,S,u,v at open boundaries (just one row of points)
-! and (2) nudging to T,S data inside the domain within the  nudging
-! finite-width band near the boundary [although depreciated,  this
-! practice  remains in some applications; doing so for u,v is no
-! longer supported by this code].  Aternatively to (1), the boundary
-! data may also be supplied via BRY mechanism, where file contains
-! perimeter data only.  In this case (activated by T_FRC_BRY), no
-! climatology file is needed.  The following code segments also
-! checks for availability of clm_file.
-
-#if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
-                        defined T_FRC_BRY )) && !defined ANA_TCLIMA
-
-        elseif (keyword(1:kwlen) == 'climatology') then
-          read(input,'(A)',iostat=ios) fname
-          if (ios /= 0) then
-             call report_opening_error(fname(1:lstr), mynode, ierr)
-             return
-          end if
-
-          lstr=lenstr(fname)
-# if defined MPI && defined PARALLEL_FILES
-          call insert_node(fname, lstr, mynode, NNODES, ierr)
-# endif
-          open(testunit, file=fname(1:lstr), status='old', iostat=ios)
-          close(testunit)
-          if (ios /= 0) then
-             call report_open_error(fname(1:lstr), mynode, ierr)
-             return
-          end if
-
-          clm_file=fname(1:lstr)
-          mpi_master_only write(*,'(1x,4A)')   'climatology data :: ',
-     &                           'file = ''', clm_file(1:lstr), ''''
-#endif
-
-! Read output file root name using roms_read_write.F module
-        elseif (keyword(1:kwlen).eq.'output_root_name') then
-          call read_output_root_name(keyword, kwlen)
-
-        else
-          mpi_master_only write(*,'(/1x,4A/)') 'WARNING: ',
-     &                'Urecognized keyword ''', keyword(1:kwlen),
-     &                                      ''' --> DISREGARDED.'
-       endif
-      end if !/*(associated(registry(idx)%handler))*/
+         else
+            mpi_master_only write(*,'(/1x,4A/)') 'WARNING: ',
+     &           'Urecognized keyword ''', keyword(1:kwlen),
+     &           ''' --> DISREGARDED.'
+         endif                  !thiswillneverbeakeyword
+      end if                    !/*(associated(registry(idx)%handler))*/
       end do
       close (input)
 
@@ -971,6 +506,448 @@ c$$$#endif
       end subroutine read_tracer_diff2
 #endif
 
+      subroutine read_bottom_drag(unit, ierr)
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+#ifdef SOLVE3D
+      read(unit,*,iostat=ios) rdrg, rdrg2, Zob
+#else
+      read(unit,*,iostat=ios) rdrg, rdrg2
+#endif
+
+      if (ios /= 0) then
+         call report_read_error('bottom_drag', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(7x,A,ES10.3,2x,A)')
+     &    'rdrg =', rdrg,
+     &    'linear bottom drag coefficient [m/s]'
+
+      mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
+     &    'rdrg2 =', rdrg2,
+     &    'quadratic bottom drag coefficient, nondim'
+
+#ifdef SOLVE3D
+      mpi_master_only write(*,'(8x,A,ES10.3,2x,A)')
+     &    'Zob =', Zob,
+     &    'bottom roughness height [m]'
+#endif
+
+      end subroutine read_bottom_drag
+
+#ifdef SOLVE3D
+# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING \
+      &&                        !defined MY2_MIXING && !defined MY25_MIXING
+
+      subroutine read_vertical_mixing(unit, ierr)
+! Background vertical viscosity and mixing coefficients for tracers.
+      use param
+      use scalars
+      use basic_output       ! for vname
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios, itrc, lstr, lenstr
+
+      read(unit,*,iostat=ios) Akv_bak, (Akt_bak(itrc), itrc=1,NT)
+      if (ios /= 0) then
+         call report_read_error('vertical_mixing', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(4x,A,ES10.3,2x,A)')
+     &    'Akv_bak =', Akv_bak,
+     &    'background vertical viscosity [m^2/s]'
+
+      do itrc = 1, NT
+         lstr = lenstr(vname(2,indxT+itrc-1))
+         mpi_master_only write(*,'(1x,A,I1,A,ES10.3,2x,2A)')
+     &       'Akt_bak(', itrc, ') =', Akt_bak(itrc),
+     &       'background vertical mixing [m^2/s] for ',
+     &       vname(2,indxT+itrc-1)(1:lstr)
+      end do
+
+      end subroutine read_vertical_mixing
+# endif
+
+# ifdef MY25_MIXING
+      subroutine read_MY_bak_mixing(unit, ierr)
+!     Mellor-Yamada Level 2.5 turbulent closure parameters.
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) Akq_bak
+#  ifdef Q_DIF2
+     &                       , q2nu2
+#  endif
+#  ifdef Q_DIF4
+     &                       , q2nu4
+#  endif
+      if (ios /= 0) then
+         call report_read_error('MY_bak_mixing', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')
+     &    'Akq_bak =', Akq_bak,
+     &    'Background vertical mixing for TKE, [m^2/s]'
+
+#  ifdef Q_DIF2
+      mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')
+     &    'q2nu2 =', q2nu2,
+     &    'Horizontal Laplacian mixing for TKE, [m^2/s]'
+#  endif
+
+#  ifdef Q_DIF4
+      mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')
+     &    'q2nu4 =', q2nu4,
+     &    'Horizontal biharmonic mixing for TKE, [m^4/s]'
+#  endif
+
+      end subroutine read_MY_bak_mixing
+#endif
+
+#if defined SFLX_CORR && defined SALINITY
+      subroutine read_SSS_correction(unit, ierr)
+      use param
+      use scalars
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) dSSSdt
+      if (ios /= 0) then
+         call report_read_error('SSS_correction', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(5x,A,ES10.3,2x,2A/38x,A)')
+     &   'dSSSdt =', dSSSdt,
+     &   'Sea-Surface Salinity correction ',
+     &   'coefficient expressed',
+     &   'kinematically as "piston velocity" [cm/day]'
+
+      dSSSdt = dSSSdt / (100*day2sec)
+
+      end subroutine read_SSS_correction
+#endif
+
+# ifdef QCORRECTION
+      subroutine read_SST_correction(unit, ierr)
+      use param
+      use scalars
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) dSSTdt
+      if (ios /= 0) then
+         call report_read_error('SST_correction', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(5x,A,ES10.3,2x,2A/38x,A)')
+     &   'dSSTdt =', dSSTdt,
+     &   'Sea-Surface Temperature correction ',
+     &   'coefficient expressed',
+     &   'kinematically as "piston velocity" [cm/day]'
+
+      dSSTdt = dSSTdt / (100*day2sec)
+
+      end subroutine read_SST_correction
+# endif
+#endif /*SOLVE3D*/
+
+#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
+  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
+  || defined M3NUDGING  || defined WKB_FRC_BRY
+      subroutine read_ubind(unit, ierr)
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) ubind
+      if (ios /= 0) then
+         call report_read_error('ubind', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
+     &    'ubind =', ubind,
+     &    'open boundary binding velcity [m/s]'
+
+      end subroutine read_ubind
+#endif
+
+#ifdef SPONGE
+      subroutine read_v_sponge(unit, ierr)
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios
+
+      read(unit,*,iostat=ios) v_sponge
+      if (ios /= 0) then
+         call report_read_error('v_sponge', ierr)
+         return
+      end if
+
+      mpi_master_only write(*,'(3x,A,F10.2,2x,A)')
+     &      'v_sponge =', v_sponge,
+     &      'maximum viscosity in sponge layer [m^2/s]'
+
+      end subroutine read_v_sponge
+#endif
+
+#ifndef ANA_GRID
+      subroutine read_grid(unit, ierr)
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios, testunit, lstr, lenstr
+      character(len=256) :: fname
+
+      read(unit,'(A)',iostat=ios) fname
+      if (ios /= 0) then
+         call report_read_error('grid', ierr)
+         return
+      end if
+
+      lstr = lenstr(fname)
+
+# if defined MPI && defined PARALLEL_FILES
+      call insert_node(fname, lstr, mynode, NNODES, ierr)
+# endif
+
+      open(newunit=testunit, file=fname(1:lstr), status='old',
+     &     iostat=ios)
+      close(testunit)
+      if (ios /= 0) then
+         call report_opening_error(fname(1:lstr), mynode, ierr)
+         return
+      end if
+
+      grdname = fname(1:lstr)
+      mpi_master_only write(*,'(1x,2A)')
+     &      'grid file: ', grdname(1:lstr)
+
+      end subroutine read_grid
+#endif /* !ANA_GRID */
+
+      subroutine read_initial(unit, ierr)
+!     Initial conditions file name. Check its availability (in the case
+!     of analytical initial conditions and nrrec=0 initial conditions are
+!     created internally and no file is needed).
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios, lstr, testunit, lenstr
+      character(len=256) :: fname
+
+      read(unit,*,iostat=ios) nrrec
+      if (ios /= 0) then
+         call report_read_error('initial', ierr)
+         return
+      end if
+
+#ifdef ANA_INITIAL
+      if (nrrec > 0) then
+#endif
+         read(unit,'(A)',iostat=ios) fname
+         if (ios /= 0) then
+            call report_read_error('initial', ierr)
+            return
+         end if
+
+         lstr = lenstr(fname)
+
+# if defined MPI && defined PARALLEL_FILES
+         call insert_node(fname, lstr, mynode, NNODES, ierr)
+# endif
+         open(newunit=testunit, file=fname(1:lstr), status='old',
+     &        iostat=ios)
+         close(testunit)
+         if (ios /= 0) then
+            call report_opening_error(fname(1:lstr), mynode, ierr)
+            return
+         end if
+         ininame = fname(1:lstr)
+         mpi_master_only write(*,'(1x,A,I3,2x,3A)')
+     &        'initial condition :: rec =', nrrec,
+     &        'file = ''', ininame(1:lstr), ''''
+
+#ifdef ANA_INITIAL
+      endif
+#endif
+
+      end subroutine read_initial
+
+      subroutine read_forcing(unit, ierr)
+      use param
+      use mpi
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+
+      integer :: ios, lstr, testunit, lenstr
+      character(len=256) :: fname
+
+!  Reset forcing storage.
+
+      force_files = ''
+      force_info  = ''
+      max_frc     = 0
+      lstr        = 1
+
+!  Read filenames until a blank line or max_frc_files reached.
+      do while (lstr > 0 .and. max_frc < max_frc_files+1)
+
+         read(unit,'(A)',iostat=ios) fname
+         if (ios /= 0) then
+            call report_read_error('forcing', ierr)
+            return
+         end if
+
+         lstr = lenstr(fname)
+
+         if (lstr > 0) then
+
+# if defined MPI && defined PARALLEL_FILES
+            call insert_node(fname, lstr, mynode, NNODES, ierr)
+# endif
+
+! Test file availability
+
+            open(newunit=testunit, file=fname(1:lstr), status='old',
+     &           iostat=ios)
+            close(testunit)
+            if (ios /= 0) then
+               call report_opening_error(fname(1:lstr), mynode, ierr)
+               return
+            end if
+
+! Store file if within limit of allowed no. of forcing files
+
+            if (max_frc < max_frc_files) then
+
+               max_frc = max_frc + 1
+               frcfile(max_frc) = fname(1:lstr)
+
+! Write file info to output stream
+# ifdef MPI_SILENT_MODE
+                if (mynode == 0) then
+# endif
+                  if (max_frc == 1) then
+                    write(*,'(1x,2A)') 'forcing data file(s): ',
+     &                                 frcfile(max_frc)(1:lstr)
+                  else
+                    write(*,'(23x,A)') frcfile(max_frc)(1:lstr)
+                  endif
+! Add to attributes
+                  if (mynode == 0) then
+                     call store_string_att(force_files,
+     &                                      frcfile(max_frc)(1:lstr))
+                  end if
+
+# ifdef MPI_SILENT_MODE
+               end if
+# endif
+            else
+                mpi_master_only write(*,'(1x,2A/12x,2A/)')
+     &          '### ERROR: read_inp :: Too many forcing files are ',
+     &          'specified in input script.',  'Increase parameter ',
+     &           '''max_frc_files'' in roms_read_write and recompile.'
+                ierr=ierr+1
+            end if
+         end if   ! lstr > 0
+      end do      ! filename loop
+
+      end subroutine read_forcing
+
+#if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
+    defined T_FRC_BRY )) &&   !defined ANA_TCLIMA
+
+      subroutine read_climatology(unit, ierr)
+! Climatology file name. Climatology data is needed for (1) to supply
+! boundary data for T,S,u,v at open boundaries (just one row of points)
+! and (2) nudging to T,S data inside the domain within the  nudging
+! finite-width band near the boundary [although depreciated,  this
+! practice  remains in some applications; doing so for u,v is no
+! longer supported by this code].  Aternatively to (1), the boundary
+! data may also be supplied via BRY mechanism, where file contains
+! perimeter data only.  In this case (activated by T_FRC_BRY), no
+! climatology file is needed.  The following code segments also
+! checks for availability of clm_file.
+
+      use param
+      use mpi
+
+      implicit none
+
+      integer, intent(in)    :: unit
+      integer, intent(inout) :: ierr
+      integer :: ios, lstr, testunit, lenstr
+      character(len=256) :: fname
+
+      read(unit,'(A)',iostat=ios) fname
+      if (ios /= 0) then
+         call report_read_error('climatology', ierr)
+         return
+      end if
+
+      lstr = lenstr(fname)
+
+# if defined MPI && defined PARALLEL_FILES
+      call insert_node(fname, lstr, mynode, NNODES, ierr)
+# endif
+
+      open(newunit=testunit, file=fname(1:lstr), status='old',
+     &     iostat=ios)
+      close(testunit)
+      if (ios /= 0) then
+         call report_open_error(fname(1:lstr), mynode, ierr)
+         return
+      end if
+      clm_file = fname(1:lstr)
+          mpi_master_only write(*,'(1x,4A)')   'climatology data :: ',
+     &                           'file = ''', clm_file(1:lstr), ''''
+
+      end subroutine read_climatology
+#endif
 
       subroutine initial_keyword_check(fname, ierr)
       use keyword_registry
