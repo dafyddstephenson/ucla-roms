@@ -77,8 +77,8 @@
       implicit none
 
       ! local
-      allocate(  uwnd  (GLOBAL_2D_ARRAY)    );
-      allocate(  vwnd  (GLOBAL_2D_ARRAY)    );
+      allocate( uwnd  (GLOBAL_2D_ARRAY)     );
+      allocate( vwnd  (GLOBAL_2D_ARRAY)     );
       allocate( sustr  (GLOBAL_2D_ARRAY)    ); sustr=init
       allocate( sustr_r(GLOBAL_2D_ARRAY)    ); sustr_r=init
       allocate( svstr  (GLOBAL_2D_ARRAY)    ); svstr=init
@@ -131,6 +131,8 @@
       integer i,j
 
 #ifdef QCORRECTION && !defined ANA_SST
+! Add relaxation of sst back to climatological value to avoid long-
+! term drift. dSSTdt below is "piston velocity" expressed in [m/s].
       do j=j0,j1
         do i=i0,i1
           stflx(i,j,itemp)=
