@@ -34,7 +34,7 @@
 
       integer :: navg = 0
 
-#ifdef BULK_FRC      
+#ifdef BULK_FRC 
       real,allocatable,dimension(:,:) :: tair_avg
       real,allocatable,dimension(:,:) :: Q_avg
       real,allocatable,dimension(:,:) :: prate_avg
@@ -43,8 +43,8 @@
       real,allocatable,dimension(:,:) :: uwnd_avg
       real,allocatable,dimension(:,:) :: vwnd_avg
       real,allocatable,dimension(:,:) :: ssflx_avg
-      real,allocatable,dimension(:,:) :: prate_ms ! prate (precipitation rate in m/s)      
-#ifdef TAU_CORRECTION      
+      real,allocatable,dimension(:,:) :: prate_ms ! prate (precipitation rate in m/s)
+#ifdef TAU_CORRECTION
       real,allocatable,dimension(:,:) :: taux_avg
       real,allocatable,dimension(:,:) :: tauy_avg
 #endif
@@ -80,7 +80,7 @@
       prate_ms(:,:)=0
 
       if (do_avg) then
-#ifdef BULK_FRC      
+#ifdef BULK_FRC 
         allocate(tair_avg(GLOBAL_2D_ARRAY) )
         tair_avg(:,:)=0
         allocate(Q_avg(GLOBAL_2D_ARRAY) )
@@ -96,8 +96,8 @@
         allocate(vwnd_avg(GLOBAL_2D_ARRAY) )
         vwnd_avg(:,:)=0
         allocate(ssflx_avg(GLOBAL_2D_ARRAY) )
-        ssflx_avg(:,:)=0        
-#ifdef TAU_CORRECTION      
+        ssflx_avg(:,:)=0 
+#ifdef TAU_CORRECTION 
         allocate(taux_avg(GLOBAL_2D_ARRAY) )
         taux_avg(:,:)=0
         allocate(tauy_avg(GLOBAL_2D_ARRAY) )
@@ -119,7 +119,7 @@
  
       endif ! done
 
-      end subroutine init_frc  !]        
+      end subroutine init_frc  !] 
 !----------------------------------------------------------------------
       subroutine calc_average ![
       ! Update averages
@@ -135,7 +135,7 @@
 
       coef = 1./navg
 
-#ifdef BULK_FRC      
+#ifdef BULK_FRC 
       tair_avg(:,:)  = tair_avg(:,:)*(1-coef)  + tair(:,:)*coef
       Q_avg(:,:)     = Q_avg(:,:)*(1-coef)     + Q(:,:)*coef
       prate_avg(:,:) = prate_avg(:,:)*(1-coef) + prate_ms(:,:)*coef
@@ -209,7 +209,7 @@
       call ncwrite(ncid,'Q',Q(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'prate',prate_ms(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'lwrad',lwrad(i0:i1,j0:j1),(/1,1,record/))
-      call ncwrite(ncid,'evap',evap(i0:i1,j0:j1),(/1,1,record/))      
+      call ncwrite(ncid,'evap',evap(i0:i1,j0:j1),(/1,1,record/))
 #ifdef TAU_CORRECTION
       call ncwrite(ncid,'taux',taux(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'tauy',tauy(i0:i1,j0:j1),(/1,1,record/))
@@ -237,7 +237,7 @@
       navg = 0
 
       end subroutine wrt_frc  !]
-! ----------------------------------------------------------------------      
+! ----------------------------------------------------------------------
       subroutine create_frc_file(fname) ![
       implicit none
 
@@ -310,11 +310,11 @@
       ierr = nf90_put_att(ncid,varid,'units','m s-1')
 #ifdef TAU_CORRECTION
       ! Input comes in units of:         N (kg m-1 s-2)
-      ! Output is written in units of:   N (kg m-1 s-2) 
+      ! Output is written in units of:   N (kg m-1 s-2)
       varid = nccreate(ncid,'taux',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),prec)
       ierr=nf90_put_att(ncid, varid, 'long_name',
      &           'wind stress correction term (x)')
-      ierr = nf90_put_att(ncid,varid,'units','kg m-1 s-2')      
+      ierr = nf90_put_att(ncid,varid,'units','kg m-1 s-2')
 
       ! Input comes in units of:         N (kg m-1 s-2)
       ! Output is written in units of:   N (kg m-1 s-2)   
@@ -370,7 +370,7 @@
       varid = nccreate(ncid,'svstr',(/dn_xr,dn_yv,dn_tm/),(/xi_rho,eta_v,0/),prec)
       ierr=nf90_put_att(ncid, varid, 'long_name',
      &           'wind stress (eta direction)')
-      ierr = nf90_put_att(ncid,varid,'units','m2 s-2')      
+      ierr = nf90_put_att(ncid,varid,'units','m2 s-2')
 #else
       ! Input comes in units of:         N m-2
       ! Output is written in units of:   m2 s-2
