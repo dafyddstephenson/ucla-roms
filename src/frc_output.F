@@ -34,7 +34,7 @@
 
       integer :: navg = 0
 
-#ifdef BULK_FRC 
+#ifdef BULK_FRC
       real,allocatable,dimension(:,:) :: tair_avg
       real,allocatable,dimension(:,:) :: Q_avg
       real,allocatable,dimension(:,:) :: prate_avg
@@ -80,7 +80,7 @@
       prate_ms(:,:)=0
 
       if (do_avg) then
-#ifdef BULK_FRC 
+#ifdef BULK_FRC
         allocate(tair_avg(GLOBAL_2D_ARRAY) )
         tair_avg(:,:)=0
         allocate(Q_avg(GLOBAL_2D_ARRAY) )
@@ -96,8 +96,8 @@
         allocate(vwnd_avg(GLOBAL_2D_ARRAY) )
         vwnd_avg(:,:)=0
         allocate(ssflx_avg(GLOBAL_2D_ARRAY) )
-        ssflx_avg(:,:)=0 
-#ifdef TAU_CORRECTION 
+        ssflx_avg(:,:)=0
+#ifdef TAU_CORRECTION
         allocate(taux_avg(GLOBAL_2D_ARRAY) )
         taux_avg(:,:)=0
         allocate(tauy_avg(GLOBAL_2D_ARRAY) )
@@ -119,7 +119,7 @@
  
       endif ! done
 
-      end subroutine init_frc  !] 
+      end subroutine init_frc  !]
 !----------------------------------------------------------------------
       subroutine calc_average ![
       ! Update averages
@@ -135,7 +135,7 @@
 
       coef = 1./navg
 
-#ifdef BULK_FRC 
+#ifdef BULK_FRC
       tair_avg(:,:)  = tair_avg(:,:)*(1-coef)  + tair(:,:)*coef
       Q_avg(:,:)     = Q_avg(:,:)*(1-coef)     + Q(:,:)*coef
       prate_avg(:,:) = prate_avg(:,:)*(1-coef) + prate_ms(:,:)*coef
@@ -317,7 +317,7 @@
       ierr = nf90_put_att(ncid,varid,'units','kg m-1 s-2')
 
       ! Input comes in units of:         N (kg m-1 s-2)
-      ! Output is written in units of:   N (kg m-1 s-2)   
+      ! Output is written in units of:   N (kg m-1 s-2)
       varid = nccreate(ncid,'tauy',(/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/),prec)
       ierr=nf90_put_att(ncid, varid, 'long_name',
      &           'wind stress correction term (y)')
