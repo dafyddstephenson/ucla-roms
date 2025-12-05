@@ -197,7 +197,7 @@
       call ncwrite(ncid,'tauy',tauy_avg(i0:i1,j0:j1),(/1,1,record/))
 #endif
 #else
-      call ncwrite(ncid,'swflx',swflux_avg(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'swflx',swflx_avg(i0:i1,j0:j1),(/1,1,record/))
 #endif
       call ncwrite(ncid,'sustr',sustr_avg(1:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'svstr',svstr_avg(i0:i1,1:j1),(/1,1,record/))
