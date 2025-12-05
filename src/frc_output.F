@@ -76,9 +76,6 @@
         return
       else
 
-      allocate(prate_ms(GLOBAL_2D_ARRAY) )
-      prate_ms(:,:)=0
-
       if (do_avg) then
 #ifdef BULK_FRC
         allocate(tair_avg(GLOBAL_2D_ARRAY) )
@@ -97,6 +94,8 @@
         vwnd_avg(:,:)=0
         allocate(ssflx_avg(GLOBAL_2D_ARRAY) )
         ssflx_avg(:,:)=0
+        allocate(prate_ms(GLOBAL_2D_ARRAY) )
+        prate_ms(:,:)=0
 #ifdef TAU_CORRECTION
         allocate(taux_avg(GLOBAL_2D_ARRAY) )
         taux_avg(:,:)=0
@@ -167,7 +166,9 @@
       integer :: ierr,itrc,ncid
       character(len=99),save :: fname
 
+#ifdef BULK_FRC
       prate_ms(:,:) = prate(:,:)/(100.*3600.*24.)
+#endif
 
       if (do_avg) call calc_average
 
