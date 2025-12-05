@@ -140,15 +140,15 @@
       prate_avg(:,:) = prate_avg(:,:)*(1-coef) + prate_ms(:,:)*coef
       lwrad_avg(:,:) = lwrad_avg(:,:)*(1-coef) + lwrad(:,:)*coef
       evap_avg(:,:)  = evap_avg(:,:)*(1-coef)  + evap(:,:)*coef
+      uwnd_avg(:,:)  = uwnd_avg(:,:)*(1-coef)  + uwnd(:,:)*coef
+      vwnd_avg(:,:)  = vwnd_avg(:,:)*(1-coef)  + vwnd(:,:)*coef
+      ssflx_avg(:,:) = ssflx_avg(:,:)*(1-coef) + stflx(:,:,isalt)*coef
 #ifdef TAU_CORRECTION
       taux_avg(:,:)  = taux_avg(:,:)*(1-coef)  + taux(:,:)*coef
       tauy_avg(:,:)  = tauy_avg(:,:)*(1-coef)  + tauy(:,:)*coef
 #endif
-      uwnd_avg(:,:)  = uwnd_avg(:,:)*(1-coef)  + uwnd(:,:)*coef
-      vwnd_avg(:,:)  = vwnd_avg(:,:)*(1-coef)  + vwnd(:,:)*coef
-      ssflx_avg(:,:) = ssflx_avg(:,:)*(1-coef) + stflx(:,:,isalt)*coef
 #else
-      swflx_avg(:,:) = swflx_avg(:,:)*(1-coef) + swflux(:,:)*coef
+      swflx_avg(:,:) = swflx_avg(:,:)*(1-coef) + stflx(:,:,isalt)*coef
 #endif
       sustr_avg(:,:) = sustr_avg(:,:)*(1-coef) + sustr(:,:)*coef
       svstr_avg(:,:) = svstr_avg(:,:)*(1-coef) + svstr(:,:)*coef
@@ -188,13 +188,13 @@
       call ncwrite(ncid,'prate',prate_avg(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'lwrad',lwrad_avg(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'evap',evap_avg(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'uwnd',uwnd_avg(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'vwnd',vwnd_avg(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'ssflx',ssflx_avg(i0:i1,j0:j1),(/1,1,record/))
 #ifdef TAU_CORRECTION
       call ncwrite(ncid,'taux',taux_avg(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'tauy',tauy_avg(i0:i1,j0:j1),(/1,1,record/))
 #endif
-      call ncwrite(ncid,'uwnd',uwnd_avg(i0:i1,j0:j1),(/1,1,record/))
-      call ncwrite(ncid,'vwnd',vwnd_avg(i0:i1,j0:j1),(/1,1,record/))
-      call ncwrite(ncid,'ssflx',ssflx_avg(i0:i1,j0:j1),(/1,1,record/))
 #else
       call ncwrite(ncid,'swflx',swflux_avg(i0:i1,j0:j1),(/1,1,record/))
 #endif
@@ -209,15 +209,15 @@
       call ncwrite(ncid,'prate',prate_ms(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'lwrad',lwrad(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'evap',evap(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'uwnd',uwnd(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'vwnd',vwnd(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'ssflx',stflx(i0:i1,j0:j1,isalt),(/1,1,record/))
 #ifdef TAU_CORRECTION
       call ncwrite(ncid,'taux',taux(i0:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'tauy',tauy(i0:i1,j0:j1),(/1,1,record/))
 #endif
-      call ncwrite(ncid,'uwnd',uwnd(i0:i1,j0:j1),(/1,1,record/))
-      call ncwrite(ncid,'vwnd',vwnd(i0:i1,j0:j1),(/1,1,record/))
-      call ncwrite(ncid,'ssflx',stflx(i0:i1,j0:j1,isalt),(/1,1,record/))
 #else
-      call ncwrite(ncid,'swflx',swflux(i0:i1,j0:j1),(/1,1,record/))
+      call ncwrite(ncid,'swflx',stflx(i0:i1,j0:j1,isalt),(/1,1,record/))
 #endif
       call ncwrite(ncid,'sustr',sustr(1:i1,j0:j1),(/1,1,record/))
       call ncwrite(ncid,'svstr',svstr(i0:i1,1:j1),(/1,1,record/))
