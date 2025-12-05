@@ -116,7 +116,6 @@
         allocate(srflx_avg(GLOBAL_2D_ARRAY) )
         srflx_avg(:,:)=0
       endif ! do_avg
- 
       endif ! done
 
       end subroutine init_frc  !]
