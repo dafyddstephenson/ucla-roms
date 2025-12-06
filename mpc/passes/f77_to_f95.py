@@ -70,11 +70,14 @@ def _fix_real(text):
     while j < l and text[j] == " ":
         j += 1
 
-    # REAL*X
+
+    # REAL*X  where X may be digits or a CPP macro (e.g. QUAD)
     if j < l and text[j] == "*":
         k = j + 1
-        while k < l and text[k].isdigit():
+        # Accept any token up to comma, whitespace, or parenthesis.
+        while k < l and text[k] not in (" ", "\t", ",", ")"):
             k += 1
+
         size = text[j+1:k]
         if size:
             return text[:i+1] + f"(kind={size})" + text[k:]

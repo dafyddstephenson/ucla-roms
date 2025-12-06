@@ -151,6 +151,37 @@ def pass_fold_lines(records, cfg):
         #   col >=7: centered tail
         # regardless of omp_dir. That’s what MPC does.
         s2 = [' '] * max(len(s) + 80, 80)
+
+        # ----------------------------------------------------------
+        # This section replicates behaviour in the original MPC to
+        # set a logical 'omp_dir' as true if a line:
+        #   - begins with C/c/*/!
+        #   - contains at least one '$' in columns 2-5
+        # In this case, cols 1-5 are copied on the continuation line
+        # ----------------------------------------------------------
+        is_comment = rec["text"].startswith(("C", "c", "*", "!"))
+
+        has_dollar_in_cols_2_to_5 = False
+        txt = rec["text"]
+        for i in range(1, min(5, len(txt))):   # indices 1..4 = cols 2..5
+            if txt[i] == '$':
+                has_dollar_in_cols_2_to_5 = True
+                break
+
+        is_directive = is_comment and has_dollar_in_cols_2_to_5
+
+        if is_directive:
+            # Copy columns 1–5 exactly from original text
+            for i in range(5):
+                if i < len(txt):
+                    s2[i] = txt[i]
+        else:
+            # Non-directive comment or normal code: blanks
+            s2[:5] = ' '
+        # End of section reproducing weird behaviour
+        #-----------------------------------------------------------
+
+
         s2[5] = '&'  # column 6
 
         # ----------------------------------------------------------
