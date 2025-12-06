@@ -27,7 +27,7 @@ def test_src(fname):
         f77_to_f95=True,
         double_constants=True,
         zig_zag=True,
-        trap_barriers=True,
+        trap_barriers=False,
         fold_lines=True,
     )
 

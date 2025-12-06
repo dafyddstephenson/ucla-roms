@@ -31,7 +31,7 @@ def _fix_integer(text):
     # INTEGER*X
     if j < l and text[j] == "*":
         k = j + 1
-        while k < l and text[k].isdigit():
+        while k < l and text[k] not in (" ", "\t", ",", ")"):
             k += 1
         size = text[j+1:k]
         if size:
@@ -97,31 +97,40 @@ def _fix_real(text):
 
 def _fix_character(text):
     """
-    CHARACTER*X → CHARACTER(len=X)
-    CHARACTER(len=...) left unchanged
+    CHARACTER*X        → CHARACTER(len=X)
+    CHARACTER*(X)      → CHARACTER(len=X)
+    CHARACTER(len=...) → unchanged
+
+    X may be numeric or a macro name, matching original MPC behavior.
     """
+
     l = len(text)
     istr = _first_nonblank(text)
     if istr + 8 >= l:
         return text
 
+    # must begin with CHARACTER
     if text[istr:istr+9].lower() != "character":
         return text
 
-    i = istr + 8
+    i = istr + 8        # index of 'R' in CHARACTER
     j = i + 1
 
+    # skip blanks
     while j < l and text[j] == " ":
         j += 1
 
-    # CHARACTER*(X) or CHARACTER*X
+    # ------------------------------------------------------------
+    # CASE 1: CHARACTER*(...)
+    # ------------------------------------------------------------
     if j < l and text[j] == "*":
         k = j + 1
 
-        # parenthesized form: CHARACTER*(10)
+        # parenthesized form: CHARACTER*(something)
         if k < l and text[k] == "(":
             k2 = k + 1
-            while k2 < l and text[k2].isdigit():
+            # accept any content until ')'
+            while k2 < l and text[k2] != ")":
                 k2 += 1
             if k2 < l and text[k2] == ")":
                 size = text[k+1:k2]
@@ -129,20 +138,30 @@ def _fix_character(text):
                 return text[:i+1] + f"(len={size})" + text[end:]
             return text
 
-        # simple form: CHARACTER*10
+        # --------------------------------------------------------
+        # CASE 2: CHARACTER*something   (simple form)
+        # accept digits or macro tokens until whitespace, ',', ')'
+        # --------------------------------------------------------
         k2 = k
-        while k2 < l and text[k2].isdigit():
+        while k2 < l and text[k2] not in (" ", "\t", ",", ")"):
             k2 += 1
+
         size = text[k:k2]
         if size:
             return text[:i+1] + f"(len={size})" + text[k2:]
         return text
 
-    # CHARACTER(...)
+    # ------------------------------------------------------------
+    # CASE 3: CHARACTER(...)
+    # Already F90 style → leave unchanged
+    # ------------------------------------------------------------
     if j < l and text[j] == "(":
-        return text  # leave as-is
+        return text
 
-    # default CHARACTER — MPC does NOT assign defaults
+    # ------------------------------------------------------------
+    # CASE 4: default CHARACTER
+    # MPC does NOT add default lengths, so leave untouched.
+    # ------------------------------------------------------------
     return text
 
 
