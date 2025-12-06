@@ -31,11 +31,16 @@ def pass_fold_lines(records, cfg):
         # ----------------------------------------------------------
         # Step 1: find candidate split positions  (ks0..ks5)
         # ----------------------------------------------------------
+
+        # print("\n--- FOLD DEBUG ---")
+        # print("Original text:", text)
+        # print("Length:", len(text), "lstr:", lstr)
         ks0 = ks1 = ks2 = ks3 = ks4 = ks5 = 0
 
         # Fortran: DO k = 7, 72   (1-based)
         # Python: indices 6..72 inclusive (0-based)
-        for k in range(6, min(72, lstr) + 1):
+        for k in range(6, min(72, lstr)):
+#        for k in range(6, min(72, lstr) + 1):
             ch = s[k]
             if ch == ';':
                 ks0 = k
@@ -47,8 +52,18 @@ def pass_fold_lines(records, cfg):
                 ks3 = k
             elif ch == '/':
                 ks4 = k
-            elif ch in ['+', '-', '*']:
+            elif ch == '+' or ch == '-' or ch != '*':
                 ks5 = k
+            # elif ch in ['+', '-', '*']:
+            #     ks5 = k
+
+        # print("Raw ks values:")
+        # print("  ks0 (;) =", ks0)
+        # print("  ks1 (space) =", ks1)
+        # print("  ks2 (,) =", ks2)
+        # print("  ks3 (=) =", ks3)
+        # print("  ks4 (/) =", ks4)
+        # print("  ks5 (+-*) =", ks5)
 
         def filter_ks(ks):
             # Fortran: IF (lstr - ks1 > 66) ks1 = 0
@@ -63,6 +78,14 @@ def pass_fold_lines(records, cfg):
         ks4 = filter_ks(ks4)
         ks5 = filter_ks(ks5)
 
+        # print("Filtered ks values:")
+        # print("  ks0 =", ks0)
+        # print("  ks1 =", ks1)
+        # print("  ks2 =", ks2)
+        # print("  ks3 =", ks3)
+        # print("  ks4 =", ks4)
+        # print("  ks5 =", ks5)
+
         # ----------------------------------------------------------
         # Step 2: choose split point exactly as MPC
         # ----------------------------------------------------------
@@ -75,30 +98,38 @@ def pass_fold_lines(records, cfg):
         #   ELSEIF (ks5 > 6)  k = ks5-1
         #
         # Our ks* are 0-based, so thresholds are shifted by 1.
-        if ks0 > 5:           # 6 (0-based) == column 7
+        split = None
+        if ks0 > 5:
             split = ks0
-        elif ks1 > 33:        # column >34 → index >33
+            reason = "ks0 (semicolon)"
+        elif ks1 > 33:
             split = ks1
+            reason = "ks1 (space >34)"
         elif ks4 > 5:
             split = ks4 - 1
+            reason = "ks4 (slash)"
         elif ks2 > 53:
             split = ks2
+            reason = "ks2 (comma >54)"
         elif ks3 > 59:
             split = ks3
+            reason = "ks3 (equals >60)"
         elif ks5 > 5:
             split = ks5 - 1
+            reason = "ks5 (operator)"
         else:
-            # Cannot split → emit as is
+            # print("NO VALID SPLIT FOUND — emitting as-is")
             new_rec = rec.copy()
             new_rec["lstr"] = len(text) - 1
             out_records.append(new_rec)
             continue
-
+        # print("Chosen split index:", split, "Reason:", reason)
         # ----------------------------------------------------------
         # Step 3: First line segment
         # ----------------------------------------------------------
         # MPC keeps trailing whitespace on the line being wrapped.
         first_text = "".join(s[:split + 1])
+        # print("First segment:", repr(first_text))
 
         first_rec = rec.copy()
         first_rec["text"] = first_text
@@ -139,6 +170,9 @@ def pass_fold_lines(records, cfg):
             start = 6  # don’t overwrite the '&' in col 6 (idx 5)
 
         end = start + len(tail)
+        # print("Tail length =", len(tail))
+        # print("Placing tail from", start, "to", end)
+
         if len(s2) < end:
             s2.extend([' '] * (end - len(s2)))
 
@@ -148,6 +182,9 @@ def pass_fold_lines(records, cfg):
         if lcont < 0:
             lcont = 0
 
+        cont_text = "".join(s2[:lcont + 1]).rstrip()
+        # print("Continuation segment:", repr(cont_text))
+        # print("--- END DEBUG ---\n")
         # MPC trims the continuation line’s trailing spaces.
         cont_text = "".join(s2[:lcont + 1]).rstrip()
 
