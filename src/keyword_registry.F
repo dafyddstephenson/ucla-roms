@@ -135,13 +135,13 @@
 
          do i = 1, kw_idx
             if (registry(i)%required .and. (registry(i)%found==0)) then
-               if (mynode==0) write(*,"(3A)") "Required keyword",
-     &              registry(i)%name, "not found"
+               if (mynode==0) write(*,"(3A)") "ERROR: Required keyword ",
+     &              registry(i)%name, " not found"
                ierr=ierr+1
             elseif (registry(i)%found>1) then
                if (mynode==0) write(*,"(3A,I0)")
-     &              "Multiple instances of keyword", registry(i)%name,
-     &              "found: ", registry(i)%found
+     &              "ERROR: Multiple instances of keyword ", registry(i)%name,
+     &              " found: ", registry(i)%found
                ierr=ierr+1
             end if
          end do

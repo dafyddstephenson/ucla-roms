@@ -54,11 +54,12 @@
          call register_keyword(name="bottom_drag",handler=kwread_bottom_drag)
 
 #ifdef SOLVE3D
-#if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
-         &&                     !defined MY2_MIXING && !defined MY25_MIXING
+!#if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
+!         &&                     !defined MY2_MIXING && !defined MY25_MIXING
 
-         call register_keyword(name="vertical_mixing",handler=kwread_vertical_mixing)
-#endif
+         call register_keyword(name="vertical_mixing",
+     &        required=.false., handler=kwread_vertical_mixing)
+!#endif
 #ifdef MY25_MIXING
          call register_keyword(name="MY_bak_mixing",handler=kwread_my_bak_mixing)
 #endif
@@ -725,8 +726,8 @@
       end subroutine kwread_bottom_drag
 
 #ifdef SOLVE3D
-# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING \
-      &&                        !defined MY2_MIXING && !defined MY25_MIXING
+!# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING \
+!      &&                        !defined MY2_MIXING && !defined MY25_MIXING
 
       subroutine kwread_vertical_mixing(unit, ierr)
 ! Background vertical viscosity and mixing coefficients for tracers.
@@ -755,7 +756,7 @@
       end do
 
       end subroutine kwread_vertical_mixing
-# endif
+!# endif
 
 # ifdef MY25_MIXING
       subroutine kwread_MY_bak_mixing(unit, ierr)
