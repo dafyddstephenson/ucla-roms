@@ -488,7 +488,7 @@
 
       integer, intent(in) :: unit
       integer, intent(inout) :: ierr
-      integer :: ios, lstr
+      integer :: ios, lstr, lenstr
 
 ! ---------------------------------------------------------
 ! Read MARBL namelist file
@@ -499,7 +499,7 @@
          return
       end if
 
-      lstr = len_trim(marbl_namelist_fname)
+      lstr = lenstr(marbl_namelist_fname)
       mpi_master_only write(*,'(1x,A,15x,A)'),
      &     'MARBL namelist file',marbl_namelist_fname(1:lstr)
 
@@ -512,7 +512,7 @@
          return
       end if
 
-      lstr = len_trim(marbl_tracer_list_fname)
+      lstr = lenstr(marbl_tracer_list_fname)
       mpi_master_only write(*,'(1x,A,5x,A)'),
      &     'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
 
@@ -526,7 +526,7 @@
          return
       end if
 
-      lstr = len_trim(marbl_diag_list_fname)
+      lstr = lenstr(marbl_diag_list_fname)
       mpi_master_only write(*,'(1x,A,1x,A)'),
      &     'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
 #endif
