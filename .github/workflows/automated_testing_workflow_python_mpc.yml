@@ -31,7 +31,7 @@ jobs:
       run: |
         source $HOME/.bashrc
         conda activate roms_env
-        conda install pytest requests
+        conda install pytest
         echo "The Conda prefix is ${CONDA_PREFIX}"
         conda info
 
@@ -56,6 +56,15 @@ jobs:
         echo "also the cpp path is"
         which cpp
       shell: bash
+
+    - name: Git test
+      - run: |
+          echo "SHA in CI:"
+          git rev-parse HEAD
+          echo "Does commit object exist?"
+          git cat-file -t 75208625d3e5afd96fa9db8e809146da4c53d7de || echo "Missing!"
+          echo "Trying git show:"
+          git show 75208625d3e5afd96fa9db8e809146da4c53d7de:Tools-Roms/mpc.F || echo "File not present"
 
     - name: Run Tests
       #run: bash Examples/code_check/do_test_all.sh

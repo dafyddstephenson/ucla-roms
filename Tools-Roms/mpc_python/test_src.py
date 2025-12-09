@@ -7,14 +7,6 @@ import tempfile
 import shutil
 from pathlib import Path
 import subprocess
-import requests
-
-# conftest.py
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
-import subprocess
 
 
 # Commit from which to fetch legacy MPC code for comparison
