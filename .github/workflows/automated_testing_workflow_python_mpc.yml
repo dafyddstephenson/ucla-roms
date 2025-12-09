@@ -58,7 +58,8 @@ jobs:
       shell: bash
 
     - name: Git test
-      - run: |
+      shell: bash
+      run: |
           echo "SHA in CI:"
           git rev-parse HEAD
           echo "Does commit object exist?"
