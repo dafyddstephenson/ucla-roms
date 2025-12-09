@@ -730,12 +730,15 @@
 !      &&                        !defined MY2_MIXING && !defined MY25_MIXING
 
       subroutine kwread_vertical_mixing(unit, ierr)
-! Background vertical viscosity and mixing coefficients for tracers.
+!     Background vertical viscosity and mixing coefficients for tracers.
       implicit none
 
       integer, intent(in)    :: unit
       integer, intent(inout) :: ierr
       integer :: ios, itrc, lstr, lenstr
+      character(len=10) :: parameter_type
+
+
 
       read(unit,*,iostat=ios) Akv_bak, (Akt_bak(itrc), itrc=1,NT)
       if (ios /= 0) then
@@ -743,16 +746,22 @@
          return
       end if
 
-      mpi_master_only write(*,'(4x,A,ES10.3,2x,A)')
+#if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING \
+      &&                        !defined MY2_MIXING && !defined MY25_MIXING
+      parameter_type = "background"
+#else
+      parameter_type = "additional"
+#endif
+
+      mpi_master_only write(*,'(4x,A,ES10.3,2x,2A)')
      &    'Akv_bak =', Akv_bak,
-     &    'background vertical viscosity [m^2/s]'
+     &    parameter_type, ' vertical viscosity [m^2/s]'
 
       do itrc = 1, NT
-         lstr = lenstr(vname(2,indxT+itrc-1))
-         mpi_master_only write(*,'(1x,A,I1,A,ES10.3,2x,2A)')
+         mpi_master_only write(*,'(1x,A,I1,A,ES10.3,2x,2A,I0)')
      &       'Akt_bak(', itrc, ') =', Akt_bak(itrc),
-     &       'background vertical mixing [m^2/s] for ',
-     &       vname(2,indxT+itrc-1)(1:lstr)
+     &       parameter_type,' vertical mixing [m^2/s] for tracer #',
+     &       itrc
       end do
 
       end subroutine kwread_vertical_mixing
