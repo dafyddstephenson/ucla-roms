@@ -38,7 +38,7 @@ jobs:
     - name: Set Environment Variables
       run: |
         source $HOME/.bashrc
-        conda activate roms-ci
+        conda activate roms_env
         ROMS_ROOT=$(pwd)
         NETCDFHOME=${CONDA_PREFIX}
         LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$NETCDFHOME/lib"
