@@ -736,7 +736,7 @@
       integer, intent(in)    :: unit
       integer, intent(inout) :: ierr
       integer :: ios, itrc, lstr, lenstr
-      character(len=10) :: parameter_type
+      character(len=10) :: mixing_type
 
 
 
@@ -748,19 +748,19 @@
 
 #if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING \
       &&                        !defined MY2_MIXING && !defined MY25_MIXING
-      parameter_type = "background"
+      mixing_type = "background"
 #else
-      parameter_type = "additional"
+      mixing_type = "additional"
 #endif
 
       mpi_master_only write(*,'(4x,A,ES10.3,2x,2A)')
      &    'Akv_bak =', Akv_bak,
-     &    parameter_type, ' vertical viscosity [m^2/s]'
+     &    mixing_type, ' vertical viscosity [m^2/s]'
 
       do itrc = 1, NT
          mpi_master_only write(*,'(1x,A,I1,A,ES10.3,2x,2A,I0)')
      &       'Akt_bak(', itrc, ') =', Akt_bak(itrc),
-     &       parameter_type,' vertical mixing [m^2/s] for tracer #',
+     &       mixing_type,' vertical mixing [m^2/s] for tracer #',
      &       itrc
       end do
 
