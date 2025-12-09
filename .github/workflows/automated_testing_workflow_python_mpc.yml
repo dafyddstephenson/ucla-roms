@@ -1,11 +1,11 @@
 name: Pytest on mpc changes
-
 on:
   push:
-    branches: [main]
+    paths:
+      - "Tools-Roms/mpc_python/**"
   pull_request:
-    branches: ['*']
-
+    paths:
+      - "Tools-Roms/mpc_python/**"
 jobs:
   test:
     runs-on: ubuntu-latest
