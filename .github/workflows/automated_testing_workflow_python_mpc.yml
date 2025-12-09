@@ -1,0 +1,68 @@
+name: Pytest on mpc changes
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    - name: Set up Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        environment-file: ci/environment.yml
+
+    - name: Create Conda Environment
+      run: conda env create -f environments/conda_environment.yml
+      shell: bash
+
+    - name: Initialize Conda
+      run: conda init bash
+      shell: bash
+
+    - name: Activate Conda Environment
+      run: |
+        source $HOME/.bashrc
+        conda activate roms_env
+        conda install pytest
+        echo "The Conda prefix is ${CONDA_PREFIX}"
+        conda info
+
+    - name: Set Environment Variables
+      run: |
+        source $HOME/.bashrc
+        conda activate roms-ci
+        ROMS_ROOT=$(pwd)
+        NETCDFHOME=${CONDA_PREFIX}
+        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$NETCDFHOME/lib"
+        PATH="./:$PATH"
+        PATH=$PATH:$ROMS_ROOT/Tools-Roms
+        # Now copy these variables to GITHUB_ENV to source in future steps
+        echo "ROMS_ROOT=$(pwd)" >> $GITHUB_ENV
+        echo "MPIHOME=${CONDA_PREFIX}" >> $GITHUB_ENV
+        echo "NETCDFHOME=${CONDA_PREFIX}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$NETCDFHOME/lib"" >> $GITHUB_ENV
+        echo "PATH="./:$PATH"" >> $GITHUB_ENV
+        echo "PATH=$PATH:$ROMS_ROOT/Tools-Roms" >> $GITHUB_ENV
+        echo "the github env variable is $GITHUB_ENV with contents"
+        cat $GITHUB_ENV
+        echo "also the cpp path is"
+        which cpp
+      shell: bash
+
+    - name: Run Tests
+      #run: bash Examples/code_check/do_test_all.sh
+      shell: bash
+      run: |
+        source $HOME/.bashrc
+        source $GITHUB_ENV
+        conda activate roms_env
+        cd ${ROMS_ROOT}/Tools-Roms/mpc_python/
+        pytest test_src.py
