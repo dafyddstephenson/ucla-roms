@@ -1,19 +1,75 @@
-import pytest
+
+# conftest.py
 import glob
-import subprocess
-from pathlib import Path
 from mpc import MPCConfig, run_mpc
+import pytest
+import tempfile
+import shutil
+from pathlib import Path
+import subprocess
+import requests
+
+# conftest.py
+import pytest
+import tempfile
+import shutil
+from pathlib import Path
+import subprocess
+
+
+# Commit from which to fetch legacy MPC code for comparison
+COMMIT = "75208625d3e5afd96fa9db8e809146da4c53d7de"
+
+@pytest.fixture(scope="session")
+def legacy_mpc_binary(tmp_path_factory):
+    """
+    Build the historical MPC exactly once per test session.
+    Must use tmp_path_factory because session-scoped fixtures
+    cannot depend on function-scoped fixtures like tmp_path.
+    """
+
+    build_dir = tmp_path_factory.mktemp("legacy_mpc")
+
+    def extract(commit_path, local_name):
+        result = subprocess.run(
+            ["git", "show", f"{COMMIT}:{commit_path}"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        out = build_dir / local_name
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result.stdout)
+        return out
+
+    # Historical source layout
+    extract("Tools-Roms/mpc.F",       "mpc.F")
+    extract("Tools-Roms/Makefile",    "Makefile")
+    extract("Tools-Roms/Make.depend", "Make.depend")
+    extract("src/Makedefs.inc",       "../src/Makedefs.inc")
+
+    # Build once
+    subprocess.run(
+        ["make", "mpc"],
+        cwd=build_dir,
+        check=True,
+        text=True,
+        capture_output=True
+    )
+
+    return str(build_dir / "mpc")
 
 # Collect all .F test inputs
 test_inputs = sorted(glob.glob("../src//*.F"))
 
 @pytest.mark.parametrize("fname", test_inputs)
-def test_src(fname):
+def test_src(fname, legacy_mpc_binary):
     # Generate expected output with actual mpc
     # expected_path = tmp_path/Path(fname).name.replace(".F","_expected.fpp")
 
     # spr=subprocess.run(f"mpc {fname} > {expected_path}", text=True, shell=True,check=True)
-    old=subprocess.run(f"mpc {fname}", text=True, shell=True,check=True, capture_output=True)
+    binary = legacy_mpc_binary
+    old=subprocess.run(f"{binary} {fname}", text=True, shell=True,check=True, capture_output=True)
 
     expected=old.stdout.splitlines(keepends=True)
 

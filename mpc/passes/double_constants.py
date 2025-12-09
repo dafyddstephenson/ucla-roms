@@ -2,140 +2,143 @@
 
 def pass_double_constants(records, cfg):
     """
-    Faithful translation of the DOUBLE_CONST block from MPC.
-    Text is assumed 0-based; entire line is considered valid
-    search space (Fortran fixed columns no longer apply).
+    Convert single-precision real literals into double-precision literals.
+    Reconstructs legacy MPC's DOUBLE_CONST block
+
+    A floating constant is identified by:
+      - a dot outside of any quotes
+      - at least one digit to the left of the dot
+      - at least one digit to the right
+      - not immediately preceded (ignoring blanks) by a letter unless
+        the scan reached column 0
+
+    Once identified, each real literal is examined for:
+      • explicit exponent marker     → rewrite e/E/d/D to D
+      • underscore kind suffix (_4)  → leave unchanged
+      • no exponent/suffix           → append '_8' (because KIND_STYLE=True)
+
+    Dots are processed right-to-left to preserve original indexing behavior.
     """
 
-    KIND_STYLE = True    # corresponds to #define KIND_STYLE
-    RUTGERS = False      # corresponds to #define RUTGERS
+    KIND_STYLE = True   # corresponds to #define KIND_STYLE
+    RUTGERS = False     # unused but kept for fidelity
 
-    def is_digit(ch):
-        return '0' <= ch <= '9'
+    def is_digit(c):
+        return '0' <= c <= '9'
 
-    def is_letter(ch):
-        return ('A' <= ch <= 'Z') or ('a' <= ch <= 'z')
+    def is_letter(c):
+        return ('A' <= c <= 'Z') or ('a' <= c <= 'z')
 
     for rec in records:
         text = rec["text"]
         s = list(text)
         lstr = rec.get("lstr", len(s) - 1)
 
-        # Safe char access (blank beyond bounds)
+        # safe character accessor
         def char_at(i):
-            if 0 <= i < len(s):
-                return s[i]
-            return ' '
+            return s[i] if 0 <= i < len(s) else ' '
 
-        # -------------------------------------------------------
-        # (1) Collect positions of dots that are OUTSIDE quotes.
-        # -------------------------------------------------------
+        # ------------------------------------------------------------
+        # 1. Identify all '.' outside of quotes
+        # ------------------------------------------------------------
         dots = []
         in_string = False
-        open_quote = None  # track quote type (' or ")
+        quote_char = None
 
         for i in range(0, lstr + 1):
             ch = char_at(i)
             if ch in ("'", '"'):
                 if not in_string:
                     in_string = True
-                    open_quote = ch
-                elif open_quote == ch:
+                    quote_char = ch
+                elif quote_char == ch:
                     in_string = False
-                    open_quote = None
+                    quote_char = None
             elif ch == '.' and not in_string:
                 dots.append(i)
 
-        # -------------------------------------------------------
-        # Process from RIGHT to LEFT
-        # -------------------------------------------------------
-        for dot_index in reversed(dots):
-            m = dot_index
-            is_idx = m  # leftmost digit
-            # Step (2): scan LEFT for digits; stop on first nonblank nondigit
-            left_scan_ptr = m
+        # ------------------------------------------------------------
+        # 2. Process dots from RIGHT to LEFT
+        # ------------------------------------------------------------
+        for dot in reversed(dots):
+            # ----- Left scan -----
+            left_ptr = dot
+            is_idx = dot
             hit_col0 = False
 
-            while left_scan_ptr > 0:
-                left_scan_ptr -= 1
-                ch = char_at(left_scan_ptr)
-                if is_digit(ch):
-                    is_idx = left_scan_ptr
-                elif ch != ' ':
+            while left_ptr > 0:
+                left_ptr -= 1
+                c = char_at(left_ptr)
+
+                if is_digit(c):
+                    is_idx = left_ptr
+                elif c != ' ':
                     break
-                if left_scan_ptr == 0:
+
+                if left_ptr == 0:
                     hit_col0 = True
                     break
 
-            prev_char = char_at(left_scan_ptr)
+            prev = char_at(left_ptr)
 
-            # Step (3): reject if previous symbol is a letter (unless hit col0)
-            if (not hit_col0) and is_letter(prev_char):
-                continue  # reject candidate
+            # reject real constant if previous nonblank nondigit is a letter
+            if not hit_col0 and is_letter(prev):
+                continue
 
-            # ---------------------------------------------------
-            # Step (4): scan RIGHT for digits & first nonblank nondigit
-            # ---------------------------------------------------
-            right_scan_ptr = dot_index
-            ie_idx = dot_index
+            # ----- Right scan -----
+            right_ptr = dot
+            ie_idx = dot
 
-            while right_scan_ptr < lstr:
-                right_scan_ptr += 1
-                ch = char_at(right_scan_ptr)
-                if is_digit(ch):
-                    ie_idx = right_scan_ptr
-                elif ch != ' ':
+            while right_ptr < lstr:
+                right_ptr += 1
+                c = char_at(right_ptr)
+
+                if is_digit(c):
+                    ie_idx = right_ptr
+                elif c != ' ':
                     break
 
-            # After loop, right_scan_ptr is first nonblank nondigit
-            after = char_at(right_scan_ptr)
+            after = char_at(right_ptr)
 
-            # If no digits around dot → not a real constant
+            # must have at least one digit on each side
             if not (is_idx < ie_idx):
                 continue
 
-            # ---------------------------------------------------
-            # Step (5a): exponent letter e/E/d/D
-            # ---------------------------------------------------
+            # --------------------------------------------------------
+            # exponent case: e/E/d/D
+            # --------------------------------------------------------
             if after in ('e', 'E', 'd', 'D'):
-                # skip blanks to find exponent sign or digit
-                p = right_scan_ptr + 1
+                p = right_ptr + 1
+
+                # skip blanks to exponent sign or digit
                 while p <= lstr and char_at(p) == ' ':
                     p += 1
+
                 chp = char_at(p)
                 if chp in ('+', '-') or is_digit(chp):
-                    # valid exponent → convert to D
-                    if 0 <= right_scan_ptr < len(s):
-                        s[right_scan_ptr] = 'D'
+                    # rewrite exponent letter to D
+                    if 0 <= right_ptr < len(s):
+                        s[right_ptr] = 'D'
                 continue
 
-            # ---------------------------------------------------
-            # Step (5b): underscore suffix (RUTGERS not used here)
-            # ---------------------------------------------------
+            # --------------------------------------------------------
+            # underscore suffix → leave unchanged
+            # --------------------------------------------------------
             if after == '_':
-                # Standard F90 kind: 1.0_4 or 1.0_8 → leave unchanged
-                # Optional RUTGERS mode not enabled
                 continue
 
-            # ---------------------------------------------------
-            # Step (5c): no exponent letter → append D0 or _8
-            # ---------------------------------------------------
+            # --------------------------------------------------------
+            # no exponent or suffix → append _8
+            # --------------------------------------------------------
             if not is_letter(after):
                 insert_at = ie_idx + 1
-
-                # # Move left to skip blanks before insertion
-                # insert_at = right_scan_ptr
-                # while char_at(insert_at - 1) == ' ' and insert_at > 0:
-                #     insert_at -= 1
-
                 annotation = '_8' if KIND_STYLE else 'D0'
-                tail = s[insert_at:lstr + 1]
+                tail = s[insert_at : lstr + 1]
                 s = s[:insert_at] + list(annotation) + tail
-                lstr += 2
-                # continue scanning leftward dots
+                lstr += len(annotation)
                 continue
 
-        # Finalize record
+        # finalize updates
         rec["text"] = "".join(s)
         rec["lstr"] = len(s) - 1
 

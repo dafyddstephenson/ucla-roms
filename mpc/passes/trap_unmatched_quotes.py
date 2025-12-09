@@ -2,57 +2,61 @@
 
 def pass_trap_unmatched_quotes(records, cfg):
     """
-    Faithful recreation of MPC's TRAP_UNMATCHED_QUOTES:
+    Insert error-message records for any input line that contains unmatched
+    quotes.
 
-        /6x, '### ERROR: Unmatched quote on line ', I4, /
+    This pass operates *after* `passes.cleanup`, which is responsible for
+    scanning the original source lines, detecting quote imbalances, and
+    assigning each cleanup record an `unmatched_quotes` boolean field.
 
-    Which emits:
-        <blank line>
-              ### ERROR: Unmatched quote on line XXX
-        <blank line>
+    For every record where `unmatched_quotes` is True, this pass emits:
+
+        <blank synthetic record>
+              ### ERROR: Unmatched quote on line XXXX
+        <blank synthetic record>
+
+    immediately *before* the original record. The original record is always
+    preserved as-is.
+
+    All injected lines follow the same structural schema as cleanup records
+    (`raw`, `line`, `text`, `istr`, `lstr`, `omp_dir`, `unmatched_quotes`)
+    so that downstream passes may treat them uniformly.
     """
 
     out = []
 
+    def make_blank(line_no):
+        """Create a schema-compliant blank synthetic record."""
+        return {
+            "raw": "",
+            "line": line_no,
+            "text": "",
+            "istr": 0,
+            "lstr": -1,
+            "omp_dir": False,
+            "unmatched_quotes": False,
+        }
+
+    def make_error(line_no):
+        """Create the formatted unmatched-quote error record."""
+        msg = f"      ### ERROR: Unmatched quote on line{line_no:4d}"
+        return {
+            "raw": "",
+            "line": line_no,
+            "text": msg,
+            "istr": 0,
+            "lstr": len(msg) - 1,
+            "omp_dir": False,
+            "unmatched_quotes": False,
+        }
+
     for rec in records:
-        if rec.get("unmatched_quotes", False):
+        if rec.get("unmatched_quotes"):
             line_no = rec["line"]
-            formatted = f"      ### ERROR: Unmatched quote on line{line_no:4d}"
+            out.append(make_blank(line_no))
+            out.append(make_error(line_no))
+            out.append(make_blank(line_no))
 
-            # --- Blank line BEFORE ---
-            out.append({
-                "raw": "",
-                "line": line_no,
-                "text": "",
-                "istr": 0,
-                "lstr": -1,
-                "omp_dir": False,
-                "unmatched_quotes": False,
-            })
-
-            # --- ERROR line itself ---
-            out.append({
-                "raw": "",
-                "line": line_no,
-                "text": formatted,
-                "istr": 0,
-                "lstr": len(formatted) - 1,
-                "omp_dir": False,
-                "unmatched_quotes": False,
-            })
-
-            # --- Blank line AFTER ---
-            out.append({
-                "raw": "",
-                "line": line_no,
-                "text": "",
-                "istr": 0,
-                "lstr": -1,
-                "omp_dir": False,
-                "unmatched_quotes": False,
-            })
-
-        # Always append the original record
         out.append(rec)
 
     return out

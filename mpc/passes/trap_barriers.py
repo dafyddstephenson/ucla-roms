@@ -2,73 +2,76 @@
 
 def pass_trap_barriers(records, cfg):
     """
-    Literal translation of MPC's TRAP_BARRIERS logic.
+    Reconstructs legacy MPC's TRAP_BARRIERS block.
 
-    Conditions (mirroring the Fortran):
+    Detects OpenMP barrier directives of the form:
 
-      - Column 1 must be 'C', 'c', or '!'.
-      - Columns 2–5 must be '$OMP' or '$omp'.
-      - Starting from column 6, skip spaces.
-      - If you can read 7 characters and they spell 'BARRIER'
-        (case-insensitive), it's a barrier directive.
+        C$OMP   BARRIER...
+        c$omp   barrier...
+        !$OMP   barrier...
+        *not accepted here (only C/c/! as column 1 markers)
 
-    Anything after 'BARRIER' is allowed (including 'nowait',
-    comments, etc.). No token-boundary checks.
+    Rules:
+      - First character must be C, c, or !.
+      - Characters 2–5 must literally be '$OMP' (case-insensitive).
+      - After column 5, skip spaces.
+      - If the next seven characters spell 'BARRIER' (case-insensitive),
+        the line is a barrier directive.
+
+    For each detection, a synthetic record is inserted immediately
+    before the original line:
+
+        C$    call sync_trap(<counter>)
+
+    The counter increments for each barrier matched.
     """
 
     out = []
-    ibarr = 0  # barrier counter
+    ibarr = 0  # running barrier counter
 
     for rec in records:
         text = rec["text"]
-        lstr = rec.get("lstr", len(text) - 1)  # last significant char (0-based)
+        lstr = rec.get("lstr", len(text) - 1)
 
-        # Need at least 6 characters (C$OMP + something)
+        # Must be long enough to contain sentinel
         if lstr < 5:
             out.append(rec)
             continue
 
-        # Column 1 (Fortran 1-based) -> text[0]
         first = text[0]
         if first not in ("C", "c", "!"):
             out.append(rec)
             continue
 
-        # Columns 2–5 (Fortran) -> text[1:5]
         sentinel = text[1:5]
         if sentinel not in ("$OMP", "$omp"):
             out.append(rec)
             continue
 
-        # is = 6 (Fortran) -> i = 5 (0-based)
+        # Position after sentinel (Fortran col 6 → index 5)
         i = 5
-        # Skip spaces while i maps to is < lstr and char is ' '
         while i <= lstr and text[i] == " ":
             i += 1
 
-        # Need 7 characters from i: text[i:i+7] must be 'BARRIER'
-        # Safest: check bounds directly.
+        # Need 7 chars available for BARRIER
         if i + 6 > lstr:
             out.append(rec)
             continue
 
-        candidate = text[i:i+7]
-        if candidate.lower() != "barrier":
+        if text[i:i+7].lower() != "barrier":
             out.append(rec)
             continue
 
-        # Valid barrier directive: insert sync_trap before it
+        # Barrier matched → insert trap call
         ibarr += 1
-        # Fortran writes '(I4)' into scratch and then strips leading blanks,
-        # so effectively just the integer as a string.
-        trap_line = f"C$    call sync_trap({ibarr})"
+        trap_text = f"C$    call sync_trap({ibarr})"
 
         trap_rec = {
             "raw": "",
             "line": rec["line"],
-            "text": trap_line,
+            "text": trap_text,
             "istr": 0,
-            "lstr": len(trap_line) - 1,
+            "lstr": len(trap_text) - 1,
             "omp_dir": False,
             "unmatched_quotes": False,
         }
