@@ -1,5 +1,6 @@
 
 # conftest.py
+import os
 import glob
 from mpc import MPCConfig, run_mpc
 import pytest
@@ -11,6 +12,7 @@ import subprocess
 
 # Commit from which to fetch legacy MPC code for comparison
 COMMIT = "75208625d3e5afd96fa9db8e809146da4c53d7de"
+roms_root = os.environ.get("ROMS_ROOT","")
 
 @pytest.fixture(scope="session")
 def legacy_mpc_binary(tmp_path_factory):
@@ -54,8 +56,8 @@ def legacy_mpc_binary(tmp_path_factory):
 # Collect all .F test inputs
 # test_inputs = sorted(glob.glob("../src//*.F"))
 test_inputs = sorted(
-    glob.glob("../../src/*.F") +
-    glob.glob("../../src/*.h")
+    glob.glob(roms_root + "/src/*.F") +
+    glob.glob(roms_root + "/src/*.h")
 )
 
 @pytest.mark.parametrize("fname", test_inputs)
@@ -67,7 +69,7 @@ def test_src(fname, legacy_mpc_binary,tmp_path):
     binary = legacy_mpc_binary
     old=subprocess.run(f"{binary} {fname_base}",
                        text=True, shell=True, check=True, capture_output=True,
-                       cwd="../../src")
+                       cwd=roms_root+"/src")
 
     expected=old.stdout.splitlines(keepends=True)
 
