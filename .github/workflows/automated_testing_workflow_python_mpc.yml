@@ -2,79 +2,32 @@ name: Pytest on mpc changes
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - '*'
+    branches: ['*']
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v2
+        fetch-depth: 0   # needed for git show of older commits
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran make
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        environment-file: environments/conda_environment.yml
+        python-version: '3.10'
 
-    - name: Create Conda Environment
-      run: conda env create -f environments/conda_environment.yml
-      shell: bash
-
-    - name: Initialize Conda
-      run: conda init bash
-      shell: bash
-
-    - name: Activate Conda Environment
-      run: |
-        source $HOME/.bashrc
-        conda activate roms_env
-        conda install pytest
-        echo "The Conda prefix is ${CONDA_PREFIX}"
-        conda info
-
-    - name: Set Environment Variables
-      run: |
-        source $HOME/.bashrc
-        conda activate roms_env
-        ROMS_ROOT=$(pwd)
-        NETCDFHOME=${CONDA_PREFIX}
-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$NETCDFHOME/lib"
-        PATH="./:$PATH"
-        PATH=$PATH:$ROMS_ROOT/Tools-Roms
-        # Now copy these variables to GITHUB_ENV to source in future steps
-        echo "ROMS_ROOT=$(pwd)" >> $GITHUB_ENV
-        echo "MPIHOME=${CONDA_PREFIX}" >> $GITHUB_ENV
-        echo "NETCDFHOME=${CONDA_PREFIX}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$NETCDFHOME/lib"" >> $GITHUB_ENV
-        echo "PATH="./:$PATH"" >> $GITHUB_ENV
-        echo "PATH=$PATH:$ROMS_ROOT/Tools-Roms" >> $GITHUB_ENV
-        echo "the github env variable is $GITHUB_ENV with contents"
-        cat $GITHUB_ENV
-        echo "also the cpp path is"
-        which cpp
-      shell: bash
-
-    - name: Git test
-      shell: bash
-      run: |
-          echo "SHA in CI:"
-          git rev-parse HEAD
-          echo "Does commit object exist?"
-          git cat-file -t 75208625d3e5afd96fa9db8e809146da4c53d7de || echo "Missing!"
-          echo "Trying git show:"
-          git show 75208625d3e5afd96fa9db8e809146da4c53d7de:Tools-Roms/mpc.F || echo "File not present"
+    - name: Install Python dependencies
+      run: pip install pytest
 
     - name: Run Tests
-      #run: bash Examples/code_check/do_test_all.sh
-      shell: bash
-      run: |
-        source $HOME/.bashrc
-        source $GITHUB_ENV
-        conda activate roms_env
-        cd ${ROMS_ROOT}/Tools-Roms/mpc_python/
-        pytest test_src.py
+      run: pytest Tools-Roms/mpc_python/test_src.py -v
