@@ -31,7 +31,7 @@ jobs:
       run: |
         source $HOME/.bashrc
         conda activate roms_env
-        conda install pytest
+        conda install pytest requests
         echo "The Conda prefix is ${CONDA_PREFIX}"
         conda info
 
