@@ -60,16 +60,22 @@ def legacy_mpc_binary(tmp_path_factory):
     return str(build_dir / "mpc")
 
 # Collect all .F test inputs
-test_inputs = sorted(glob.glob("../src//*.F"))
+# test_inputs = sorted(glob.glob("../src//*.F"))
+test_inputs = sorted(
+    glob.glob("../../src/*.F") +
+    glob.glob("../../src/*.h")
+)
 
 @pytest.mark.parametrize("fname", test_inputs)
-def test_src(fname, legacy_mpc_binary):
-    # Generate expected output with actual mpc
-    # expected_path = tmp_path/Path(fname).name.replace(".F","_expected.fpp")
+def test_src(fname, legacy_mpc_binary,tmp_path):
 
-    # spr=subprocess.run(f"mpc {fname} > {expected_path}", text=True, shell=True,check=True)
+    fname=Path(fname)
+    fname_base = Path(fname).name
+
     binary = legacy_mpc_binary
-    old=subprocess.run(f"{binary} {fname}", text=True, shell=True,check=True, capture_output=True)
+    old=subprocess.run(f"{binary} {fname_base}",
+                       text=True, shell=True, check=True, capture_output=True,
+                       cwd="../../src")
 
     expected=old.stdout.splitlines(keepends=True)
 
