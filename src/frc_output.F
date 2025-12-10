@@ -166,20 +166,21 @@
       integer :: ierr,itrc,ncid
       character(len=99),save :: fname
 
-#ifdef BULK_FRC
-      prate_ms(:,:) = prate(:,:)/(100.*3600.*24.)
-#endif
-
-      if (do_avg) call calc_average
-
       if (record==nrpf) then
           call create_frc_file(fname)
           record = 0
       endif
 
-      record = record+1
+#ifdef BULK_FRC
+      prate_ms(:,:) = prate(:,:)/(100.*3600.*24.)
+#endif
 
+      if (do_avg) call calc_average
+      output_time = output_time + dt
+
+      if (otime>=output_period) then      
       ierr=nf90_open(fname,nf90_write,ncid)
+      record = record+1
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
       if (do_avg) then
@@ -234,7 +235,10 @@
      &   'step =', iic-1, 'rec =', record
       endif
 
+      output_time = 0
       navg = 0
+
+      endif
 
       end subroutine wrt_frc  !]
 ! ----------------------------------------------------------------------
