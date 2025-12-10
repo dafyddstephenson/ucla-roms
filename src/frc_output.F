@@ -178,7 +178,7 @@
       if (do_avg) call calc_average
       output_time = output_time + dt
 
-      if (otime>=output_period) then
+      if (output_time>=output_period) then
       ierr=nf90_open(fname,nf90_write,ncid)
       record = record+1
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
