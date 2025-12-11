@@ -1202,9 +1202,11 @@
          do i=istr,iend
 
             if (rmask(i,j)==0.) cycle
-            call marbldrv_set_surface_flux_forcing_values(i,j,tracer_array)
-            call marbldrv_set_surface_tracer_values(i,j,tracer_array)
-            call marbldrv_set_surface_flux_saved_state_values(i,j)
+            call marbldrv_set_marbl_surface_flux_forcing_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_surface_tracer_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_surface_flux_saved_state_values(i,j)
 !     Surface tracer values
 
 !     3. Compute surface fluxes using MARBL:
@@ -1225,14 +1227,17 @@
 !     5. Populate MARBL instance interior tendency forcing values:
 !     ----------------------------------------------------------------------
 !     First, update domain in MARBL instance to local geometry:
-            call marbldrv_update_marbl_domain(i,j)
-            call marbldrv_set_interior_tendency_forcing_values(i,j,tracer_array)
-            call marbldrv_set_interior_tracer_values(i,j,tracer_array)
+            call marbldrv_set_marbl_column_geometry(i,j)
+            call marbldrv_set_marbl_interior_tendency_forcing_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_interior_tracer_values(
+     &           i,j,tracer_array)
 
 !     6. Populate MARBL interior tendency saved state values:
 !     ----------------------------------------------------------------------
-            call marbldrv_set_interior_saved_state_values(i,j)
-            call marbldrv_set_bottom_fluxes
+            call marbldrv_set_marbl_interior_saved_state_values(i,j)
+
+            call marbldrv_set_marbl_bottom_fluxes
 
 !     7. Compute interior tendencies using MARBL:
 !     ----------------------------------------------------------------------
@@ -1254,7 +1259,14 @@
 
       end subroutine marbldrv_column_physics
 
-      subroutine marbldrv_set_surface_flux_forcing_values(i,j,tracer_array)
+      subroutine marbldrv_set_marbl_surface_flux_forcing_values(
+     &     i,j,tracer_array)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_marbl_surface_flux_forcing_values
+!     DESCRIPTION:
+!     Populate the MARBL instance`s `surface_flux_forcings` field using
+!     Values from ROMS
+!-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &     intent(in)     :: tracer_array
          integer                                       :: i,j,k,m
@@ -1333,6 +1345,12 @@
       end subroutine marbldrv_set_surface_flux_forcing_values
 
       subroutine marbldrv_set_surface_tracer_values(i,j,tracer_array)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_surface_tracer_values
+!     DESCRIPTION:
+!     Populate the MARBL instance`s `tracers_at_surface` field using
+!     Values from ROMS
+!-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &     intent(in)     :: tracer_array
          integer                                       :: i,j,k,m
@@ -1354,9 +1372,14 @@
       end subroutine marbldrv_set_surface_tracer_values
 
       subroutine marbldrv_set_surface_flux_saved_state_values(i,j)
-         integer                                       :: i,j,k,m
-!     2. Populate MARBL surface flux saved state values:
-!     ----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_surface_flux_saved_state_values
+!     DESCRIPTION:
+!     Populate the MARBL instance`s `surface_flux_saved_state` field
+!     using values from ROMS
+!-----------------------------------------------------------------------
+
+         integer                                       :: i,j,m
          do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
             MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
      &           =marbl_saved_state_2d(i,j,m)
@@ -1378,6 +1401,13 @@
 
 #ifdef MARBL_DIAGS
       subroutine marbldrv_update_roms_diagnostics_surf(i,j)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_diagnostics_surf
+!     DESCRIPTION:
+!     Update ROMS` bgc diagnostics arrays from this MARBL instance`s
+!     `surface_flux_diags` field
+!-----------------------------------------------------------------------
+
          integer :: diagidx2d,diagidx3d ! indices for stepping through diagnostics arrays
          integer :: i,j,m
             diagidx2d=1 ! Initialise array indices to increment
@@ -1405,7 +1435,13 @@
         end subroutine marbldrv_update_roms_diagnostics_surf
 #endif
 
-        subroutine marbldrv_update_roms_tracers_surf(i,j,tracer_array)
+      subroutine marbldrv_update_roms_tracers_surf(i,j,tracer_array)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_tracers_surf
+!     DESCRIPTION:
+!     Update ROMS` tracer arrays at the surface by applying surface
+!     fluxes from this MARBL instance`s `surface_fluxes` field
+!-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &       intent(inout)     :: tracer_array
          integer                                       :: i,j,m
@@ -1431,7 +1467,13 @@
         end do                  ! m=1,nt_marbl
         end subroutine marbldrv_update_roms_tracers_surf
 
-      subroutine marbldrv_update_marbl_domain(i,j)
+      subroutine marbldrv_set_marbl_column_geometry(i,j)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_marbl_column_geometry
+!     DESCRIPTION:
+!     Update MARBL's interior column geometry using ROMS' local vertical
+!     geometry values
+!-----------------------------------------------------------------------
          integer :: i,j
 
          MARBL_instance%domain%zw(:)      = -z_w(i,j,nz-1:0:-1) ! bottom interface depth
@@ -1442,10 +1484,16 @@
       end subroutine marbldrv_update_marbl_domain
 
       subroutine marbldrv_set_interior_tendency_forcing_values(i,j,tracer_array)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_interior_tendency_forcing_values
+!     DESCRIPTION:
+!     Populate this MARBL instance's `interior_tendency_forcings` field
+!     using values from ROMS
+!-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &       intent(inout)     :: tracer_array
          integer :: i,j
-
+!-----------------------------------------------------------------------
 ! dust flux
          if (dustflux_ind > 0) then
             MARBL_instance%interior_tendency_forcings(dustflux_ind)%field_0d(1)=
@@ -1510,9 +1558,18 @@
 
          end do
       end subroutine marbldrv_set_interior_tracer_values
+!-----------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
       subroutine marbldrv_set_interior_saved_state_values(i,j)
-         integer :: i,j,m
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_interior_tendency_forcing_values
+!     DESCRIPTION:
+!     Populate this MARBL instance's `interior_tendency_forcings` field
+!     using values from ROMS
+!-----------------------------------------------------------------------
+      integer :: i,j,m
+!-----------------------------------------------------------------------
 
             do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
                MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1)
@@ -1521,87 +1578,126 @@
 !     Print interior tendency saved state bottom values at a chosen location if desired:
                if ( (i==printi) .and. (j==printj)
      &              .and. (mynode==printnode) .and. (print_values) ) then
-                  print *, 'We just set bottom ',
+                  print *, 'MARBL driver: bottom ',
      &                 trim(MARBL_instance%
      &                 interior_tendency_saved_state%state(m)%long_name)
-     &                 ,' as ',marbl_instance%
+     &                 ,' set as ',marbl_instance%
      &                 interior_tendency_saved_state%state(m)%field_3d(nz,1)
      &                 ,trim(MARBL_instance%interior_tendency_saved_state%state(m)%units)
                end if
 
             end do
       end subroutine marbldrv_set_interior_saved_state_values
+!-----------------------------------------------------------------------
 
       subroutine marbldrv_set_bottom_fluxes
-!     Populate bottom fluxes (0 for now)
-         marbl_instance%bot_flux_to_tend(:)=0.
-         marbl_instance%bot_flux_to_tend(nz)=
-     &        1./MARBL_instance%domain%delta_z(nz)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_bottom_fluxes
+!     DESCRIPTION:
+!     Set this MARBL instance's `bot_flux_to_tend` field. Currently
+!     unimplemented, values set to zero.
+!-----------------------------------------------------------------------
+      marbl_instance%bot_flux_to_tend(:)=0.
+      marbl_instance%bot_flux_to_tend(nz)=
+     &     1./MARBL_instance%domain%delta_z(nz)
+
       end subroutine marbldrv_set_bottom_fluxes
+!-----------------------------------------------------------------------
 
-      subroutine marbldrv_update_roms_tracers_interior(i,j,tracer_array)
-         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+!------------------------------------------------------------------------
+      subroutine marbldrv_update_roms_tracers_interior(i,j,tracer_array)!
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_tracers_interior
+!     DESCRIPTION:
+!     Update ROMS' tracer arrays at the surface by applying interior
+!     tendency fluxes from this MARBL instance's `interior_tendencies`
+!     field
+!-----------------------------------------------------------------------
+      real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &     intent(inout)     :: tracer_array
-         integer                                       :: i,j,m
-
-         do m=1,nt_marbl
-            tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) =
-     &           tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) +
-     &           marbl_instance%interior_tendencies(m,nz:1:-1)*dt
-         end do
+      integer                :: i,j,m
+!-----------------------------------------------------------------------
+      do m=1,nt_marbl
+         tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) =
+     &        tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) +
+     &        marbl_instance%interior_tendencies(m,nz:1:-1)*dt
+      end do
       end subroutine marbldrv_update_roms_tracers_interior
+!-----------------------------------------------------------------------
 
       subroutine marbldrv_update_roms_saved_state_values_interior(i,j)
-         integer:: i,j,m
-         do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
-            marbl_saved_state_3d(i,j,:,m)=
-     &           MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
-         end do
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_saved_state_values_interior
+!     DESCRIPTION:
+!     Update ROMS' marbl_saved_state_3d array using this MARBL instance's
+!     `interior_tendency_saved_state` field
+!-----------------------------------------------------------------------
+      integer:: i,j,m
+!-----------------------------------------------------------------------
+      do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
+         marbl_saved_state_3d(i,j,:,m)=
+     &        MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
+      end do
       end subroutine marbldrv_update_roms_saved_state_values_interior
+!-----------------------------------------------------------------------
 
 #ifdef MARBL_DIAGS
+!-----------------------------------------------------------------------
       subroutine marbldrv_update_roms_diagnostics_interior(i,j)
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_diagnostics_interior
+!     DESCRIPTION:
+!     Update ROMS' bgc diagnostics arrays from this MARBL instance's
+!     `interior_tendency_diags` field
+!-----------------------------------------------------------------------
+      integer :: i,j,m,diagidx2d,diagidx3d
+!-----------------------------------------------------------------------
+      diagidx2d=diag_cnt_sf_2d+1 ! Initialise array indices to increment
+      diagidx3d=diag_cnt_sf_3d+1
 
-         integer :: i,j,m,diagidx2d,diagidx3d
-
-         diagidx2d=diag_cnt_sf_2d+1 ! Initialise array indices to increment
-         diagidx3d=diag_cnt_sf_3d+1
-
-         do m=1,size(MARBL_instance%interior_tendency_diags%diags)
-            if (trim(MARBL_instance%interior_tendency_diags%diags(m
-     &           )%vertical_grid) .eq. "none") then ! 2D field
-               if (wrt_marbl_diag_2d(diagidx2d)) then
-                  marbl_diag_2d(i,j,idx_marbl_diag_2d(diagidx2d))=
-     &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_2d(1))
-               end if
-               diagidx2d=diagidx2d+1
-            else                ! 3D field
-               if (wrt_marbl_diag_3d(diagidx3d)) then
-                  marbl_diag_3d(i,j,:,idx_marbl_diag_3d(diagidx3d))=
-     &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_3d(nz:1:-1,1))
-               end if
-               diagidx3d=diagidx3d+1
-
+      do m=1,size(MARBL_instance%interior_tendency_diags%diags)
+         if (trim(MARBL_instance%interior_tendency_diags%diags(m
+     &        )%vertical_grid) .eq. "none") then ! 2D field
+            if (wrt_marbl_diag_2d(diagidx2d)) then
+               marbl_diag_2d(i,j,idx_marbl_diag_2d(diagidx2d))=
+     &              real(MARBL_instance%interior_tendency_diags%diags(m)%field_2d(1))
             end if
-         end do
-      end subroutine marbldrv_update_roms_diagnostics_interior
-#endif
+            diagidx2d=diagidx2d+1
+         else                   ! 3D field
+            if (wrt_marbl_diag_3d(diagidx3d)) then
+               marbl_diag_3d(i,j,:,idx_marbl_diag_3d(diagidx3d))=
+     &              real(MARBL_instance%interior_tendency_diags%diags(m)%field_3d(nz:1:-1,1))
+            end if
+            diagidx3d=diagidx3d+1
 
-      subroutine marbldrv_compute_interior_tendency(i,j)
-         integer :: i,j
-
-         call marbl_instance%interior_tendency_compute()
-
-         if (marbl_instance%StatusLog%labort_marbl) then
-            print *, 'abort during interior tendency compute'
-            call marbl_instance%StatusLog%log_error_trace(
-     &           "marbl_instance%interior_tendency_compute()",
-     &           "MARBL_tracers_column_physics")
-            call print_marbl_log(marbl_instance%StatusLog,i,j)
-!error stop 'ERROR reported from MARBL library'
          end if
-!            call print_marbl_log(marbl_instance%StatusLog,i,j)
-            call marbl_instance%StatusLog%erase()
+      end do
+      end subroutine marbldrv_update_roms_diagnostics_interior
+!-----------------------------------------------------------------------
+#endif
+!-----------------------------------------------------------------------
+      subroutine marbldrv_compute_interior_tendency(i,j)
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_compute_interior_tendency
+!     DESCRIPTION:
+!     call `interior_tendency_compute()` on this MARBL instance after
+!     populating necessary fields, handling any errors captured in its
+!     StatusLog
+!-----------------------------------------------------------------------
+      integer :: i,j
+!-----------------------------------------------------------------------
+      call marbl_instance%interior_tendency_compute()
+
+      if (marbl_instance%StatusLog%labort_marbl) then
+         print *, 'abort during interior tendency compute'
+         call marbl_instance%StatusLog%log_error_trace(
+     &        "marbl_instance%interior_tendency_compute()",
+     &        "MARBL_tracers_column_physics")
+         call print_marbl_log(marbl_instance%StatusLog,i,j)
+!     error stop 'ERROR reported from MARBL library'
+      end if
+!     call print_marbl_log(marbl_instance%StatusLog,i,j)
+      call marbl_instance%StatusLog%erase()
       end subroutine
 
       subroutine marbldrv_compute_surface_fluxes(i,j)
@@ -1620,6 +1716,12 @@
       end subroutine
 
       subroutine marbldrv_update_roms_saved_state_values_surf(i,j)
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_saved_state_values_surf
+!     DESCRIPTION:
+!     Update ROMS' marbl_saved_state_2d array using this MARBL instance's
+!     `surface_flux_saved_state` field
+!-----------------------------------------------------------------------
          integer :: i,j,m
          do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
             marbl_saved_state_2d(i,j,m)=
@@ -1627,9 +1729,8 @@
          end do
       end subroutine marbldrv_update_roms_saved_state_values_surf
 
-
+!-----------------------------------------------------------------------
       subroutine print_marbl_log(log_to_print,i,j)
-
 !-----------------------------------------------------------------------
 !     SUBROUTINE: print_marbl_log
 !     DESCRIPTION:
@@ -1716,10 +1817,10 @@
 
 
       end subroutine print_marbl_log
+!-----------------------------------------------------------------------
 
-
+!-----------------------------------------------------------------------
       subroutine sf_test_print(ind,i,j)
-
 !-----------------------------------------------------------------------
 !     SUBROUTINE: sf_test_print
 !     DESCRIPTION:
@@ -1736,8 +1837,6 @@
 !     NOTES:
 !
 !-----------------------------------------------------------------------
-
-
       integer, intent(in) :: i,j,ind
 
       if (j==printj) then
@@ -1751,7 +1850,9 @@
          end if
       end if
       end subroutine sf_test_print
+!-----------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
       subroutine if_test_print(ind,i,j)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: if_test_print
