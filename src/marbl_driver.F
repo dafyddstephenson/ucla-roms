@@ -124,7 +124,7 @@
       integer                             :: printi = 4    ! i location
       integer                             :: printj = 4    ! j location
       integer                             :: printnode = 0 ! cpu
-
+      logical                             :: print_values = .false. ! Print example values to stdout during loop
 
 ! ----------------------------------------------------------------------
 
@@ -1194,7 +1194,6 @@
       integer                                       :: diagidx2d,diagidx3d ! indices for stepping through diagnostics arrays
 #endif
       integer                                       :: i,j,k,m
-      logical                                       :: print_values = .false. ! Print example values to stdout during loop
 
 
 !     1. Populate MARBL instance surface flux forcing values:
@@ -1210,7 +1209,7 @@
 
 !     3. Compute surface fluxes using MARBL:
 !     ----------------------------------------------------------------------
-            call marbldrv_compute_surface_fluxes
+            call marbldrv_compute_surface_fluxes(i,j)
 !     4a. Update saved state array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_set_surface_flux_saved_state_values(i,j)
@@ -1246,7 +1245,7 @@
 
 !     7. Compute interior tendencies using MARBL:
 !     ----------------------------------------------------------------------
-            call marbldrv_compute_interior_tendency
+            call marbldrv_compute_interior_tendency(i,j)
 !     8a. Apply calculated increments to ROMS tracer array:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_tracers_interior(i,j,tracer_array)
@@ -1345,7 +1344,7 @@
 
       end subroutine marbldrv_set_surface_flux_forcing_values
 
-      subroutine marbldrv_set_surface_tracer_values
+      subroutine marbldrv_set_surface_tracer_values(i,j,tracer_array)
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &     intent(in)     :: tracer_array
          integer                                       :: i,j,k,m
@@ -1392,7 +1391,7 @@
 #ifdef MARBL_DIAGS
       subroutine marbldrv_update_roms_diagnostics_surf(i,j)
          integer :: diagidx2d,diagidx3d ! indices for stepping through diagnostics arrays
-         integer :: i,j
+         integer :: i,j,m
             diagidx2d=1 ! Initialise array indices to increment
             diagidx3d=1
 
@@ -1415,7 +1414,7 @@
 
                end if
             end do
-        end subroutine marbldrv_update_roms_diagnostics_surf(i,j)
+        end subroutine marbldrv_update_roms_diagnostics_surf
 #endif
 
         subroutine marbldrv_update_roms_tracers_surf(i,j,tracer_array)
@@ -1522,7 +1521,7 @@
             end if
 
          end do
-      end subroutine marbldrv_set_interior_tracer_values(i,j,tracer_array)
+      end subroutine marbldrv_set_interior_tracer_values
 
       subroutine marbldrv_set_interior_saved_state_values(i,j)
          integer :: i,j,m
@@ -1562,10 +1561,10 @@
      &           tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) +
      &           marbl_instance%interior_tendencies(m,nz:1:-1)*dt
          end do
-      end subroutine marbldrv_update_roms_tracers_interior(i,j,tracer_array)
+      end subroutine marbldrv_update_roms_tracers_interior
 
       subroutine marbldrv_update_roms_saved_state_values_interior(i,j)
-         integer:: i,j
+         integer:: i,j,m
          do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
             marbl_saved_state_3d(i,j,:,m)=
      &           MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
@@ -1600,7 +1599,8 @@
       end subroutine marbldrv_update_roms_diagnostics_interior
 #endif
 
-      subroutine marbldrv_compute_interior_tendency
+      subroutine marbldrv_compute_interior_tendency(i,j)
+         integer :: i,j
 
          call marbl_instance%interior_tendency_compute()
 
@@ -1616,7 +1616,8 @@
             call marbl_instance%StatusLog%erase()
       end subroutine
 
-      subroutine marbldrv_compute_surface_fluxes
+      subroutine marbldrv_compute_surface_fluxes(i,j)
+         integer :: i,j
          call marbl_instance%surface_flux_compute()
 
          if (marbl_instance%StatusLog%labort_marbl) then
