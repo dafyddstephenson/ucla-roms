@@ -1203,142 +1203,199 @@
          do i=istr,iend
 
             if (rmask(i,j)==0.) cycle
+            call marbldrv_set_surface_flux_forcing_values(i,j,tracer_array)
+            call marbldrv_set_surface_tracer_values(i,j,tracer_array)
+            call marbldrv_set_surface_flux_saved_state_values(i,j)
+!     Surface tracer values
+
+!     3. Compute surface fluxes using MARBL:
+!     ----------------------------------------------------------------------
+            call marbldrv_compute_surface_fluxes
+!     4a. Update saved state array in ROMS using newly computed values:
+!     ----------------------------------------------------------------------
+            call marbldrv_set_surface_flux_saved_state_values(i,j)
+!     4b. Update diagnostics array in ROMS using newly computed values:
+!     ----------------------------------------------------------------------
+            call marbldrv_update_roms_diagnostics_surf(i,j)
+!     4c. Update tracer array in ROMS using newly computed values:
+!     ----------------------------------------------------------------------
+            call marbldrv_update_roms_tracers_surf(i,j,tracer_array)
+
+         end do   ! j=jstr,jend
+      end do      ! i=istr,iend
+
+
+!     5. Populate MARBL instance interior tendency forcing values:
+!     ----------------------------------------------------------------------
+
+      do j=jstr,jend
+         do i=istr,iend
+            if (rmask(i,j)==0.) cycle
+
+! First, update domain in MARBL instance to local geometry:
+            call marbldrv_update_marbl_domain(i,j)
+
+            call marbldrv_set_interior_tendency_forcing_values(i,j,tracer_array)
+            call marbldrv_set_interior_tracer_values(i,j,tracer_array)
+
+!     6. Populate MARBL interior tendency saved state values:
+!     ----------------------------------------------------------------------
+
+            call marbldrv_set_interior_saved_state_values(i,j)
+            call marbldrv_set_bottom_fluxes
+
+!     7. Compute interior tendencies using MARBL:
+!     ----------------------------------------------------------------------
+            call marbldrv_compute_interior_tendency
+!     8a. Apply calculated increments to ROMS tracer array:
+!     ----------------------------------------------------------------------
+            call marbldrv_update_roms_tracers_interior(i,j,tracer_array)
+!     8b. Update saved state array in ROMS using newly computed values:
+!     ----------------------------------------------------------------------
+            call marbldrv_update_roms_saved_state_values_interior(i,j)
+#ifdef MARBL_DIAGS
+!     8c. Update diagnostics array in ROMS using newly computed values:
+!     ----------------------------------------------------------------------
+            call marbldrv_update_roms_diagnostics_interior(i,j)
+#endif
+
+         end do                 !j=jstr,jend
+      end do                    ! i=istr,iend
+
+
+
+
+      end subroutine marbldrv_column_physics
+
+      subroutine marbldrv_set_surface_flux_forcing_values(i,j,tracer_array)
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &     intent(in)     :: tracer_array
+         integer                                       :: i,j,k,m
 
 ! sea surface salinity
-            if (sss_ind > 0) then
-               marbl_instance%surface_flux_forcings(sss_ind)%field_0d(1)
-     &              =tracer_array(i,j,nz,nnew,isalt) ! (psu)
-               if (print_values) call sf_test_print(sss_ind,i,j)
-            end if
-! sea surface temperature
-            if (sst_ind > 0) then
-               marbl_instance%surface_flux_forcings(sst_ind)%field_0d(1)
-     &              =tracer_array(i,j,nz,nnew,itemp) ! (degC)
-               if (print_values) call sf_test_print(sst_ind,i,j)
-            end if
-! ice fraction (unused)
-            if (ifrac_ind > 0) then
-               marbl_instance%surface_flux_forcings(ifrac_ind)%field_0d(1)=0
+         if (sss_ind > 0) then
+            marbl_instance%surface_flux_forcings(sss_ind)%field_0d(1)
+     &           =tracer_array(i,j,nz,nnew,isalt) ! (psu)
+            if (print_values) call sf_test_print(sss_ind,i,j)
+         end if
+!     sea surface temperature
+         if (sst_ind > 0) then
+            marbl_instance%surface_flux_forcings(sst_ind)%field_0d(1)
+     &           =tracer_array(i,j,nz,nnew,itemp) ! (degC)
+            if (print_values) call sf_test_print(sst_ind,i,j)
+         end if
+!     ice fraction (unused)
+         if (ifrac_ind > 0) then
+            marbl_instance%surface_flux_forcings(ifrac_ind)%field_0d(1)=0
 !     &              ifrac(i,j) ! (dimensionless)
-               if (print_values) call sf_test_print(ifrac_ind,i,j)
-            end if
-! squared 10m windspeed
-            if (u10_sqr_ind > 0) then
-               marbl_instance%surface_flux_forcings(u10_sqr_ind)%field_0d(1)=
-     &               (uwnd(i,j)**2) + (vwnd(i,j)**2) ! (m2/s2)
-               if (print_values) call sf_test_print(u10_sqr_ind,i,j)
-            end if
-! atmospheric pressure (constant)
-            if (atmpress_ind > 0) then
+            if (print_values) call sf_test_print(ifrac_ind,i,j)
+         end if
+!     squared 10m windspeed
+         if (u10_sqr_ind > 0) then
+            marbl_instance%surface_flux_forcings(u10_sqr_ind)%field_0d(1)=
+     &           (uwnd(i,j)**2) + (vwnd(i,j)**2) ! (m2/s2)
+            if (print_values) call sf_test_print(u10_sqr_ind,i,j)
+         end if
+!     atmospheric pressure (constant)
+         if (atmpress_ind > 0) then
             marbl_instance%surface_flux_forcings(atmpress_ind)%field_0d(1)=1.
 !     &              press(i,j) !(atm)
             if (print_values) call sf_test_print(atmpress_ind,i,j)
          end if
-! pco2
-            if (xco2_ind > 0) then
-               marbl_instance%surface_flux_forcings(xco2_ind)%field_0d(1)=
-     &              pco2air(i,j) !(ppm)
-               if (print_values) call sf_test_print(xco2_ind,i,j)
-            end if
-! pco2 (alternative co2 forcing)
-            if (xco2_alt_ind > 0) then
-               marbl_instance%surface_flux_forcings(xco2_alt_ind)%field_0d(1)=
-     &              pco2air_alt(i,j) !(ppm)
-               if (print_values) call sf_test_print(xco2_alt_ind,i,j)
-            end if
-! dust
-            if (dust_dep_ind > 0) then
-               marbl_instance%surface_flux_forcings(dust_dep_ind)%field_0d(1)
-     &              = dust(i,j) !(kg/m2/s)
-               if (print_values) call sf_test_print(dust_dep_ind,i,j)
-            end if
-! iron deposition
-            if (fe_dep_ind > 0) then
-               marbl_instance%surface_flux_forcings(fe_dep_ind)%field_0d(1)=
-     &              iron(i,j)*0.01 ! nmol/cm2/s (ROMS) -> mmol/m2/s (MARBL MKS)
-               if (print_values) call sf_test_print(fe_dep_ind,i,j)
-            end if
-! nox
+!     pco2
+         if (xco2_ind > 0) then
+            marbl_instance%surface_flux_forcings(xco2_ind)%field_0d(1)=
+     &           pco2air(i,j)   !(ppm)
+            if (print_values) call sf_test_print(xco2_ind,i,j)
+         end if
+!     pco2 (alternative co2 forcing)
+         if (xco2_alt_ind > 0) then
+            marbl_instance%surface_flux_forcings(xco2_alt_ind)%field_0d(1)=
+     &           pco2air_alt(i,j) !(ppm)
+            if (print_values) call sf_test_print(xco2_alt_ind,i,j)
+         end if
+!     dust
+         if (dust_dep_ind > 0) then
+            marbl_instance%surface_flux_forcings(dust_dep_ind)%field_0d(1)
+     &           = dust(i,j)    !(kg/m2/s)
+            if (print_values) call sf_test_print(dust_dep_ind,i,j)
+         end if
+!     iron deposition
+         if (fe_dep_ind > 0) then
+            marbl_instance%surface_flux_forcings(fe_dep_ind)%field_0d(1)=
+     &           iron(i,j)*0.01 ! nmol/cm2/s (ROMS) -> mmol/m2/s (MARBL MKS)
+            if (print_values) call sf_test_print(fe_dep_ind,i,j)
+         end if
+!     nox
 #ifdef NOX_FORCING
-            if (nox_flux_ind > 0) then
-               marbl_instance%surface_flux_forcings(nox_flux_ind)%field_0d(1)=
-     &              nox(i,j)*71394.200220751 ! kg(N)/m2/s (ROMS) -> mmol/m2/s (MARBL MKS)
-               if (print_values) call sf_test_print(nox_flux_ind,i,j)
-            end if
+         if (nox_flux_ind > 0) then
+            marbl_instance%surface_flux_forcings(nox_flux_ind)%field_0d(1)=
+     &           nox(i,j)*71394.200220751 ! kg(N)/m2/s (ROMS) -> mmol/m2/s (MARBL MKS)
+            if (print_values) call sf_test_print(nox_flux_ind,i,j)
+         end if
 #endif
-! nhy
+!     nhy
 #ifdef NHY_FORCING
-            if (nhy_flux_ind > 0) then
-               marbl_instance%surface_flux_forcings(nhy_flux_ind)%field_0d(1)=
-     &              nhy(i,j)*71394.200220751 ! kg(N)/m2/s (ROMS) -> mmol/m2/s (MARBL MKS)
-               if (print_values) call sf_test_print(nhy_flux_ind,i,j)
-            end if
+         if (nhy_flux_ind > 0) then
+            marbl_instance%surface_flux_forcings(nhy_flux_ind)%field_0d(1)=
+     &           nhy(i,j)*71394.200220751 ! kg(N)/m2/s (ROMS) -> mmol/m2/s (MARBL MKS)
+            if (print_values) call sf_test_print(nhy_flux_ind,i,j)
+         end if
 #endif
-! Surface tracer values
-            do m=1,nt_marbl
-               marbl_instance%tracers_at_surface(1,m)=
-     &              tracer_array(i,j,nz,nnew, m+(NT-nt_marbl))
+
+      end subroutine marbldrv_set_surface_flux_forcing_values
+
+      subroutine marbldrv_set_surface_tracer_values
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &     intent(in)     :: tracer_array
+         integer                                       :: i,j,k,m
+
+         do m=1,nt_marbl
+            marbl_instance%tracers_at_surface(1,m)=
+     &           tracer_array(i,j,nz,nnew, m+(NT-nt_marbl))
 
 !     Print surface values at desired location if requested
-               if ( (i==printi) .and. (j==printj)
-     &              .and. (mynode==printnode) .and. (print_values) ) then
-                  print *, 'We just set surface ',
-     &                 (trim(MARBL_instance%tracer_metadata(m)%short_name)),
-     &                 ' as ',marbl_instance%tracers_at_surface(1,m),
-     &                 (trim(MARBL_instance%tracer_metadata(m)%units))
-               end if
+            if ( (i==printi) .and. (j==printj)
+     &           .and. (mynode==printnode) .and. (print_values) ) then
+               print *, 'We just set surface ',
+     &              (trim(MARBL_instance%tracer_metadata(m)%short_name)),
+     &              ' as ',marbl_instance%tracers_at_surface(1,m),
+     &              (trim(MARBL_instance%tracer_metadata(m)%units))
+            end if
 !
-            end do
+         end do
+      end subroutine marbldrv_set_surface_tracer_values
 
+      subroutine marbldrv_set_surface_flux_saved_state_values(i,j)
+         integer                                       :: i,j,k,m
 !     2. Populate MARBL surface flux saved state values:
 !     ----------------------------------------------------------------------
-
-            do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
-               MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
-     &              =marbl_saved_state_2d(i,j,m)
+         do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+            MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
+     &           =marbl_saved_state_2d(i,j,m)
 
 !     Print surface flux saved state values at a chosen location if desired:
-               if ( (i==printi) .and. (j==printj)
-     &              .and. (mynode==printnode) .and. (print_values) ) then
-                  print *, 'We just set surface ',
-     &                 trim(MARBL_instance%surface_flux_saved_state%
-     &                 state(m)%short_name),
-     &                 ' as ',MARBL_instance%surface_flux_saved_state%
-     &                 state(m)%field_2d(1),
-     &                 trim(MARBL_instance%surface_flux_saved_state%
-     &                 state(m)%units)
-               end if
-
-            end do
-
-!     3. Compute surface fluxes using MARBL:
-!     ----------------------------------------------------------------------
-
-            call marbl_instance%surface_flux_compute()
-
-            if (marbl_instance%StatusLog%labort_marbl) then
-               print *, 'abort during surface flux compute'
-               call marbl_instance%StatusLog%log_error_trace(
-     &              "marbl_instance%surface_flux_compute()",
-     &              "MARBL_tracers_column_physics")
-               call print_marbl_log(marbl_instance%StatusLog,i,j)
+            if ( (i==printi) .and. (j==printj)
+     &           .and. (mynode==printnode) .and. (print_values) ) then
+               print *, 'We just set surface ',
+     &              trim(MARBL_instance%surface_flux_saved_state%
+     &              state(m)%short_name),
+     &              ' as ',MARBL_instance%surface_flux_saved_state%
+     &              state(m)%field_2d(1),
+     &              trim(MARBL_instance%surface_flux_saved_state%
+     &              state(m)%units)
             end if
 
-            call marbl_instance%StatusLog%erase()
+         end do
+         end subroutine marbldrv_set_surface_flux_saved_state_values
 
-!     4a. Update saved state array in ROMS using newly computed values:
-!     ----------------------------------------------------------------------
-
-            do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
-               marbl_saved_state_2d(i,j,m)=
-     &              MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
-            end do
-
-!     4b. Update diagnostics array in ROMS using newly computed values:
-!     ----------------------------------------------------------------------
 #ifdef MARBL_DIAGS
+      subroutine marbldrv_update_roms_diagnostics_surf(i,j)
+         integer :: diagidx2d,diagidx3d ! indices for stepping through diagnostics arrays
+         integer :: i,j
             diagidx2d=1 ! Initialise array indices to increment
             diagidx3d=1
+
             do m=1,size(MARBL_instance%surface_flux_diags%diags)
                if (trim(MARBL_instance%surface_flux_diags%diags(m
      &              )%vertical_grid) .eq. "none") then ! 2D field
@@ -1358,109 +1415,117 @@
 
                end if
             end do
+        end subroutine marbldrv_update_roms_diagnostics_surf(i,j)
 #endif
 
-!     4c. Update tracer array in ROMS using newly computed values:
-!     ----------------------------------------------------------------------
-            do m=1,nt_marbl
-               if ( marbl_instance%surface_fluxes(1,m) .ne. 0) then
-                  tracer_array(i,j,nz,nnew, m+(NT-nt_marbl) ) =
-     &                 tracer_array(i,j,nz,nnew, m+(NT-nt_marbl) ) +
-     &                 marbl_instance%surface_fluxes(1,m)*dt/Hz(i,j,nz)
-
-                  if ( (i==printi) .and. (j==printj)
-     &                 .and. (mynode==printnode)
-     &                 .and. (print_values) ) then
-                     write(*,'(A,F10.5,1X,A,1X,A,1X,A)')
-     &                    'We just applied a surface flux of ',
-     &                    marbl_instance%surface_fluxes(1,m),
-     &                    trim(marbl_instance%tracer_metadata(m)%flux_units),
-     &                    'to',
-     &                    trim(marbl_instance%tracer_metadata(m)%short_name)
-                  end if
-               end if
-            end do ! m=1,nt_marbl
+        subroutine marbldrv_update_roms_tracers_surf(i,j,tracer_array)
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &       intent(inout)     :: tracer_array
+         integer                                       :: i,j,m
 
 
-         end do   ! j=jstr,jend
-      end do      ! i=istr,iend
+        do m=1,nt_marbl
+           if ( marbl_instance%surface_fluxes(1,m) .ne. 0) then
+              tracer_array(i,j,nz,nnew, m+(NT-nt_marbl) ) =
+     &             tracer_array(i,j,nz,nnew, m+(NT-nt_marbl) ) +
+     &             marbl_instance%surface_fluxes(1,m)*dt/Hz(i,j,nz)
 
+              if ( (i==printi) .and. (j==printj)
+     &             .and. (mynode==printnode)
+     &             .and. (print_values) ) then
+                 write(*,'(A,F10.5,1X,A,1X,A,1X,A)')
+     &                'We just applied a surface flux of ',
+     &                marbl_instance%surface_fluxes(1,m),
+     &                trim(marbl_instance%tracer_metadata(m)%flux_units),
+     &                'to',
+     &                trim(marbl_instance%tracer_metadata(m)%short_name)
+              end if
+           end if
+        end do                  ! m=1,nt_marbl
+        end subroutine marbldrv_update_roms_tracers_surf
 
-!     5. Populate MARBL instance interior tendency forcing values:
-!     ----------------------------------------------------------------------
+      subroutine marbldrv_update_marbl_domain(i,j)
+         integer :: i,j
 
-      do j=jstr,jend
-         do i=istr,iend
-            if (rmask(i,j)==0.) cycle
+         MARBL_instance%domain%zw(:)      = -z_w(i,j,nz-1:0:-1) ! bottom interface depth
+         MARBL_instance%domain%zt(:)      = -z_r(i,j,nz  :1:-1) ! centre depth
+         MARBL_instance%domain%delta_z(:) = Hz(  i,j,nz  :1:-1) ! thickness
+         MARBL_instance%domain%kmt        = nz ! number of active levels
 
-! First, update domain in MARBL instance to local geometry:
+      end subroutine marbldrv_update_marbl_domain
 
-            MARBL_instance%domain%zw(:)      = -z_w(i,j,nz-1:0:-1) ! bottom interface depth
-            MARBL_instance%domain%zt(:)      = -z_r(i,j,nz  :1:-1) ! centre depth
-            MARBL_instance%domain%delta_z(:) = Hz(  i,j,nz  :1:-1) ! thickness
-            MARBL_instance%domain%kmt        = nz                  ! number of active levels
+      subroutine marbldrv_set_interior_tendency_forcing_values(i,j,tracer_array)
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &       intent(inout)     :: tracer_array
+         integer :: i,j
 
 ! dust flux
-            if (dustflux_ind > 0) then
-               MARBL_instance%interior_tendency_forcings(dustflux_ind)%field_0d(1)=
-     &              dust(i,j)
-            end if
-! PAR subcolumns (unused as the dimension of this field is the number of ice categories and we have none)
-            if (PAR_col_frac_ind > 0) then
-               continue
-               !MARBL_instance%interior_tendency_forcings(PAR_col_frac_ind)%field_1d(1,:)=
-            end if
-! surface shortwave
-            if (surf_shortwave_ind > 0) then
-               MARBL_instance%interior_tendency_forcings(surf_shortwave_ind)%field_1d(1,1)=
-     &              srflx(i,j) * Cp * rho0
-            end if
-! potential temperature
-            if (potemp_ind > 0) then
-               MARBL_instance%interior_tendency_forcings(potemp_ind)%field_1d(1,:)
-     &              =tracer_array(i,j,nz:1:-1,nnew,itemp)
-               if (print_values) call if_test_print(potemp_ind,i,j)
-            end if
-! salinity
-            if (salinity_ind > 0) then
-               MARBL_instance%interior_tendency_forcings(salinity_ind)%field_1d(1,:)
-     &              =tracer_array(i,j,nz:1:-1,nnew,isalt)
-               if (print_values) call if_test_print(salinity_ind,i,j)
-            end if
-! pressure (currently calculating from depth)
-            if (pressure_ind > 0) then
-               MARBL_instance%interior_tendency_forcings(pressure_ind)%field_1d(1,:)=
-     &              -z_r(i,j,nz:1:-1)*0.1
+         if (dustflux_ind > 0) then
+            MARBL_instance%interior_tendency_forcings(dustflux_ind)%field_0d(1)=
+     &           dust(i,j)
+         end if
+!     PAR subcolumns (unused as the dimension of this field is the number of ice categories and we have none)
+         if (PAR_col_frac_ind > 0) then
+            continue
+!MARBL_instance%interior_tendency_forcings(PAR_col_frac_ind)%field_1d(1,:)=
+         end if
+!     surface shortwave
+         if (surf_shortwave_ind > 0) then
+            MARBL_instance%interior_tendency_forcings(surf_shortwave_ind)%field_1d(1,1)=
+     &           srflx(i,j) * Cp * rho0
+         end if
+!     potential temperature
+         if (potemp_ind > 0) then
+            MARBL_instance%interior_tendency_forcings(potemp_ind)%field_1d(1,:)
+     &           =tracer_array(i,j,nz:1:-1,nnew,itemp)
+            if (print_values) call if_test_print(potemp_ind,i,j)
+         end if
+!     salinity
+         if (salinity_ind > 0) then
+            MARBL_instance%interior_tendency_forcings(salinity_ind)%field_1d(1,:)
+     &           =tracer_array(i,j,nz:1:-1,nnew,isalt)
+            if (print_values) call if_test_print(salinity_ind,i,j)
+         end if
+!     pressure (currently calculating from depth)
+         if (pressure_ind > 0) then
+            MARBL_instance%interior_tendency_forcings(pressure_ind)%field_1d(1,:)=
+     &           -z_r(i,j,nz:1:-1)*0.1
 !     &              =p(i,j,nz:1:-1)
-               if (print_values) call if_test_print(pressure_ind,i,j)
-            end if
+            if (print_values) call if_test_print(pressure_ind,i,j)
+         end if
 
-! iron flux
-            if (fesedflux_ind > 0) then
-               MARBL_instance%interior_tendency_forcings(fesedflux_ind)%field_1d(1,:)=0.
-               if (print_values) call if_test_print(fesedflux_ind,i,j)
-            end if
+!     iron flux
+         if (fesedflux_ind > 0) then
+            MARBL_instance%interior_tendency_forcings(fesedflux_ind)%field_1d(1,:)=0.
+            if (print_values) call if_test_print(fesedflux_ind,i,j)
+         end if
 
+      end subroutine marbldrv_set_interior_tendency_forcing_values
+
+      subroutine marbldrv_set_interior_tracer_values(i,j,tracer_array)
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &     intent(inout)     :: tracer_array
+         integer                                       :: i,j,m
 
 ! column tracers
-            do m=1,nt_marbl
-               marbl_instance%tracers(m,:)=
-     &              tracer_array(i,j,nz:1:-1,nnew, m+(NT-nt_marbl) )
+         do m=1,nt_marbl
+            marbl_instance%tracers(m,:)=
+     &           tracer_array(i,j,nz:1:-1,nnew, m+(NT-nt_marbl) )
 
 !     Print bottom value at a desired location if requested:
-               if ( (i==printi) .and. (j==printj)
-     &              .and. (mynode==printnode) .and. (print_values) ) then
-                  print *, 'We just set bottom ',
-     &                 (trim(MARBL_instance%tracer_metadata(m)%short_name)),
-     &                 ' as ',marbl_instance%tracers(m,nz),
-     &                 (trim(MARBL_instance%tracer_metadata(m)%units))
-               end if
+            if ( (i==printi) .and. (j==printj)
+     &           .and. (mynode==printnode) .and. (print_values) ) then
+               print *, 'We just set bottom ',
+     &              (trim(MARBL_instance%tracer_metadata(m)%short_name)),
+     &              ' as ',marbl_instance%tracers(m,nz),
+     &              (trim(MARBL_instance%tracer_metadata(m)%units))
+            end if
 
-            end do
+         end do
+      end subroutine marbldrv_set_interior_tracer_values(i,j,tracer_array)
 
-!     6. Populate MARBL interior tendency saved state values:
-!     ----------------------------------------------------------------------
-
+      subroutine marbldrv_set_interior_saved_state_values(i,j)
+         integer :: i,j,m
 
             do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
                MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1)
@@ -1478,81 +1543,93 @@
                end if
 
             end do
+      end subroutine marbldrv_set_interior_saved_state_values
 
+      subroutine marbldrv_set_bottom_fluxes
 !     Populate bottom fluxes (0 for now)
-            marbl_instance%bot_flux_to_tend(:)=0.
-            marbl_instance%bot_flux_to_tend(nz)=
-     &           1./MARBL_instance%domain%delta_z(nz)
+         marbl_instance%bot_flux_to_tend(:)=0.
+         marbl_instance%bot_flux_to_tend(nz)=
+     &        1./MARBL_instance%domain%delta_z(nz)
+      end subroutine marbldrv_set_bottom_fluxes
 
+      subroutine marbldrv_update_roms_tracers_interior(i,j,tracer_array)
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &     intent(inout)     :: tracer_array
+         integer                                       :: i,j,m
 
-!     7. Compute interior tendencies using MARBL:
-!     ----------------------------------------------------------------------
+         do m=1,nt_marbl
+            tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) =
+     &           tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) +
+     &           marbl_instance%interior_tendencies(m,nz:1:-1)*dt
+         end do
+      end subroutine marbldrv_update_roms_tracers_interior(i,j,tracer_array)
 
-            call marbl_instance%interior_tendency_compute()
-
-            if (marbl_instance%StatusLog%labort_marbl) then
-               print *, 'abort during interior tendency compute'
-               call marbl_instance%StatusLog%log_error_trace(
-     &             "marbl_instance%interior_tendency_compute()",
-     &              "MARBL_tracers_column_physics")
-               call print_marbl_log(marbl_instance%StatusLog,i,j)
-               !error stop 'ERROR reported from MARBL library'
-            end if
-!            call print_marbl_log(marbl_instance%StatusLog,i,j)
-            call marbl_instance%StatusLog%erase()
-
-
-!     8a. Apply calculated increments to ROMS tracer array:
-!     ----------------------------------------------------------------------
-
-            do m=1,nt_marbl
-               tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) =
-     &              tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) +
-     &              marbl_instance%interior_tendencies(m,nz:1:-1)*dt
-            end do
-
-!     8b. Update saved state array in ROMS using newly computed values:
-!     ----------------------------------------------------------------------
-
-            do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
-               marbl_saved_state_3d(i,j,:,m)=
-     &             MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
-            end do
+      subroutine marbldrv_update_roms_saved_state_values_interior(i,j)
+         integer:: i,j
+         do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
+            marbl_saved_state_3d(i,j,:,m)=
+     &           MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
+         end do
+      end subroutine marbldrv_update_roms_saved_state_values_interior
 
 #ifdef MARBL_DIAGS
+      subroutine marbldrv_update_roms_diagnostics_interior(i,j)
 
-!     8c. Update diagnostics array in ROMS using newly computed values:
-!     ----------------------------------------------------------------------
+         integer :: i,j,m,diagidx2d,diagidx3d
 
-            diagidx2d=diag_cnt_sf_2d+1 ! Initialise array indices to increment
-            diagidx3d=diag_cnt_sf_3d+1
+         diagidx2d=diag_cnt_sf_2d+1 ! Initialise array indices to increment
+         diagidx3d=diag_cnt_sf_3d+1
 
-            do m=1,size(MARBL_instance%interior_tendency_diags%diags)
-               if (trim(MARBL_instance%interior_tendency_diags%diags(m
-     &              )%vertical_grid) .eq. "none") then ! 2D field
-                  if (wrt_marbl_diag_2d(diagidx2d)) then
-                     marbl_diag_2d(i,j,idx_marbl_diag_2d(diagidx2d))=
-     &                    real(MARBL_instance%interior_tendency_diags%diags(m)%field_2d(1))
-                  end if
-                  diagidx2d=diagidx2d+1
-               else             ! 3D field
-                  if (wrt_marbl_diag_3d(diagidx3d)) then
-                     marbl_diag_3d(i,j,:,idx_marbl_diag_3d(diagidx3d))=
-     &                    real(MARBL_instance%interior_tendency_diags%diags(m)%field_3d(nz:1:-1,1))
-                  end if
-                  diagidx3d=diagidx3d+1
-
+         do m=1,size(MARBL_instance%interior_tendency_diags%diags)
+            if (trim(MARBL_instance%interior_tendency_diags%diags(m
+     &           )%vertical_grid) .eq. "none") then ! 2D field
+               if (wrt_marbl_diag_2d(diagidx2d)) then
+                  marbl_diag_2d(i,j,idx_marbl_diag_2d(diagidx2d))=
+     &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_2d(1))
                end if
-            end do
+               diagidx2d=diagidx2d+1
+            else                ! 3D field
+               if (wrt_marbl_diag_3d(diagidx3d)) then
+                  marbl_diag_3d(i,j,:,idx_marbl_diag_3d(diagidx3d))=
+     &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_3d(nz:1:-1,1))
+               end if
+               diagidx3d=diagidx3d+1
+
+            end if
+         end do
+      end subroutine marbldrv_update_roms_diagnostics_interior
 #endif
 
-         end do                 !j=jstr,jend
-      end do                    ! i=istr,iend
+      subroutine marbldrv_compute_interior_tendency
 
+         call marbl_instance%interior_tendency_compute()
 
+         if (marbl_instance%StatusLog%labort_marbl) then
+            print *, 'abort during interior tendency compute'
+            call marbl_instance%StatusLog%log_error_trace(
+     &           "marbl_instance%interior_tendency_compute()",
+     &           "MARBL_tracers_column_physics")
+            call print_marbl_log(marbl_instance%StatusLog,i,j)
+!error stop 'ERROR reported from MARBL library'
+         end if
+!            call print_marbl_log(marbl_instance%StatusLog,i,j)
+            call marbl_instance%StatusLog%erase()
+      end subroutine
 
+      subroutine marbldrv_compute_surface_fluxes
+         call marbl_instance%surface_flux_compute()
 
-      end subroutine marbldrv_column_physics
+         if (marbl_instance%StatusLog%labort_marbl) then
+            print *, 'abort during surface flux compute'
+            call marbl_instance%StatusLog%log_error_trace(
+     &           "marbl_instance%surface_flux_compute()",
+     &           "MARBL_tracers_column_physics")
+            call print_marbl_log(marbl_instance%StatusLog,i,j)
+         end if
+
+         call marbl_instance%StatusLog%erase()
+      end subroutine
+
 
       subroutine print_marbl_log(log_to_print,i,j)
 
