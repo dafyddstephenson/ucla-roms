@@ -1212,34 +1212,25 @@
             call marbldrv_compute_surface_fluxes(i,j)
 !     4a. Update saved state array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
-            call marbldrv_set_surface_flux_saved_state_values(i,j)
+            call marbldrv_update_roms_saved_state_values_surf(i,j)
+#ifdef MARBL_DIAGS
 !     4b. Update diagnostics array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_diagnostics_surf(i,j)
+#endif
 !     4c. Update tracer array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_tracers_surf(i,j,tracer_array)
 
-         end do   ! j=jstr,jend
-      end do      ! i=istr,iend
-
-
 !     5. Populate MARBL instance interior tendency forcing values:
 !     ----------------------------------------------------------------------
-
-      do j=jstr,jend
-         do i=istr,iend
-            if (rmask(i,j)==0.) cycle
-
-! First, update domain in MARBL instance to local geometry:
+!     First, update domain in MARBL instance to local geometry:
             call marbldrv_update_marbl_domain(i,j)
-
             call marbldrv_set_interior_tendency_forcing_values(i,j,tracer_array)
             call marbldrv_set_interior_tracer_values(i,j,tracer_array)
 
 !     6. Populate MARBL interior tendency saved state values:
 !     ----------------------------------------------------------------------
-
             call marbldrv_set_interior_saved_state_values(i,j)
             call marbldrv_set_bottom_fluxes
 
@@ -1260,9 +1251,6 @@
 
          end do                 !j=jstr,jend
       end do                    ! i=istr,iend
-
-
-
 
       end subroutine marbldrv_column_physics
 
@@ -1630,6 +1618,14 @@
 
          call marbl_instance%StatusLog%erase()
       end subroutine
+
+      subroutine marbldrv_update_roms_saved_state_values_surf(i,j)
+         integer :: i,j,m
+         do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+            marbl_saved_state_2d(i,j,m)=
+     &           MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
+         end do
+      end subroutine marbldrv_update_roms_saved_state_values_surf
 
 
       subroutine print_marbl_log(log_to_print,i,j)
