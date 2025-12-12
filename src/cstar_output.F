@@ -4,7 +4,7 @@
 
 #include "cppdefs.opt"
 
-#if defined MARBL && defined MARBL_DIAGS
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use param
       use tracers
       use marbl_driver
@@ -229,9 +229,6 @@
       if (done) then
         return
       else
-#ifndef MARBL
-        error stop 'ERROR: cstar_output must have MARBL enabled.'
-#endif
         done = .true.
       endif
 
@@ -701,7 +698,7 @@
 
 !----------------------------------------------------------------------
 
-#else /* MARBL && MARBL_DIAGS */
+#else /* MARBL && MARBL_DIAGS && CDR_FORCING */
 !----------------------------------------------------------------------
       use param
       use tracers
@@ -733,9 +730,13 @@
         error stop 'ERROR: cstar_output must have MARBL_DIAGS enabled.'
 #endif
 
+#ifndef CDR_FORCING
+        error stop 'ERROR: cstar_output must have CDR_FORCING enabled.'
+#endif
+
       end subroutine init_cstar !]
 !----------------------------------------------------------------------
 
-#endif /* MARBL && MARBL_DIAGS */
+#endif /* MARBL && MARBL_DIAGS && CDR_FORCING */
 
       end module cstar_output

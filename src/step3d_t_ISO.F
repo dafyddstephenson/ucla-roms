@@ -55,9 +55,11 @@ c--# define CONST_TRACERS
 
       use param
       use pipe_frc
+#if defined CDR_FORCING && defined MARBL
       use cdr_frc, only: cdr_nprf, cdr_icdr, cdr_source, cdr_iloc,
      &      cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d_ALK, cdr_flx_3d_DIC,
      &      forcing_3d, ncdr, iALK, iDIC
+#endif
       use river_frc
       use surf_flux, only: stflx, srflx
       use tracers
@@ -832,6 +834,7 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
         endif
 # endif
 
+#if defined CDR_FORCING && defined MARBL
         if (cdr_source) then
 
           if (forcing_3d) then
@@ -875,6 +878,7 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
           endif ! forcing_3d
 
         endif ! cdr_source
+#endif
 
         do j=jstr,jend
 

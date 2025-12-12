@@ -8,6 +8,8 @@
 
 #include "cppdefs.opt"
 
+#if defined MARBL && defined CDR_FORCING
+
       use dimensions
       use roms_read_write
       use nc_read_write
@@ -182,16 +184,6 @@
       ! local
       integer :: ierr
       integer :: dimid
-
-      ! Make sure that we have all the necessary CPP keys and settings to use depth profiles
-#if defined BIOLOGY_BEC2 || defined MARBL
-        ierr = 0
-#else
-        ierr = 1
-#endif
-      if (ierr == 1) then
-        error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
-      endif
 
       ! Check how many vertical profiles (i.e. tracer releases) we will use
       ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
@@ -419,7 +411,6 @@
 
       integer :: idx, itot
 
-#if defined BIOLOGY_BEC2 || defined MARBL
       itot = 0
       do idx=1,ntrc_bio
          itot=itot+1
@@ -433,7 +424,6 @@
 
       cdr_inds(1) = iALK
       cdr_inds(2) = iDIC
-#endif
 
       end subroutine get_tracer_indices  !]
 ! ----------------------------------------------------------------------
@@ -1002,5 +992,45 @@
 
       end subroutine ll2dist  !]
 ! ----------------------------------------------------------------------
+! ----------------------------------------------------------------------
+#else /* defined MARBL && defined CDR_FORCING */
+
+!----------------------------------------------------------------------
+      use dimensions
+      use roms_read_write
+      use nc_read_write
+      use scalars
+      use grid
+      use ocean_vars
+      use hidden_mpi_vars
+
+      implicit none
+
+      private
+
+#include "cdr_frc.opt"
+
+      ! Public functions
+      public set_cdr_frc
+
+      contains
+
+      subroutine set_cdr_frc ![
+      ! Allocate and initialize arrays.
+      implicit none
+
+#if (!defined MARBL)
+      error stop 'ERROR: CDR module must have MARBL enabled.'
+#endif
+
+#if (!defined CDR_FORCING)
+      error stop 'ERROR: CDR module must have CDR_FORCING enabled.'
+#endif
+
+      end subroutine set_cdr_frc !]
+!----------------------------------------------------------------------
+
+#endif /* defined MARBL && defined CDR_FORCING */
+
 
       end module cdr_frc
