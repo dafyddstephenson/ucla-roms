@@ -183,6 +183,7 @@
 !     1. Read in MARBL settings file (marbl_in), pass settings to MARBL:
 !     ------------------------------------------------------------------
 
+      if (mynode==0) print *, "FIRST TRACER CONFIG"
 
 !     read the marbl_in into buffer
       if (mynode==0) then
@@ -877,14 +878,16 @@
       diag_cnt_sf_3d = 0 ! number of 3d surface flux diagnostics
       diag_cnt_it_2d = 0 ! number of 2d interior tendency diagnostics
       diag_cnt_it_3d = 0 ! number of 3d interior tendency diagnostics
-            diag_cnt_tot = 0 ! total number of diagnostics
-                diagidx2d = 1 ! index for incrementing 2d diagnostics
-                diagidx3d = 1 ! index for incrementing 3d diagnostics
+      diag_cnt_tot = 0          ! total number of diagnostics
+      diagidx2d = 1             ! index for incrementing 2d diagnostics
+      diagidx3d = 1             ! index for incrementing 3d diagnostics
 
 
 !     Go through both MARBL diagnostics types and check if fields are
 !     2d or 3d one by one (calculate nr_marbl_ss_2d,nr_marbl_ss_3d), then
 !     increment the size check variables accordingly:
+
+      if (mynode==0) print *, "FIRST DIAG CONFIG"
 
 !     Add surface flux diagnostics variables to the counts:
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
@@ -1342,11 +1345,11 @@
          end if
 #endif
 
-      end subroutine marbldrv_set_surface_flux_forcing_values
+      end subroutine marbldrv_set_marbl_surface_flux_forcing_values
 
-      subroutine marbldrv_set_surface_tracer_values(i,j,tracer_array)
+      subroutine marbldrv_set_marbl_surface_tracer_values(i,j,tracer_array)
 !-----------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_set_surface_tracer_values
+!     SUBROUTINE: marbldrv_set_marbl_surface_tracer_values
 !     DESCRIPTION:
 !     Populate the MARBL instance`s `tracers_at_surface` field using
 !     Values from ROMS
@@ -1369,11 +1372,11 @@
             end if
 !
          end do
-      end subroutine marbldrv_set_surface_tracer_values
+      end subroutine marbldrv_set_marbl_surface_tracer_values
 
-      subroutine marbldrv_set_surface_flux_saved_state_values(i,j)
+      subroutine marbldrv_set_marbl_surface_flux_saved_state_values(i,j)
 !-----------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_set_surface_flux_saved_state_values
+!     SUBROUTINE: marbldrv_set_marbl_surface_flux_saved_state_values
 !     DESCRIPTION:
 !     Populate the MARBL instance`s `surface_flux_saved_state` field
 !     using values from ROMS
@@ -1397,7 +1400,45 @@
             end if
 
          end do
-         end subroutine marbldrv_set_surface_flux_saved_state_values
+         end subroutine marbldrv_set_marbl_surface_flux_saved_state_values
+
+      subroutine marbldrv_compute_surface_fluxes(i,j)
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_compute_surface_fluxes
+!     DESCRIPTION:
+!     call `surface_Flux_compute()` on this MARBL instance after
+!     populating necessary fields, handling any errors captured in its
+!     StatusLog
+!-----------------------------------------------------------------------
+      integer :: i,j
+!-----------------------------------------------------------------------
+         call marbl_instance%surface_flux_compute()
+
+         if (marbl_instance%StatusLog%labort_marbl) then
+            print *, 'abort during surface flux compute'
+            call marbl_instance%StatusLog%log_error_trace(
+     &           "marbl_instance%surface_flux_compute()",
+     &           "MARBL_tracers_column_physics")
+            call print_marbl_log(marbl_instance%StatusLog,i,j)
+         end if
+
+         call marbl_instance%StatusLog%erase()
+      end subroutine marbldrv_compute_surface_fluxes
+
+      subroutine marbldrv_update_roms_saved_state_values_surf(i,j)
+!------------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_update_roms_saved_state_values_surf
+!     DESCRIPTION:
+!     Update ROMS' marbl_saved_state_2d array using this MARBL instance's
+!     `surface_flux_saved_state` field
+!-----------------------------------------------------------------------
+         integer :: i,j,m
+         do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+            marbl_saved_state_2d(i,j,m)=
+     &           MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
+         end do
+      end subroutine marbldrv_update_roms_saved_state_values_surf
+
 
 #ifdef MARBL_DIAGS
       subroutine marbldrv_update_roms_diagnostics_surf(i,j)
@@ -1481,11 +1522,11 @@
          MARBL_instance%domain%delta_z(:) = Hz(  i,j,nz  :1:-1) ! thickness
          MARBL_instance%domain%kmt        = nz ! number of active levels
 
-      end subroutine marbldrv_update_marbl_domain
+      end subroutine marbldrv_set_marbl_column_geometry
 
-      subroutine marbldrv_set_interior_tendency_forcing_values(i,j,tracer_array)
+      subroutine marbldrv_set_marbl_interior_tendency_forcing_values(i,j,tracer_array)
 !-----------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_set_interior_tendency_forcing_values
+!     SUBROUTINE: marbldrv_set_marbl_interior_tendency_forcing_values
 !     DESCRIPTION:
 !     Populate this MARBL instance's `interior_tendency_forcings` field
 !     using values from ROMS
@@ -1535,13 +1576,20 @@
             if (print_values) call if_test_print(fesedflux_ind,i,j)
          end if
 
-      end subroutine marbldrv_set_interior_tendency_forcing_values
+      end subroutine marbldrv_set_marbl_interior_tendency_forcing_values
+!-----------------------------------------------------------------------
 
-      subroutine marbldrv_set_interior_tracer_values(i,j,tracer_array)
+      subroutine marbldrv_set_marbl_interior_tracer_values(i,j,tracer_array)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_set_marbl_interior_tracer_values
+!     DESCRIPTION:
+!     Populate the MARBL instance`s `tracers` field using
+!     Values from ROMS
+!-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
      &     intent(inout)     :: tracer_array
          integer                                       :: i,j,m
-
+!-----------------------------------------------------------------------
 ! column tracers
          do m=1,nt_marbl
             marbl_instance%tracers(m,:)=
@@ -1557,15 +1605,15 @@
             end if
 
          end do
-      end subroutine marbldrv_set_interior_tracer_values
+      end subroutine marbldrv_set_marbl_interior_tracer_values
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-      subroutine marbldrv_set_interior_saved_state_values(i,j)
+      subroutine marbldrv_set_marbl_interior_saved_state_values(i,j)
 !-----------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_set_interior_tendency_forcing_values
+!     SUBROUTINE: marbldrv_set_marbl_interior_saved_state_values
 !     DESCRIPTION:
-!     Populate this MARBL instance's `interior_tendency_forcings` field
+!     Populate this MARBL instance's `interior_tendency_saved_state` field
 !     using values from ROMS
 !-----------------------------------------------------------------------
       integer :: i,j,m
@@ -1587,12 +1635,12 @@
                end if
 
             end do
-      end subroutine marbldrv_set_interior_saved_state_values
+      end subroutine marbldrv_set_marbl_interior_saved_state_values
 !-----------------------------------------------------------------------
 
-      subroutine marbldrv_set_bottom_fluxes
+      subroutine marbldrv_set_marbl_bottom_fluxes
 !-----------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_set_bottom_fluxes
+!     SUBROUTINE: marbldrv_set_marbl_bottom_fluxes
 !     DESCRIPTION:
 !     Set this MARBL instance's `bot_flux_to_tend` field. Currently
 !     unimplemented, values set to zero.
@@ -1601,7 +1649,7 @@
       marbl_instance%bot_flux_to_tend(nz)=
      &     1./MARBL_instance%domain%delta_z(nz)
 
-      end subroutine marbldrv_set_bottom_fluxes
+      end subroutine marbldrv_set_marbl_bottom_fluxes
 !-----------------------------------------------------------------------
 
 !------------------------------------------------------------------------
@@ -1698,36 +1746,9 @@
       end if
 !     call print_marbl_log(marbl_instance%StatusLog,i,j)
       call marbl_instance%StatusLog%erase()
-      end subroutine
-
-      subroutine marbldrv_compute_surface_fluxes(i,j)
-         integer :: i,j
-         call marbl_instance%surface_flux_compute()
-
-         if (marbl_instance%StatusLog%labort_marbl) then
-            print *, 'abort during surface flux compute'
-            call marbl_instance%StatusLog%log_error_trace(
-     &           "marbl_instance%surface_flux_compute()",
-     &           "MARBL_tracers_column_physics")
-            call print_marbl_log(marbl_instance%StatusLog,i,j)
-         end if
-
-         call marbl_instance%StatusLog%erase()
-      end subroutine
-
-      subroutine marbldrv_update_roms_saved_state_values_surf(i,j)
-!------------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_update_roms_saved_state_values_surf
-!     DESCRIPTION:
-!     Update ROMS' marbl_saved_state_2d array using this MARBL instance's
-!     `surface_flux_saved_state` field
+      end subroutine marbldrv_compute_interior_tendency
 !-----------------------------------------------------------------------
-         integer :: i,j,m
-         do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
-            marbl_saved_state_2d(i,j,m)=
-     &           MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
-         end do
-      end subroutine marbldrv_update_roms_saved_state_values_surf
+
 
 !-----------------------------------------------------------------------
       subroutine print_marbl_log(log_to_print,i,j)
