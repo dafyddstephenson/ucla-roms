@@ -1480,8 +1480,6 @@
       end subroutine marbldrv_update_roms_saved_state_values_surf
 
 
-#ifdef MARBL_DIAGS
-
       subroutine marbldrv_update_roms_tracers_surf(i,j,tracer_array)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: marbldrv_update_roms_tracers_surf
