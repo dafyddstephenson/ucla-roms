@@ -887,8 +887,6 @@
 !     2d or 3d one by one (calculate nr_marbl_ss_2d,nr_marbl_ss_3d), then
 !     increment the size check variables accordingly:
 
-      if (mynode==0) print *, "FIRST DIAG CONFIG"
-
 !     Add surface flux diagnostics variables to the counts:
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
          diag_cnt_tot=diag_cnt_tot+1
@@ -1004,8 +1002,9 @@
       call marbldrv_read_diagnostic_output_list(
      &     vname_marbl_diag_2d,vname_marbl_diag_3d
      &     )                    !
-
       end subroutine marbldrv_configure_diagnostics
+
+!-----------------------------------------------------------------------
 
 
       subroutine marbldrv_read_diagnostic_output_list(
@@ -1133,7 +1132,52 @@
 
       end subroutine marbldrv_read_diagnostic_output_list
 
+
+      subroutine marbldrv_compute_init_diagnostics(istr,iend,jstr,jend,tracer_array)
+!-----------------------------------------------------------------------
+!     SUBROUTINE: marbldrv_compute_init_diagnostics
+!     DESCRIPTION:
+!     This subroutine is called before writing the first BGC output in
+!     order to compute MARBL diagnostics from the initial state
+!     and populate ROMS' BGC diagnostics arrays. This is needed as the
+!     first `wrt_bgc` call occurs before the first
+!     `marbldrv_column_physics` call after startup, when ROMS' bgc
+!     diagnostics arrays are still empty
+!
+!     NOTES: the logic below is identical to `marbldrv_column_physics`
+!     but ROMS' tracer arrays are never updated
+!-----------------------------------------------------------------------
+      integer, intent(in)                           :: istr,jstr,iend,jend
+         real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
+     &     intent(in)     :: tracer_array
+      integer :: i,j
+      do j=jstr,jend
+         do i=istr,iend
+            if (rmask(i,j)==0.) cycle
+
+            call marbldrv_set_marbl_surface_flux_forcing_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_surface_tracer_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_surface_flux_saved_state_values(i,j)
+            call marbldrv_compute_surface_fluxes(i,j)
+
+            call marbldrv_set_marbl_column_geometry(i,j)
+            call marbldrv_set_marbl_interior_tendency_forcing_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_interior_tracer_values(
+     &           i,j,tracer_array)
+            call marbldrv_set_marbl_interior_saved_state_values(i,j)
+            call marbldrv_set_marbl_bottom_fluxes
+            call marbldrv_compute_interior_tendency(i,j)
+
+            call marbldrv_update_roms_diagnostics(i,j)
+         end do
+      end do
+      end subroutine
+
 #endif /* MARBL_DIAGS */
+
 
       subroutine marbldrv_column_physics(istr,iend,jstr,jend,tracer_array)
 
@@ -1152,7 +1196,6 @@
 !        ROMS (either from previous time step or read in restart file)
 !     3. Compute surface fluxes using MARBL
 !     4a. Update saved state array in ROMS using newly computed values
-!     4b. Update diagnostics array in ROMS using newly computed values
 !     4c. Update    tracer   array in ROMS using newly computed values
 !     5. Populate MARBL instance interior tendency forcing values
 !        using ROMS ocean interior values
@@ -1219,11 +1262,8 @@
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_saved_state_values_surf(i,j)
 #ifdef MARBL_DIAGS
-!     4b. Update diagnostics array in ROMS using newly computed values:
-!     ----------------------------------------------------------------------
-            call marbldrv_update_roms_diagnostics_surf(i,j)
 #endif
-!     4c. Update tracer array in ROMS using newly computed values:
+!     4b. Update tracer array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_tracers_surf(i,j,tracer_array)
 
@@ -1254,7 +1294,7 @@
 #ifdef MARBL_DIAGS
 !     8c. Update diagnostics array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
-            call marbldrv_update_roms_diagnostics_interior(i,j)
+            call marbldrv_update_roms_diagnostics(i,j)
 #endif
 
          end do                 !j=jstr,jend
@@ -1441,40 +1481,6 @@
 
 
 #ifdef MARBL_DIAGS
-      subroutine marbldrv_update_roms_diagnostics_surf(i,j)
-!-----------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_update_roms_diagnostics_surf
-!     DESCRIPTION:
-!     Update ROMS` bgc diagnostics arrays from this MARBL instance`s
-!     `surface_flux_diags` field
-!-----------------------------------------------------------------------
-
-         integer :: diagidx2d,diagidx3d ! indices for stepping through diagnostics arrays
-         integer :: i,j,m
-            diagidx2d=1 ! Initialise array indices to increment
-            diagidx3d=1
-
-            do m=1,size(MARBL_instance%surface_flux_diags%diags)
-               if (trim(MARBL_instance%surface_flux_diags%diags(m
-     &              )%vertical_grid) .eq. "none") then ! 2D field
-
-                  if (wrt_marbl_diag_2d(diagidx2d)) then
-                     marbl_diag_2d(i,j,idx_marbl_diag_2d(diagidx2d))=
-     &                    real(MARBL_instance%surface_flux_diags%diags(m)%field_2d(1))
-                  end if
-                  diagidx2d=diagidx2d+1
-
-               else             ! 3D field
-                  if (wrt_marbl_diag_3d(diagidx3d)) then
-                     marbl_diag_3d(i,j,:,idx_marbl_diag_3d(diagidx3d))=
-     &                    real(MARBL_instance%surface_flux_diags%diags(m)%field_3d(nz:1:-1,1))
-                  end if
-                  diagidx3d=diagidx3d+1
-
-               end if
-            end do
-        end subroutine marbldrv_update_roms_diagnostics_surf
-#endif
 
       subroutine marbldrv_update_roms_tracers_surf(i,j,tracer_array)
 !-----------------------------------------------------------------------
@@ -1532,7 +1538,7 @@
 !     using values from ROMS
 !-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
-     &       intent(inout)     :: tracer_array
+     &       intent(in)     :: tracer_array
          integer :: i,j
 !-----------------------------------------------------------------------
 ! dust flux
@@ -1587,7 +1593,7 @@
 !     Values from ROMS
 !-----------------------------------------------------------------------
          real, dimension(GLOBAL_2D_ARRAY,nz,3,nt) ,
-     &     intent(inout)     :: tracer_array
+     &     intent(in)     :: tracer_array
          integer                                       :: i,j,m
 !-----------------------------------------------------------------------
 ! column tracers
@@ -1689,17 +1695,41 @@
       end subroutine marbldrv_update_roms_saved_state_values_interior
 !-----------------------------------------------------------------------
 
+
 #ifdef MARBL_DIAGS
 !-----------------------------------------------------------------------
-      subroutine marbldrv_update_roms_diagnostics_interior(i,j)
+      subroutine marbldrv_update_roms_diagnostics(i,j)
 !------------------------------------------------------------------------
-!     SUBROUTINE: marbldrv_update_roms_diagnostics_interior
+!     SUBROUTINE: marbldrv_update_roms_diagnostics
 !     DESCRIPTION:
 !     Update ROMS' bgc diagnostics arrays from this MARBL instance's
-!     `interior_tendency_diags` field
+!     `surface_flux_diags` and `interior_tendency_diags` fields
 !-----------------------------------------------------------------------
       integer :: i,j,m,diagidx2d,diagidx3d
 !-----------------------------------------------------------------------
+      diagidx2d=1               ! Initialise array indices to increment
+      diagidx3d=1
+
+      do m=1,size(MARBL_instance%surface_flux_diags%diags)
+         if (trim(MARBL_instance%surface_flux_diags%diags(m
+     &        )%vertical_grid) .eq. "none") then ! 2D field
+
+            if (wrt_marbl_diag_2d(diagidx2d)) then
+               marbl_diag_2d(i,j,idx_marbl_diag_2d(diagidx2d))=
+     &              real(MARBL_instance%surface_flux_diags%diags(m)%field_2d(1))
+            end if
+            diagidx2d=diagidx2d+1
+
+         else                   ! 3D field
+            if (wrt_marbl_diag_3d(diagidx3d)) then
+               marbl_diag_3d(i,j,:,idx_marbl_diag_3d(diagidx3d))=
+     &              real(MARBL_instance%surface_flux_diags%diags(m)%field_3d(nz:1:-1,1))
+            end if
+            diagidx3d=diagidx3d+1
+
+         end if
+      end do
+
       diagidx2d=diag_cnt_sf_2d+1 ! Initialise array indices to increment
       diagidx3d=diag_cnt_sf_3d+1
 
@@ -1720,7 +1750,7 @@
 
          end if
       end do
-      end subroutine marbldrv_update_roms_diagnostics_interior
+      end subroutine marbldrv_update_roms_diagnostics
 !-----------------------------------------------------------------------
 #endif
 !-----------------------------------------------------------------------
