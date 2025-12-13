@@ -8,6 +8,8 @@
 
 #include "cppdefs.opt"
 
+#if defined MARBL && defined CDR_FORCING
+
       use dimensions
       use roms_read_write
       use nc_read_write
@@ -60,12 +62,12 @@
       real, allocatable, dimension(:,:)          :: cdr_hz        ! layer thicknesses of CDR release
       integer                                    :: ncdr_prof     ! number of release locations
       integer                                    :: N_src         ! number of layers from source file
-      integer :: iALK, iDIC                                       ! Tracer indices for ALK and DIC
+      integer,public :: iALK, iDIC                                ! Tracer indices for ALK and DIC
       integer, dimension(2) :: cdr_inds                           ! Array to hold those indices
 
       !!! Variables used only for (3)
-      real,public,allocatable,dimension(:,:,:,:,:)   :: cdr_flx_3d    ! cdr tracer flux (3d, for each tracer)
-
+      real,public,allocatable,dimension(:,:,:)   :: cdr_flx_3d_ALK    ! 3d cdr tracer flux for ALK
+      real,public,allocatable,dimension(:,:,:)   :: cdr_flx_3d_DIC    ! 3d cdr tracer flux for DIC
 
       public set_cdr_frc
 
@@ -90,17 +92,15 @@
       call MPI_Barrier(ocean_grid_comm, ierr)
 
       if (forcing_depth_profiles) then
+
         call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
         call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
         call create_cdr_vertical_structure
 
       else if (forcing_3d) then
 
-        do icdr=1,ncdr
-          do itrc=1,nt
-            call set_frc_data(nc_cdrflx_3d,var3d=cdr_flx_3d(icdr,itrc,:,:,:))
-          enddo
-        enddo
+        call set_frc_data(nc_cdrflx_3d_ALK,var3d=cdr_flx_3d_ALK)
+        call set_frc_data(nc_cdrflx_3d_DIC,var3d=cdr_flx_3d_DIC)
 
       else if (forcing_parameterized) then
 
@@ -135,12 +135,7 @@
       integer      :: ncid
       character(1) :: tmp1
 
-      ! Open file
-      ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
-      if(ierr/=0)
-     &    call handle_ierr(ierr,
-     &     'init_cdr_frc:: Cant open cdr forcing file')
-
+      ! Check if we selected too many forcing types
       if (forcing_depth_profiles) ierr = ierr+1
       if (forcing_3d)             ierr = ierr+1
       if (forcing_parameterized)  ierr = ierr+1
@@ -149,19 +144,28 @@
         error stop 'ERROR: cdr_source set to true, but no forcing type selected.'
       endif
 
-      if (ierr>1)
-     &   error stop 'ERROR: More than one CDR forcing type selected.'
+      if (forcing_3d) then
+        call init_cdr_frc_3d
+      else
+
+        ! Open file
+        ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
+        if(ierr/=0)
+     &    call handle_ierr(ierr,
+     &     'init_cdr_frc:: Cant open cdr forcing file')
+
+        if (ierr>1)
+     &    error stop 'ERROR: More than one CDR forcing type selected.'
 
 
-      if (forcing_depth_profiles) then
-        call init_cdr_frc_dp(ncid)
-      else if (forcing_3d) then
-        call init_cdr_frc_3d(ncid)
-      else if (forcing_parameterized) then
-        call init_cdr_frc_parm(ncid)
-      endif
+        if (forcing_depth_profiles) then
+          call init_cdr_frc_dp(ncid)
+        else if (forcing_parameterized) then
+          call init_cdr_frc_parm(ncid)
+        endif
 
-      ierr = nf90_close(ncid)
+        ierr = nf90_close(ncid)
+      endif ! forcing_3d
 
       init_cdr_done = .true.
       if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
@@ -180,16 +184,6 @@
       ! local
       integer :: ierr
       integer :: dimid
-
-      ! Make sure that we have all the necessary CPP keys and settings to use depth profiles
-#if defined BIOLOGY_BEC2 || defined MARBL
-        ierr = 0
-#else
-        ierr = 1
-#endif
-      if (ierr == 1) then
-        error stop 'ERROR: CDR forcing file is using depth profiles (upscaling), but MARBL/BEC cpp keys are not defined.'
-      endif
 
       ! Check how many vertical profiles (i.e. tracer releases) we will use
       ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
@@ -217,6 +211,7 @@
       ! Determine release points
       call ncread(ncid,cdr_loc_lon,cdr_lon)
       call ncread(ncid,cdr_loc_lat,cdr_lat)
+      call init_arrays_cdr
       call find_release_locations
 
       ! Get tracer indices for ALK and DIC
@@ -224,23 +219,27 @@
 
       end subroutine init_cdr_frc_dp  !]
 ! ----------------------------------------------------------------------
-      subroutine init_cdr_frc_3d(ncid)  ![
+      subroutine init_cdr_frc_3d  ![
 
       use netcdf
       use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
-      integer, intent(in) :: ncid
 
       ! local
       integer :: ierr
       integer :: dimid
 
-      ncdr = ncdr_parm
+      allocate(cdr_flx_3d_ALK(GLOBAL_2D_ARRAY,N))
+      allocate(cdr_flx_3d_DIC(GLOBAL_2D_ARRAY,N))
+      cdr_flx_3d_ALK(:,:,:) = 0
+      cdr_flx_3d_DIC(:,:,:) = 0
 
-      allocate(cdr_flx_3d(ncdr,nt,GLOBAL_2D_ARRAY,N))
-      cdr_flx_3d(:,:,:,:,:) = 0
+      call init_arrays_cdr
+
+      ! Get tracer indices for ALK and DIC
+      call get_tracer_indices
 
       end subroutine init_cdr_frc_3d  !]
 ! ----------------------------------------------------------------------
@@ -268,6 +267,7 @@
       call ncread(ncid,cdr_loc_dep,cdr_dep)
       call ncread(ncid,cdr_scl_hor,cdr_hsc)
       call ncread(ncid,cdr_scl_vrt,cdr_vsc)
+      call init_arrays_cdr
       call find_release_locations
 
       ! Get tracer indices for ALK and DIC
@@ -298,8 +298,6 @@
 
 
       bad_releases(:) = .false.
-
-      call init_arrays_cdr
 
       ! Figure out where to apply CDR forcing
       ! Find fractional cdr fluxes for this subdomain
@@ -413,7 +411,6 @@
 
       integer :: idx, itot
 
-#if defined BIOLOGY_BEC2 || defined MARBL
       itot = 0
       do idx=1,ntrc_bio
          itot=itot+1
@@ -427,7 +424,6 @@
 
       cdr_inds(1) = iALK
       cdr_inds(2) = iDIC
-#endif
 
       end subroutine get_tracer_indices  !]
 ! ----------------------------------------------------------------------
@@ -918,11 +914,14 @@
         endif
 
       else if (forcing_3d) then
-        allocate(nc_cdrflx_3d%vdata(ncdr,nt,N,2))
-        nc_cdrflx_3d%ungridded = .false.
+        allocate(nc_cdrflx_3d_ALK%vdata(GLOBAL_2D_ARRAY,N,2))
+        allocate(nc_cdrflx_3d_DIC%vdata(GLOBAL_2D_ARRAY,N,2))
+        nc_cdrflx_3d_ALK%ungridded = .false.
+        nc_cdrflx_3d_DIC%ungridded = .false.
 
         if (time_interpolation) then
-          nc_cdrflx_3d%time_interpolation = .true.
+          nc_cdrflx_3d_ALK%time_interpolation = .true.
+          nc_cdrflx_3d_DIC%time_interpolation = .true.
         endif
 
       else
@@ -993,5 +992,45 @@
 
       end subroutine ll2dist  !]
 ! ----------------------------------------------------------------------
+! ----------------------------------------------------------------------
+#else /* defined MARBL && defined CDR_FORCING */
+
+!----------------------------------------------------------------------
+      use dimensions
+      use roms_read_write
+      use nc_read_write
+      use scalars
+      use grid
+      use ocean_vars
+      use hidden_mpi_vars
+
+      implicit none
+
+      private
+
+#include "cdr_frc.opt"
+
+      ! Public functions
+      public set_cdr_frc
+
+      contains
+
+      subroutine set_cdr_frc ![
+      ! Allocate and initialize arrays.
+      implicit none
+
+#if (!defined MARBL)
+      error stop 'ERROR: CDR module must have MARBL enabled.'
+#endif
+
+#if (!defined CDR_FORCING)
+      error stop 'ERROR: CDR module must have CDR_FORCING enabled.'
+#endif
+
+      end subroutine set_cdr_frc !]
+!----------------------------------------------------------------------
+
+#endif /* defined MARBL && defined CDR_FORCING */
+
 
       end module cdr_frc
