@@ -582,7 +582,9 @@
 !     import/export
       logical,optional       :: init
       integer :: tile = 0
+#ifdef MARBL_DIAGS
 #include "compute_tile_bounds.h"
+#endif
       ! initialisation writting
       if (wrt_his.and.present(init)) then
          call wrt_bgc_tracers(.false.) ! write his data
