@@ -4,13 +4,13 @@
 
       logical,parameter,public :: cdr_source  = .true.  ! Should be false if not using CDR forcing
 
-      character(len=60) :: cdr_file = 'cdr_forcing_dp.nc'   ! NetCDF forcing file and variable names
+      character(len=60) :: cdr_file = 'cdr_forcing_3d.nc'   ! NetCDF forcing file and variable names
 
       integer,parameter,public :: ncdr_parm=1   !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 
       ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
-      logical,public                     :: forcing_depth_profiles = .true.     ! T if this file contains depth profiles
-      logical,public                     :: forcing_3d             = .false.     ! T if this file contains 3d forcing
+      logical,public                     :: forcing_depth_profiles = .false.     ! T if this file contains depth profiles
+      logical,public                     :: forcing_3d             = .true.     ! T if this file contains 3d forcing
       logical,public                     :: forcing_parameterized  = .false.      ! T if forcing with idealized Gaussian profiles
 
       ! INTERPOLATE FORCING IN TIME, OR NO?
