@@ -54,6 +54,48 @@
 #endif
       end subroutine handle_configuration_error
 
+      subroutine handle_local_error(context, info, i, j, k, tile)
+      implicit none
+      integer, intent(in) :: i,j,k,tile
+      integer :: ierr, msglen, total, leftpad, rightpad
+      character(len=*), intent(in) :: context
+      character(len=*), intent(in), optional :: info
+      character(len=5120) :: final_message
+
+!     Ensure all nodes wait for message above to be printed before any call abort:
+#ifdef MPI
+      call MPI_Barrier(MPI_COMM_WORLD, ierr)
+#endif
+
+      ! Write on node 0 (all nodes will call in a global failure)
+      if (mynode==tile) then
+         write(error_unit, '(A)') repeat('!', 34) // " ROMS ERROR " //
+     &        repeat('!',34)
+
+      ! For context line, want to pad left and right of message so things are aligned:
+         msglen  = len_trim(context)
+         total   = 80
+         leftpad  = (total - msglen - 2) / 2 ! integer division = floor
+         rightpad = total - msglen - 2 - leftpad ! whatever remains
+
+         write(error_unit,'(A)') repeat('!', leftpad) //
+     &        ' ' // trim(context) // ' ' // repeat('!',rightpad)
+         if (present(info)) write(error_unit,'(A)') trim(info)
+         write(error_unit,'(A)') repeat('!', total)
+         write(error_unit, '(A,I0,A,I0,A)')" Location: tile=", tile,
+     &        ", i=",i,", j=",j,", k=",k
+         write(error_unit,'(A)') repeat('!', total)
+      endif
+
+#ifdef MPI
+      call MPI_Abort(MPI_COMM_WORLD, mynode, ierr)
+      call sleep(30) ! prevent any further outputs from being printed
+#else
+      error stop
+#endif
+      end subroutine handle_configuration_error
+
+
       subroutine handle_netcdf_error(netcdf_status,context,info)
 
       use netcdf, only: nf90_strerror
@@ -85,12 +127,11 @@
      &        ' ' // trim(context) // ' ' // repeat('!',rightpad)
          if (present(info)) write(error_unit,'(A)') trim(info)
          write(error_unit,'(A)') repeat('!', total)
-         write(error_unit, '(A)') repeat('!', 78)
          write(error_unit, '(A,I0)')" nf90 status code:", netcdf_status
          write(error_unit, '(2A)') "nf90 error message: ",
      &        nf90_strerror(netcdf_status)
          write(error_unit, nf90_strerror(netcdf_status))
-         write(error_unit, '(A)') repeat('!', 78)
+         write(error_unit, '(A)') repeat('!', total)
       endif
 
 #ifdef MPI
