@@ -12,7 +12,8 @@
       implicit none
       private
 
-      public :: handle_configuration_error, handle_netcdf_error
+      public :: handle_configuration_error
+      public :: handle_netcdf_error
 
       contains
 
