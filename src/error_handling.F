@@ -12,7 +12,7 @@
       implicit none
       private
 
-      public :: global_failure_condition_exit
+      public :: global_failure_condition_exit, handle_netcdf_error
 
       contains
 
@@ -22,15 +22,6 @@
       character(len=*), intent(in) :: context
       character(len=*), intent(in), optional :: info
       character(len=5120) :: final_message
-
-      ! Provide universal header and context (e.g. subroutine)
-c$$$      write(final_message,'(2A)') "ROMS ERROR from ", trim(context)
-
-!     If caller has supplied further info, append it
-c$$$      if (present(info)) then
-c$$$         write(final_message,'(3A)') trim(final_message),
-c$$$     &        ": ", trim(info)
-c$$$      endif
 
 !     Ensure all nodes wait for message above to be printed before any call abort:
 #ifdef MPI
@@ -61,5 +52,52 @@ c$$$      endif
       error stop
 #endif
       end subroutine global_failure_condition_exit
+
+      subroutine handle_netcdf_error(netcdf_status,context,info)
+
+      use netcdf, only: nf90_strerror
+
+      implicit none
+      integer :: ierr, msglen, total, leftpad, rightpad
+      integer, intent(in) :: netcdf_status
+      character(len=*), intent(in) :: context
+      character(len=*), intent(in), optional :: info
+      character(len=5120) :: final_message
+
+!     Ensure all nodes wait for message above to be printed before any call abort:
+#ifdef MPI
+      call MPI_Barrier(MPI_COMM_WORLD, ierr)
+#endif
+
+!     Write on node 0
+      if (mynode==0) then
+         write(error_unit, '(A)') repeat('!', 33) // " NETCDF ERROR " //
+     &        repeat('!',33)
+
+!     For context line, want to pad left and right of message so things are aligned:
+         msglen  = len_trim(context)
+         total   = 80
+         leftpad  = (total - msglen - 2) / 2 ! integer division = floor
+         rightpad = total - msglen - 2 - leftpad ! whatever remains
+
+         write(error_unit,'(A)') repeat('!', leftpad) //
+     &        ' ' // trim(context) // ' ' // repeat('!',rightpad)
+         if (present(info)) write(error_unit,'(A)') trim(info)
+         write(error_unit,'(A)') repeat('!', total)
+         write(error_unit, '(A)') repeat('!', 78)
+         write(error_unit, '(A,I0)')" nf90 status code:", netcdf_status
+         write(error_unit, '(2A)') "nf90 error message: ",
+     &        nf90_strerror(netcdf_status)
+         write(error_unit, nf90_strerror(netcdf_status))
+         write(error_unit, '(A)') repeat('!', 78)
+      endif
+
+#ifdef MPI
+      call MPI_Abort(MPI_COMM_WORLD, mynode, ierr)
+      call sleep(30) ! prevent any further outputs from being printed
+#else
+      error stop
+#endif
+      end subroutine handle_netcdf_error
 
       end module error_handling
