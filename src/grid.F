@@ -312,7 +312,7 @@
 
       use netcdf
       use nc_read_write
-      use error_handling, only: global_failure_condition_exit
+      use error_handling, only: handle_configuration_error
 
       implicit none
       ! input
@@ -336,12 +336,12 @@
      &                                         'F')
 #endif
           if (ierr /= nf90_noerr) then
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=sr_name//"/"//nf90_strerror(ierr),
      &            info="failed to put variable `spherical`")
           endif
        else
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=sr_name//"/"//nf90_strerror(ierr),
      &            info="spherical var not found")
         endif
@@ -353,12 +353,12 @@
         if (ierr == nf90_noerr) then
           ierr=nf90_put_var(ncid, varid, xl)
           if (ierr /= nf90_noerr) then
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=sr_name//"/"//nf90_strerror(ierr),
      &            info="failed to put variable `xl`")
           endif
        else
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=sr_name//"/"//nf90_strerror(ierr),
      &            info="`xl` var not found")
         endif
@@ -369,12 +369,12 @@
           ierr=nf90_put_var(ncid, varid, el)
           if (ierr /= nf90_noerr) then
           if (ierr /= nf90_noerr) then
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=sr_name//"/"//nf90_strerror(ierr),
      &            info="failed to put variable `el`")
           endif
        else
-          call global_failure_condition_exit(
+          call handle_configuration_error(
      &         context=sr_name//"/"//nf90_strerror(ierr),
      &         info="`el` var not found")
         endif
@@ -416,7 +416,7 @@
 !----------------------------------------------------------------------
       subroutine get_grid  ![
 ! read in grid data from NetCDF file or define analytical grid
-      use error_handling, only: global_failure_condition_exit
+      use error_handling, only: handle_configuration_error
       implicit none
 
       character*1 char1
@@ -437,14 +437,14 @@
       if (ierr == nf90_noerr) then
         ierr=checkdims (ncid, grdname, varid)
         if (ierr. ne. nf90_noerr) then
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &       context=sr_name//"/"//nf90_strerror(ierr),
      &       info="Cause of termination: netCDF input.")
         end if
       else
          write(error_info,'(/1x,4A/12x)')  'Cannot ',
      &        'open input NetCDF file ''', trim(grdname), '''.'
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &       context=sr_name//"/"//nf90_strerror(ierr),
      &       info=error_info)
       endif
@@ -461,7 +461,7 @@
      &          " from netCDF file ",
      &          trim(grdname),
      &          "."
-           call global_failure_condition_exit(
+           call handle_configuration_error(
      &          context=sr_name//"/"//nf90_strerror(ierr),
      &          info=error_info)
         end if
@@ -473,7 +473,7 @@
      &        ''' within netCDF file ''',
      &        trim(grdname),
      &        '''.'
-           call global_failure_condition_exit(
+           call handle_configuration_error(
      &          context=sr_name//"/"//nf90_strerror(ierr),
      &          info=error_info)
       endif
@@ -485,7 +485,7 @@
         write(error_info,'(/1x,2A/24x,A/)')
      &          'Spherical grid file detected, but CPP-switch',
      &                                 'SPHERICAL is not set.'
-           call global_failure_condition_exit(
+           call handle_configuration_error(
      &          context=sr_name,
      &          info=error_info)
 # endif
@@ -502,7 +502,7 @@
      &            " from netCDF file ",
      &            trim(grdname),
      &            "."
-           call global_failure_condition_exit(
+           call handle_configuration_error(
      &          context=sr_name//"/"//nf90_strerror(ierr),
      &          info=error_info)
           endif
@@ -513,7 +513,7 @@
      &         " within netCDF file ",
      &         trim(grdname),
      &         "."
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=sr_name//"/"//nf90_strerror(ierr),
      &        info=error_info)
         endif
@@ -528,7 +528,7 @@
      &            " from netCDF file ",
      &            trim(grdname),
      &            "."
-           call global_failure_condition_exit(
+           call handle_configuration_error(
      &          context=sr_name//"/"//nf90_strerror(ierr),
      &          info=error_info)
           endif
@@ -539,7 +539,7 @@
      &         " within netCDF file ",
      &         trim(grdname),
      &         "."
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=sr_name//"/"//nf90_strerror(ierr),
      &        info=error_info)
         endif
@@ -603,7 +603,7 @@
         write(error_info,'(1x,3A/12x,A,1x,A,I4)'),
      &                'Cannot close file ''', trim(grdname), '''.',
      &        nf90_strerror(ierr) MYID
-        call global_failure_condition_exit(
+        call handle_configuration_error(
      &       context=sr_name//"/"//nf90_strerror(ierr),
      &       info=error_info)
 

@@ -35,7 +35,7 @@
       use netcdf
       use roms_read_write
       use nc_read_write
-      use error_handling, only : global_failure_condition_exit
+      use error_handling, only : handle_configuration_error
 
       implicit none
       character(len=9) :: fn_name="checkdims"
@@ -73,7 +73,7 @@
                if (dsize/=xi_rho) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), xi_rho, dsize)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -83,7 +83,7 @@
                if (dsize /= xi_u) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), xi_u, dsize)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -93,7 +93,7 @@
                if (dsize/=eta_rho) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), eta_rho, dsize)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -103,7 +103,7 @@
                if (dsize /= eta_v) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), eta_v, dsize)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -114,7 +114,7 @@
               if (dsize /= N+1) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), N+1, dsize)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
               endif
@@ -123,7 +123,7 @@
               if (dsize /= N) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), N, dsize)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -137,7 +137,7 @@
      &            'Cannot get size of dimension #', id,
      &            'from netCDF file ''',fname(1:lname),'''.',
      &            nf90_strerror(ierr)
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=fn_name,
      &            info=error_info)
 
@@ -148,7 +148,7 @@
         write(error_info,'(A)')
      &          'Cannot get number of dimensions in netCDF file '''//
      &        fname(1:lname)// '''.'// nf90_strerror(ierr)
-        call global_failure_condition_exit(
+        call handle_configuration_error(
      &       context=fn_name,
      &       info=error_info)
 
@@ -186,7 +186,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 
       use param
       use netcdf
-      use error_handling, only: global_failure_condition_exit
+      use error_handling, only: handle_configuration_error
 
       implicit none
       character(len=13) :: fn_name="check_vardims"
@@ -218,7 +218,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                    'for variable ''', vname(1:lvar), ''' in ''',
      &                     fname(1:lfnm),  ''': expecting',   count(i),
      &                 'instead of', size, 'in the file.'
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 ierr=nf90_noerr-1
@@ -228,7 +228,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &              'Cannot determine size of dimension #', i,
      &              'for variable ''', vname(1:lvar), ''' in ''',
      &              fname(1:lfnm), ''', ', nf90_strerror(ierr)
-              call global_failure_condition_exit(
+              call handle_configuration_error(
      &             context=fn_name,
      &             info=error_info)
             endif
@@ -244,7 +244,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                    'mismatch in dimension #3 of variable ''',
      &                        vname(1:lvar), ''' in ''', fname(1:lfnm),
      &              ''': expecting',n3,'instead of',size,'in the file.'
-              call global_failure_condition_exit(
+              call handle_configuration_error(
      &             context=fn_name,
      &             info=error_info)
 
@@ -255,7 +255,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &            'Cannot determine size of dimension #3 for variable''',
      &            vname(1:lvar), ''' in ''', fname(1:lfnm), ''', ',
      &            nf90_strerror(ierr)
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
 
@@ -265,7 +265,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
         write(error_info,'(/A,I3,1x,4A/)')
      &      'Cannot make inquiry for variable varid =', varid, 'in ''',
      &        fname(1:lfnm), ''', ', nf90_strerror(ierr)
-        call global_failure_condition_exit(
+        call handle_configuration_error(
      &       context=fn_name,
      &       info=error_info)
       endif
@@ -285,7 +285,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 
       use param
       use scoord
-      use error_handling, only: global_failure_condition_exit
+      use error_handling, only: handle_configuration_error
 
       implicit none
       character(len=12) :: fn_name = "check_scoord"
@@ -317,7 +317,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           write(error_info,'(/A,F12.5,1x,A,F12.5,1x,3A/)')
      &                  'Mismatch in ''hc'': should be', hc, 'found',
      &               tst_val(1), 'in file ''', fname(1:lfile), '''.'
-          call global_failure_condition_exit(
+          call handle_configuration_error(
      &         context=fn_name,
      &         info=error_info)
           icount=icount+1
@@ -339,7 +339,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           if (ierr /= 0) then
             write(error_info,'(/4A/)')  'Mismatch in ''Cs_w'' ',
      &            'values in file ''', fname(1:lfile), '''.'
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
             icount=icount+1
@@ -362,7 +362,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           if (ierr /= 0) then
             write(error_info,'(/1x,4A/)')  'Mismatch in ''Cs_r'' ',
      &            'values in file ''', fname(1:lfile), '''.'
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
             icount=icount+1
@@ -381,7 +381,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,'(/2(A,F9.4,1x),3A/)')
      &            'Mismatch in ''theta_s'': should be',   theta_s,
      &            'found',tst_val(1),'in file ''', fname(1:lfile),'''.'
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
 # ifdef VERBOSE
@@ -396,7 +396,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,'(/2(A,F9.4,1x),3A/)')
      &      'Mismatch in ''theta_b'': should be',   theta_b, 'found',
      &            tst_val(1), 'in file ''', fname(1:lfile), '''.'
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
 
@@ -439,7 +439,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 
       use param
       use netcdf
-      use error_handling, only : global_failure_condition_exit
+      use error_handling, only : handle_configuration_error
 
       implicit none
       character(len=11) :: fn_name = "read_nc1dat"
@@ -461,7 +461,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,'(/5A/12x,A/)')
      &          'Cannot retrieve global attribute ''',   vname(1:lvar),
      &            ''' from ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
           endif
@@ -491,7 +491,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                'read_nc1dat :: Cannot find size of dimension #',
      &                 dimids(i),  'in file ''', fname(1:lfile), '''.',
      &                  nf90_strerror(ierr)
-                  call global_failure_condition_exit(
+                  call handle_configuration_error(
      &                 context=fn_name,
      &                 info=error_info)
                 endif
@@ -499,7 +499,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
                 write(error_info,'(/5A/12x,A/)')
      &                'Cannot determine dimension IDs for ''', vname(1:lvar),
      &                ''' in file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-                call global_failure_condition_exit(
+                call handle_configuration_error(
      &               context=fn_name,
      &               info=error_info)
               endif
@@ -508,7 +508,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,'(/5A/12x,A/)')
      &            'Cannot determine number of dimensions for ''', vname(1:lvar),
      &            ''' in file ''',  fname(1:lfile), '''.', nf90_strerror(ierr)
-            call global_failure_condition_exit(
+            call handle_configuration_error(
      &           context=fn_name,
      &           info=error_info)
           endif
@@ -518,7 +518,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
               write(error_info,'(/5A/12x,A/)')
      &              'Cannot read variable ''',  vname(1:lvar),
      &              ''' from file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-              call global_failure_condition_exit(
+              call handle_configuration_error(
      &             context=fn_name,
      &             info=error_info)
             endif
@@ -535,7 +535,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &        'Unexpected size of ''', vname(1:lvar),
      &        ''' in file ''',  fname(1:lfile),  ''':', 'should be',
      &        nlen, 'but found', size
-        call global_failure_condition_exit(
+        call handle_configuration_error(
      &       context=fn_name,
      &       info=error_info)
         ierr=+1

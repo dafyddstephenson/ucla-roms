@@ -3,7 +3,7 @@
 #include "cppdefs.opt"
 
       use netcdf
-      use error_handling, only: handle_netcdf_error, global_failure_condition_exit
+      use error_handling, only: handle_netcdf_error, handle_configuration_error
       implicit none
       private
 
@@ -306,7 +306,7 @@
         ierr = nf90_inq_dimid(ncid,dimname(i),did)
         if (ierr/=nf90_noerr) then
            if (.not. present(dimsize)) then ! only an issue if dimension doesn't exist yet
-              call global_failure_condition_exit(
+              call handle_configuration_error(
      &             context=module_name//"/"//fn_name,
      &             info="no dimsize given for var="//varname)
           endif

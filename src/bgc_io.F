@@ -17,7 +17,7 @@
       use marbl_driver
 #endif
       use bgc_shared_vars
-      use error_handling, only: global_failure_condition_exit
+      use error_handling, only: handle_configuration_error
       use nc_read_write
       use roms_read_write
       use netcdf
@@ -163,7 +163,7 @@
      &        "output_period_his (",
      &        output_period_his, ")"
 
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -174,7 +174,7 @@
      &        "output_period_avg (",
      &        output_period_avg, ")"
 
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -285,7 +285,7 @@
      &        "output_period_his_dia (",
      &        output_period_his_dia, ")"
 
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -296,7 +296,7 @@
      &        "output_period_avg_dia (",
      &        output_period_avg_dia, ")"
 
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif

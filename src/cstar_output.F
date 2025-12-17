@@ -17,7 +17,7 @@
       use ocean_vars
       use diagnostics
       use cdr_frc
-      use error_handling, only : global_failure_condition_exit
+      use error_handling, only : handle_configuration_error
       implicit none
 
       private
@@ -235,7 +235,7 @@
       endif
 
       if (monthly_averages .and. .not. do_avg) then
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info="`monthly_avg` is .true., but `do_avg` is .false.")
       endif
@@ -710,7 +710,7 @@
       use roms_read_write
       use scalars
       use ocean_vars
-      use error_handling, only : global_failure_condition_exit
+      use error_handling, only : handle_configuration_error
 
       implicit none
       character(len=12) :: module_name = "cstar_output"
@@ -729,13 +729,13 @@
       character(len=9) :: sr_name = "init_cstar"
 
 #ifndef MARBL
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info="cstar_output must have MARBL enabled.")
 #endif
 
 #ifndef MARBL_DIAGS
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &        info="cstar_output must have MARBL_DIAGS enabled.")
 #endif

@@ -12,11 +12,11 @@
       implicit none
       private
 
-      public :: global_failure_condition_exit, handle_netcdf_error
+      public :: handle_configuration_error, handle_netcdf_error
 
       contains
 
-      subroutine global_failure_condition_exit(context, info)
+      subroutine handle_configuration_error(context, info)
       implicit none
       integer :: ierr, msglen, total, leftpad, rightpad
       character(len=*), intent(in) :: context
@@ -51,7 +51,7 @@
 #else
       error stop
 #endif
-      end subroutine global_failure_condition_exit
+      end subroutine handle_configuration_error
 
       subroutine handle_netcdf_error(netcdf_status,context,info)
 

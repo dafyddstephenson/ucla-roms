@@ -50,7 +50,7 @@
       use basic_output, vn=>vname
       use scalars
       use diagnostics
-      use error_handling, only : global_failure_condition_exit
+      use error_handling, only : handle_configuration_error
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_shared_vars
 #endif
@@ -152,7 +152,7 @@
       if (diag_pflx) then
 #ifndef DIAGNOSTICS
          if (mynode == 0) then
-         call global_failure_condition_exit(
+         call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
      &           info="Must define CPP key DIAGNOSTICS if `do_extract`" //
      &           "=.true. and diag_pflux=.true")
@@ -326,18 +326,18 @@
 
           ! DIAGNOSTICS needs to be activated and diag_pflx=.true.
           if (obj(iobj)%up.and. .not.diag_pflx) then
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=module_name//"/"//sr_name,
      &            info="diag_pflx is not set for up extraction")
           endif
           if (obj(iobj)%vp.and. .not.diag_pflx) then
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=module_name//"/"//sr_name,
      &            info="diag_pflx is not set for vp extraction")
           endif
 #if !defined(BIOLOGY_BEC2) && !defined(MARBL)
           if (obj(iobj)%bgc) then
-             call global_failure_condition_exit(
+             call handle_configuration_error(
      &            context=module_name//"/"//sr_name,
      &            info="MARBL or BIOLOGY_BEC2 cpp key is not "//
      &            "set for BGC extraction")
