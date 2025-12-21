@@ -14,6 +14,7 @@
 
       public :: handle_configuration_error
       public :: handle_netcdf_error
+      public :: handle_local_error
 
       contains
 
@@ -93,7 +94,7 @@
 #else
       error stop
 #endif
-      end subroutine handle_configuration_error
+      end subroutine handle_local_error
 
 
       subroutine handle_netcdf_error(netcdf_status,context,info)

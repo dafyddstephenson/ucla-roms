@@ -14,6 +14,7 @@
       use nc_read_write
       use scalars                                                    ! for FIRST_STEP
       use grid
+      use error_handling, only : handle_configuration_error, handle_netcdf_error, handle_local_error
 
       implicit none
 
@@ -93,7 +94,7 @@
       use mpi
       implicit none
 
-      character(len=14) sr_name = "init_river_frc"
+      character(len=14) :: sr_name = "init_river_frc"
       ! local
       integer :: i,j
       integer :: ierr,ncid,varid
@@ -191,7 +192,7 @@
      &              ' forcing file ('// trim(frcfile(nc_rvol%ifile)) //
      &              ') or as a combined variable, '// trim(riv_flx_name) //
      &              ',  in grid (' // trim(grdname)//
-     &              ') file.')
+     &              ') file.'
                call handle_netcdf_error(
      &              netcdf_status=ierr,
      &              context=module_name//"/"//sr_name,
@@ -226,7 +227,8 @@
       ! hence river_flux = 3 + 0.5 = 3.5
       implicit none
 
-      ! local
+! local
+      character(len=15) :: sr_name = "calc_river_flux"
       integer :: i,j,faces
 
       ! compute uflx,vflx from rflx

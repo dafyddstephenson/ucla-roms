@@ -11,9 +11,9 @@
       use dimensions
       use hidden_mpi_vars
       use mpi_exchanges
-
+      use error_handling, only: handle_configuration_error, handle_netcdf_error
       implicit none
-      character(len=15) module_name="roms_read_write"
+      character(len=15) :: module_name="roms_read_write"
 #include "cppdefs.opt"
 
       private
@@ -296,7 +296,7 @@
       subroutine set_frc_data_1d(nc,var1d,obry)  ![
       implicit none
 
-      character(len=15) sr_name = "set_frc_data_1d"
+      character(len=15) :: sr_name = "set_frc_data_1d"
       ! input/outputs
       type(ncforce),    intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real,dimension(:),intent(out)   :: var1d ! time interpolated forcing data
@@ -381,7 +381,7 @@
 ! ----------------------------------------------------------------------
       subroutine set_frc_data_2d(nc,var2d,obry)  ![
       implicit none
-      character(len=15) sr_name="set_frc_data_2d"
+      character(len=15) :: sr_name="set_frc_data_2d"
       ! input/outputs
       type(ncforce),      intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real,dimension(:,:),intent(out)   :: var2d ! time interpolated forcing data
@@ -464,7 +464,7 @@
 ! ----------------------------------------------------------------------
       subroutine set_frc_data_3d(nc,var3d,obry)  ![
       implicit none
-      character(len=15) sr_name = "set_frc_data_3d"
+      character(len=15) :: sr_name = "set_frc_data_3d"
 ! input/outputs
 
       type(ncforce3d),      intent(inout) :: nc    ! derived type containing all neccesary supporting data
@@ -547,7 +547,7 @@
       ! Specifically for 2-dimensional surface forcing data
       ! Deals with u,v, or rho-grids and performs a mpi exchange if needed
       ! vdata must be allocated with the same 'standard' 2D size as var2d
-      character(len=17) :: set_frc_data_surf
+      character(len=17) :: sr_name = "set_frc_data_surf"
       ! input/outputs
       type(ncforce)                        ,intent(inout):: nc    ! Derived type containing all neccesary supporting data
       real,dimension(1-bf:nx+bf,1-bf:ny+bf),intent(out)  :: var2d ! time interpolated forcing data
@@ -681,16 +681,17 @@
           call handle_netcdf_error(
      &         netcdf_status=ierr,
      &         context=module_name//"/"//sr_name,
-     &         info=("error opening "//ungridded_filename))
-        else
+     &            info=("error opening "//ungridded_filename))
+          end if
+       else
           ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
           if (ierr/=nf90_noerr) then
           call handle_netcdf_error(
      &         netcdf_status=ierr,
      &         context=module_name//"/"//sr_name,
      &         info=("error opening "//frcfile(ifile)))
-        endif
-
+          endif
+       end if
         ierr = nf90_inq_varid(ncid, vname,vid)                       ! check if this file contains the variable
 
         if (ierr==nf90_noerr) then                                   ! variable found, now check if file times contain model time
@@ -703,7 +704,7 @@
              call handle_netcdf_error(netcdf_status=ierr,
      &            context=module_name//"/"//sr_name,
      &            info="error searching for "//tname)
-
+          end if
           ! Check if the time has a cycle length
           ierr=nf90_get_att(ncid, tid, 'cycle_length', cycle_length)
           if (ierr==nf90_noerr) then
@@ -755,8 +756,8 @@
      &            'for ', vname, ' in single file ', ungridded_filename
 
              call handle_configuration_error(
-             context=module_name//"/"//sr_name,
-             info=error_info) ! TODO maybe a more appropriate SR
+     &            context=module_name//"/"//sr_name,
+     &            info=error_info) ! TODO maybe a more appropriate SR
           endif
         endif
 
@@ -769,8 +770,8 @@
         write(error_info,'(/1x,3A/)')
      &        'Could not find var: ', vname, 'in forcing files.'
         call handle_configuration_error(
-             context=module_name//"/"//sr_name,
-             info=error_info) ! TODO maybe a more appropriate SR
+     &       context=module_name//"/"//sr_name,
+     &       info=error_info)   ! TODO maybe a more appropriate SR
       endif
       if (.not. found_rec) then
          write(error_info,'(/1x,3A,I3/)')
@@ -859,7 +860,7 @@
       use mpi
 
       implicit none
-
+      character(len=19) :: sr_name = "fill_frc_slice_aux"
       ! input/outputs
       type(ncforce)      ,intent(inout) :: nc      ! derived type containing all neccesary supporting data
       real               ,intent(in)    :: modtime ! current time of the model
@@ -963,7 +964,7 @@
       use mpi
 
       implicit none
-      character(len=21) sr_name="fill_frc_slice_aux3d"
+      character(len=21) :: sr_name="fill_frc_slice_aux3d"
       ! input/outputs
       type(ncforce3d)      ,intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real               ,intent(in)    :: modtime ! current time of the model
@@ -1143,7 +1144,7 @@
       ! It appends a date/time string and, if neccesary, a node number
       ! It puts the global attributes and creates an ocean_time variable
       implicit none
-      character(len=11) sr_name = "create_file"
+      character(len=11) :: sr_name = "create_file"
       ! input/output
       character(len=*), intent(in) :: ftype     ! desired netcdf file extension
       character(len=*), intent(out):: fname     ! desired netcdf file name
@@ -1494,19 +1495,17 @@
       ierr = nf90_open(file_name,nf90_nowrite,ncid)
       if (ierr/=nf90_noerr) then
 !    &    call handle_ierr(ierr,'check_units, opening: ',frcfile(ifile))
-     &     call handle_ierr(ierr,'check_units, opening: ',file_name)
          call handle_netcdf_error(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
-     &        info = "error opening "//filename)
+     &        info = "error opening "//file_name)
       end if
 
       ierr = nf90_inq_varid(ncid, var_name, var_id)
       if (ierr/=0) then
-         call handle_ierr(ierr,'check_units:: cant find var')
          call handle_netcdf_error(netcdf_status=ierr,
-     &        info="cannot find var "//varname,
+     &        info="cannot find var "//var_name,
      &        context=module_name//"/"//sr_name)
-
+      end if
       ierr = nf90_get_att(ncid, var_id, 'units', file_var_units)
       if (ierr/=0) then
          call handle_netcdf_error(netcdf_status=ierr,
