@@ -11,13 +11,12 @@
       use bgc_shared_vars
       use dimensions
       use roms_read_write
-      use nc_read_write
       use netcdf
       use scalars
       use ocean_vars
       use diagnostics
       use cdr_frc
-      use error_handling, only : handle_configuration_error
+      use error_handling, only : handle_configuration_error, handle_netcdf_error
       implicit none
 
       private
@@ -551,7 +550,8 @@
       ! Call wrt after completion of the time-step
       implicit none
 
-      ! local
+! local
+      character(len=10) :: sr_name = "wrt_output"
       character(len=99),save :: fname
       integer,dimension(3)   :: start
       integer                :: ncid,ierr
@@ -567,9 +567,11 @@
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
-        if (ierr/=nf90_noerr)
-     &      call handle_ierr(ierr,'wrt_cstar, opening: ',fname)
-
+        if (ierr/=nf90_noerr) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          info="error opening "//fname,
+     &          context=module_name//"/"//sr_name)
+        end if
         call multiply_by_thickness
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
