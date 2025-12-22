@@ -66,6 +66,9 @@
 #if defined(BIOLOGY_BEC2) && !defined(MARBL)
 # include "bgc_tracers_indx.opt"
 #endif
+#ifdef MARBL
+      integer,public: iALK, iDIC, iALK_alt, iDIC_alt
+#endif
 
       public set_surf_tracer_flx
       public init_tracers
@@ -364,9 +367,41 @@
         endif
       enddo
 
+#if defined MARBL and !defined((BIOLOGY_BEC2)
+      call get_tracer_indices
+#endif
+
       end subroutine init_tracers  !]
 
 ! ----------------------------------------------------------------------
+      subroutine get_tracer_indices  ![
 
+      ! Store the indices in the tracer array corresponding to particular tracers
+      use tracers, only: t, t_vname, t_lname, t_units
+      use param
+
+      implicit none
+
+      integer :: idx, itot
+
+      itot = 0
+      do idx=1,ntrc_bio
+         itot=itot+1
+         if (t_vname(itot)=='ALK') then
+           iALK = itot
+         endif
+         if (t_vname(itot)=='DIC') then
+           iDIC = itot
+         endif
+         if (t_vname(itot)=='ALK_ALT_CO2') then
+           iALK_alt = itot
+         endif
+         if (t_vname(itot)=='DIC_ALT_CO2') then
+           iDIC_alt = itot
+         endif
+      enddo
+
+      end subroutine get_tracer_indices  !]
+! ----------------------------------------------------------------------
       end module tracers
 
