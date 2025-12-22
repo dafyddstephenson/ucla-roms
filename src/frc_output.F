@@ -10,14 +10,12 @@
       use nc_read_write
       use roms_read_write
       use netcdf
-!      use boundary
-!      use coupling
       use ocean_vars
       use basic_output
       use scalars
-!      use mixing
-!      use diagnostics
+#ifdef MARBL
       use marbl_driver, only : iALK, iDIC, iALK_alt, iDIC_alt
+#endif
 #ifdef BULK_FRC
       use bulk_frc
 #else
@@ -49,12 +47,12 @@
       real,allocatable,dimension(:,:) :: taux_avg
       real,allocatable,dimension(:,:) :: tauy_avg
 #endif
-#if defined BIOLOGY_BEC2 || defined MARBL
+#ifdef MARBL
       real,allocatable,dimension(:,:) :: vflux_ALK_avg
       real,allocatable,dimension(:,:) :: vflux_DIC_avg
       real,allocatable,dimension(:,:) :: vflux_ALK_ALT_CO2_avg
       real,allocatable,dimension(:,:) :: vflux_DIC_ALT_CO2_avg
-#endif /* BIOLOGY_BEC2  || MARBL */
+#endif ! MARBL
 #else
       real,allocatable,dimension(:,:) :: swflx_avg
 #endif
@@ -424,7 +422,7 @@
      &           'wind stress (eta direction)')
       ierr = nf90_put_att(ncid,varid,'units','m2 s-2')
 
-#if defined BIOLOGY_BEC2 || defined MARBL
+#ifdef MARBL
       ! Virtual fluxes
       ! Input comes in units of:         N/A (calculated)
       ! Output is written in units of:   mmol m-2 s-1
@@ -447,7 +445,7 @@
       ierr=nf90_put_att(ncid, varid, 'long_name',
      &           'Virtual flux of ALK')
       ierr = nf90_put_att(ncid,varid,'units','mmol m-2 s-1 ')
-#endif /* BIOLOGY_BEC2  || MARBL */
+#endif ! MARBL
 #else
       ! Input comes in units of:         N m-2
       ! Output is written in units of:   m2 s-2
