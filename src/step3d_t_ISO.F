@@ -64,7 +64,7 @@ c--# define CONST_TRACERS
       use surf_flux, only: stflx, srflx
       use tracers
 #ifdef MARBL
-      use marbl_driver, only: marbldrv_column_physics
+      use marbl_driver, only: marbldrv_column_physics, iALK, iDIC
 #endif
       use diagnostics
       use eos_vars

@@ -13,7 +13,7 @@
       use nc_read_write
       use roms_read_write
       use netcdf
-      use tracers, only: iALK, iDIC, iALK_alt, iDIC_alt
+      use marbl, only: iALK, iDIC, iALK_alt, iDIC_alt
       use ocean_vars
       use basic_output, vn=>vname
       use scalars
