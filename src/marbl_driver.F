@@ -675,7 +675,7 @@
 !
 !-----------------------------------------------------------------------
 
-      use nc_read_write, only: ncread,handle_ierr
+      use nc_read_write, only: ncread
       use netcdf
       use dimensions, only : i0,i1,j0,j1
       use mpi_exchanges, only : exchange_xxx

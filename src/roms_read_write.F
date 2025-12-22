@@ -1494,7 +1494,6 @@
 !     ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
       ierr = nf90_open(file_name,nf90_nowrite,ncid)
       if (ierr/=nf90_noerr) then
-!    &    call handle_ierr(ierr,'check_units, opening: ',frcfile(ifile))
          call handle_netcdf_error(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info = "error opening "//file_name)

@@ -22,7 +22,6 @@
       public :: ncread
       public :: ncwrite
       public :: nccreate
-      public :: handle_ierr
 
       contains
 
@@ -224,8 +223,11 @@
      &        info="ncwrite write var="//trim(vname))
       end if
 
-      if (ierr/=0) call handle_ierr(ierr,'ncwrite write var=',vname)
-
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        info="error writing variable "//trim(vname),
+     &        context=module_name//"/"//sr_name)
+      end if
       end subroutine ncwrite_2D  !]
 !----------------------------------------------------------------------
       subroutine ncwrite_3D(ncid,vname,dat,start)  ![
@@ -311,7 +313,11 @@
      &             info="no dimsize given for var="//varname)
           endif
           ierr=nf90_def_dim(ncid,dimname(i),dimsize(i),did)
-          if (ierr/=0) call handle_ierr(ierr,'nccreate :: def_dim var=',varname)
+          if (ierr/=0) then
+             call handle_netcdf_error(netcdf_status=ierr,
+     &            info="unable to define dim, variable: "//varname,
+     &            context=module_name//"/"//fn_name)
+          end if
         endif
         dimid(i) = did
       enddo
@@ -329,41 +335,6 @@
       nccreate = varid
 
       end function nccreate  !]
-
-      subroutine handle_ierr(ierr, err_msg1, err_msg2)  ![
-      ! handle fatal ierr with error messages.
-      ! err_msg1 & 2 are optional messages
-      ! get this from roms_read_write module rather at some point
-      use param
-      implicit none
-
-      ! inputs
-      integer ierr
-      character(len=*), optional :: err_msg1, err_msg2
-      ! local
-      character(:), allocatable :: f_msg, f_msg1, f_msg2
-
-      ! Check if error message 1 is available
-      if(present(err_msg1))then
-          f_msg1=err_msg1
-      else
-          f_msg1=''
-      endif
-      ! Check if error message 2 is available
-      if(present(err_msg2))then
-          f_msg2=err_msg2
-      else
-          f_msg2=''
-      endif
-      ! Combine optional messages:
-      f_msg = trim(f_msg1) / / ' ' / / trim(f_msg2)
-
-      write(*,'(/3x,A/5x,I4,A/12x,A/)') 'ERROR:: ',mynode,' ',
-     &       trim(f_msg), nf90_strerror(ierr)
-
-      error stop ! Stop simulation assumed fatal error
-
-      end subroutine handle_ierr  !]
 
 
       end module nc_read_write
