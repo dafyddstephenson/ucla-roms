@@ -67,7 +67,7 @@
 # include "bgc_tracers_indx.opt"
 #endif
 #ifdef MARBL
-      integer,public: iALK, iDIC, iALK_alt, iDIC_alt
+      integer,public :: iALK, iDIC, iALK_alt, iDIC_alt
 #endif
 
       public set_surf_tracer_flx
@@ -377,7 +377,6 @@
       subroutine get_tracer_indices  ![
 
       ! Store the indices in the tracer array corresponding to particular tracers
-      use tracers, only: t, t_vname, t_lname, t_units
       use param
 
       implicit none

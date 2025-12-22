@@ -17,7 +17,7 @@
       use grid
       use ocean_vars
       use hidden_mpi_vars
-      use tracers, only :: iALK, iDIC
+      use tracers, only : iALK, iDIC
 
       implicit none
 
