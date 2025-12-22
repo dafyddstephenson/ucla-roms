@@ -366,12 +366,9 @@
      &            context=sr_name,
      &            info="`xl` var not found")
         endif
-        if (ierr /= nf90_noerr)  goto 99                   !--> ERROR
-
         ierr=nf90_inq_varid(ncid, 'el', varid)
         if (ierr == nf90_noerr) then
           ierr=nf90_put_var(ncid, varid, el)
-          if (ierr /= nf90_noerr) then
           if (ierr /= nf90_noerr) then
              call handle_netcdf_error(
      &            netcdf_status=ierr,
