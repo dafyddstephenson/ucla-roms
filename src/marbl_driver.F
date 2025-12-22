@@ -126,6 +126,8 @@
       integer                             :: printnode = 0 ! cpu
       logical                             :: print_values = .false. ! Print example values to stdout during loop
 
+!     Indices of carbonate system tracers
+      integer,public :: iALK, iDIC, iALK_alt, iDIC_alt
 ! ----------------------------------------------------------------------
 
       contains
@@ -383,6 +385,9 @@
          end select
       enddo
 
+!     5. Save carbonate system indices
+!     ---------------------------------------------------------
+      call get_tracer_indices(t_vname)
 
       end subroutine marbldrv_configure_tracers
 
@@ -1932,6 +1937,37 @@
          end if
       end if
       end subroutine if_test_print
+!-----------------------------------------------------------------------
+      subroutine get_tracer_indices(t_vname)  ![
+
+      ! Store the indices in the tracer array corresponding to particular tracers
+      use param
+
+      implicit none
+
+      character*42, dimension(nt), intent(inout) :: t_vname
+
+      integer :: idx, itot
+
+      itot = 0
+      do idx=1,ntrc_bio
+         itot=itot+1
+         if (t_vname(itot)=='ALK') then
+           iALK = itot
+         endif
+         if (t_vname(itot)=='DIC') then
+           iDIC = itot
+         endif
+         if (t_vname(itot)=='ALK_ALT_CO2') then
+           iALK_alt = itot
+         endif
+         if (t_vname(itot)=='DIC_ALT_CO2') then
+           iDIC_alt = itot
+         endif
+      enddo
+
+      end subroutine get_tracer_indices  !]
+!-----------------------------------------------------------------------
 #endif /* MARBL */
       end module marbl_driver
 

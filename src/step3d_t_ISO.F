@@ -58,13 +58,13 @@ c--# define CONST_TRACERS
 #if defined CDR_FORCING && defined MARBL
       use cdr_frc, only: cdr_nprf, cdr_icdr, cdr_source, cdr_iloc,
      &      cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d_ALK, cdr_flx_3d_DIC,
-     &      forcing_3d, ncdr, iALK, iDIC
+     &      forcing_3d, ncdr
 #endif
       use river_frc
       use surf_flux, only: stflx, srflx
       use tracers
 #ifdef MARBL
-      use marbl_driver, only: marbldrv_column_physics
+      use marbl_driver, only: marbldrv_column_physics, iALK, iDIC
 #endif
       use diagnostics
       use eos_vars

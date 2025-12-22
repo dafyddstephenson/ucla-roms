@@ -17,6 +17,7 @@
       use grid
       use ocean_vars
       use hidden_mpi_vars
+      use marbl_driver, only : iALK, iDIC
 
       implicit none
 
@@ -215,7 +216,8 @@
       call find_release_locations
 
       ! Get tracer indices for ALK and DIC
-      call get_tracer_indices
+      cdr_inds(1) = iALK
+      cdr_inds(2) = iDIC
 
       end subroutine init_cdr_frc_dp  !]
 ! ----------------------------------------------------------------------
@@ -237,9 +239,6 @@
       cdr_flx_3d_DIC(:,:,:) = 0
 
       call init_arrays_cdr
-
-      ! Get tracer indices for ALK and DIC
-      call get_tracer_indices
 
       end subroutine init_cdr_frc_3d  !]
 ! ----------------------------------------------------------------------
@@ -269,9 +268,6 @@
       call ncread(ncid,cdr_scl_vrt,cdr_vsc)
       call init_arrays_cdr
       call find_release_locations
-
-      ! Get tracer indices for ALK and DIC
-      call get_tracer_indices
 
       call create_cdr_vertical_structure
 
@@ -399,33 +395,6 @@
       allocate(cdr_jloc(cdr_nprf))
 
       end subroutine find_release_locations  !]
-! ----------------------------------------------------------------------
-      subroutine get_tracer_indices  ![
-
-      ! Figure out which indices in the tracer array correspond
-      ! to ALK and DIC, and save those values in an array
-      use tracers, only: t, t_vname, t_lname, t_units
-      use param
-
-      implicit none
-
-      integer :: idx, itot
-
-      itot = 0
-      do idx=1,ntrc_bio
-         itot=itot+1
-         if (t_vname(itot)=='ALK') then
-           iALK = itot
-         endif
-         if (t_vname(itot)=='DIC') then
-           iDIC = itot
-         endif
-      enddo
-
-      cdr_inds(1) = iALK
-      cdr_inds(2) = iDIC
-
-      end subroutine get_tracer_indices  !]
 ! ----------------------------------------------------------------------
       subroutine create_cdr_vertical_structure  ![
 

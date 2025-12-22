@@ -34,7 +34,6 @@
       real :: avg_begin_time, avg_end_time
 
       integer :: navg = 0
-      integer :: iALK, iDIC, iALK_alt, iDIC_alt
       integer :: iPH, iPH_alt, iFG, iFG_alt
       real,allocatable,dimension(:,:,:) :: hALK_tmp
       real,allocatable,dimension(:,:,:) :: hDIC_tmp
@@ -246,26 +245,6 @@
       endif
 
       if (mynode==0) print *,'init cstar'
-
-      !  Get tracer indices
-      ! --------------------------------------------------------------------------------
-      ! Loop over MARBL tracers...
-      ! ...but use itot as index (to include other tracers)
-      do idx=1,ntrc_bio
-         itot=itot+1
-         if (t_vname(itot)=='ALK') then
-           iALK = itot
-         endif
-         if (t_vname(itot)=='DIC') then
-           iDIC = itot
-         endif
-         if (t_vname(itot)=='ALK_ALT_CO2') then
-           iALK_alt = itot
-         endif
-         if (t_vname(itot)=='DIC_ALT_CO2') then
-           iDIC_alt = itot
-         endif
-      enddo
 
       itot = 0
       ! Loop over 2D BGC diagnostics...
