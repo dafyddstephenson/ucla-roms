@@ -15,8 +15,10 @@
       use scalars
       use ocean_vars
       use diagnostics
-      use cdr_frc
       use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
+     &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
+     &                   cdr_jloc, cdr_source, forcing_3d
       implicit none
 
       private
