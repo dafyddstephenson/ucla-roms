@@ -64,7 +64,6 @@
       real, allocatable, dimension(:,:)          :: cdr_hz        ! layer thicknesses of CDR release
       integer                                    :: ncdr_prof     ! number of release locations
       integer                                    :: N_src         ! number of layers from source file
-      integer,public :: iALK, iDIC                                ! Tracer indices for ALK and DIC
       integer, dimension(2) :: cdr_inds                           ! Array to hold those indices
 
       !!! Variables used only for (3)
