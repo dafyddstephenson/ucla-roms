@@ -58,7 +58,9 @@
 !     ----------------------------------------------------------------------
 
       implicit none
+      private
       character(len=12) :: module_name = "marbl_driver"
+
       type(MARBL_interface_class) :: marbl_instance ! Object to interface between ROMS and MARBL
       integer                     :: nt_marbl       ! number of marbl tracers (according to MARBL)
       integer                     :: idx            ! Looping variable
@@ -102,23 +104,23 @@
       integer, public :: diag_cnt_tot    ! Total number of MARBL diagnostic vars
 
 !     Making local versions of these "bec2" arrays for bgc diagnostic output control
-      logical, dimension(:), pointer :: wrt_marbl_diag_2d
-      logical, dimension(:), pointer :: wrt_marbl_diag_3d
-      integer, dimension(:), pointer :: idx_marbl_diag_2d
-      integer, dimension(:), pointer :: idx_marbl_diag_3d
+      logical, dimension(:), pointer, public :: wrt_marbl_diag_2d
+      logical, dimension(:), pointer, public :: wrt_marbl_diag_3d
+      integer, dimension(:), pointer, public :: idx_marbl_diag_2d
+      integer, dimension(:), pointer, public :: idx_marbl_diag_3d
 
-      real,dimension(:,:,:,:),pointer :: marbl_diag_3d ! points to bec2_diag_3d
-      real,dimension(:,:,:)  ,pointer :: marbl_diag_2d ! points to bec2_diag_2d
+      real,dimension(:,:,:,:),pointer, public :: marbl_diag_3d ! points to bec2_diag_3d
+      real,dimension(:,:,:)  ,pointer, public :: marbl_diag_2d ! points to bec2_diag_2d
 
 #endif
 !     Saved state variables: (mimicking structure of bgc_shared_vars for bec2_diag arrays)
-      integer                             :: nr_marbl_ss_2d,nr_marbl_ss_3d       ! No. of saved_state vars
+      integer, public                         :: nr_marbl_ss_2d,nr_marbl_ss_3d       ! No. of saved_state vars
       parameter( nr_marbl_ss_2d=3, nr_marbl_ss_3d=2)                             ! Hardcode no. of vars (error if wrong)
 
-      real,allocatable,dimension(:,:,:  ) :: marbl_saved_state_2d                ! Array to store them
-      real,allocatable,dimension(:,:,:,:) :: marbl_saved_state_3d                ! " "
-      character*72                        :: vname_marbl_ss_2d(4,nr_marbl_ss_2d) ! Metadata (shortname,longname,units)
-      character*72                        :: vname_marbl_ss_3d(4,nr_marbl_ss_3d) ! " "
+      real,allocatable,dimension(:,:,:  ),public :: marbl_saved_state_2d                ! Array to store them
+      real,allocatable,dimension(:,:,:,:),public :: marbl_saved_state_3d                ! " "
+      character*72, public                       :: vname_marbl_ss_2d(4,nr_marbl_ss_2d) ! Metadata (shortname,longname,units)
+      character*72, public                       :: vname_marbl_ss_3d(4,nr_marbl_ss_3d) ! " "
 
 
 !     Integers to define where print statements should come from
@@ -128,9 +130,18 @@
       logical                             :: print_values = .false. ! Print example values to stdout during loop
 
 !     Indices of carbonate system tracers
-      integer,public :: iALK, iDIC, iALK_alt, iDIC_alt
+      integer, public :: iALK, iDIC, iALK_alt, iDIC_alt
       character(len=200) :: error_info
 ! ----------------------------------------------------------------------
+
+      public :: marbldrv_configure_tracers
+      public :: marbldrv_configure_diagnostics
+      public :: marbldrv_configure_saved_state
+      public :: marbldrv_compute_init_diagnostics
+      public :: marbldrv_write_ss_vars_to_rst
+      public :: marbldrv_create_ss_vars_in_rst
+      public :: marbldrv_read_ss_vars_from_rst
+      public :: marbldrv_column_physics
 
       contains
 
@@ -1876,7 +1887,7 @@
 ! If MARBL needs to abort, stop the program
       if (log_to_print%labort_marbl) then
          call handle_configuration_error(context=module_name,
-         info="error reported from MARBL (external library)")
+     &        info="error reported from MARBL (external library)")
       end if
 
 

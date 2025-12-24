@@ -610,6 +610,9 @@
       end subroutine  init_arrays_bgc_frc !]
 ! ----------------------------------------------------------------------
       subroutine wrt_bgc(init)  ![
+#ifdef MARBL_DIAGS
+      use hidden_mpi_vars, only : inode, jnode
+#endif
       implicit none
 
 !     import/export

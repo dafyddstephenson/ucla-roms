@@ -131,7 +131,6 @@
          write(error_unit, '(A,I0)')" nf90 status code:", netcdf_status
          write(error_unit, '(2A)') "nf90 error message: ",
      &        nf90_strerror(netcdf_status)
-         write(error_unit, nf90_strerror(netcdf_status))
          write(error_unit, '(A)') repeat('!', total)
       endif
 

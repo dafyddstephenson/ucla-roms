@@ -269,9 +269,11 @@
      &          info="error during inquire,  dimension:"//dname)
         end if
         ierr = nf90_inquire_dimension(ncid,dimids(2),len=n2)
+        if (ierr/=0) then
            call handle_netcdf_error(netcdf_status=ierr,
      &          context=module_name//"/"//sr_name,
      &          info="error during inquire")
+        end if
 
         lstr = len(trim(dname))
         allocate(character(len=lstr) :: obj(iobj)%dname)

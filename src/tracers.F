@@ -27,7 +27,7 @@
       use roms_read_write
       use netcdf
 #ifdef MARBL
-      use marbl_driver
+      use marbl_driver, only: marbldrv_configure_tracers
 #endif
       use mpi_exchanges
       implicit none
