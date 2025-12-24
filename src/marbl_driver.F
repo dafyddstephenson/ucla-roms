@@ -53,6 +53,7 @@
       use bgc_forces                  , only: nhy
 #endif
       use ocean_vars                  , only: Hz, z_r, z_w
+      use error_handling              , only: handle_configuration_error
 
 !     ----------------------------------------------------------------------
 
