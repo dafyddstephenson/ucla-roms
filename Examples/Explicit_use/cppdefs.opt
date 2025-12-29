@@ -46,7 +46,7 @@ c--# define AVERAGES
 c--# define LMD_CONVEC
 
 # define BIOLOGY_BEC2
-# define BEC2_DIAGS
+!# define BEC2_DIAG
 
 # define OBC_WEST
 # define OBC_EAST

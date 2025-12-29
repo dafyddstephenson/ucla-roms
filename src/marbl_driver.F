@@ -32,7 +32,8 @@
      &                                        marbl_saved_state_type
 #endif
       use param                       , only: mynode,nt,ntrc_bio,
-     &                                        isalt,itemp,Lm,Mm
+     &                                        isalt,itemp,Lm,Mm,
+     &                                        ocean_grid_comm
       use dimensions                  , only: nz
       use surf_flux                   , only: uwnd, vwnd
       use bgc_forces                  , only: pco2air,pco2air_alt,

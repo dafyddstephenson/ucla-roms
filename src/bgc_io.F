@@ -11,19 +11,43 @@
 #if defined BIOLOGY_BEC2 || defined MARBL
 
       ! param needed for GLOBAL_2D_array to work. NT = number tracer from param
-      use param
-      use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
+      use param, only: lm, mm
+      use tracers, only: t_avg, wrt_t_avg, nt_2_t_avg, t_units
 #ifdef MARBL
-      use marbl_driver
 #endif
-      use bgc_shared_vars
-      use nc_read_write
-      use roms_read_write
-      use netcdf
-      use scalars
-      use dimensions !
-      use ocean_vars
-      use dimensions
+      use bgc_shared_vars, only:
+     &     nrpf_avg, nrpf_his, nrpf_avg_dia,
+     &     nrpf_his_dia, t, nc_dust, nc_iron, bgc_idx, t_idx, wrt_avg,
+     &     wrt_his, interp_frc, itands, mynode, nt_passive,
+     &     output_period_avg, output_period_his, t_vname, wrt_t, t_lname,
+     &     nc_pco2air
+#ifdef MARBL
+     &     , nc_pco2air_alt
+#endif
+#ifdef NOX_FORCING
+     &     , nc_nox
+#endif
+#ifdef NHY_FORCING
+     &     , nc_nhy
+#endif
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
+     &     , bgc_diag_2d_avg, bgc_diag_3d_avg,
+     &     bgc_diag_2d, bgc_diag_3d, nr_bgc_diag_2d, nr_bgc_diag_3d,
+     &     nr_bgc_wrdiag_2d, nr_bgc_wrdiag_3d, output_period_avg_dia,
+     &     output_period_his_dia, wrt_avg_dia, wrt_his_dia,
+     &     wrt_bgc_diag_2d, idx_bgc_diag_2d, vname_bgc_diag_2d,
+     &     wrt_bgc_diag_3d, idx_bgc_diag_3d, vname_bgc_diag_3d
+#endif
+      use nc_read_write, only: nccreate, ncwrite
+      use roms_read_write, only:
+     &     max_name_size,
+     &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
+     &     xi_rho, create_file, set_frc_data
+      use netcdf, only:
+     &     nf90_write, nf90_open, nf90_close,
+     &     nf90_put_att, nf90_enddef
+      use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
+      use dimensions, only: i0, i1, j0, j1
 
       implicit none
 
@@ -66,8 +90,19 @@
 
       ! this routine is called by # if defined BIOLOGY_BEC2 in set_forces.F of ETH code
 
-      use scalars
-      use bgc_forces
+      use bgc_forces, only: dust, iron
+#ifdef NOX_FORCING
+     &     , nox
+#endif
+#ifdef NHY_FORCING
+     &     ,nhy
+#endif
+#ifdef PCO2AIR_FORCING
+     &     ,pco2air
+#ifdef MARBL
+     &     ,pco2air_alt
+#endif
+#endif
 
       implicit none
 
@@ -577,6 +612,11 @@
       end subroutine  init_arrays_bgc_frc !]
 ! ----------------------------------------------------------------------
       subroutine wrt_bgc(init)  ![
+#ifdef MARBL_DIAGS
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_x, nsub_e
+      use hidden_mpi_vars, only: inode, jnode
+      use marbl_driver, only: marbldrv_compute_init_diagnostics
+#endif
       implicit none
 
 !     import/export

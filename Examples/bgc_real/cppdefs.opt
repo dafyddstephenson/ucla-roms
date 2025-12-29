@@ -30,6 +30,7 @@ c--# define SFLX_CORR
 # define SALINITY
 # define NONLIN_EOS
 # define SPLIT_EOS
+# define CDR_FORCING
 
 c--# define AVERAGES
 # define EXACT_RESTART
@@ -73,7 +74,7 @@ c--# define LMD_CONVEC
 
 #ifdef BIOLOGY_BEC2
 # define BIOLOGY                  /* DPD current does nothing in new code */
-!# define BEC2_DIAG                /* BGC diagnostics */
+# define BEC2_DIAG                /* BGC diagnostics */
 # define Ncycle_SY                /* N Cycle with NO2, N2O and N2 tracers */
 # undef TDEP_REMIN                /* Temperature dependency for Particulate  remin */
 # undef DAILYPAR_BEC              /* daily average value used for BGC (ony works with bulk) */
