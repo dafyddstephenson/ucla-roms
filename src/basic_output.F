@@ -1183,7 +1183,7 @@
      &        "Name","Write (T/F)","Long name"
          write(*,'(9x,A)')  repeat('-',62)
          write(*,'(13(/11x,A,T30,L1,T36,A))') ! 13(....) repeats formatting 11 times.
-     &     , 'zeta',   wrt_avg_Z,    vname(2,indxZ)
+     &       'zeta',   wrt_avg_Z,    vname(2,indxZ)
      &     , 'ubar',   wrt_avg_Ub,   vname(2,indxUb)
      &     , 'vbar',   wrt_avg_Vb,   vname(2,indxVb)
 #ifdef SOLVE3D
@@ -1229,7 +1229,7 @@
             write(period_info,'(7x,A,F6.1)')
      &           'output_period_rst =', output_period_rst
          end if
-         write(*,'(A,2x,A)'),trim(stdout_str),trim(period_info)
+         write(*,'(A,2x,A)') trim(stdout_str),trim(period_info)
       end if
       end subroutine display_output_settings_to_terminal_rst
 
