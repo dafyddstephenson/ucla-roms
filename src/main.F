@@ -10,12 +10,12 @@
       use tracers, only: init_tracers
       use mpi
       use sponge_tune
-
+      use timers, only: tstart, tend
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.
 # ifdef MPI
-      real*8 tstart, tend
+c$$$      real*8 tstart, tend
 C$    integer level,req_lev
 
 c**   call system('uname -nmr')
@@ -59,6 +59,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars
       use ocean_vars
       use basic_output
+      use timers
 
       implicit none
 
@@ -97,11 +98,10 @@ C$OMP END MASTER                         ! is in uniform state]. This
       use diagnostics
       use boundary
       use particles
-      use cstar_output
       use upscale_output
       use random_output
       use cstar_output
-      use cdr_frc
+      use frc_output
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bec2_params
       use bgc_io
@@ -238,9 +238,11 @@ CR      write(*,*) ' -6' MYID
 
                                   ! Set initial model clock: at this
       time=start_time             ! moment "start_time" (global scalar)
-      tdays=time*sec2day          ! is set by get_init or analytically
+                                  ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
+      tdays = (time-0.5*dt)*sec2day
       call set_forces
+      tdays = time*sec2day
       call set_depth(0)
 
 !----------------------------------------------------------------------
@@ -270,7 +272,6 @@ CR      write(*,*)  ' -2' MYID
       endif
 
       ! we should have a grid and z_r by now
-!      if (cdr_source) call init_cdr_frc
 
 #if defined SPONGE
       call set_nudgcof(0)
@@ -285,6 +286,7 @@ CR      write(*,*)  ' -2' MYID
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
       if (do_upscale) call init_upscale
+      if (do_frc) call init_frc
 
       if (may_day_flag /=0 ) goto 99     !-->  EXIT
 
@@ -318,6 +320,7 @@ CR      write(*,*)  ' -2' MYID
       use surf_flux
       use random_output
       use cstar_output
+      use frc_output
       use zslice_output
       use basic_output
       use boundary
@@ -475,10 +478,11 @@ CR      write(*,*)  ' -2' MYID
 #endif
 
       if (do_random) call wrt_random
-#if defined MARBL && defined MARBL_DIAGS
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       if (do_cstar)  call wrt_cstar
 #endif
       if (do_zslice) call wrt_zslice
+      if (do_frc)    call wrt_frc
 
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc
