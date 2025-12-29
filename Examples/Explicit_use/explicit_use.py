@@ -64,7 +64,7 @@ def find_enclosing_owner_symbol(statement, pos):
         i -= 1
     return None
 
-def determine_symbol_from_compiler_error(error_block, direction="forward"):
+def determine_symbol_from_compiler_error(error_block, direction="backward"):
     # 1) If the compiler explicitly names the symbol, trust it.
     named = extract_symbol_named_in_error(error_block)
     if named:

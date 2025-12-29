@@ -45,6 +45,9 @@ c--# define AVERAGES
 # define LMD_NONLOCAL
 c--# define LMD_CONVEC
 
+# define BIOLOGY_BEC2
+# define BEC2_DIAGS
+
 # define OBC_WEST
 # define OBC_EAST
 # define OBC_NORTH

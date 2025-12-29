@@ -16,12 +16,12 @@
       use sponge_tune, only: ub_tune
       use diagnostics, only: diag_pflx
       use scalars, only:
-     &     NT, mynode, nt_passive, iic, knew, nstp, time,
+     &     NT, iic, knew, nstp, time,
      &     N, dt, start_time, nnew, tdays
       use ocean_vars, only:
      &     zeta_avg, ubar_avg, vbar_avg, u_avg, v_avg,
      &     w_avg, wvl_avg, zeta, ubar, vbar, u, v, z_r, We, Wi
-      use param, only: Lm, Mm, isalt, itemp
+      use param, only: Lm, Mm, isalt, itemp, mynode, nt_passive
       implicit none
       private
 

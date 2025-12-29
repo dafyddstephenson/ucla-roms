@@ -15,12 +15,9 @@
 ! Both are evaluated at the surface.  Adapted from original "rati"
 ! and "beta" routines.
 
-      use param
       use tracers, only: t
-      use eos_vars
-      use grid
-      use ocean_vars
-      use scalars
+      use scalars, only: nstp, rho0
+      use param, only: N, isalt, itemp
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j

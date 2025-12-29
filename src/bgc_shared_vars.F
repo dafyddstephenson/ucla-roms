@@ -6,13 +6,18 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #include "cppdefs.opt"
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
 
-      use param
-      use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
-      use roms_read_write
+      use param, only: mynode, nt_passive, ntrc_bio
+      use tracers, only:
+     &     itands, t_vname, wrt_t, t_lname, idiatc,
+     &     idiatchl, idiatfe, idiatsi, idiazc, idiazchl, idiazfe, ispc,
+     &     ispcaco3, ispchl, ispfe,t
+      use tracers, only: ialk, idic, ife, io2, ipo4, isio3, idoc,
+     & idofe, idon, idonr, idop, idopr, inh4, ino3, izooc
+      use roms_read_write, only: ncforce
 #if defined(BIOLOGY_BEC2)
-      use bec2_vars
+      use bec2_vars, only: init_arrays_bec2_vars
 #elif defined(MARBL)
-      use marbl_driver,only: marbldrv_configure_saved_state
+      use marbl_driver, only: marbldrv_configure_saved_state
 # ifdef MARBL_DIAGS
      &     ,marbldrv_configure_diagnostics
      &     ,nr_marbl_diag_2d,nr_marbl_diag_3d

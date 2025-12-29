@@ -17,7 +17,7 @@
       use roms_read_write
       use nc_read_write
       use scalars
-
+      use param
       implicit none
 
       private

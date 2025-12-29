@@ -9,9 +9,8 @@
        subroutine ecosys_bec2_tile(Istr,Iend,Jstr,Jend)
        ! Taken from PDamien's ecosys_bec2_td2.F
 
-       use param
        use tracers, only: t, iTandS
-       use surf_flux ! , only: sustr,sustr_r,svstr,svstr_r,srflx
+       use surf_flux, only: sustr,sustr_r,svstr,svstr_r,srflx
 # ifdef BULK_FRC
        use bulk_frc, only: wspd_used ! to compute gas exchange
 # endif
@@ -576,6 +575,7 @@
        use scalars
        use bgc_io
        use bgc_shared_vars
+       use bec2_vars
        use bec2_params
 
         implicit none
@@ -2305,6 +2305,7 @@
         use scalars
         use bgc_shared_vars
         use bec2_params
+        use bec2_vars
 
         implicit none
 
@@ -2441,6 +2442,7 @@
        use ocean_vars
        use bgc_shared_vars
        use bec2_params
+       use bec2_vars
 
        implicit none
 

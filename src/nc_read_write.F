@@ -9,6 +9,11 @@
 
 #include "nc_read_write.opt"
 
+      public :: ncread
+      public :: ncwrite
+      public :: nccreate
+      public :: handle_ierr
+
       interface ncwrite
         module procedure  ncwrite_1D, ncwrite_2D, ncwrite_3D
       end interface
@@ -16,11 +21,6 @@
       interface ncread
         module procedure  ncread_1D, ncread_2D, ncread_3D
       end interface
-
-      public :: ncread
-      public :: ncwrite
-      public :: nccreate
-      public :: handle_ierr
 
       contains
 

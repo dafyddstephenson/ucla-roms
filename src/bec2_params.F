@@ -354,10 +354,7 @@
 !!===========================================================
 !! Purpose :   Initialisation of the BEC biogeochemical model
 !!===========================================================
-
-      use param
       use grid
-      use bgc_io
       use bgc_shared_vars
       use bec2_vars
 
