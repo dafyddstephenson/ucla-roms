@@ -14,12 +14,12 @@ def find_first_use_statement(file_path):
             # Store the original indent so it never changes
             indent = line[:len(line) - len(line.lstrip())]
             return i, line, indent
-        
+
     return None, None, None
 
 def run_make_and_find_missing_symbols(file_path):
-    clean_process = subprocess.run(['make','compile_clean'], capture_output=True, text=True)    
-    process = subprocess.run(['make','KEEP_PPSRC=true'], capture_output=True, text=True)
+    clean_process = subprocess.run(['make','compile_clean'], capture_output=True, text=True)
+    process = subprocess.run(['make','BUILD_MODE=debug','KEEP_PPSRC=true'], capture_output=True, text=True)
     output = process.stdout + process.stderr
     output_lines = output.split("\n")
     compiler_error_blocks = find_compiler_error_blocks(output_lines, file_path.stem)
@@ -28,17 +28,17 @@ def run_make_and_find_missing_symbols(file_path):
     if compiler_error_blocks:
         error_block = compiler_error_blocks[0]
 
-        missing_symbol_compiler = determine_symbol_from_compiler_error(error_block, direction="forward")
+        missing_symbol_compiler = determine_symbol_from_compiler_error(error_block, direction="backward")
         if missing_symbol_compiler:
             return error_block, [missing_symbol_compiler], process.returncode
-        
+
     if linker_error_blocks:
         error_block = linker_error_blocks[0]
         missing_symbol_linker = extract_symbol_from_linker_error(error_block)
         if missing_symbol_linker:
             return error_block, [missing_symbol_linker], process.returncode
 
-    
+
     # If no "IMPLICIT type" error found, but non-zero exit code, raise
     if process.returncode != 0:
         raise RuntimeError(
@@ -55,7 +55,7 @@ def find_compiler_error_blocks(output_lines, filename_stem):
     i = 0
     while i < n:
         line = output_lines[i].lower().strip()
-        
+
         if line.startswith("error:"):
             # Walk back to filename
             block_start = i
@@ -73,7 +73,7 @@ def find_linker_error_blocks(output_lines):
     i = 0
     while i < n:
         line = output_lines[i].lower().strip()
-        
+
         if line.startswith("ld:") and ("ld: warning:" not in line):
             # Walk back to filename
             block_start = i
@@ -122,7 +122,7 @@ def get_statement(filename, line_num, col_num):
         sum([len(p) for p in parts_stripped[:relative_line_num]]) +
         len(parts[relative_line_num][:(col_num-6)].strip()) - 1
     )
-    
+
     statement = ''.join(parts_stripped)
     print("----------")
     print(f"STATEMENT: {statement[pos:]}")
@@ -130,35 +130,63 @@ def get_statement(filename, line_num, col_num):
     return statement, pos
 
 def get_nearest_symbol_in_statement(statement, position, direction):
-    pattern = r'[a-zA-Z_][a-zA-Z0-9_]*'
+    """
+    Find the most likely symbol responsible for an error at `position`.
+    Prefers enclosing function/array references like foo(...) over
+    variables inside index expressions.
+    """
+
+    # --- Step 1: try to find enclosing (...) and extract its leading symbol ---
+    depth = 0
+    i = position
+
+    while i >= 0:
+        c = statement[i]
+
+        if c == ')':
+            depth += 1
+        elif c == '(':
+            if depth == 0:
+                # Found the opening paren of the expression
+                j = i - 1
+                # Skip whitespace
+                while j >= 0 and statement[j].isspace():
+                    j -= 1
+                # Extract identifier before '('
+                m = re.search(r'[A-Za-z_][A-Za-z0-9_]*$', statement[:j+1])
+                if m:
+                    return m.group(0)
+                break
+            else:
+                depth -= 1
+        i -= 1
+
+    # --- Step 2: fallback to nearest identifier logic ---
+    pattern = r'[A-Za-z_][A-Za-z0-9_]*'
     matches = list(re.finditer(pattern, statement))
+
     if direction == "backward":
-        for match in matches[::-1]:
+        for match in reversed(matches):
             start, end = match.span()
-            print(statement)
-            print(match)
-            print(position)
             if start <= position < end:
                 return match.group(0)
-        # Fallback: last identifier strictly before caret
+        # fallback: closest before
         left = statement[:position]
         matches_left = list(re.finditer(pattern, left))
         if matches_left:
             return matches_left[-1].group(0)
+
     elif direction == "forward":
         for match in matches:
             start, end = match.span()
-            # if "nf90_inq_varid" in statement:
-            #     import pdb;pdb.set_trace()
-            
             if start <= position < end:
                 return match.group(0)
-        # Fallback: first identifier strictly after caret
+        # fallback: first after caret
         right = statement[position:]
         matches_right = list(re.finditer(pattern, right))
-        
         if matches_right:
             return matches_right[0].group(0)
+
     return None
 
 def extract_symbol_from_implicit_type_error(error_block):
@@ -291,7 +319,7 @@ def comment_line(file_path, line_num):
         lines[line_num] = '!' + lines[line_num]
     with open(file_path, 'w') as f:
         f.writelines(lines)
-        
+
 def uncomment_line(file_path, line_num):
     with open(file_path, 'r') as f:
         lines = f.readlines()
@@ -306,7 +334,7 @@ def delete_line(file_path, line_num):
     lines[line_num]=''
     with open(file_path, 'w') as f:
         f.writelines(lines)
-        
+
 
 if __name__ == "__main__":
     old_missing=None
@@ -319,7 +347,7 @@ if __name__ == "__main__":
         if line_num is None:
             print("No non-explicit use statement found.")
             exit(1)
-        first_make=True            
+        first_make=True
         while True:
             error_lines, missing, code = run_make_and_find_missing_symbols(file_path)
             print("First error:", "\n".join(error_lines))
