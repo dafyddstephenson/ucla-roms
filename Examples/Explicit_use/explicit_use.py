@@ -1,6 +1,98 @@
+#!/usr/bin/env python3
 import subprocess
 from pathlib import Path
+import sys
 import re
+
+IMPLICIT_TYPE_RE = re.compile(r"symbol\s+'([^']+)'\s+.*has no implicit type", re.IGNORECASE)
+NOT_DECLARED_RE  = re.compile(r"symbol\s+'([^']+)'\s+.*has no implicit type", re.IGNORECASE)
+
+def extract_symbol_named_in_error(error_block):
+    """
+    Extract explicitly named symbols from compiler diagnostics like:
+      - Symbol 'x' has no IMPLICIT type
+      - Function 'x' has no IMPLICIT type
+      - Variable 'x' has no IMPLICIT type
+    """
+    pattern = re.compile(
+        r"(?:symbol|function|variable)\s+'([^']+)'",
+        re.IGNORECASE
+    )
+    for line in error_block:
+        m = pattern.search(line)
+        if m:
+            return m.group(1).lower()
+    return None
+
+def is_syntax_style_error(error_block):
+    """
+    Errors where the caret location is often misleading and the *enclosing* call/index
+    owner is usually the real missing symbol.
+    """
+    text = "\n".join(error_block).lower()
+    return any(
+        key in text
+        for key in [
+            "syntax error",
+            "syntax error in argument list",
+            "expression expected",
+            "invalid form of array reference",
+            "allocate-object",
+            "rank mismatch",  # optional; depends on your workflow
+        ]
+    )
+
+def find_enclosing_owner_symbol(statement, pos):
+    """
+    If pos is inside (...) and that (...) is immediately preceded by an identifier,
+    return that identifier (array/procedure name).
+    """
+    depth = 0
+    i = pos
+    while i >= 0:
+        c = statement[i]
+        if c == ')':
+            depth += 1
+        elif c == '(':
+            if depth == 0:
+                j = i - 1
+                while j >= 0 and statement[j].isspace():
+                    j -= 1
+                m = re.search(r'[A-Za-z_][A-Za-z0-9_]*$', statement[:j+1])
+                return m.group(0) if m else None
+            depth -= 1
+        i -= 1
+    return None
+
+def determine_symbol_from_compiler_error(error_block, direction="forward"):
+    # 1) If the compiler explicitly names the symbol, trust it.
+    named = extract_symbol_named_in_error(error_block)
+    if named:
+        return named
+
+    # 2) Otherwise fall back to caret-based extraction, but for syntax-style errors
+    #    prefer the enclosing owner (foo(...) => foo).
+    m = re.match(r'([^:]+):(\d+):(\d+):', error_block[0])
+    if m:
+        filename, line_num, col_num = m.group(1), int(m.group(2)), int(m.group(3))
+    else:
+        m = re.match(r'([^:]+):(\d+):', error_block[0])
+        if not m:
+            return None
+        filename, line_num = m.group(1), int(m.group(2))
+        col_num = 1
+
+    statement, caret_pos = get_statement(Path("Compile")/filename, line_num, col_num)
+
+    if is_syntax_style_error(error_block):
+        owner = find_enclosing_owner_symbol(statement, caret_pos)
+        if owner:
+            return owner.lower()
+
+    # 3) General fallback: nearest identifier (your previous logic).
+    symbol = get_nearest_symbol_in_statement(statement, caret_pos, direction)
+    return symbol.lower() if symbol else None
+
 
 def find_first_use_statement(file_path):
     with open(file_path, 'r') as f:
@@ -85,22 +177,6 @@ def find_linker_error_blocks(output_lines):
         i += 1
     return blocks
 
-
-def determine_symbol_from_compiler_error(error_block, direction="backward"):
-    # Parse filename, line, col from first error line
-    m = re.match(r'([^:]+):(\d+):(\d+):', error_block[0])
-    if m:
-        filename, line_num, col_num = m.group(1), int(m.group(2)), int(m.group(3))
-    else:
-        m = re.match(r'([^:]+):(\d+):', error_block[0])
-        if not m:
-            return None
-        filename, line_num = m.group(1), int(m.group(2))
-        col_num = 1
-
-    statement, caret_pos = get_statement(Path("Compile")/filename, line_num, col_num)
-    symbol = get_nearest_symbol_in_statement(statement, caret_pos, direction)
-    return symbol
 
 def get_statement(filename, line_num, col_num):
     with open(filename, 'r') as f:
@@ -339,7 +415,7 @@ def delete_line(file_path, line_num):
 if __name__ == "__main__":
     old_missing=None
     for filenum in range(8):
-        file_path = Path("basic_output.F")
+        file_path = Path(sys.argv[-1])
         line_num, use_statement_first_line, indent = find_first_use_statement(file_path)
         print(f"Found use statement at line {line_num}: {use_statement_first_line} (...)")
         comment_line(file_path, line_num)
