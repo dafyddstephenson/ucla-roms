@@ -5,17 +5,24 @@
 #include "cppdefs.opt"
 
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
-      use param
-      use tracers
-      use marbl_driver
-      use bgc_shared_vars
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use netcdf
-      use scalars
-      use ocean_vars
-      use diagnostics
+      use tracers, only: t_units
+      use marbl_driver, only:
+     &     marbl_saved_state_3d, idx, ialk,
+     &     ialk_alt, idic, idic_alt, isalt, itemp, nr_marbl_ss_3d,
+     &     vname_marbl_ss_3d
+      use bgc_shared_vars, only:
+     &     t, bgc_diag_2d, mynode, lm, mm,
+     &     nr_bgc_diag_2d, vname_bgc_diag_2d, t_lname
+      use dimensions, only: i0, i1, j0, j1, nx, ny, nz
+      use roms_read_write, only:
+     &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
+     &     xi_rho, create_file
+      use nc_read_write, only: nccreate, handle_ierr, ncwrite
+      use netcdf, only:
+     &     nf90_noerr, nf90_write, nf90_double, nf90_open,
+     &     nf90_put_att, nf90_close
+      use scalars, only: iic, knew, nnew, tdays, time, dt, n
+      use ocean_vars, only: zeta, hz
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
      &                   cdr_jloc, cdr_source, forcing_3d
@@ -347,7 +354,6 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use param
       implicit none
 
       ! local
@@ -420,7 +426,6 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use param
       implicit none
 
       hALK_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iALK)*Hz(i0:i1,j0:j1,:)
@@ -435,7 +440,6 @@
 !----------------------------------------------------------------------
       subroutine calc_cdr_source ![
       ! Update source terms from the CDR module
-      use param
       implicit none
 
       integer :: i,j,k,icdr,cidx
@@ -681,12 +685,6 @@
 
 #else /* MARBL && MARBL_DIAGS && CDR_FORCING */
 !----------------------------------------------------------------------
-      use param
-      use tracers
-      use dimensions
-      use roms_read_write
-      use scalars
-      use ocean_vars
 
       implicit none
 
