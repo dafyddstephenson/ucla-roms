@@ -557,8 +557,10 @@
       use mixing, only: hbls, hbbl
       use dimensions, only: i0, i1, j0,j1
       use tracers, only: wrt_rst_trc
-      use coupling, only: du_avg1, dv_avg1, du_avg2, dv_avg2,
-     & du_avg_bak, dv_avg_bak
+      use coupling, only:
+     &     du_avg1, dv_avg1, du_avg2, dv_avg2,
+     &     du_avg_bak, dv_avg_bak
+      use grid, only: riv_umask, riv_vmask
 #ifdef MARBL
 !     add MARBL saved state to restart to restart file
       use marbl_driver, only: marbldrv_write_ss_vars_to_rst
