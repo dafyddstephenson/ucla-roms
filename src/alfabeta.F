@@ -18,6 +18,12 @@
       use tracers, only: t
       use scalars, only: nstp, rho0
       use param, only: N, isalt, itemp
+#ifndef NONLIN_EOS
+      use eos_vars, only: tcoef
+#ifdef SALINITY
+     &     , scoef
+#endif
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j
