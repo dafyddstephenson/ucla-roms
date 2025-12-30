@@ -49,6 +49,7 @@
       use ocean_vars
       use basic_output, vn=>vname
       use scalars
+      use param
       use diagnostics
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_shared_vars
