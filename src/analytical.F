@@ -3,14 +3,15 @@
       ! all analytical routines contained in this module
 
 #include "cppdefs.opt"
-
-      use ocean_vars, only: zeta, ubar, vbar, u, v
-      use grid, only: nx, ny, nz, exchange_xxx
+      use ocean_vars, only: zeta, ubar, vbar, u, v, z_w, hz
+      use grid, only: nx, ny, nz, exchange_xxx, xr, pm, f
       use tracers, only: t
       use mixing, only: akt, akv
       use scalars, only:
-     &     akv_bak, forw_start, iic, ntstart, akt_bak
-      use param, only: isalt, itemp
+     &     akv_bak, forw_start, iic, ntstart, akt_bak, g, rho0
+      use param, only: isalt, itemp, hd
+! For Filament example case:
+      use eos_vars, only: tcoef!, rho1
 
       implicit none
       private

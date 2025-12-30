@@ -268,8 +268,15 @@
       ! ocean_vars variables are calculated for t=n in timestep t=n
       ! (unlike u/v/etc which are calculated for t=n+1 in timestep t=n)
 
-      use mixing, only: Akv, Akt, hbls, hbbl
+      use mixing, only: Akv, Akt
+#ifdef LMD_KPP
+      ,hbls, hbbl
+#endif
+#ifdef SPLIT_EOS
       use eos_vars, only: rho1
+#else
+      use eos_vars, only: rho
+#endif
       use work_mod, only: work
       use grid, only: pn, pm
       use dimensions, only: i0,i1,j0,j1
@@ -553,8 +560,9 @@
       ! write ocean_vars variables to output netcdf restart file
       ! ocean_vars variables are calculated for t=n in timestep t=n
       ! (unlike u/v/etc which are calculated for t=n+1 in timestep t=n)
-
+#if defined LMD_KPP
       use mixing, only: hbls, hbbl
+#endif
       use dimensions, only: i0, i1, j0,j1
       use tracers, only: wrt_rst_trc
       use coupling, only:
@@ -1019,10 +1027,17 @@
       end subroutine def_vars_rst_ocean_vars  !]
 ! ----------------------------------------------------------------------
       subroutine calc_avg_ocean_vars  ![
-      ! set averaged variables
+! set averaged variables
+#ifdef SPLIT_EOS
       use eos_vars, only: rho1, qp1
+#else
+      use eos_vars, only: rho
+#endif
       use work_mod, only: work
-      use mixing, only: akv, akt, hbls, hbbl
+      use mixing, only: akv, akt
+#ifdef LMD_KPP
+     &     , hbls, hbbl
+#endif
       use private_scratch, only: a2d
       use dimensions, only: i0, i1, j0, j1, nx, ny
       implicit none
