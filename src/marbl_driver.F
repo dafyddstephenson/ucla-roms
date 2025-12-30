@@ -206,7 +206,7 @@
             namelist_line = ''
             do                  !namelist line-by-line read
                if (mynode==0) then
-                  read(marbl_settings_in,"(A)",iostat=read_status),
+                  read(marbl_settings_in,"(A)",iostat=read_status)
      &                 namelist_line
                end if
 #ifdef MPI
@@ -245,7 +245,7 @@
 
             close(marbl_settings_in)
             if (mynode==printnode) then
-               write(*, '(A)'), 'we successfully read and closed ' //
+               write(*, '(A)') 'we successfully read and closed ' //
      &              trim(marbl_namelist_fname)
             end if
          endif
@@ -444,7 +444,7 @@
          file_line = ''
          do                     !line-by-line read
             if (mynode==0) then
-               read(marbl_tracer_list,"(A)",iostat=read_status),
+               read(marbl_tracer_list,"(A)",iostat=read_status)
      &              file_line
             end if
 #ifdef MPI
@@ -466,7 +466,7 @@
                      wrt_t(idx) =.true.
                      wrt_t_avg(idx) =.true.
                      if (mynode==printnode) then
-                        write(*,'(2A)'),
+                        write(*,'(2A)')
      &                       'REQUESTED MARBL TRACER OUTPUT: ' // trim(t_vname(idx))
                      end if
                      recognized_tracer=.true.
@@ -476,7 +476,7 @@
                end do           ! idx
                if ( (.not. recognized_tracer) .and. (mynode==printnode))
      &              then
-                  write(*,'(A)'), 'REQUESTED TRACER ' // trim(file_line) //
+                  write(*,'(A)') 'REQUESTED TRACER ' // trim(file_line) //
      &                 ' NOT RECOGNIZED. See tracer metadata section' //
      &                 ' of this output log for ' //
      &                 ' a list of valid entries.'
@@ -491,7 +491,7 @@
             wrt_t_avg(:)=.true.
 
             if (mynode==0) then
-               write(*,'(A)'), 'NO REQUESTED TRACERS FOUND IN ' //
+               write(*,'(A)') 'NO REQUESTED TRACERS FOUND IN ' //
      &              trim(marbl_tracer_list_fname),'. Defaulting to ' //
      &              ' writing all BGC tracers to output file.'
             end if
@@ -514,7 +514,7 @@
 
          close(marbl_tracer_list)
          if (mynode==printnode) then
-            write(*,'(2A)'), 'we successfully read and closed ',
+            write(*,'(2A)') 'we successfully read and closed ',
      &           trim(marbl_tracer_list_fname)
          end if
       endif
@@ -1064,7 +1064,7 @@
          file_line = ''
          do                     !line-by-line read
             if (mynode==0) then
-               read(marbl_diag_list,"(A)",iostat=read_status),
+               read(marbl_diag_list,"(A)",iostat=read_status)
      &              file_line
             end if
 #ifdef MPI
@@ -1104,7 +1104,7 @@
                if ( (.not. recognized_diag) .and. (mynode==printnode))
      &              then
 
-                  write(*,'(A)'), 'REQUESTED DIAGNOSTIC ' //
+                  write(*,'(A)') 'REQUESTED DIAGNOSTIC ' //
      &                 trim(file_line) //
      &                 ' NOT RECOGNIZED. See ' //
      &                 ' $MARBL_ROOT/tests/regression_tests/' //

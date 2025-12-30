@@ -181,5 +181,5 @@ C
 
       end subroutine init_arrays_bec2_vars  !]
 
-#endif BIOLOGY_BEC2
+#endif /* BIOLOGY_BEC2 */
       end module bec2_vars
