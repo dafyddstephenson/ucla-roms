@@ -270,7 +270,10 @@
 
       use mixing, only: Akv, Akt
 #ifdef LMD_KPP
-      ,hbls, hbbl
+     &     ,hbls
+#endif
+#ifdef LMD_BKPP
+     &     , hbbl
 #endif
 #ifdef SPLIT_EOS
       use eos_vars, only: rho1

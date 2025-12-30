@@ -9,9 +9,14 @@
       use mixing, only: akt, akv
       use scalars, only:
      &     akv_bak, forw_start, iic, ntstart, akt_bak, g, rho0
-      use param, only: isalt, itemp, hd
-! For Filament example case:
-      use eos_vars, only: tcoef!, rho1
+      use param, only: isalt, itemp
+#ifdef FILAMENT_IDEAL
+     &     , hd
+#endif
+!     For Filament example case:
+#ifndef NONLIN_EOS
+      use eos_vars, only: tcoef
+#endif
 
       implicit none
       private
