@@ -14,7 +14,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
      &     , ialk, idic, ife, io2, ipo4, isio3, idoc,
      &     idofe, idon, idonr, idop, idopr, inh4, ino3, izooc, idiatc,
      &     idiatchl, idiatfe, idiatsi, idiazc, idiazchl, idiazfe, ispc,
-     &     ispcaco3, ispchl, ispfe,
+     &     ispcaco3, ispchl, ispfe
       use bec2_vars, only:
      &     init_arrays_bec2_vars
 #if defined(BEC2_DIAG)
