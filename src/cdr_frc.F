@@ -433,7 +433,6 @@
                  if (forcing_depth_profiles) then
                  ! VERTICAL STRUCTURE FROM DATA
                  ! Conservatively remap the fluxes from the source grid to the current grid
-                   !call remap_src_to_grid(i,j,icdr,cidx)
                    do itrc=1,2
                      call remap_src_to_grid(nz, cdr_hz(icdr,:), Hz(i,j,:), cdr_flx_dp(icdr,itrc,:),cdr_flx_dp_remap)
                      cdr_prf(cidx,cdr_inds(itrc),:) = cdr_flx_dp_remap(:)
