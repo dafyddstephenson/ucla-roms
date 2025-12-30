@@ -8,8 +8,8 @@
       use grid, only: nx, ny, nz, exchange_xxx
       use tracers, only: t
       use mixing, only: akt, akv
-      use scalars, only: akv_bak, forw_start, iic,
-     &     ntstart, akt_bak
+      use scalars, only:
+     &     akv_bak, forw_start, iic, ntstart, akt_bak
       use param, only: isalt, itemp
 
       implicit none
@@ -210,8 +210,9 @@
       subroutine ana_smflux_tile(istr,iend,jstr,jend) ![
 
       use surf_flux, only: sustr,svstr
-      use param, only: east_exchng, ieast, iwest, jnorth, jsouth,
-     & north_exchng, south_exchng, west_exchng
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
 
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -235,8 +236,9 @@
 ! Set kinematic surface solar shortwave radiation flux "srflx"
 !     [degC m/s] using an analytical expression.
       use surf_flux, only: srflx
-      use param, only: east_exchng, ieast, iwest, jnorth, jsouth,
-     & north_exchng, south_exchng, west_exchng
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
 
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -255,8 +257,9 @@
 ! Set kinematic surface flux of tracer type variables "stflx" (tracer
 !     units m/s) using analytical expressions.
       use surf_flux, only: stflx
-      use param, only: east_exchng, ieast, iwest, jnorth, jsouth,
-     & north_exchng, south_exchng, west_exchng
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
 
       implicit none
       integer istr,iend,jstr,jend, itrc, i,j
