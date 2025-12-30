@@ -86,7 +86,7 @@
       allocate( stflx  (GLOBAL_2D_ARRAY,nt) ); stflx=init
       allocate( srflx  (GLOBAL_2D_ARRAY)    ); srflx=init
 
-#if defined Q_CORRECTION && !defined ANA_SST
+#if defined(Q_CORRECTION) && !defined(ANA_SST)
       allocate( sst(GLOBAL_2D_ARRAY)        ); sst=init
       allocate(nc_sst%vdata(GLOBAL_2D_ARRAY,2) )
 #endif
@@ -108,8 +108,7 @@
       ! Set surface fields that will be restored towards
 
       implicit none
-
-#if defined QCORRECTION && !defined ANA_SST
+#if defined(QCORRECTION) && !defined(ANA_SST)
       ! Sea-surface temperature (SST) data
       call set_frc_data(nc_sst,sst,'r')
 #endif
@@ -130,7 +129,7 @@
       ! local
       integer i,j
 
-#ifdef QCORRECTION && !defined ANA_SST
+#if defined(QCORRECTION) && !defined(ANA_SST)
 ! Add relaxation of sst back to climatological value to avoid long-
 ! term drift. dSSTdt below is "piston velocity" expressed in [m/s].
       do j=j0,j1
