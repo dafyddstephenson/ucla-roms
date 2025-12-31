@@ -24,7 +24,6 @@
       use scalars, only: may_day_flag, init
       use mpi_exchanges, only: exchange_xxx
       implicit none
-
 !
 ! h         Model bottom topography (depth [m] at RHO-points.)
 ! f, fomn   Coriolis parameter [1/s] and compound term f/[pm*pn]

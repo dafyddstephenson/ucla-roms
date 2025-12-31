@@ -13,11 +13,12 @@
 ! Variables still need to be visible within code even when pipes are not used.
 
 
-      use dimensions                                       ! has dimensions, a list of forcing files, and rmask
-      use roms_read_write
-      use nc_read_write
-      use scalars
-      use param
+      use dimensions, only: i0, i1, j0, j1, nx, ny
+      use roms_read_write, only:
+     &     ncforce, pipe_frc_opt, grdname,
+     &     set_frc_data, store_string_att
+      use nc_read_write, only: handle_ierr, ncread
+      use param, only: n, lm, mm, nt, mynode
       implicit none
 
       private
@@ -95,7 +96,7 @@
       ! Realistic case - stored as one value in NetCDF file where
       ! pipe grid point value = pidx + pipe_fraction
 
-      use netcdf
+      use netcdf, only: nf90_nowrite, nf90_open
       implicit none
 
       ! local

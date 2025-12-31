@@ -2,7 +2,10 @@
 
 #include "cppdefs.opt"
 
-      use netcdf
+      use netcdf, only:
+     &     nf90_float, nf90_noerr, nf90_strerror,
+     &     nf90_inq_dimid, nf90_def_dim, nf90_def_var, nf90_inq_varid,
+     &     nf90_put_var, nf90_get_var
 
       implicit none
       private
@@ -274,7 +277,7 @@
       ! handle fatal ierr with error messages.
       ! err_msg1 & 2 are optional messages
       ! get this from roms_read_write module rather at some point
-      use param
+      use param, only: mynode
       implicit none
 
       ! inputs
