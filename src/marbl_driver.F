@@ -39,13 +39,12 @@
       use bgc_forces                  , only: pco2air,pco2air_alt,
      &                                        dust,iron
       use surf_flux                   , only: srflx
-      use nc_read_write
       use scalars                     , only: nstp,nnew,dt,iic,ntstart,
      &                                        Cp, rho0
       use grid                        , only : rmask
 #ifdef MPI
-      use mpi
-      use hidden_mpi_vars
+      use mpi                         , only: MPI_CHARACTER, MPI_INTEGER
+!      use hidden_mpi_vars
 #endif
 #ifdef NOX_FORCING
       use bgc_forces                  , only: nox
@@ -683,10 +682,9 @@
 !-----------------------------------------------------------------------
 
       use nc_read_write, only: ncread,handle_ierr
-      use netcdf
+      use netcdf, only: nf90_noerr, nf90_inq_varid
       use dimensions, only : i0,i1,j0,j1
       use mpi_exchanges, only : exchange_xxx
-!      use hidden_mpi_vars
       use param, only : N
       implicit none
 
@@ -765,8 +763,8 @@
 !
 !-----------------------------------------------------------------------
 
-      use netcdf
-      use nc_read_write
+      use netcdf, only: nf90_double, nf90_put_att
+      use nc_read_write, only: nccreate
       use roms_read_write, only: dn_xr,dn_yr,dn_zr,dn_tm,xi_rho,eta_rho
       use param, only : N
 
@@ -1942,8 +1940,7 @@
       subroutine get_tracer_indices(t_vname)  ![
 
       ! Store the indices in the tracer array corresponding to particular tracers
-      use param
-
+!
       implicit none
 
       character*42, dimension(nt), intent(inout) :: t_vname
