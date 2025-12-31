@@ -3,27 +3,48 @@
       subroutine get_init(req_rec, tindx)    ! Reads initial conditions
                                              ! from netCDF file.
 
-      use param
+      use scalars, only:
+     &     day2sec, dt, forw_start, iic, ntstart,
+     &     sec2day, start_time, may_day_flag
+      use hidden_mpi_vars, only: inode, jnode
       use tracers, only: t_vname, t, iTandS
-      use bgc_io ! get_init_bgc_diag
 #ifdef MARBL
       use marbl_driver, only: marbldrv_read_ss_vars_from_rst
 #endif
-      use coupling
-      use grid
-      use hidden_mpi_vars
-      use analytical
-      use mixing
-      use ocean_vars
-      use basic_output
-      use scalars
-      use netcdf
-      use bgc_shared_vars
-      use diagnostics
-      use sponge_tune
+      use coupling, only:
+     &     du_avg1, dv_avg1, du_avg2, dv_avg2,
+     &     du_avg_bak, dv_avg_bak
+#ifdef LMD_BKPP
+      use mixing, only: hbbl
+#endif
+#ifdef LMD_KPP
+      use mixing, only: hbls
+#endif
+      use ocean_vars, only: zeta, ubar, vbar, u, v
+      use basic_output, only:
+     &     vname, iaux, indxtime,
+     &     indxu, indxv
+#ifdef LMD_BKPP
+     &     , indxhbbl,
+#endif
+#ifdef LMD_KPP
+     &     indxhbls
+#endif
+      use netcdf, only:
+     &     nf90_get_att, nf90_inquire_variable,
+     &     nf90_inquire_dimension, nf90_noerr, nf90_nowrite,
+     &     nf90_strerror, nf90_inq_varid, nf90_get_var, nf90_close,
+     &     nf90_open
       use nc_read_write, only: handle_ierr, ncread
-      use roms_read_write
-      use dimensions
+      use roms_read_write, only: ininame
+      use grid, only:
+     &     riv_umask, riv_vmask, rmask, umask, vmask
+      use dimensions, only: i0, i1, j0, j1, nz
+      use param, only:
+     &     ieast, iwest, jnorth, jsouth, mynode,
+     &     nsub_e, nsub_x, north_exchng, east_exchng,
+     &     west_exchng, south_exchng, nnodes, n, nt
+      use mpi_exchanges, only: exchange_xxx
 
       implicit none
 

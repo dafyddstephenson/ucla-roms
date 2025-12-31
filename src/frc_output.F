@@ -16,11 +16,12 @@
      &     nf90_open, nf90_close
       use scalars, only: n, dt, iic, tdays, time
 #ifdef MARBL
+      use marbl_driver, only: iALK, iDIC, iALK_alt, iDIC_alt
 #endif
 #ifdef BULK_FRC
-#else
+      use bulk_frc, only: tair, q, lwrad, evap, prate
 #endif
-      use surf_flux, only: stflx, sustr, svstr, srflx
+      use surf_flux, only: stflx, sustr, svstr, srflx, uwnd, vwnd
 
       implicit none
       private
