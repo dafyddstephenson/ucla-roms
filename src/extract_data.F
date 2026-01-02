@@ -51,6 +51,7 @@
       use scalars
       use diagnostics
       use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use vertical_remapping
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_shared_vars
 #endif
@@ -102,8 +103,14 @@
         real                               :: otime=0   ! time since last output
 
         real,   dimension(:,:),pointer     :: Hz_par    ! interpolated thickness for parent
-        real,   dimension(:)  ,pointer     :: h         ! interpolated bottom depth
+        real,   dimension(:,:),pointer     :: Hz_par_u  ! interpolated thickness for parent at u-interface
+        real,   dimension(:,:),pointer     :: Hz_par_v  ! interpolated thickness for parent at v-interface
+        real,   dimension(:)  ,pointer     :: h_par     ! interpolated bottom depth for parent
+        real,   dimension(:)  ,pointer     :: h_par_u   ! interpolated bottom depth for parent at u-interface
+        real,   dimension(:)  ,pointer     :: h_par_v   ! interpolated bottom depth for parent at v-interface
         real,   dimension(:,:),pointer     :: Hz_chd    ! interpolated thickness for child
+        real,   dimension(:,:),pointer     :: Hz_chd_u  ! interpolated thickness for child at u-interface
+        real,   dimension(:,:),pointer     :: Hz_chd_v  ! interpolated thickness for child at v-interface
         real,   dimension(:,:),pointer     :: vari      ! data for output
         real,   dimension(:,:),pointer     :: vari_chd  ! data for output
 
@@ -207,8 +214,14 @@
           obj(i)%pre = preamb(1:lpre)
 
           allocate(obj(i)%Hz_par(np,nz))
-          allocate(obj(i)%h(np))
+          allocate(obj(i)%Hz_par_u(np,nz))
+          allocate(obj(i)%Hz_par_v(np,nz))
+          allocate(obj(i)%h_par(np))
+          allocate(obj(i)%h_par_u(np))
+          allocate(obj(i)%h_par_v(np))
           allocate(obj(i)%Hz_chd(np,N_chd))
+          allocate(obj(i)%Hz_chd_u(np,N_chd))
+          allocate(obj(i)%Hz_chd_v(np,N_chd))
 
           allocate(obj(i)%vari(np,nz))
           allocate(obj(i)%vari_chd(np,N_chd))
@@ -639,13 +652,19 @@
             call ncwrite(ncid,tname,(/time/),(/record/))
             !if (mynode==0) print *,'writing extract: ',time,mynode,tname
 
+! rho variables --------------------------------------------------------
+
             ! Get thickness and depth at interpolated location
             call interpolate(Hz(:,:,:),obj(i)%Hz_par,coef,ip,jp)
-            obj(i)%h(:) = 0
+            obj(i)%h_par(:) = 0
             do j=1,obj(i)%np
               do k=1,nz
-                obj(i)%h(j) = obj(i)%h(j) + obj(i)%Hz_par(j,k)
+                obj(i)%h_par(j) = obj(i)%h_par(j) + obj(i)%Hz_par(j,k)
               enddo
+            enddo
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h_par(j), obj(i)%Hz_chd(j,:))
             enddo
 
             if (obj(i)%zeta) then
@@ -654,37 +673,84 @@
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
 
-            do j=1,obj(i)%np
-              call get_child_thickness(obj(i)%h(j), obj(i)%Hz_chd(j,:), obj(i)%vari(j,1))
-            enddo
-
             if (obj(i)%temp) then
               oname = trim(obj(i)%set)//'_temp'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,itemp),obj(i)%vari,coef,ip,jp)
-              if (diff_grid) then
-                call remap_src_to_grid(N_src, H_src, H_tgt, t_src, t_tgt)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              if (diff_grids) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
             endif
 #ifdef SALINITY
             if (obj(i)%salt) then
               oname = trim(obj(i)%set)//'_salt'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,isalt),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              if (diff_grids) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
             endif
 #endif
+            if (obj(i)%bgc) then
+              do indt=isalt+nt_passive+1,NT
+              oname = trim(obj(i)%set)//'_'//trim(t_vname(indt))//trim(obj(i)%bnd)
+              call interpolate(t(:,:,:,nstp,indt),obj(i)%vari,coef,ip,jp)
+              if (diff_grids) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
+              enddo
+            endif
+
+! w variables --------------------------------------------------------
+
+            if (obj(i)%w) then
+              call wvlcty (0,Wvl)
+              oname = trim(obj(i)%set)//'_w'//trim(obj(i)%bnd)
+              call interpolate(Wvl(-1:nx+2,-1:ny+2,1:nz),obj(i)%vari,coef,ip,jp)
+              if (diff_grids) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
+              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+            endif
+
+! u variables --------------------------------------------------------
+
+            ! Get thickness and depth at interpolated location
+            call interpolate(Hz_u(:,:,:),obj(i)%Hz_par_u,coef,ipu,jpu)
+            obj(i)%h_par_u(:) = 0
+            do j=1,obj(i)%np
+              do k=1,nz
+                obj(i)%h_par_u(j) = obj(i)%h_par_u(j) + obj(i)%Hz_par_u(j,k)
+              enddo
+            enddo
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h_par_u(j), obj(i)%Hz_chd_u(j,:))
+            enddo
 
             if (obj(i)%ubar) then
               oname = trim(obj(i)%set)//'_ubar'//trim(obj(i)%bnd)
               call interpolate(ubar(:,:,knew),ui(:,1),cfu,ipu,jpu)
               call interpolate(vbar(:,:,knew),vi(:,1),cfv,ipv,jpv)
               obj(i)%vari(:,1) = obj(i)%cosa*ui(:,1) - obj(i)%sina*vi(:,1)
-              call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
-            endif
-            if (obj(i)%vbar) then
-              oname = trim(obj(i)%set)//'_vbar'//trim(obj(i)%bnd)
-              call interpolate(ubar(:,:,knew),ui(:,1),cfu,ipu,jpu)
-              call interpolate(vbar(:,:,knew),vi(:,1),cfv,ipv,jpv)
-              obj(i)%vari(:,1) = obj(i)%sina*ui(:,1) + obj(i)%cosa*vi(:,1)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
             if (obj(i)%u) then
@@ -695,22 +761,14 @@
                 obj(i)%vari(:,k) = obj(i)%cosa*ui(:,k) - obj(i)%sina*vi(:,k)
               enddo
               oname = trim(obj(i)%set)//'_u'//trim(obj(i)%bnd)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
-            endif
-            if (obj(i)%v) then
-              call interpolate(u(:,:,:,nstp),ui,cfu,ipu,jpu)
-              call interpolate(v(:,:,:,nstp),vi,cfv,ipv,jpv)
-              do k=1,nz
-                obj(i)%vari(:,k) = obj(i)%sina*ui(:,k) + obj(i)%cosa*vi(:,k)
-              enddo
-              oname = trim(obj(i)%set)//'_v'//trim(obj(i)%bnd)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
-            endif
-            if (obj(i)%w) then
-              call wvlcty (0,Wvl)
-              oname = trim(obj(i)%set)//'_w'//trim(obj(i)%bnd)
-              call interpolate(Wvl(-1:nx+2,-1:ny+2,1:nz),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              if (diff_grids) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par_u(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd_u(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
             endif
             if (obj(i)%up) then
               call interpolate(upe,ui(:,1),cfu,ipu,jpu)
@@ -719,19 +777,52 @@
               oname = trim(obj(i)%set)//'_up'//trim(obj(i)%bnd)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
+
+! v variables --------------------------------------------------------
+
+            ! Get thickness and depth at interpolated location
+            call interpolate(Hz_v(:,:,:),obj(i)%Hz_par_v,coef,ipv,jpv)
+            obj(i)%h_par_v(:) = 0
+            do j=1,obj(i)%np
+              do k=1,nz
+                obj(i)%h_par_v(j) = obj(i)%h_par_v(j) + obj(i)%Hz_par_v(j,k)
+              enddo
+            enddo
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h_par_v(j), obj(i)%Hz_chd_v(j,:))
+            enddo
+
+            if (obj(i)%vbar) then
+              oname = trim(obj(i)%set)//'_vbar'//trim(obj(i)%bnd)
+              call interpolate(ubar(:,:,knew),ui(:,1),cfu,ipu,jpu)
+              call interpolate(vbar(:,:,knew),vi(:,1),cfv,ipv,jpv)
+              obj(i)%vari(:,1) = obj(i)%sina*ui(:,1) + obj(i)%cosa*vi(:,1)
+              call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
+            endif
+            if (obj(i)%v) then
+              call interpolate(u(:,:,:,nstp),ui,cfu,ipu,jpu)
+              call interpolate(v(:,:,:,nstp),vi,cfv,ipv,jpv)
+              do k=1,nz
+                obj(i)%vari(:,k) = obj(i)%sina*ui(:,k) + obj(i)%cosa*vi(:,k)
+              enddo
+              oname = trim(obj(i)%set)//'_v'//trim(obj(i)%bnd)
+              if (diff_grids) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par_v(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd_v(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
+              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+            endif
             if (obj(i)%vp) then
               call interpolate(upe,ui(:,1),cfu,ipu,jpu)
               call interpolate(vpe,vi(:,1),cfv,ipv,jpv)
               obj(i)%vari(:,1) = obj(i)%sina*ui(:,1) + obj(i)%cosa*vi(:,1)
               oname = trim(obj(i)%set)//'_vp'//trim(obj(i)%bnd)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
-            endif
-            if (obj(i)%bgc) then
-              do indt=isalt+nt_passive+1,NT
-              oname = trim(obj(i)%set)//'_'//trim(t_vname(indt))//trim(obj(i)%bnd)
-              call interpolate(t(:,:,:,nstp,indt),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
-              enddo
             endif
 
           endif
@@ -793,7 +884,7 @@
             dname3(1) = 'np'//label
             dname3(2) = 's_rho'
             dname3(3) = 'time_'//trim(obj(i)%set)
-            dsize3 = (/ obj(i)%np , nz, 0/)
+            dsize3 = (/ obj(i)%np , N_chd, 0/)
 
           tname = trim(obj(i)%set)//'_time'
           ierr=nf90_inq_varid(ncid,tname,varid)
@@ -874,12 +965,12 @@
 ! ----------------------------------------------------------------------
       subroutine set_chd_scoord
 
-      implicit none                      ! output: Cs_w(0:N), Cs_r(1:N)
+      implicit none                         ! output: Cs_w(0:N
 
       integer :: k                          ! Compute vertical stretching
       real :: ds,sc                         ! curves at W-points
 
-      ds=1.D0/dble(N_chd)                ! -1 < Cs_w < 0
+      ds=1.D0/dble(N_chd)                   ! -1 < Cs_w < 0
       Cs_w_chd(N_chd)=0.D0
       do k=N_chd-1,1,-1
         sc=ds*dble(k-N_chd)
@@ -911,7 +1002,7 @@
       end subroutine calc_cs                  ! J. Comput. Phys.
 
 ! ----------------------------------------------------------------------
-      subroutine get_child_thickness(h_par, Hz_chd, ssh)
+      subroutine get_child_thickness(h_par, Hz_chd)
 
       use mpi
 
@@ -919,13 +1010,14 @@
 
       real, intent(in)                    :: h_par
       real, dimension(:), intent(out)     :: Hz_chd
-      real, intent(in)                    :: ssh
 
       integer :: k
       real :: ds,hinv
       real :: z_w_chd(0:N_chd)
       real :: cff_w, cff1_w
 
+      ! Note that this calculation does not need the SSH, as it is already
+      ! implicitly included from when we calculated h_par
       ds=1.D0/dble(N_chd)
       hinv=1./(h_par+hc_chd)
       z_w_chd(0)=-h_par
@@ -935,8 +1027,7 @@
 
         cff1_w=Cs_w_chd(k)
 
-        z_w_chd(k)=ssh + (ssh+h_par)
-     &               *(cff_w+cff1_w*h_par)*hinv
+        z_w_chd(k)= h_par*(cff_w+cff1_w*h_par)*hinv
 
         Hz_chd(k)=z_w_chd(k)-z_w_chd(k-1)
       enddo

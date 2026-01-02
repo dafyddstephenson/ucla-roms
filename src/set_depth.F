@@ -233,6 +233,7 @@
 # if defined WEC && defined MASKING
             FlxU(i,j,k)=FlxU(i,j,k)*umask(i,j)
 # endif
+            Hz_u(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i-1,j,k))
           enddo
         enddo
         do j=jstr,jendR
@@ -248,6 +249,7 @@
 # if defined WEC && defined MASKING
             FlxV(i,j,k)=FlxV(i,j,k)*vmask(i,j)
 # endif
+            Hz_v(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i,j-1,k))
           enddo
         enddo
       enddo
