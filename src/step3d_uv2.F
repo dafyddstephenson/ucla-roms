@@ -1,11 +1,12 @@
+
 #include "cppdefs.opt"
 
 #ifdef SOLVE3D
 
       subroutine step3d_uv2(tile)
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: nsub_e, nsub_x, a2d
       implicit none
       integer tile
 
@@ -16,18 +17,43 @@
 
       subroutine step3d_uv2_tile(istr,iend,jstr,jend, WC,FC,CF,DC)
 
-      use param
-      use river_frc
-      use wec_frc      ! , only: ust2d, vst2d, ust, vst
-      use dimensions
-      use diagnostics
-      use coupling
-      use eos_vars
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
-      use surf_flux
+      use river_frc, only:
+     &     iriver, riv_depth, riv_uvel, riv_vvel,
+     &     river_source, riv_uflx, riv_vol, riv_vflx
+
+#ifdef ADV_ISONEUTRAL
+      use eos_vars, only: drdx, drde, idrz
+#endif
+
+!      use wec_frc, only: ust2d
+!     , only: ust2d, vst2d, ust, vst
+
+!     use wec_frc
+
+#ifdef SPLIT_EOS
+      use eos_vars, only: qp2, qp1, rho1
+#else
+      use eos_vars, only: rho
+#endif
+
+      use coupling, only: du_avg1, dv_avg1, du_avg2, dv_avg2
+      use grid, only: nz, dn_u, umask, dm_v, vmask, dm_u, dn_v, f
+      use ocean_vars, only: z_r
+      use mixing, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
+#ifdef ADV_ISONEUTRAL
+     &     , diff3u, diff3v
+#endif
+#ifdef LMD_KPP
+     &     , hbls
+#endif
+#ifdef LMD_BKPP
+     &     , hbbl
+#endif
+      use ocean_vars, only: u, ubar, v, vbar, hz, flxu, flxv, z_w
+      use scalars, only: n, knew, nnew, nstp, g, rho0
+      use mpi_exchanges, only: exchange_xxx
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -850,7 +876,7 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
 ! above.  It does not affect any model results, other than signature in
 ! global attribute "CPPS" in output netCDF files.
 
-      use param
+      use param, only: mynode
       use strings
 
       implicit none
