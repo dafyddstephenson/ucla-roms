@@ -300,7 +300,7 @@
       use work_mod, only: work
       use grid, only: pn, pm
       use dimensions, only: i0,i1,j0,j1
-      use tracers    !, only: wrt_his_trc
+      use tracers, only: wrt_his_trc
 
       implicit none
 

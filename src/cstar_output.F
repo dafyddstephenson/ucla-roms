@@ -6,9 +6,10 @@
 
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use tracers, only: t_units
+      use param, only: itemp, isalt
       use marbl_driver, only:
-     &     marbl_saved_state_3d, idx, ialk,
-     &     ialk_alt, idic, idic_alt, isalt, itemp, nr_marbl_ss_3d,
+     &     marbl_saved_state_3d, ialk,
+     &     ialk_alt, idic, idic_alt, nr_marbl_ss_3d,
      &     vname_marbl_ss_3d
       use bgc_shared_vars, only:
      &     t, bgc_diag_2d, mynode, lm, mm,
@@ -227,9 +228,9 @@
       end subroutine define_cstar_output_variables
 
       subroutine init_cstar ![
-! Allocate and initialize arrays.
-      character(len=9) :: sr_name = "init_cstar"
+!     Allocate and initialize arrays.
       implicit none
+      character(len=9) :: sr_name = "init_cstar"
 
       ! local
       logical,save :: done=.false.
@@ -647,6 +648,7 @@
         subroutine display_cstar_output_settings_to_terminal_cstar
 !     Basic header
         character(len=120) :: stdout_str
+        integer :: idx
         if (mynode==0) then
            if (.not. do_avg) then
               write(stdout_str,'(7x,A)')
