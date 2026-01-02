@@ -22,14 +22,14 @@
       use roms_read_write, only:
      &     dn_tm, create_file, store_string_att,
      &     particle_opt
-      use nc_read_write, only: nccreate, handle_ierr
-
+      use nc_read_write, only: nccreate
+      use error_handling, only: handle_netcdf_error
       implicit none
       private
 
 
 #include "particles.opt"
-
+      character(len=9) :: module_name = "particles"
       logical :: terminal_vel= .false. ! terminal velocities on particles (not yet implemented)
 
       ! We choose not to define a derived particle type that has all the
@@ -439,6 +439,7 @@
       subroutine create_particles_file(fname)![
       implicit none
 
+      character(len=22) :: sr_name = "create_particles_file"
       !input/output
       character(len=99),intent(out) :: fname
 
@@ -457,8 +458,11 @@
       ierr=nf90_open(fname,nf90_write,ncid)
 
       varid = nccreate(ncid,'particles',dimnames,dimsizes,nf90_double)
-      if (ierr/=nf90_noerr)
-     &    call handle_ierr(ierr,'create_particles_file: ')
+      if (ierr/=nf90_noerr) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        info="error creating particles file",
+     &        context=module_name//"/"//sr_name)
+      end if
       ierr = nf90_put_att(ncid,varid,'long_name'
      &                                ,'Tag/x/y/z/u/v/w')
 

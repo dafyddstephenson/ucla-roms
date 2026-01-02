@@ -5,10 +5,11 @@
 
 #include "cppdefs.opt"
 
+
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_inq_varid,
      &     nf90_open, nf90_put_att, nf90_close
-      use nc_read_write, only: nccreate, handle_ierr, ncread, ncwrite
+      use nc_read_write, only: nccreate, ncread, ncwrite
       use scalars, only: iic, tdays, time, dt
       use dimensions, only: nx, ny
       use diagnostics, only: up, vp, diag_pflx
@@ -20,10 +21,11 @@
       use param, only:
      &     obc_east, obc_north, obc_south, obc_west,
      &     east_exchng, north_exchng, south_exchng, west_exchng
+      use error_handling, only: handle_netcdf_error
 
       implicit none
       private
-
+      character(len=11) :: module_name = "sponge_tune"
 #include "sponge_tune.opt"
 
       logical   :: tune_init = .true.
@@ -283,6 +285,7 @@
       subroutine write_sp_tune ![
       implicit none
 
+      character(len=13) :: sr_name = "write_sponge_tune"
       !local
       integer            :: ncid,ierr
       character(len=99)  :: fname
@@ -295,8 +298,11 @@
       record = record + 1
 
       ierr=nf90_open(fname, nf90_write, ncid)
-      if (ierr/=nf90_noerr)
-     &    call handle_ierr(ierr,'write sponge_tune: ',fname)
+      if (ierr/=nf90_noerr) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        info="error opening "//fname,
+     &        context=module_name//"/"//sr_name)
+      end if
 
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 

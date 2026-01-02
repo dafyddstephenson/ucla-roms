@@ -18,6 +18,7 @@
 #ifdef MARBL_DIAGS
       use marbl_driver, only: marbldrv_compute_init_diagnostics
 #endif
+
       use bgc_shared_vars, only:
      &     nrpf_avg, nrpf_his, nrpf_avg_dia,
      &     nrpf_his_dia, t, nc_dust, nc_iron, nc_pco2air
@@ -54,7 +55,7 @@
      &     nf90_put_att, nf90_enddef
       use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
       use dimensions, only: i0, i1, j0, j1
-
+      use error_handling, only: handle_configuration_error
 
       implicit none
 
@@ -62,7 +63,8 @@
 
       ! Includes:
 
-      ! netcdf outputting:
+! netcdf outputting:
+      character(len=6) :: module_name = "bgc_io"
       integer :: ncid=-1, prev_fill_mode
       real    :: t_avg_bgc=0
       real    :: t_avg_dia_bgc=0
@@ -190,19 +192,35 @@
       ! import/export
       logical, intent(in) :: avg
 
-      ! local
+! local
+      character(len=15) :: sr_name = "wrt_bgc_tracers"
       character(len=max_name_size),save :: fname_his,fname_avg
+      character(len=200) :: error_info
       integer                :: itrc, itavg, ierr
       logical,save           :: first_step_avg=.true.
       logical,save           :: first_step_his=.true.
 
-      if (wrt_his .and. mod(output_period_his,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor of output_period_his!'
-      endif
-      if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor of output_period_avg!'
+      if (wrt_his .and. mod(output_period_his, dt) /= 0) then
+         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_his (",
+     &        output_period_his, ")"
+
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
 
+      if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
+         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_avg (",
+     &        output_period_avg, ")"
+
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
+      endif
 
       if (avg) then
 
@@ -296,19 +314,34 @@
       subroutine wrt_bgc_diags ![
       implicit none
 #if defined (BEC2_DIAG) || defined (MARBL_DIAGS)
-      ! local
+! local
+      character(len=13) :: sr_name = "wrt_bgc_diags"
       character(len=max_name_size),save :: fname_his,fname_avg
+      character(len=200) :: error_info
       integer                :: itrc, ierr, idiag
       logical,save           :: first_step_dia_avg=.true.
       logical,save           :: first_step_dia_his=.true.
 
-      if (wrt_his_dia .and. mod(output_period_his_dia,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor ' //
-     &        'of output_period_his_dia for diagnostics!'
+      if (wrt_his_dia .and. mod(output_period_his_dia, dt) /= 0) then
+         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_his_dia (",
+     &        output_period_his_dia, ")"
+
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
+
       if (wrt_avg_dia .and. mod(output_period_avg_dia,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor' //
-     &        'of output_period_avg_dia for diagnostics!'
+         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_avg_dia (",
+     &        output_period_avg_dia, ")"
+
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
 
 

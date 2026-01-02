@@ -17,12 +17,13 @@
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
      &     xi_rho, create_file
-      use nc_read_write, only: nccreate, handle_ierr, ncwrite
+      use nc_read_write, only: nccreate, ncwrite
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_double, nf90_open,
      &     nf90_put_att, nf90_close
       use scalars, only: iic, knew, nnew, tdays, time, dt, n
       use ocean_vars, only: zeta, hz
+      use error_handling, only : handle_configuration_error, handle_netcdf_error
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
      &                   cdr_jloc, cdr_source, forcing_3d
@@ -31,7 +32,7 @@
       private
 
 #include "cstar_output.opt"
-
+      character(len=12) :: module_name = "cstar_output"
       real    :: output_time = 0
       integer :: record = nrpf ! to trigger the first file creation
 
@@ -226,7 +227,8 @@
       end subroutine define_cstar_output_variables
 
       subroutine init_cstar ![
-      ! Allocate and initialize arrays.
+! Allocate and initialize arrays.
+      character(len=9) :: sr_name = "init_cstar"
       implicit none
 
       ! local
@@ -241,7 +243,9 @@
       endif
 
       if (monthly_averages .and. .not. do_avg) then
-         error stop 'ERROR: cstar_output:: monthly avgs=t, but do_avg=f'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="`monthly_avg` is .true., but `do_avg` is .false.")
       endif
 
       ! Look one timestep ahead to initialize the "previous month", so that
@@ -532,7 +536,8 @@
       ! Call wrt after completion of the time-step
       implicit none
 
-      ! local
+! local
+      character(len=10) :: sr_name = "wrt_output"
       character(len=99),save :: fname
       integer,dimension(3)   :: start
       integer                :: ncid,ierr
@@ -548,9 +553,11 @@
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
-        if (ierr/=nf90_noerr)
-     &      call handle_ierr(ierr,'wrt_cstar, opening: ',fname)
-
+        if (ierr/=nf90_noerr) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          info="error opening "//fname,
+     &          context=module_name//"/"//sr_name)
+        end if
         call multiply_by_thickness
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
@@ -685,9 +692,10 @@
 
 #else /* MARBL && MARBL_DIAGS && CDR_FORCING */
 !----------------------------------------------------------------------
+      use error_handling, only : handle_configuration_error
 
       implicit none
-
+      character(len=12) :: module_name = "cstar_output"
       private
 
 #include "cstar_output.opt"
@@ -698,15 +706,20 @@
       contains
 
       subroutine init_cstar ![
-      ! Allocate and initialize arrays.
+!     Allocate and initialize arrays.
       implicit none
+      character(len=9) :: sr_name = "init_cstar"
 
 #ifndef MARBL
-        error stop 'ERROR: cstar_output must have MARBL enabled.'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="cstar_output must have MARBL enabled.")
 #endif
 
 #ifndef MARBL_DIAGS
-        error stop 'ERROR: cstar_output must have MARBL_DIAGS enabled.'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="cstar_output must have MARBL_DIAGS enabled.")
 #endif
 
 #ifndef CDR_FORCING

@@ -12,13 +12,14 @@
      &     nf90_put_att, nf90_inquire_variable, nf90_inquire_dimension,
      &     nf90_get_var
       use scalars, only: time, dt, sec2day, tdays, akt_bak, akv_bak
-      use nc_read_write, only: nccreate, handle_ierr, ncread
+      use nc_read_write, only: nccreate, ncread
       use dimensions, only: bf, nx, ny, gnx, gny, i0, i1, j0, j1
       use hidden_mpi_vars, only: mynode, nnodes, inode, jnode
       use mpi_exchanges, only: exchange_xxx
+      use error_handling, only: handle_configuration_error, handle_netcdf_error
 
       implicit none
-
+      character(len=15) :: module_name="roms_read_write"
 #include "cppdefs.opt"
 
       private
@@ -41,7 +42,7 @@
       character(len=7),public,parameter :: dn_tm = 'time'
 
       ! ---- user input ends
-
+      character(len=200) :: error_info = ''
       character(len=21) :: refdatestr
       integer :: offset = 0
 
@@ -121,8 +122,8 @@
       character(len=100),public::frctype ! variable across netcdf files (forcing module)
       ! average files
       character(len=100),public::avg_output=''
-      character(len=max_options_string),public::
-     &     diagnostic_opt='diagnostics OFF'
+      character(len=max_options_string),
+     &     public::diagnostic_opt='diagnostics OFF'
       ! average diagnostic options
       character(len=100),public::diag_avg_output=''
 
@@ -300,6 +301,7 @@
       subroutine set_frc_data_1d(nc,var1d,obry)  ![
       implicit none
 
+      character(len=15) :: sr_name = "set_frc_data_1d"
       ! input/outputs
       type(ncforce),    intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real,dimension(:),intent(out)   :: var1d ! time interpolated forcing data
@@ -369,9 +371,12 @@
         var1d = cff1*nc%vdata(:,1,it1) + cff2*nc%vdata(:,1,it2)
 
         if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
-          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-          error stop 'ERROR: set_frc_data :: time interpolation error'
+           write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
+     &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
+     &          ". time interpolation_error"
+           call handle_configuration_error(
+     &          context=module_name//"/"//sr_name,
+     &          info=error_info)
         endif
       else
         var1d = nc%vdata(:,1,it1)
@@ -381,7 +386,7 @@
 ! ----------------------------------------------------------------------
       subroutine set_frc_data_2d(nc,var2d,obry)  ![
       implicit none
-
+      character(len=15) :: sr_name="set_frc_data_2d"
       ! input/outputs
       type(ncforce),      intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real,dimension(:,:),intent(out)   :: var2d ! time interpolated forcing data
@@ -449,9 +454,12 @@
         var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
         if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
-          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-          error stop 'ERROR: set_frc_data :: time interpolation error'
+           write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
+     &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
+     &          ". time interpolation_error"
+           call handle_configuration_error(
+     &          context=module_name//"/"//sr_name,
+     &          info=error_info)
         endif
       else
         var2d = nc%vdata(:,:,it1)
@@ -461,8 +469,9 @@
 ! ----------------------------------------------------------------------
       subroutine set_frc_data_3d(nc,var3d,obry)  ![
       implicit none
+      character(len=15) :: sr_name = "set_frc_data_3d"
+! input/outputs
 
-      ! input/outputs
       type(ncforce3d),      intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real,dimension(:,:,:),intent(out)   :: var3d ! time interpolated forcing data
       integer,optional,   intent(in)    :: obry  ! bry=1, suppress terminal info, bry=2 display boundary
@@ -525,9 +534,12 @@
         var3d = cff1*nc%vdata(:,:,:,it1) + cff2*nc%vdata(:,:,:,it2)
 
         if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
-          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-          error stop 'ERROR: set_frc_data :: time interpolation error'
+           write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
+     &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
+     &          ". time interpolation error"
+           call handle_configuration_error(
+     &          context=module_name//"/"//sr_name,
+     &          info=error_info)
         endif
       else
         var3d = nc%vdata(:,:,:,it1)
@@ -540,7 +552,7 @@
       ! Specifically for 2-dimensional surface forcing data
       ! Deals with u,v, or rho-grids and performs a mpi exchange if needed
       ! vdata must be allocated with the same 'standard' 2D size as var2d
-
+      character(len=17) :: sr_name = "set_frc_data_surf"
       ! input/outputs
       type(ncforce)                        ,intent(inout):: nc    ! Derived type containing all neccesary supporting data
       real,dimension(1-bf:nx+bf,1-bf:ny+bf),intent(out)  :: var2d ! time interpolated forcing data
@@ -603,9 +615,12 @@
         var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
         if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
-          print * ,'set_frc_data :: ', nc%vname,frcfile(nc%ifile)
-          print * ,'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime
-          error stop 'ERROR: set_frc_data :: time interpolation error'
+           write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
+     &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
+     &          ". time interpolation error"
+           call handle_configuration_error(
+     &          context=module_name//"/"//sr_name,
+     &          info=error_info)
         endif
       else
         var2d = nc%vdata(:,:,it1)
@@ -621,7 +636,7 @@
       ! When called for the first time, it will find the last record with a
       ! time smaller than the model time.
       implicit none
-
+      character(len=16) :: sr_name = "find_new_record"
       ! input/output
       character(len=*)              ,intent(in)   :: vname   ! name of the variable
       character(len=*)              ,intent(in)   :: tname   ! name of the corresponding time
@@ -667,15 +682,21 @@
         found_var = .false.                                          ! reset for new file
         if (present(ungridded_filename)) then
           ierr = nf90_open(ungridded_filename, nf90_nowrite, ncid)
-          if (ierr/=nf90_noerr)
-     &    call handle_ierr(ierr,'Find_new_record, opening: ',
-     &    ungridded_filename)
-        else
+          if (ierr/=nf90_noerr) then
+          call handle_netcdf_error(
+     &         netcdf_status=ierr,
+     &         context=module_name//"/"//sr_name,
+     &            info=("error opening "//ungridded_filename))
+          end if
+       else
           ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
-          if (ierr/=nf90_noerr)
-     &    call handle_ierr(ierr,'Find_new_record, opening: ',frcfile(ifile))
-        endif
-
+          if (ierr/=nf90_noerr) then
+          call handle_netcdf_error(
+     &         netcdf_status=ierr,
+     &         context=module_name//"/"//sr_name,
+     &         info=("error opening "//frcfile(ifile)))
+          endif
+       end if
         ierr = nf90_inq_varid(ncid, vname,vid)                       ! check if this file contains the variable
 
         if (ierr==nf90_noerr) then                                   ! variable found, now check if file times contain model time
@@ -684,9 +705,11 @@
           found_var_ever = .true.
 
           ierr = nf90_inq_varid(ncid,tname,tid)                      ! get time ID
-          if (ierr/=nf90_noerr)
-     &      call handle_ierr(ierr,'Find_new_record, searching: ',tname)
-
+          if (ierr/=nf90_noerr) then
+             call handle_netcdf_error(netcdf_status=ierr,
+     &            context=module_name//"/"//sr_name,
+     &            info="error searching for "//tname)
+          end if
           ! Check if the time has a cycle length
           ierr=nf90_get_att(ncid, tid, 'cycle_length', cycle_length)
           if (ierr==nf90_noerr) then
@@ -694,8 +717,10 @@
             found_rec = .true.
           elseif (ierr==nf90_enotatt) then                           ! non-cyclical var won't have attribute
             cycle_length = -1                                        ! nf90_enotatt = attribute not found
-          else                                                       ! any other netcdf error is a problem.
-            call handle_ierr(ierr,'find_new_record: cycle length att')
+         else                   ! any other netcdf error is a problem.
+            call handle_netcdf_error(netcdf_status=ierr,
+     &           context=module_name//"/"//sr_name,
+     &           info="error getting cycle_length attribute")
           endif
 
           ! Number of records in file
@@ -731,9 +756,13 @@
           ifile = ifile+1
           irec = 0                                                   ! Reset irec for new file
           if (present(ungridded_filename)) then
-            print *, 'ERROR: find_new_record: Ran out of time records ',
-     &           'for ', vname, ' in single file ', ungridded_filename
-            error stop
+             write(error_info, *),
+     &            'find_new_record: Ran out of time records ',
+     &            'for ', vname, ' in single file ', ungridded_filename
+
+             call handle_configuration_error(
+     &            context=module_name//"/"//sr_name,
+     &            info=error_info) ! TODO maybe a more appropriate SR
           endif
         endif
 
@@ -743,15 +772,19 @@
 
 
       if (.not. found_var_ever) then
-        write(*,'(/1x,4A,I3/)') 'ERROR: find_new_record:: ',
-     &              'Could not find var: ', vname, ' mynode=', mynode
-        error stop 'find_new_record: var not found in forcing files'
+        write(error_info,'(/1x,3A/)')
+     &        'Could not find var: ', vname, 'in forcing files.'
+        call handle_configuration_error(
+     &       context=module_name//"/"//sr_name,
+     &       info=error_info)   ! TODO maybe a more appropriate SR
       endif
       if (.not. found_rec) then
-        write(*,'(/1x,3A,I3/)')
-     &  'ERROR: find_new_record: Ran out of time records for ',
-     &                               vname, ' mynode=', mynode
-        error stop
+         write(error_info,'(/1x,3A,I3/)')
+     &        'Ran out of time records for ',
+     &        vname, ' mynode=', mynode
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
 
       if (first) then  ! Handle initital timestep. Need vtime < model_time. As per (A) above.
@@ -767,10 +800,12 @@
       endif ! Handle initital timestep.
 
       if (irec==0) then
-        write(*,'(/1x,4A,I3/)') 'ERROR: find_new_record:: ',
+         write(error_info,'(/1x,3A,I3/)')
      &  'First available forcing record is past current time for var: ',
-     &     vname, ' mynode=', mynode
-        error stop 'First available forcing record is past current time'
+     &        vname, ' mynode=', mynode
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
 
       end subroutine find_new_record  !]
@@ -779,7 +814,7 @@
       ! Find the first record that has vtime>time, or if it's
       ! the first time calling, the record preceeding that one.
       implicit none
-
+      character(len=22) :: sr_name = "find_new_record_cycle"
       ! input/output
       integer                       ,intent(in)  :: ncid ! Handle of open netcdf file
       integer                       ,intent(in)  :: tid  ! ID of time variable
@@ -830,7 +865,7 @@
       use mpi, only: mpi_double_precision, mpi_integer
 
       implicit none
-
+      character(len=19) :: sr_name = "fill_frc_slice_aux"
       ! input/outputs
       type(ncforce)      ,intent(inout) :: nc      ! derived type containing all neccesary supporting data
       real               ,intent(in)    :: modtime ! current time of the model
@@ -896,7 +931,7 @@
         ierr = nf90_get_att(ncid,nf90_global,'data_source',forcing_version)
         ! if forcing netcdf has information
         if (len(trim(forcing_version)) /= 0) then
-          ! if attribute has not been set yet
+!     if attribute has not been set yet
           if (index(force_info,forcing_version) == 0) then
             write(frcstr,'(2A)') trim(adjustl(frctype)),
      &            trim(adjustl(forcing_version))
@@ -914,10 +949,12 @@
       elseif (bry==1) then
         ! do nothing (suppress terminal output)
       elseif (bry==2) then
-        if (mynode==0 .or. mynode==nnodes-1)                         ! 2 nodes catch e/w/s/n boundaries
+         if (mynode==0 .or. mynode==nnodes-1) ! 2 nodes catch e/w/s/n boundaries
      &    call display_read_time_to_log(vname,nc%times(it),irec )
       else
-        stop 'fill_frc_slice - bry error'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="bry error")
       endif
 
       nc%irec  = irec
@@ -932,7 +969,7 @@
       use mpi, only: mpi_double_precision, mpi_integer
 
       implicit none
-
+      character(len=21) :: sr_name="fill_frc_slice_aux3d"
       ! input/outputs
       type(ncforce3d)      ,intent(inout) :: nc    ! derived type containing all neccesary supporting data
       real               ,intent(in)    :: modtime ! current time of the model
@@ -1005,6 +1042,9 @@
         if (mynode==0 .or. mynode==nnodes-1)                         ! 2 nodes catch e/w/s/n boundaries
      &    call display_read_time_to_log(vname,nc%times(it),irec )
       else
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="bry error")
         stop 'fill_frc_slice - bry error'
       endif
 
@@ -1109,7 +1149,7 @@
       ! It appends a date/time string and, if neccesary, a node number
       ! It puts the global attributes and creates an ocean_time variable
       implicit none
-
+      character(len=11) :: sr_name = "create_file"
       ! input/output
       character(len=*), intent(in) :: ftype     ! desired netcdf file extension
       character(len=*), intent(out):: fname     ! desired netcdf file name
@@ -1131,8 +1171,11 @@
 !      endif
 
       ierr=nf90_create(trim(fname),nf90_netcdf4,ncid)
-      if (ierr/=nf90_noerr)
-     &   call handle_ierr(ierr,'create_file: '/ /trim(fname) )
+      if (ierr/=nf90_noerr) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info="unable to create file "//trim(fname))
+      end if
 
       if (.not.present(nodate)) then
         varid = nccreate(ncid,'ocean_time',(/dn_tm/),(/0/),nf90_double)
@@ -1141,8 +1184,11 @@
       endif
 
       call put_global_atts(ncid, ierr)                     ! put global attributes in file
-      if (ierr/=nf90_noerr)
-     %   call handle_ierr(ierr,'create_file: '/ / trim(fname) )
+      if (ierr/=nf90_noerr) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info="unable to create attributes in file"//trim(fname))
+      end if
 
       ierr = nf90_close(ncid)
       if (mynode == 0) then
@@ -1392,6 +1438,7 @@
       ! If the nodate argument is present, only add the node number
       implicit none
 
+      character(len=12) :: sr_name = "insert_nodes"
       ! import/export
       character(len=*),intent(inout):: fname
 
@@ -1405,8 +1452,9 @@
       if (ncf) then
         fname(istart:istart+2) = '   '
       else
-        print *,'error insert_node. No .nc found in file name'
-        stop
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="no .nc in file name")
       endif
 
 
@@ -1435,7 +1483,7 @@
       subroutine nc_check_units(file_name,var_name, var_units )  ![
 !     subroutine nc_check_units(ifile,var_name, var_units )
       implicit none
-
+      character(len=15) :: sr_name = "nc_check_units"
       ! input/output
 !     integer,          intent(in) :: ifile      ! index
       character(len=*), intent(in) :: file_name
@@ -1449,20 +1497,32 @@
 
 !     ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
       ierr = nf90_open(file_name,nf90_nowrite,ncid)
-      if (ierr/=nf90_noerr)
-!    &    call handle_ierr(ierr,'check_units, opening: ',frcfile(ifile))
-     &    call handle_ierr(ierr,'check_units, opening: ',file_name)
+      if (ierr/=nf90_noerr) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info = "error opening "//file_name)
+      end if
 
       ierr = nf90_inq_varid(ncid, var_name, var_id)
-      if (ierr/=0) call handle_ierr(ierr,'check_units:: cant find var')
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        info="cannot find var "//var_name,
+     &        context=module_name//"/"//sr_name)
+      end if
       ierr = nf90_get_att(ncid, var_id, 'units', file_var_units)
-      if (ierr/=0) call handle_ierr(ierr,'check_units:: cant find units')
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info="cannot find units.")
+      end if
 
       if (trim(var_units) /= trim(file_var_units)) then
-        write(*,'(/3x,3A/5x,3A/)') 'ERROR:: check_units: ',
+        write(error_info,'(/3x,3A/5x,3A/)')
      &   trim(file_var_units),' for var: ',
      &   trim(var_name),',  Units must be: ', trim(var_units)
-        error stop
+        call handle_configuration_error(
+     &       context=module_name//"/"//sr_name,
+     &       info=error_info)
       end if
       ierr = nf90_close(ncid)
 
@@ -1494,6 +1554,7 @@
       use netcdf, only: nf90_def_dim
 
       implicit none
+      character(len=15) :: sr_name = "put_global_atts"
       integer :: ncid, ierr, dimid
 
 
@@ -1653,6 +1714,7 @@
       ! Add settings that affect the solution to a string
       ! which will be added to global attributes of all nc files
       implicit none
+      character(len=17) :: sr_name = "store_string_att"
       ! input
       character(len=*),intent(inout) :: char_string
       character(len=*),intent(in)    :: string_add
@@ -1666,9 +1728,11 @@
       ie=ie+is-1
 
       if (ie > max_options_string) then
-        print *, 'ERROR roms_read_write:: ',
-     &    'store_string_att character full=', trim(string_add)
-        stop 'ROMS stopped'
+         write(error_info,*),
+     &    'character full:', trim(string_add)
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
 
       char_string(is:ie) = string_add

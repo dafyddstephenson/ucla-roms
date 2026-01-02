@@ -12,19 +12,19 @@
 ! we have no PIPE_SOURCE flag here anymore, since we are moving away from cpp flags.
 ! Variables still need to be visible within code even when pipes are not used.
 
-
       use dimensions, only: i0, i1, j0, j1, nx, ny
       use roms_read_write, only:
      &     ncforce, pipe_frc_opt, grdname,
      &     set_frc_data, store_string_att
-      use nc_read_write, only: handle_ierr, ncread
+      use nc_read_write, only: ncread
       use param, only: n, lm, mm, nt, mynode
+      use error_handling, only: handle_netcdf_error
       implicit none
 
       private
 
 #include "pipe_frc.opt"
-
+      character(len=8) :: module_name = "pipe_frc"
       ! Variables used in the evolution equations
       integer,public  :: pidx ! Pipe index for looping through pipes
       integer,public,allocatable,dimension(:,:) :: pipe_idx      ! pipe indices at grid points
@@ -98,7 +98,7 @@
 
       use netcdf, only: nf90_nowrite, nf90_open
       implicit none
-
+      character(len=13) :: sr_name = "init_pipe_frc"
       ! local
       integer :: ierr,ncid,v_id,i,j
 
@@ -114,9 +114,11 @@
         ! Temporarily store as pipe_fraction to avoid extra array,
         ! but value still pipe_idx + pipe_fraction
         call ncread(ncid,pipe_flx_name, pipe_fraction(i0:i1,j0:j1))
-        if(ierr/=0)
-     &      call handle_ierr(ierr,'init_pipe_frc:: pipe not in file!')
-
+        if(ierr/=0) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          info="pipe not in file!",
+     &          context=module_name//"/"//sr_name)
+        end if
         ! Separate pipe_idx & pipe_fraction:
         do j = 1,ny
           do i = 1,nx

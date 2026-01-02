@@ -26,7 +26,7 @@ c--#define MAX_BY_VERT_CFL_ONLY
       use scalars, only: iic, ninfo
 
       implicit none
-
+      character(len=4) :: sr_name = "diag"
 
       integer   i,j
       integer,save:: tile=0
@@ -72,9 +72,9 @@ c--#define MAX_BY_VERT_CFL_ONLY
      &     rho0, tdays
       use mpi, only: mpi_real8, mpi_status_size, mpi_wtime
       use timers, only: tstart
-
+      use error_handling, only : handle_configuration_error
       implicit none
-
+      character(len=9) :: sr_name = "diag_tile"
 #include "diag.opt"
 
       integer istr,iend,jstr,jend
@@ -473,7 +473,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
               i=buff(1)+0.0001
               if (i>0 .and. may_day_flag==0) may_day_flag=i
               avzeta=avzeta+buff(2)
-              avke=avke+buff(3)              ! Here "v2" is used as
+              avke=avke+buff(3) ! Here "v2" is used as
               avpe=avpe+buff(4)              ! a scratch variable to
               avke2b=avke2b+buff(5)          ! avoid type conflict
               avke3bc=avke3bc+buff(6)        ! in the case if "buff"
@@ -632,11 +632,10 @@ C$   &                                                 , proc(2)
               if ( check_line(i:i) /= ' ' .and.
      &             check_line(i:i) /= '+'  .and.
      &             check_line(i:i) /= '-'  .and.
-     &             check_line(i:i) /= '.') then
-                if (may_day_flag == 0) then
-                  write(*,*) '---> setting may day flag'
-                  may_day_flag=1    !--> BLOW UP
-                endif
+     &              check_line(i:i) /= '.') then
+                 call handle_configuration_error(
+     &                info="Abnormal termination: BLOWUP",
+     &                context=sr_name)
               endif
             endif
           enddo  ! <-- while(..)

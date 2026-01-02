@@ -8,7 +8,7 @@
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
      &     nf90_nofill, nf90_set_fill
-      use nc_read_write, only: nccreate, handle_ierr, ncwrite
+      use nc_read_write, only: nccreate, ncwrite
       use roms_read_write, only:
      &     max_name_size, dn_tm, dn_xr, dn_xu,
      &     dn_yr, dn_yv, dn_zr, eta_rho, eta_v, xi_rho, xi_u, dn_zw,
@@ -22,11 +22,12 @@
      &     zeta_avg, ubar_avg, vbar_avg, u_avg, v_avg,
      &     w_avg, wvl_avg, zeta, ubar, vbar, u, v, z_r, We, Wi
       use param, only: Lm, Mm, isalt, itemp, mynode, nt_passive
+      use error_handling, only : handle_configuration_error, handle_netcdf_error
       implicit none
       private
 
 #include "ocean_vars.opt"
-
+      character(len=12) :: module_name = "basic_output"
 # ifdef SOLVE3D
       real,allocatable,dimension(:,:,:) :: akv_avg
       real,allocatable,dimension(:,:,:) :: akt_avg
@@ -120,15 +121,31 @@
       end subroutine init_restarts !]
 !----------------------------------------------------------------------
       subroutine init_avg_arrays  ![
-
       implicit none
+      character(len=15) :: sr_name = "init_avg_arrays"
+      character(len=200) :: error_info
 
-      if (wrt_file_his .and. mod(output_period_his,dt) /= 0) then
-        stop 'ERROR :: ocean_vars.opt - dt not a factor of output_period_his!'
+      if (wrt_file_his .and. mod(output_period_his, dt) /= 0) then
+         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_his (",
+     &        output_period_his, ")"
+
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
+
       if (wrt_file_avg .and. mod(output_period_avg,dt) /= 0) then
-        stop 'ERROR :: ocean_vars.opt - dt not a factor of output_period_avg!'
+         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_avg (",
+     &        output_period_avg, ")"
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
+
 
       if (wrt_file_avg) then
         if (wrt_avg_Z)  then
@@ -1114,7 +1131,7 @@
 ! ----------------------------------------------------------------------
       subroutine write_time_step( ncid, record, total_recs )  ![
       implicit none
-
+      character(len=16) :: sr_name = "write_time_step"
       ! inputs
       integer, intent(in) :: ncid
       integer, intent(in) :: record                        ! current file record number
@@ -1131,9 +1148,18 @@
       start(2)=record ; count(2)=1
 
       ierr=nf90_inq_varid(ncid, 'time_step', var_id_tmp)
-      if (ierr/=0) call handle_ierr(ierr,'ocean_vars write_time_step inq_varid')
-      ierr=nf90_put_var(ncid, var_id_tmp, ibuff, start, count)  ! & record time step info
-      if (ierr/=0) call handle_ierr(ierr,'ocean_vars write_time_step put_var')
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info="variable: time_step")
+      end if
+
+      ierr=nf90_put_var(ncid, var_id_tmp, ibuff, start, count) ! & record time step info
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info="variable: time_step")
+      end if
       ! can't use ncwrite() as ibuff is an integer array not real
 
       end subroutine write_time_step  !]
