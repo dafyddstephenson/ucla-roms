@@ -114,7 +114,7 @@ ifeq ($(COMPILER),intel)
 	CPPFLAGS = -D__IFC -free -I${MPIHOME}/include -I${NETCDFHOME}/include
 else
         CPP = /usr/bin/cpp
-	CPPFLAGS =  -traditional -D__IFC -I${MPIHOME}/include -I${NETCDFHOME}/include
+	CPPFLAGS =  -traditional -D__IFC -Wno-invalid-pp-token -I${MPIHOME}/include -I${NETCDFHOME}/include
 endif
 
 #   Since we no longer keep preprocessed files after compilation, if you want to still

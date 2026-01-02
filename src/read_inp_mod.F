@@ -501,7 +501,7 @@
       end if
 
       lstr = lenstr(marbl_namelist_fname)
-      mpi_master_only write(*,'(1x,A,15x,A)'),
+      mpi_master_only write(*,'(1x,A,15x,A)')
      &     'MARBL namelist file',marbl_namelist_fname(1:lstr)
 
 ! ---------------------------------------------------------
@@ -514,7 +514,7 @@
       end if
 
       lstr = lenstr(marbl_tracer_list_fname)
-      mpi_master_only write(*,'(1x,A,5x,A)'),
+      mpi_master_only write(*,'(1x,A,5x,A)')
      &     'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
 
 #ifdef MARBL_DIAGS
@@ -528,7 +528,7 @@
       end if
 
       lstr = lenstr(marbl_diag_list_fname)
-      mpi_master_only write(*,'(1x,A,1x,A)'),
+      mpi_master_only write(*,'(1x,A,1x,A)')
      &     'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
 #endif
 
