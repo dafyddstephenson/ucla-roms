@@ -20,18 +20,19 @@
       contains
 
 ! ----------------------------------------------------------------------
-      subroutine remap_src_to_grid(N_src, H_src, H_tgt, t_src, t_tgt)
+      subroutine remap_src_to_grid(N_src, H_src, t_src, N_tgt, H_tgt, t_tgt)
 
       ! Perform conservative remapping of a depth profile from the source grid to the
       ! target (current) grid using piecewise parabolic reconstruction.
 
       implicit none
 
-      integer, intent(in) :: N_src
+      integer, intent(in)                 :: N_src
       real, dimension(N_src), intent(in)  :: H_src
-      real, dimension(nz),    intent(in)  :: H_tgt
       real, dimension(N_src), intent(in)  :: t_src
-      real, dimension(nz),    intent(out) :: t_tgt
+      integer, intent(in)                 :: N_tgt
+      real, dimension(N_tgt), intent(in)  :: H_tgt
+      real, dimension(N_tgt), intent(out) :: t_tgt
 
       ! local
       integer :: k,k_new,trc,idx
@@ -44,21 +45,21 @@
       real :: tot_dist
 
       integer :: curr_src_index
-      integer, dimension(nz) :: tgt_index_start
-      integer, dimension(nz) :: tgt_index_end
+      integer, dimension(N_tgt) :: tgt_index_start
+      integer, dimension(N_tgt) :: tgt_index_end
 
       ! Keep track of how far up we are in the water column
       real :: curr_tgt_height, curr_src_height
 
       ! Keep track of where in each H_orig cell the interfaces of H_tgt are
-      real, dimension(nz) :: tgt_frac_start
-      real, dimension(nz) :: tgt_frac_end
+      real, dimension(N_tgt) :: tgt_frac_start
+      real, dimension(N_tgt) :: tgt_frac_end
 
       ! This holds the integrated_values
-      real, dimension(nz) :: definite_integral
+      real, dimension(N_tgt) :: definite_integral
 
       ! Temporary array to hold the remapped fluxes
-      real, dimension(nz) :: t_tmp
+      real, dimension(N_tgt) :: t_tmp
 
       ! Scalars to hold the tracer mass in each cell
       real :: total_t_src
@@ -82,7 +83,7 @@
       ! Compare total depths and expand/contract current grid to match original depth
       total_depth_src = 0
       total_depth_tgt = 0
-      do k=1,nz
+      do k=1,N_tgt
         total_depth_tgt = total_depth_tgt + H_tgt(k)
       enddo
 
@@ -129,7 +130,7 @@
       curr_src_index = 1
 
       ! Sort the source and target cell heights so we know how to perform the integration
-      do k_new = 1,nz-1
+      do k_new = 1,N_tgt-1
 
         do while (curr_tgt_height > curr_src_height)
           curr_src_index = curr_src_index + 1
@@ -147,11 +148,11 @@
       enddo
 
       ! Remap by integrating the piecewise parabolas from the source grid
-      tgt_index_end(nz) = N_src
-      tgt_frac_end(nz)  = 1
+      tgt_index_end(N_tgt) = N_tgt
+      tgt_frac_end(N_tgt)  = 1
 
       total_t_tgt = 0
-      do k = 1,nz
+      do k = 1,N_tgt
 
         do idx = tgt_index_start(k),tgt_index_end(k)
 
@@ -181,7 +182,7 @@
       total_t_diff = total_t_tgt - total_t_src
 
       if (total_t_tgt /= 0.0) then
-        do k = 1,nz
+        do k = 1,N_tgt
           cellwise_mass_frac = t_tmp(k) / total_t_tgt
           t_tgt(k) = t_tmp(k) - total_t_diff*cellwise_mass_frac
         enddo

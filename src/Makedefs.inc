@@ -183,7 +183,7 @@ endif
 # Apply debug, strict, vtune, or grof settings for Intel compilers
 ifeq ($(COMPILER),$(filter ifort intel, $(COMPILER)))
     ifeq ($(BUILD_MODE),debug)
-        FFLAGS = -g -traceback -check all
+        FFLAGS = -g -traceback
     else ifeq ($(BUILD_MODE),strict)
         FFLAGS += -fp-model strict
     else ifeq ($(BUILD_MODE),vtune)

@@ -72,6 +72,12 @@
       ! For vertical velocity
       real,dimension(:,:,:),allocatable :: Wvl   ! Vertical velocity
 
+      ! Array for child vertical grid
+      real, dimension(:),allocatable :: Cs_w_chd
+
+      ! Different parent and child grid parameters?
+      logical :: diff_grids = .true.
+
       type extract_object  ! contains all information for a data_extraction object
 
         ! needed as input
@@ -94,7 +100,11 @@
         integer                        :: record=nrpf   ! record number in file
         real                               :: otime=0   ! time since last output
 
+        real,   dimension(:,:),pointer     :: Hz_par    ! interpolated thickness for parent
+        real,   dimension(:)  ,pointer     :: h         ! interpolated bottom depth
+        real,   dimension(:,:),pointer     :: Hz_chd    ! interpolated thickness for child
         real,   dimension(:,:),pointer     :: vari      ! data for output
+        real,   dimension(:,:),pointer     :: vari_chd  ! data for output
 
         ! these are only for scalars
         integer,dimension(:)  ,pointer     :: ip,jp     ! lower left hand point index
@@ -136,6 +146,9 @@
       subroutine init_extract_data  ![
       ! Allocate space and compute interpolation coefficients
       ! for rho,u,and v variables.
+
+      use scoord
+
       implicit none
 
       !local
@@ -144,6 +157,28 @@
       real,dimension(:),allocatable :: angp  ! grid angle
 
       call read_extraction_objects
+
+      if ((N == N_chd) .and. (theta_s == theta_s_chd) .and. (theta_b == theta_b_chd) .and. (hc == hc_chd)) then
+        diff_grids = .false.
+        if (mynode == 0) then
+          mpi_nonexit_warn write(*,*) 'init_extract_data :: Parent ',
+     &     'and child grids have identical parameters. ',
+     &     'Vertical remapping will not be used.'
+          call flush()
+        endif
+      else
+        if (mynode == 0) then
+          mpi_nonexit_warn write(*,*) 'init_extract_data :: Parent ',
+     &     'and child grids have different parameters. ',
+     &     'Using vertical remapping.'
+          call flush()
+        endif
+      endif
+
+      if (diff_grids) then
+        allocate(Cs_w_chd(0:N_chd))
+        call set_chd_scoord
+      endif
 
       ! For vertical velocity
       allocate( Wvl(GLOBAL_2D_ARRAY,nz+1))
@@ -169,7 +204,12 @@
           allocate(character(len=lpre) :: obj(i)%pre)
           obj(i)%pre = preamb(1:lpre)
 
+          allocate(obj(i)%Hz_par(np,nz))
+          allocate(obj(i)%h(np))
+          allocate(obj(i)%Hz_chd(np,N_chd))
+
           allocate(obj(i)%vari(np,nz))
+          allocate(obj(i)%vari_chd(np,N_chd))
           allocate(obj(i)%coef(np,4))
           allocate(obj(i)%ip(np))                          ! DON'T NEED THESE FOR U or V objects
           allocate(obj(i)%jp(np))
@@ -495,10 +535,11 @@
       subroutine do_extract_data ![
       ! extract data for all objects, for all vars
       ! and write to file
+
       implicit none
 
       ! local
-      integer :: i,itrc,ierr,ncid,k,record,indt
+      integer :: i,j,itrc,ierr,ncid,k,record,indt
       character(len=30) :: obj_name
       character(len=99),save :: fname
       character(len=20)              :: tname
@@ -511,6 +552,7 @@
       real,dimension(:),allocatable :: dummy
       integer,dimension(3) :: start2D
       integer,dimension(2) :: start1D
+      real, dimension(1:N_chd) :: tmpp
 
       if (.not.allocated(obj)) then
         call init_extract_data
@@ -567,14 +609,30 @@
             call ncwrite(ncid,tname,(/time/),(/record/))
             !if (mynode==0) print *,'writing extract: ',time,mynode,tname
 
+            ! Get thickness and depth at interpolated location
+            call interpolate(Hz(:,:,:),obj(i)%Hz_par,coef,ip,jp)
+            obj(i)%h(:) = 0
+            do j=1,obj(i)%np
+              do k=1,nz
+                obj(i)%h(j) = obj(i)%h(j) + obj(i)%Hz_par(j,k)
+              enddo
+            enddo
+
             if (obj(i)%zeta) then
               oname = trim(obj(i)%set)//'_zeta'//trim(obj(i)%bnd)
               call interpolate(zeta(:,:,knew),obj(i)%vari(:,1),coef,ip,jp)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h(j), obj(i)%Hz_chd(j,:), obj(i)%vari(j,1))
+            enddo
+
             if (obj(i)%temp) then
               oname = trim(obj(i)%set)//'_temp'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,itemp),obj(i)%vari,coef,ip,jp)
+              if (diff_grid) then
+                call remap_src_to_grid(N_src, H_src, H_tgt, t_src, t_tgt)
               call ncwrite(ncid,oname,obj(i)%vari,start2D)
             endif
 #ifdef SALINITY
@@ -778,6 +836,77 @@
 
       end subroutine create_var  !]
 
+! ----------------------------------------------------------------------
+      subroutine set_chd_scoord
+
+      implicit none                      ! output: Cs_w(0:N), Cs_r(1:N)
+
+      integer :: k                          ! Compute vertical stretching
+      real :: ds,sc                         ! curves at W-points
+
+      ds=1.D0/dble(N_chd)                ! -1 < Cs_w < 0
+      Cs_w_chd(N_chd)=0.D0
+      do k=N_chd-1,1,-1
+        sc=ds*dble(k-N_chd)
+        call calc_cs(sc, Cs_w_chd(k))
+      enddo
+      Cs_w_chd(0)=-1.D0
+
+      end subroutine set_chd_scoord
+
+      subroutine calc_cs(sc, Cs)
+
+      implicit none
+
+      real, intent(in) :: sc
+      real, intent(out) :: Cs
+
+      real :: csrf
+
+      if (theta_s_chd > 0.D0) then
+        csrf=(1.D0-cosh(theta_s_chd*sc))/(cosh(theta_s_chd)-1.D0)
+      else
+        csrf=-sc**2                           ! Reference: This form of
+      endif                                   ! CSF corresponds exactly
+      if (theta_b_chd > 0.D0) then
+        Cs=(exp(theta_b_chd*csrf)-1.D0)/(1.D0-exp(-theta_b_chd))
+      else
+        Cs=csrf                               ! to Eq.(2.4) from SM2009
+      endif                                   ! article published in
+      end subroutine calc_cs                  ! J. Comput. Phys.
+
+! ----------------------------------------------------------------------
+      subroutine get_child_thickness(h_par, Hz_chd, ssh)
+
+      use mpi
+
+      implicit none                      ! output: Cs_w(0:N), Cs_r(1:N)
+
+      real, intent(in)                    :: h_par
+      real, dimension(:), intent(out)     :: Hz_chd
+      real, intent(in)                    :: ssh
+
+      integer :: k
+      real :: ds,hinv
+      real :: z_w_chd(0:N_chd)
+      real :: cff_w, cff1_w
+
+      ds=1.D0/dble(N_chd)
+      hinv=1./(h_par+hc_chd)
+      z_w_chd(0)=-h_par
+
+      do k=1,N_chd,+1   !--> irreversible because of recursion in Hz
+        cff_w=hc_chd*ds*dble(k-N_chd)
+
+        cff1_w=Cs_w_chd(k)
+
+        z_w_chd(k)=ssh + (ssh+h_par)
+     &               *(cff_w+cff1_w*h_par)*hinv
+
+        Hz_chd(k)=z_w_chd(k)-z_w_chd(k-1)
+      enddo
+
+      end subroutine get_child_thickness
 ! ----------------------------------------------------------------------
 
       end module extract_data
