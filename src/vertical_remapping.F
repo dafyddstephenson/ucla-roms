@@ -42,7 +42,6 @@
       real, dimension(N_src+1) :: z_orig_interfaces
       real, dimension(N_src) :: H_orig
       real :: H_src_tot
-      real :: tot_dist
 
       integer :: curr_src_index
       integer, dimension(N_tgt) :: tgt_index_start
@@ -68,9 +67,6 @@
       real :: cellwise_mass_frac
 
 
-      H_src_tot = 0.0
-      tot_dist = 0.0
-
       tgt_frac_start(:) = 0.0
       tgt_frac_end(:)   = 0.0
 
@@ -93,10 +89,10 @@
 
       total_t_src = 0.0
       do k=1,N_src
-          a0(k) = t_src(k)
+          a0(k) = interface_values(k)
           a1(k) = 6*t_src(k) - 4*interface_values(k) - 2*interface_values(k+1)
           a2(k) = 3*(interface_values(k) + interface_values(k+1) - 2*t_src(k))
-          total_t_src = total_t_src + t_src(k)
+          total_t_src = total_t_src + t_src(k)*H_src(k)
       enddo
 
       ! These are vector copies of the source and target column.
@@ -148,7 +144,7 @@
       enddo
 
       ! Remap by integrating the piecewise parabolas from the source grid
-      tgt_index_end(N_tgt) = N_tgt
+      tgt_index_end(N_tgt) = N_src
       tgt_frac_end(N_tgt)  = 1
 
       total_t_tgt = 0
@@ -157,23 +153,19 @@
         do idx = tgt_index_start(k),tgt_index_end(k)
 
           if (tgt_index_start(k) == tgt_index_end(k)) then
-            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), tgt_frac_end(k))
-            tot_dist = tgt_frac_end(k) - tgt_frac_start(k)
+            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), tgt_frac_end(k))*H_src(idx)
           elseif ((idx == tgt_index_start(k)) .and. (idx < tgt_index_end(k))) then
-            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), 1.0)
-            tot_dist = 1 - tgt_frac_start(k)
+            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), 1.0)*H_src(idx)
           elseif ((idx < tgt_index_end(k)) .and. (idx > tgt_index_start(k))) then
-            definite_integral(k) = definite_integral(k) + integrate(a0(idx), a1(idx), a2(idx), 0.0, 1.0)
-            tot_dist = tot_dist + 1
+            definite_integral(k) = definite_integral(k) + integrate(a0(idx), a1(idx), a2(idx), 0.0, 1.0)*H_src(idx)
           else
             definite_integral(k) = definite_integral(k) +
-     &        integrate(a0(idx), a1(idx), a2(idx), 0.0, tgt_frac_end(k))
-            tot_dist = tot_dist + tgt_frac_end(k)
+     &        integrate(a0(idx), a1(idx), a2(idx), 0.0, tgt_frac_end(k))*H_src(idx)
           endif
 
         enddo
-        t_tmp(k) = definite_integral(k) / tot_dist
-        total_t_tgt = total_t_tgt + t_tmp(k)
+        t_tmp(k) = definite_integral(k) / H_tgt(k)
+        total_t_tgt = total_t_tgt + t_tmp(k)*H_tgt(k)
       enddo
 
       ! Correction to ensure exact tracer conservation in the remapping
@@ -199,7 +191,7 @@
       real :: one_third = 0.3333333333
 
       integrate = a0 * (z1 - z0) + 0.5*a1*(z1**2 - z0**2) +
-     & one_third*a2*(z1**3 - z0**3)
+     &  one_third*a2*(z1**3 - z0**3)
 
       end function integrate !]
 ! ----------------------------------------------------------------------
