@@ -1265,8 +1265,6 @@
 !     4a. Update saved state array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_saved_state_values_surf(i,j)
-#ifdef MARBL_DIAGS
-#endif
 !     4b. Update tracer array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_tracers_surf(i,j,tracer_array)

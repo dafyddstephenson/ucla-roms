@@ -72,9 +72,6 @@ c      write(*,*) 'kmp_stacksize =', size
       do i=1,max_frc_files
         ncfrc(i)=-1
       enddo
-#ifndef ANA_BRY
-!      bry_id=-1
-#endif
 
       call init_dimensions                                 ! needs to come before init_output_indices
       call init_output_indices      ! retire this soon (the bfx, bfy thing)

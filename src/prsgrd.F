@@ -32,6 +32,7 @@
      &                                      dR,dZ, FC,dZx,rx,dRx)
 
 #ifdef WEC
+      use wec_frc, only: cff1 => cff_ext, cff2 => cff_ext2
 #endif
       use grid, only: f, pm, pn
       use tides, only: pot_tides, ptide

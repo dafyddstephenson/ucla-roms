@@ -5,6 +5,7 @@
 
       use param, only: mynode, ocean_grid_comm
 #ifdef NHMG
+      use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
       use mpi, only: mpi_wtime
@@ -81,6 +82,7 @@ C$OMP END MASTER                         ! is in uniform state]. This
 
       subroutine roms_init
 #ifdef NHMG
+      use nhmg, only: nhmg_matrices, nhmg_init
 #endif
       use basic_output, only: init_restarts, wrt_his_ocean_vars
       use scalars, only:

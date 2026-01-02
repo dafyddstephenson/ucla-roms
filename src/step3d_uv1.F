@@ -35,6 +35,7 @@
       use mg_grids, only: mggrid => grid
 # endif
 # ifdef WEC
+      use wec_frc, only: compute_wec_rhs_uv_terms
 # endif
       use diagnostics, only: diag_uv, u_prev, v_prev
       use surf_flux, only: sustr, svstr

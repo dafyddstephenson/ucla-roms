@@ -32,6 +32,8 @@
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
 #ifdef NHMG
+      use nhmg, only: nhdu, nhdv, nhdw,
+     &     nh_ubar, nh_vbar, nh_wcor, iprec1, iprec2
 #endif
       use surf_flux, only: sustr, svstr
       use tracers, only: iTandS, t

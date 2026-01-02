@@ -1140,10 +1140,6 @@ c??         enddo
 
       do itrc=1,nt
         call t3dbc_tile (istr,iend,jstr,jend, itrc, wrk1)
-# ifdef DIAGNOSTICS
-!       if (diag_trc .and. wrt_t_dia(itrc) .and. calc_diag)
-!    &    call set_diags_t_bc(itrc,td)
-# endif
       enddo     !<-- itrc
 
 # if defined(MARBL)

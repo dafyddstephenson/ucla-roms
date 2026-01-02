@@ -459,19 +459,6 @@
 
 # endif /* NHMG */
 
-
-# ifdef DIAGNOSTICS
-!     if (diag_uv .and. calc_diag) then
-!       Udiag(:,j,:,ivmix) = ( u(1:nx,j,:,nnew)*
-!    &    0.5*( Hz(0:nx-1,j,:)+Hz(1:nx,j,:) )-u_prev ) / dt
-!       Vdiag(:,j,:,ivmix) = ( v(1:nx,j,:,nnew)*
-!    &    0.5*( Hz(1:nx,j-1,:)+Hz(1:nx,j,:) )-v_prev ) / dt
-
-!       Udiag(:,j,nz,ivmix) = Udiag(:,j,nz,ivmix)+sustr(1:nx,j)
-!       Vdiag(:,j,nz,ivmix) = Vdiag(:,j,nz,ivmix)+svstr(1:nx,j)
-!     endif
-# endif
-
       enddo      ! <-- j
 
 ! Set PHYSICAL lateral boundary conditions.
