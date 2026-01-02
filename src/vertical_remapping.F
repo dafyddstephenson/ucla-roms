@@ -20,18 +20,19 @@
       contains
 
 ! ----------------------------------------------------------------------
-      subroutine remap_src_to_grid(N_src, H_src, H_tgt, t_src, t_tgt)
+      subroutine remap_src_to_grid(N_src, H_src, t_src, N_tgt, H_tgt, t_tgt)
 
       ! Perform conservative remapping of a depth profile from the source grid to the
       ! target (current) grid using piecewise parabolic reconstruction.
 
       implicit none
 
-      integer, intent(in) :: N_src
+      integer, intent(in)                 :: N_src
       real, dimension(N_src), intent(in)  :: H_src
-      real, dimension(nz),    intent(in)  :: H_tgt
       real, dimension(N_src), intent(in)  :: t_src
-      real, dimension(nz),    intent(out) :: t_tgt
+      integer, intent(in)                 :: N_tgt
+      real, dimension(N_tgt), intent(in)  :: H_tgt
+      real, dimension(N_tgt), intent(out) :: t_tgt
 
       ! local
       integer :: k,k_new,trc,idx
@@ -41,24 +42,23 @@
       real, dimension(N_src+1) :: z_orig_interfaces
       real, dimension(N_src) :: H_orig
       real :: H_src_tot
-      real :: tot_dist
 
       integer :: curr_src_index
-      integer, dimension(nz) :: tgt_index_start
-      integer, dimension(nz) :: tgt_index_end
+      integer, dimension(N_tgt) :: tgt_index_start
+      integer, dimension(N_tgt) :: tgt_index_end
 
       ! Keep track of how far up we are in the water column
       real :: curr_tgt_height, curr_src_height
 
       ! Keep track of where in each H_orig cell the interfaces of H_tgt are
-      real, dimension(nz) :: tgt_frac_start
-      real, dimension(nz) :: tgt_frac_end
+      real, dimension(N_tgt) :: tgt_frac_start
+      real, dimension(N_tgt) :: tgt_frac_end
 
       ! This holds the integrated_values
-      real, dimension(nz) :: definite_integral
+      real, dimension(N_tgt) :: definite_integral
 
       ! Temporary array to hold the remapped fluxes
-      real, dimension(nz) :: t_tmp
+      real, dimension(N_tgt) :: t_tmp
 
       ! Scalars to hold the tracer mass in each cell
       real :: total_t_src
@@ -66,9 +66,9 @@
       real :: total_t_diff
       real :: cellwise_mass_frac
 
+      real :: tt1, tt2
 
       H_src_tot = 0.0
-      tot_dist = 0.0
 
       tgt_frac_start(:) = 0.0
       tgt_frac_end(:)   = 0.0
@@ -82,7 +82,7 @@
       ! Compare total depths and expand/contract current grid to match original depth
       total_depth_src = 0
       total_depth_tgt = 0
-      do k=1,nz
+      do k=1,N_tgt
         total_depth_tgt = total_depth_tgt + H_tgt(k)
       enddo
 
@@ -92,10 +92,10 @@
 
       total_t_src = 0.0
       do k=1,N_src
-          a0(k) = t_src(k)
+          a0(k) = interface_values(k)
           a1(k) = 6*t_src(k) - 4*interface_values(k) - 2*interface_values(k+1)
           a2(k) = 3*(interface_values(k) + interface_values(k+1) - 2*t_src(k))
-          total_t_src = total_t_src + t_src(k)
+          total_t_src = total_t_src + t_src(k)*H_src(k)
       enddo
 
       ! These are vector copies of the source and target column.
@@ -129,7 +129,7 @@
       curr_src_index = 1
 
       ! Sort the source and target cell heights so we know how to perform the integration
-      do k_new = 1,nz-1
+      do k_new = 1,N_tgt-1
 
         do while (curr_tgt_height > curr_src_height)
           curr_src_index = curr_src_index + 1
@@ -147,32 +147,28 @@
       enddo
 
       ! Remap by integrating the piecewise parabolas from the source grid
-      tgt_index_end(nz) = N_src
-      tgt_frac_end(nz)  = 1
+      tgt_index_end(N_tgt) = N_src
+      tgt_frac_end(N_tgt)  = 1
 
       total_t_tgt = 0
-      do k = 1,nz
+      do k = 1,N_tgt
 
         do idx = tgt_index_start(k),tgt_index_end(k)
 
           if (tgt_index_start(k) == tgt_index_end(k)) then
-            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), tgt_frac_end(k))
-            tot_dist = tgt_frac_end(k) - tgt_frac_start(k)
+            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), tgt_frac_end(k))*H_src(idx)
           elseif ((idx == tgt_index_start(k)) .and. (idx < tgt_index_end(k))) then
-            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), 1.0)
-            tot_dist = 1 - tgt_frac_start(k)
+            definite_integral(k) = integrate(a0(idx), a1(idx), a2(idx), tgt_frac_start(k), 1.0)*H_src(idx)
           elseif ((idx < tgt_index_end(k)) .and. (idx > tgt_index_start(k))) then
-            definite_integral(k) = definite_integral(k) + integrate(a0(idx), a1(idx), a2(idx), 0.0, 1.0)
-            tot_dist = tot_dist + 1
+            definite_integral(k) = definite_integral(k) + integrate(a0(idx), a1(idx), a2(idx), 0.0, 1.0)*H_src(idx)
           else
             definite_integral(k) = definite_integral(k) +
-     &        integrate(a0(idx), a1(idx), a2(idx), 0.0, tgt_frac_end(k))
-            tot_dist = tot_dist + tgt_frac_end(k)
+     &        integrate(a0(idx), a1(idx), a2(idx), 0.0, tgt_frac_end(k))*H_src(idx)
           endif
 
         enddo
-        t_tmp(k) = definite_integral(k) / tot_dist
-        total_t_tgt = total_t_tgt + t_tmp(k)
+        t_tmp(k) = definite_integral(k) / H_tgt(k)
+        total_t_tgt = total_t_tgt + t_tmp(k)*H_tgt(k)
       enddo
 
       ! Correction to ensure exact tracer conservation in the remapping
@@ -181,7 +177,7 @@
       total_t_diff = total_t_tgt - total_t_src
 
       if (total_t_tgt /= 0.0) then
-        do k = 1,nz
+        do k = 1,N_tgt
           cellwise_mass_frac = t_tmp(k) / total_t_tgt
           t_tgt(k) = t_tmp(k) - total_t_diff*cellwise_mass_frac
         enddo
@@ -198,7 +194,7 @@
       real :: one_third = 0.3333333333
 
       integrate = a0 * (z1 - z0) + 0.5*a1*(z1**2 - z0**2) +
-     & one_third*a2*(z1**3 - z0**3)
+     &  one_third*a2*(z1**3 - z0**3)
 
       end function integrate !]
 ! ----------------------------------------------------------------------
