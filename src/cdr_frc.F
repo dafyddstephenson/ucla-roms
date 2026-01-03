@@ -617,7 +617,6 @@
       use grid
       use ocean_vars
       use hidden_mpi_vars
-
       implicit none
 
       private
@@ -630,7 +629,8 @@
       contains
 
       subroutine set_cdr_frc    ![
-      ! Allocate and initialize arrays.
+! Allocate and initialize arrays.
+      use error_handling, only: handle_configuration_error
       implicit none
       character(len=11) :: sr_name = "set_cdr_frc"
 
