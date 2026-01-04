@@ -45,6 +45,9 @@
       use hidden_mpi_vars, only: jnode, inode
       use boundary, only: frctype
       use scalars, only: nt
+#if defined(CDR_FORCING)
+      use cdr_frc, only: set_cdr_frc
+#endif
 # ifdef BULK_FRC
       use bulk_frc, only: set_bulk_frc
 #endif
