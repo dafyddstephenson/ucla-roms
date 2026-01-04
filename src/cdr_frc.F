@@ -607,6 +607,9 @@
 #else /* defined MARBL && defined CDR_FORCING */
 
 !----------------------------------------------------------------------
+      use roms_read_write, only: ncforce, ncforce3d
+      use error_handling, only: handle_configuration_error
+
       implicit none
 
       private
