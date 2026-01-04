@@ -7,9 +7,9 @@
 ! stepping algorithm [Sec. 2.3 from SM2005 starting with Eq. (2.49)]
 ! and perform fast-time averaging to interact with baroclinic mode.
 
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a2d
+      use private_scratch, only: a2d
 
       implicit none
       integer,save :: tile=0

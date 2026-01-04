@@ -3,9 +3,9 @@
 
       subroutine set_nudgcof (tile)  ! Set up nudging-to-climatology
 
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a2d
+      use private_scratch, only: a2d
 
       implicit none                  ! inverse time-scale coeffcients
       integer tile                   ! (units [1/sec])

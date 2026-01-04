@@ -2,9 +2,11 @@
 #ifdef SOLVE3D
 
       subroutine wvlcty (tile, Wvlc)
-      use param, only: n, ieast, iwest, jnorth, jsouth
+      use param, only:
+     &     n, ieast, iwest, jnorth, jsouth,
+     &     lm, mm, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: lm, mm, nsub_e, nsub_x, a2d
+      use private_scratch, only: a2d
       implicit none
       integer tile
       real Wvlc(GLOBAL_2D_ARRAY,0:N)

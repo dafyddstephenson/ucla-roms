@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
                                     ! Note that arrays A2d(1,1:4) in
       subroutine pre_step3d (tile)  ! the call just below are repeated
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a3d, a2d
+      use private_scratch, only: a3d, a2d
       implicit none                 ! within the list of agruments to
       integer tile                  ! use the same memory for vertical
                                     ! and horizontal scratch arrays.

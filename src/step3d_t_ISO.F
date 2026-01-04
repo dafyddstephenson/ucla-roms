@@ -19,9 +19,9 @@ c--# define CONST_TRACERS
                                   ! Note that arrays A2d(1,1:4) within
       subroutine step3d_t(tile)   ! the list of agruments in call below
 
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a2d, a3d
+      use private_scratch, only: a2d, a3d
 
       implicit none               ! are repeated to use the same memory
       integer tile                ! for vertical and horizontal scratch

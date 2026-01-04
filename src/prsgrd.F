@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
 
       subroutine prsgrd
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a3d, a2d
+      use private_scratch, only: a3d, a2d
       implicit none
       integer,save:: tile=0
 
@@ -34,7 +34,7 @@
 #ifdef WEC
       use wec_frc, only: cff1 => cff_ext, cff2 => cff_ext2
 #endif
-      use grid, only: f, pm, pn
+      use grid, only: f, pm, pn, umask, dn_u, vmask, dm_v
       use tides, only: pot_tides, ptide
       use param, only:
      &     east_exchng, north_exchng, south_exchng,
@@ -51,7 +51,7 @@
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx,drde
 #endif
-      use grid, only:  nx, ny, nz, umask, dn_u, vmask, dm_v
+      use dimensions, only:  nx, ny, nz
       use scalars, only: n, g, rho0, nrhs
 
       implicit none

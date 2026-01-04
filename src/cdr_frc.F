@@ -12,13 +12,13 @@
 
       use roms_read_write, only:
      &     ncforce, ncforce3d, cdr_frc_opt,
-     &     set_frc_data
+     &     set_frc_data, store_string_att
       use scalars, only: nt, deg2rad, n, pi
-      use grid, only:
-     &     lm, mm, nx, ny, nz, ocean_grid_comm, rmask, lonr,
-     &     latr, ncread, store_string_att
+      use grid, only: rmask, lonr,latr
+      use dimensions, only: nx, ny, nz
       use ocean_vars, only: hz, z_r0, hz0
-      use param, only: mynode
+      use param, only: mynode, lm, mm, ocean_grid_comm
+      use nc_read_write, only: ncread
       use marbl_driver, only: iALK, iDIC
       use vertical_remapping, only: remap_src_to_grid
       use error_handling, only: handle_configuration_error, handle_netcdf_error

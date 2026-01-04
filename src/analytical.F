@@ -4,7 +4,9 @@
 
 #include "cppdefs.opt"
       use ocean_vars, only: zeta, ubar, vbar, u, v, z_w, hz
-      use grid, only: nx, ny, nz, exchange_xxx, xr, pm, f
+      use grid, only: xr, pm, f
+      use mpi_exchanges, only: exchange_xxx
+      use dimensions, only: nx, ny, nz
       use tracers, only: t
       use mixing, only: akt, akv
       use scalars, only:

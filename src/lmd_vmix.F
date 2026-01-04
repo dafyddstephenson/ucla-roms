@@ -3,9 +3,9 @@
 # define SMOOTH_RIG  /* local Ri number smoothing */
 
       subroutine lmd_vmix(tind)
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a3d, a2d, ia2d
+      use private_scratch, only: a3d, a2d, ia2d
       implicit none
       integer,save :: tile=0
       integer      :: tind

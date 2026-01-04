@@ -2,9 +2,9 @@
 #define SUM_BY_PAIRS
 
       subroutine setup_grid2 (tile)
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a2d
+      use private_scratch, only: a2d
       implicit none
       integer tile
 

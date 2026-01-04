@@ -20,9 +20,9 @@ c--#define MAX_BY_VERT_CFL_ONLY
 
 
       subroutine diag
-      use param, only: ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a2d
+      use private_scratch, only: a2d
       use scalars, only: iic, ninfo
 
       implicit none
@@ -62,11 +62,11 @@ c--#define MAX_BY_VERT_CFL_ONLY
 #else
       use eos_vars, only: rho
 #endif
-      use grid, only:
-     &     ieast, isw_corn, iwest, jnorth, jsouth, jsw_corn,
-     &     mynode, nsub_e, nsub_x, ocean_grid_comm, pn, pm, rmask
+      use grid, only: pn, pm, rmask
       use ocean_vars, only: u, hz, v, z_w, wi, we, flxv, flxu, z_r
-      use param, only: nnodes
+      use param, only:
+     &     nnodes, ieast, isw_corn, iwest, jnorth, jsouth, jsw_corn,
+     &     mynode, nsub_e, nsub_x, ocean_grid_comm
       use scalars, only:
      &     diag_sync, dt, g, iic, may_day_flag, n, nstp,
      &     rho0, tdays

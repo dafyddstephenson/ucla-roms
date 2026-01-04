@@ -40,7 +40,8 @@
 
 #include "cppdefs.opt"
 
-      use grid, only: nx, ny, nz, angler, rmask, umask, vmask
+      use grid, only: angler, rmask, umask, vmask
+      use dimensions, only: nx, ny, nz
       use nc_read_write, only: nccreate, ncread, ncwrite
       use roms_read_write, only: findstr, create_file
       use netcdf, only:

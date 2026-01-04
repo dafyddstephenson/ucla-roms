@@ -2,9 +2,9 @@
 #if defined SOLVE3D && ( defined TS_DIF2 || defined TS_DIF4 )
 
       subroutine t3dmix
-      use param, only: ieast, iwest, jnorth, jsouth, nt
+      use param, only: ieast, iwest, jnorth, jsouth, nt, nsub_e, nsub_x
       use hidden_mpi_vars, only: inode, jnode
-      use private_scratch, only: nsub_e, nsub_x, a2d
+      use private_scratch, only: a2d
       implicit none
       integer,save:: tile=0
       integer itrc
