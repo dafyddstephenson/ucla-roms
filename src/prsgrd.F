@@ -51,7 +51,6 @@
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx,drde
 #endif
-      use nc_read_write
       use grid, only:  nx, ny, nz, umask, dn_u, vmask, dm_v
       use scalars, only: n, g, rho0, nrhs
 

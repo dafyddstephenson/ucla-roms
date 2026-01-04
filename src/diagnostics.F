@@ -968,7 +968,7 @@
       subroutine create_diagvars(ncid)  ![
       ! Add diagnostics variables to an opened netcdf file
 
-      use nc_read_write
+      use nc_read_write, only: nccreate
       implicit none
 
       !import/export
@@ -1115,8 +1115,7 @@
       subroutine wrt_diag_uv(ncid,record,ud,vd)  ![
       ! Write uv diagnostic vars to file
 
-      use param
-      use nc_read_write
+      use param, only: south_exchng, west_exchng
       implicit none
 
       !import/export
@@ -1154,8 +1153,6 @@
       subroutine wrt_diag_trc(ncid,record,trcd)  ![
       ! Write uv diagnostic vars to file
 
-      use param
-      use nc_read_write
       implicit none
 
       !import/export
@@ -1185,8 +1182,6 @@
       subroutine wrt_diag_pflx(ncid,record,up,vp)  ![
       ! Write pressure fluxes
 
-      use param
-      use nc_read_write
       implicit none
 
       !import/export

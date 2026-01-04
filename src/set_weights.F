@@ -7,7 +7,7 @@ c--# define TEST_WEIGHTS
       subroutine set_weights
 
       use coupling, only: weight
-      use hidden_mpi_vars, only: mynode
+      use param, only: mynode
       use scalars, only: ndtfast, nfast
 
       implicit none

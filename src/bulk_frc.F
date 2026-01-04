@@ -192,7 +192,7 @@
      &     east_exchng, ieast, isalt, itemp, iwest,
      &     jnorth, jsouth, north_exchng, south_exchng, west_exchng
       use ocean_vars, only: u, v
-      use scalars
+      use scalars, only: cp, g, n, nrhs, pi, rho0, vonkar
 
       implicit none
 

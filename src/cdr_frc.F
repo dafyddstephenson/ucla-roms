@@ -10,16 +10,25 @@
 
 #if defined MARBL && defined CDR_FORCING
 
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use scalars
-      use grid
-      use ocean_vars
-      use hidden_mpi_vars
-      use marbl_driver, only : iALK, iDIC
-      use vertical_remapping
+      use roms_read_write, only:
+     &     ncforce, ncforce3d, cdr_frc_opt,
+     &     set_frc_data
+      use scalars, only: nt, deg2rad, n, pi
+      use grid, only:
+     &     lm, mm, nx, ny, nz, ocean_grid_comm, rmask, lonr,
+     &     latr, ncread, store_string_att
+      use ocean_vars, only: hz, z_r0, hz0
+      use param, only: mynode
+      use marbl_driver, only: iALK, iDIC
+      use vertical_remapping, only: remap_src_to_grid
       use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use netcdf, only:
+     &     nf90_noerr, nf90_inq_dimid,
+     &     nf90_inquire_dimension, nf90_nowrite, nf90_open, nf90_close
+      use mpi, only:
+     &     mpi_double_precision, mpi_sum,
+     &     mpi_2double_precision, mpi_comm_world, mpi_in_place,
+     &     mpi_logical, mpi_lor, mpi_minloc
 
       implicit none
       private
@@ -82,7 +91,6 @@
       ! - all cdr variables need time interpolation only
       !   here so can use same generic routine.
       ! - input data in days!
-      use mpi
 
       implicit none
 
@@ -128,8 +136,6 @@
       ! Initialize cdr forcing:
       ! Open the NetCDF file and check which forcing mode we're using
 
-      use netcdf
-      use mpi
       implicit none
       character(len=12) :: sr_name = "init_cdr_frc"
       ! local
@@ -184,8 +190,6 @@
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc_dp(ncid)  ![
 
-      use netcdf
-      use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
@@ -242,8 +246,6 @@
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc_3d  ![
 
-      use netcdf
-      use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
@@ -263,8 +265,6 @@
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc_parm(ncid)  ![
 
-      use netcdf
-      use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
@@ -297,8 +297,6 @@
       ! Determine where tracer releases will take place
       ! (for depth profiles and parameterized releases):
 
-      use netcdf
-      use mpi
       implicit none
       character(len=23) :: sr_name = "find_release_locations"
       ! local
@@ -417,7 +415,6 @@
       ! Either figure out vertical structure of parameterized releases, or
       ! perform conservative remapping for depth profiles.
 
-      use mpi
       implicit none
 
       ! local
@@ -610,13 +607,6 @@
 #else /* defined MARBL && defined CDR_FORCING */
 
 !----------------------------------------------------------------------
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use scalars
-      use grid
-      use ocean_vars
-      use hidden_mpi_vars
       implicit none
 
       private

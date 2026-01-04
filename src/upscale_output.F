@@ -105,8 +105,8 @@
       subroutine init_upscale ![
       ! Allocate and initialize arrays.
 
-      use param, only: lm, mm
-      use hidden_mpi_vars, only: inode, jnode, mynode
+      use param, only: lm, mm, mynode
+      use hidden_mpi_vars, only: inode, jnode
 
       implicit none
 
@@ -315,7 +315,8 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use hidden_mpi_vars, only: inode, jnode, mynode
+      use hidden_mpi_vars, only: inode, jnode
+      use param, only: mynode
       implicit none
 
       ! local

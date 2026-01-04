@@ -387,7 +387,7 @@
       end subroutine seed_particles !]
 !-------------------------------------------------
       subroutine wrt_particles ![
-      use nc_read_write
+      use nc_read_write, only: ncwrite
       implicit none
 
       ! local
@@ -661,7 +661,6 @@
       subroutine exchange_particles![
       ! Deal with particles entering/leaving the domain.
       ! Deal with particles switching sub-domains
-      use hidden_mpi_vars
       implicit none
 
       ! local
@@ -933,9 +932,10 @@
 ! ---------------------------------------------------------------------
       subroutine exchange_data  ![
       ! orginally to exchange particles
-
-      use hidden_mpi_vars
-      use mpi
+      use hidden_mpi_vars, only:
+     &     p_e, p_n, p_ne, p_nw, p_s, p_se, p_sw,
+     &     p_w
+      use mpi, only: mpi_double_precision, mpi_status_size
 
       implicit none
 

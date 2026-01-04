@@ -870,7 +870,7 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
 ! global attribute "CPPS" in output netCDF files.
 
       use param, only: mynode
-      use strings
+      use strings, only: cpps, max_opt_size
 
       implicit none
       integer ierr, is,ie, lenstr

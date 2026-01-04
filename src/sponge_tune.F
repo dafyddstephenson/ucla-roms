@@ -17,10 +17,11 @@
      &     ncforce, bfx, bfy, dn_tm, dn_xr,
      &     dn_yr, xi_rho, bc_options, create_file, set_frc_data,
      &     store_string_att
-      use hidden_mpi_vars, only: inode, jnode, mynode, np_eta, np_xi
+      use hidden_mpi_vars, only: inode, jnode
       use param, only:
      &     obc_east, obc_north, obc_south, obc_west,
-     &     east_exchng, north_exchng, south_exchng, west_exchng
+     &     east_exchng, north_exchng, south_exchng, west_exchng,
+     &     mynode, np_eta, np_xi
       use error_handling, only: handle_netcdf_error
 
       implicit none

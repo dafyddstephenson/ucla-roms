@@ -4,9 +4,8 @@
 #include "cppdefs.opt"
 
       use grid, only: rmask
-      use param, only: lm, mm
+      use param, only: lm, mm, mynode
       use mpi_exchanges, only: exchange_xxx
-      use hidden_mpi_vars, only: mynode
       use dimensions, only: nx, ny, nz
       use roms_read_write, only:
      &     bfx, bfy, dn_tm, dn_xr, dn_xu, dn_yr,
