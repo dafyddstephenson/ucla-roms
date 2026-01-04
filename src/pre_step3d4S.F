@@ -32,25 +32,33 @@
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
 #ifdef NHMG
-      use nhmg, only: nhdu, nhdv, nhdw,
-     &     nh_ubar, nh_vbar, nh_wcor, iprec1, iprec2
+      use ocean_vars, only:
+     &     nhdu, nhdv, nhdw,
+     &     nh_ubar, nh_vbar, nh_wcor, w
+      use nhmg, only: iprec1, iprec2, halo, nhmg_solve
+      use mg_grids, only: mggrid => grid
 #endif
       use surf_flux, only: sustr, svstr
       use tracers, only: iTandS, t
       use coupling, only: r_d
       use mpi_exchanges, only: exchange_xxx
       use grid, only:
-     &     pn, pm, umask, vmask, fomn, dn_u, dm_v
+     &     pn, pm, umask, vmask, fomn, dn_u, dm_v, pn_u, pm_v
 #if (defined CURVGRID && defined UV_ADV)
      &     ,dmde, dndx
 #endif
       use mixing, only: akt, akv
-      use param, only: east_exchng, ieast, iwest, jnorth, jsouth,
-     & north_exchng, south_exchng, west_exchng
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng, lm, mm,
+     &     padd_e, padd_x
+#ifdef NHMG
+      use mg_namelist, only: surface_neumann
+#endif
       use ocean_vars, only: wi, we, flxv, flxu, hz, z_w, u, v
       use scalars, only:
      &     n, dt, forw_start, iic, nnew, nrhs, nstp, nt,
-     &     rdrg, vonkar, zob
+     &     rdrg, vonkar, zob, ntstart
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k

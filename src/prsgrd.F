@@ -40,6 +40,9 @@
      &     east_exchng, north_exchng, south_exchng,
      &     west_exchng, ieast, iwest, jnorth, jsouth
       use ocean_vars, only: z_r, z_w, hz
+#ifdef NHMG
+     &     , dzdeta, dzdxi
+#endif
 #ifdef SPLIT_EOS
       use eos_vars, only: qp1, rho1, qp2
 #else

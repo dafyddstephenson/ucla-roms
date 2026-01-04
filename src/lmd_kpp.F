@@ -37,6 +37,9 @@
 #ifdef LMD_BKPP
      &     , hbbl
 #endif
+#ifdef WEC
+      use wec_frc, only: akb
+#endif
       use ocean_vars, only: z_w, hz, v, u, z_r
       use scalars, only: n, forw_start, g, iic, nstp, vonkar, zob
 

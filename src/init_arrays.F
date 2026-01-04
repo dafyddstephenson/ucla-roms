@@ -45,7 +45,10 @@
       use eos_vars, only: init_arrays_eos_vars
       use grid, only: init_arrays_grid
       use mixing, only: init_arrays_mixing
-      use ocean_vars, only: we, wi, init_arrays_ocean
+      use ocean_vars, only: we, wi, init_arrays_ocean,
+#ifdef NHMG
+     &     w
+#endif
       use basic_output, only: init_avg_arrays
       use work_mod, only: init_arrays_work_mod
       use boundary, only: init_arrays_boundary

@@ -82,7 +82,8 @@ C$OMP END MASTER                         ! is in uniform state]. This
 
       subroutine roms_init
 #ifdef NHMG
-      use nhmg, only: nhmg_matrices, nhmg_init
+      use nhmg, only: nhmg_matrices, nhmg_init, halo
+      use ocean_vars, only: dzdeta, dzdxi, hz
 #endif
       use basic_output, only: init_restarts, wrt_his_ocean_vars
       use scalars, only:
@@ -105,9 +106,11 @@ C$OMP END MASTER                         ! is in uniform state]. This
 # if defined(BIOLOGY_BEC2)
       use bec2_params, only: ecosys2_init
 #endif
-      use grid, only: get_grid
+      use grid, only: get_grid, dm_r, dn_r
       use roms_read_write, only: nrrec
-      use param, only: mynode, nsub_e, nsub_x
+      use param, only:
+     &     mynode, nsub_e, nsub_x, lm, mm,
+     &     N, np_eta, np_xi, padd_e, padd_x
 
       implicit none
 

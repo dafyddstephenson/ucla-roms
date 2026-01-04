@@ -23,13 +23,17 @@
       use coupling, only:
      &     east_exchng, north_exchng, south_exchng,
      &     west_exchng, du_avg1, dv_avg1
-      use grid, only: h, hinv, dn_u, dm_v
-      use param, only: ieast, jnorth
+      use grid, only: h, hinv, dn_u, dm_v, pn, pm
+      use param, only: ieast, jnorth, lm, mm
       use mpi_exchanges, only: exchange_xxx
       use ocean_vars, only:
-     &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0
+     &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0,
+     &     dzdxi, dzdeta
       use scalars, only: iic, knew
       use scoord, only: hc, iwest, jsouth, n, cs_w, cs_r
+#ifdef WEC
+      use wec_frc, only: ust2d, vst2d
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -217,7 +221,9 @@
       use mpi_exchanges, only: exchange_xxx
       use ocean_vars, only: flxu, u, hz, flxv, v
       use scalars, only: n, nrhs
-
+#ifdef WEC
+      use wec_frc, only: ust, vst
+#endif
       implicit none
       integer istr,iend,jstr,jend, i,j,k
 
@@ -290,6 +296,9 @@
       use ocean_vars, only: u, v, hz, flxu, flxv
       use scalars, only: n, forw_start, iic, nnew
       use dimensions, only: nz
+#ifdef WEC
+      use wec_frc, only: ust2d, vst2d, ust, vst
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k

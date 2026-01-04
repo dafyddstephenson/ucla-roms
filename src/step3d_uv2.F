@@ -20,6 +20,9 @@
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_vflx
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
 
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx, drde, idrz
@@ -37,11 +40,14 @@
 #endif
 
       use coupling, only: du_avg1, dv_avg1, du_avg2, dv_avg2
-      use grid, only: nz, dn_u, umask, dm_v, vmask, dm_u, dn_v, f
-      use ocean_vars, only: z_r
-      use mixing, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng
+      use grid, only:
+     &     nz, dn_u, umask, dm_v, vmask, dm_u, dn_v, f,
+     &     dm_r, pn, pm
+      use ocean_vars, only: z_r, wi
+#ifdef NHMG
+     &     , w
+#endif
+      use mixing, only: akv
 #ifdef ADV_ISONEUTRAL
      &     , diff3u, diff3v
 #endif
@@ -52,7 +58,7 @@
      &     , hbbl
 #endif
       use ocean_vars, only: u, ubar, v, vbar, hz, flxu, flxv, z_w
-      use scalars, only: n, knew, nnew, nstp, g, rho0
+      use scalars, only: n, knew, nnew, nstp, g, rho0, dt
       use mpi_exchanges, only: exchange_xxx
 
       implicit none

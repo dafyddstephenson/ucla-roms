@@ -29,9 +29,12 @@
      &                                                              )
 
 # ifdef NHMG
-      use nhmg, only: &
-     &     nhmg_solve, nh_ubar, nh_vbar, nh_wcor, nhdu,
-     &     nhdv, nhdw, iprec1, iprec2, surface_neumann
+      use ocean_vars, only:
+     &     nh_ubar, nh_vbar, nh_wcor, nhdu,
+     &     nhdv, nhdw, w
+      use nhmg, only:
+     &     nhmg_solve,  iprec1, iprec2, halo
+      use mg_namelist, only: surface_neumann
       use mg_grids, only: mggrid => grid
 # endif
 # ifdef WEC
@@ -42,15 +45,17 @@
       use coupling, only: r_d, rufrc, rvfrc
       use grid, only:
      &     nx, fomn, umask, vmask, pn, pm, dn_u,
-     &     dm_u, dn_v, dm_v
+     &     dm_u, dn_v, dm_v, dn_r, dm_r, pn_u, pm_v
 #if (defined CURVGRID && defined UV_ADV)
      &     , dmde,dndx
 #endif
-      use mixing, only:
+      use mixing, only: akv
+      use param, only:
      &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng, akv
-      use ocean_vars, only: u, v, hz, flxu, flxv, we, wi
-      use scalars, only: n, dt, nnew, nrhs
+     &     north_exchng, south_exchng, west_exchng, lm, mm,
+     &     padd_e, padd_x
+      use ocean_vars, only: u, v, hz, flxu, flxv, we, wi, z_w
+      use scalars, only: n, dt, nnew, nrhs, ntstart
 #ifdef EXCHANGE
       use mpi_exchanges, only: exchange_xxx
 #endif
