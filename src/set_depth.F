@@ -27,8 +27,10 @@
       use param, only: ieast, jnorth, lm, mm
       use mpi_exchanges, only: exchange_xxx
       use ocean_vars, only:
-     &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0,
-     &     dzdxi, dzdeta
+     &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0
+# if defined NHMG || defined NONTRAD_COR
+     &     , dzdxi, dzdeta
+#endif
       use scalars, only: iic, knew
       use scoord, only: hc, iwest, jsouth, n, cs_w, cs_r
 #ifdef WEC
