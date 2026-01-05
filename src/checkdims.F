@@ -137,7 +137,7 @@
               max_rec=dsize
             endif
           else
-             write(error_info,'(/A,I3/12x,3A/12x,A/)')
+             write(error_info,*)
      &            'Cannot get size of dimension #', id,
      &            'from netCDF file ''',fname(1:lname),'''.',
      &            nf90_strerror(ierr)
@@ -149,7 +149,7 @@
           endif
         enddo
       else
-        write(error_info,'(A)')
+        write(error_info,*)
      &          'Cannot get number of dimensions in netCDF file '''//
      &        fname(1:lname)// '''.'// nf90_strerror(ierr)
         call handle_configuration_error(
@@ -217,7 +217,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             ierr=nf90_inquire_dimension(ncid, dimid(i), len=size)
             if (ierr == nf90_noerr) then
                if (count(i) /= size) then
-                  write(error_info,'(/A,I3,1x,5A,2(I5,1x,A)/)')
+                  write(error_info,*)
      &                    'mismatch in dimension #', i,
      &                    'for variable ''', vname(1:lvar), ''' in ''',
      &                     fname(1:lfnm),  ''': expecting',   count(i),
@@ -228,7 +228,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
                 ierr=nf90_noerr-1
               endif
             else
-              write(error_info,'(/A,I3,1x,6A/)')
+              write(error_info,*)
      &              'Cannot determine size of dimension #', i,
      &              'for variable ''', vname(1:lvar), ''' in ''',
      &              fname(1:lfnm), ''', ', nf90_strerror(ierr)
@@ -244,7 +244,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           ierr=nf90_inquire_dimension(ncid, dimid(3), len=size)
           if (ierr == nf90_noerr) then
             if (n3 /= size) then
-              write(error_info,'(/5A,2(I4,1x,A)/)')
+              write(error_info,*)
      &                    'mismatch in dimension #3 of variable ''',
      &                        vname(1:lvar), ''' in ''', fname(1:lfnm),
      &              ''': expecting',n3,'instead of',size,'in the file.'
@@ -255,7 +255,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
               ierr=nf90_noerr-1
             endif
           else
-            write(error_info,'(/6A/)')
+            write(error_info,*)
      &            'Cannot determine size of dimension #3 for variable''',
      &            vname(1:lvar), ''' in ''', fname(1:lfnm), ''', ',
      &            nf90_strerror(ierr)
@@ -266,7 +266,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           endif
         endif ! <-- n3 > 0
       else
-        write(error_info,'(/A,I3,1x,4A/)')
+        write(error_info,*)
      &      'Cannot make inquiry for variable varid =', varid, 'in ''',
      &        fname(1:lfnm), ''', ', nf90_strerror(ierr)
         call handle_configuration_error(
@@ -318,7 +318,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
       if (ierr == 0) then
         if (abs((hc-tst_val(1))/hc)>epsil) then
                 print *, hc,tst_val(1)
-          write(error_info,'(/A,F12.5,1x,A,F12.5,1x,3A/)')
+          write(error_info,*)
      &                  'Mismatch in ''hc'': should be', hc, 'found',
      &               tst_val(1), 'in file ''', fname(1:lfile), '''.'
           call handle_configuration_error(
@@ -341,7 +341,8 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             endif
           enddo
           if (ierr /= 0) then
-            write(error_info,'(/4A/)')  'Mismatch in ''Cs_w'' ',
+            write(error_info,*)
+     &            'Mismatch in ''Cs_w'' ',
      &            'values in file ''', fname(1:lfile), '''.'
             call handle_configuration_error(
      &           context=fn_name,
@@ -364,7 +365,8 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             endif
           enddo
           if (ierr /= 0) then
-            write(error_info,'(/1x,4A/)')  'Mismatch in ''Cs_r'' ',
+            write(error_info,*)
+     &            'Mismatch in ''Cs_r'' ',
      &            'values in file ''', fname(1:lfile), '''.'
             call handle_configuration_error(
      &           context=fn_name,
@@ -382,7 +384,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
         ierr=read_nc1dat(ncid, fname, 'theta_s', 1,  tst_val)
         if (ierr == 0) then
           if (abs(theta_s-tst_val(1)) > epsil) then
-            write(error_info,'(/2(A,F9.4,1x),3A/)')
+            write(error_info,*)
      &            'Mismatch in ''theta_s'': should be',   theta_s,
      &            'found',tst_val(1),'in file ''', fname(1:lfile),'''.'
             call handle_configuration_error(
@@ -397,7 +399,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
         ierr=read_nc1dat(ncid, fname, 'theta_b', 1,  tst_val)
         if (ierr == 0) then
           if (abs(theta_b-tst_val(1)) > epsil) then
-            write(error_info,'(/2(A,F9.4,1x),3A/)')
+            write(error_info,*)
      &      'Mismatch in ''theta_b'': should be',   theta_b, 'found',
      &            tst_val(1), 'in file ''', fname(1:lfile), '''.'
             call handle_configuration_error(
@@ -462,7 +464,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
         if (size == nlen) then
           ierr=nf90_get_att(ncid, nf90_global, vname, value)
           if (ierr /= nf90_noerr) then
-            write(error_info,'(/5A/12x,A/)')
+            write(error_info,*)
      &          'Cannot retrieve global attribute ''',   vname(1:lvar),
      &            ''' from ''', fname(1:lfile), '''.', nf90_strerror(ierr)
             call handle_configuration_error(
@@ -491,7 +493,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
                   endif
                 enddo
                 if (ierr /= nf90_noerr) then
-                  write(error_info,'(/A,I3,1x,3A/12x,A/)')
+                  write(error_info,*)
      &                'read_nc1dat :: Cannot find size of dimension #',
      &                 dimids(i),  'in file ''', fname(1:lfile), '''.',
      &                  nf90_strerror(ierr)
@@ -500,7 +502,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                 info=error_info)
                 endif
               else
-                write(error_info,'(/5A/12x,A/)')
+                write(error_info,*)
      &                'Cannot determine dimension IDs for ''', vname(1:lvar),
      &                ''' in file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
                 call handle_configuration_error(
@@ -509,7 +511,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
               endif
             endif
           else
-            write(error_info,'(/5A/12x,A/)')
+            write(error_info,*)
      &            'Cannot determine number of dimensions for ''', vname(1:lvar),
      &            ''' in file ''',  fname(1:lfile), '''.', nf90_strerror(ierr)
             call handle_configuration_error(
@@ -519,7 +521,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           if (size == nlen .and. ierr == nf90_noerr) then
             ierr=nf90_get_var(ncid, varid, value)
             if (ierr/=nf90_noerr) then
-              write(error_info,'(/5A/12x,A/)')
+              write(error_info,*)
      &              'Cannot read variable ''',  vname(1:lvar),
      &              ''' from file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
               call handle_configuration_error(
@@ -535,7 +537,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
         endif
       endif
       if (size /= nlen .and. ierr == nf90_noerr) then
-        write(error_info,'(/5A/12x,A,I7,1x,A,I7/)')
+        write(error_info,*)
      &        'Unexpected size of ''', vname(1:lvar),
      &        ''' in file ''',  fname(1:lfile),  ''':', 'should be',
      &        nlen, 'but found', size

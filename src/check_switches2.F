@@ -26,7 +26,7 @@
 
       if (isize<2) then
         ierr=ierr+1
-        write(error_info,'(1x,2A,I3,1x,A,I4,3x,A,I3,1x,A,2I4)')
+        write(error_info, *)
      &          'NSUB_X =', NSUB_X,  'is incompatible with Lm =', Lm,
      &       'i_X =', i_X,  '==> istr,iend =', istr,iend
 
@@ -37,7 +37,7 @@
       endif
       if (jsize<2) then
         ierr=ierr+1
-        write(error_info,'(1x,2A,I3,1x,A,I4,3x,A,I3,1x,A,2I4)')
+        write(error_info, *)
      &          'NSUB_E =', NSUB_E,  'is incompatible with Mm =', Mm,
      &       'j_E =', j_E,  '==> jstr,jend =', jstr,jend
          call handle_configuration_error(
@@ -178,7 +178,7 @@
       ncoupl=ncoupl+1
 #endif
       if (ncoupl==0) then
-        write(error_info,'(A)') 'neither PRED_COUPLED_MODE '//
+        write(error_info, *) 'neither PRED_COUPLED_MODE '//
      &                       'nor CORR_COUPLED_MODE are defined in '//
      &        '"set_global_definitions.h".'
         call handle_configuration_error(
@@ -187,7 +187,7 @@
 
         ierr=ierr+1
       elseif (ncoupl>1) then
-        write(error_info,'(A)')     'misconfigured '//
+        write(error_info, *)     'misconfigured '//
      &          'switches PRED_COUPLED_MODE and CORR_COUPLED_MODE '//
      &          'in "set_global_definitions.h": only one of them '//
      &        'should be defined.'
@@ -214,7 +214,7 @@
       nobc_east=nobc_east+1
 #endif
       if (nobc_west>1) then
-        write(error_info,'(A)') 'more than one '//
+        write(error_info, *) 'more than one '//
      &        'boundary condition is chosen on the WESTERN EDGE.'
          call handle_configuration_error(
      &        context=sr_name,
@@ -244,7 +244,7 @@
       nobc_north=nobc_north+1
 #endif
       if (nobc_south>1) then
-        write(error_info,'(A)') 'more than one '//
+        write(error_info, *) 'more than one '//
      &        'boundary condition is chosen on the SOUTHERN EDGE.'
          call handle_configuration_error(
      &        context=sr_name,
@@ -252,7 +252,7 @@
         ierr=ierr+1
       endif
       if (nobc_north>1) then
-        write(error_info,'(1x,2A)') 'more than one '//
+        write(error_info, *) 'more than one '//
      &        'boundary condition is chosen on the NORTHERN EDGE.'
          call handle_configuration_error(
      &        context=sr_name,
@@ -283,7 +283,7 @@
       nAk=nAk+1
 #endif
       if (nAk>1) then
-        write(error_info,'(A)') 'cppdefs.opt: more than '//
+        write(error_info, *) 'cppdefs.opt: more than '//
      &        'one vertical mixing scheme is chosen.'
         call handle_configuration_error(
      &        context=sr_name,
@@ -312,7 +312,7 @@
 
 #ifndef SOLVE3D
       if (ndtfast>1) then
-        write(error_info,'(A,I3,1x,A/12x,A,2x,A)')  'NDTFAST =',
+        write(error_info, *)  'NDTFAST =',
      &         ndtfast, 'is greater than unity for a shallow water',
      &        'configuration.','Change it to unity in startup file.'
       call handle_configuration_error(
@@ -322,7 +322,7 @@
       endif
 #endif
       return
-  99  mpi_master_only write(error_info,'(/1x,2A/14x,A)')
+  99  mpi_master_only write(error_info, *)
      &     'Insufficient size of string "cpps" ',
      &     'in file "strings".', 'Increase the size it and recompile.'
       call handle_configuration_error(
