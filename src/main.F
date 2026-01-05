@@ -315,7 +315,7 @@ CR      write(*,*)  ' -2' MYID
 
       subroutine roms_step
 
-      use extract_data, only: do_extract
+      use extract_data, only: do_extract, do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
      &     nstp, ntstart, sec2day, start_time, tdays, time
