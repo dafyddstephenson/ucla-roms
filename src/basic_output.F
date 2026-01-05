@@ -118,7 +118,7 @@
       character(len=200) :: error_info
 
       if (wrt_file_his .and. mod(output_period_his, dt) /= 0) then
-         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+         write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_his (",
      &        output_period_his, ")"
@@ -129,7 +129,7 @@
       endif
 
       if (wrt_file_avg .and. mod(output_period_avg,dt) /= 0) then
-         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+         write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_avg (",
      &        output_period_avg, ")"

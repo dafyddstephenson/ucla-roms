@@ -102,7 +102,7 @@
         else
 
           if(mynode==0) then
-             write(error_info,'(/1x,2A,I3,2A/)')
+             write(error_info, *)
      &            'Forcing type not supported: t_ana_frc(itrc)= ', t_ana_frc(itrc),
      &            ', for tracer: ', nc_t(itrc)%vname
             call handle_configuration_error(

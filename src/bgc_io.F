@@ -158,7 +158,7 @@
       logical,save           :: first_step_his=.true.
 
       if (wrt_his .and. mod(output_period_his, dt) /= 0) then
-         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+         write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_his (",
      &        output_period_his, ")"
@@ -169,7 +169,7 @@
       endif
 
       if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
-         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+         write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_avg (",
      &        output_period_avg, ")"
@@ -280,7 +280,7 @@
       logical,save           :: first_step_dia_his=.true.
 
       if (wrt_his_dia .and. mod(output_period_his_dia, dt) /= 0) then
-         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+         write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_his_dia (",
      &        output_period_his_dia, ")"
@@ -291,7 +291,7 @@
       endif
 
       if (wrt_avg_dia .and. mod(output_period_avg_dia,dt) /= 0) then
-         write(error_info, '(A, F0.2, (2A), F0.2,A)')
+         write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_avg_dia (",
      &        output_period_avg_dia, ")"
