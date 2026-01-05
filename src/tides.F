@@ -257,10 +257,12 @@
       subroutine read_tides  ![
       ! read tides from forcing file. Only read once at first timestep.
 
-      use netcdf, only: nf90_global, nf90_nowrite, nf90_open,
-     & nf90_inq_varid, nf90_get_var, nf90_get_att
+      use netcdf, only:
+     &     nf90_global, nf90_nowrite, nf90_open,
+     &     nf90_inq_varid, nf90_get_var, nf90_get_att
       use dimensions, only: i0, i1, j0, j1
       use error_handling, only: handle_netcdf_error, handle_configuration_error
+      use mpi_exchanges, only: exchange_xxx
       implicit none
       character(len=10) :: sr_name = "read_tides"
       ! local
