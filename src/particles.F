@@ -5,13 +5,24 @@
 
 #include "cppdefs.opt"
 
-      use dimensions    ! has dimensions, a list of forcing files, and rmask, glob_istr, etc
-      use netcdf
-      use ocean_vars
-      use scalars
-      use hidden_mpi_vars
-      use grid
-      use nc_read_write
+      use netcdf, only:
+     &     nf90_double, nf90_global, nf90_nofill,
+     &     nf90_put_att, nf90_set_fill, nf90_noerr, nf90_write,
+     &     nf90_open, nf90_close
+      use ocean_vars, only: z_w, u, v, hz, z_r, flxu, flxv
+      use scalars, only: dt, nnew, iic, tdays, time
+      use hidden_mpi_vars, only:
+     &     east_msg_exch, north_msg_exch,
+     &     south_msg_exch, west_msg_exch
+      use param, only:
+     &     ocean_grid_comm, mynode, isw_corn, jsw_corn,
+     &     obc_east, obc_west, obc_south, obc_north
+      use grid, only: dn_u, dn_v, h, pm, pn, dm_v
+      use dimensions, only: nx, ny, nz
+      use roms_read_write, only:
+     &     dn_tm, create_file, store_string_att,
+     &     particle_opt
+      use nc_read_write, only: nccreate
       use error_handling, only: handle_netcdf_error
       implicit none
       private
@@ -122,7 +133,6 @@
       end subroutine do_particles !]
 !-------------------------------------------------
       subroutine init_particles![
-      use mpi
       implicit none
       !local
       integer :: ip,i,j,lnp
@@ -377,7 +387,7 @@
       end subroutine seed_particles !]
 !-------------------------------------------------
       subroutine wrt_particles ![
-      use nc_read_write
+      use nc_read_write, only: ncwrite
       implicit none
 
       ! local
@@ -651,7 +661,6 @@
       subroutine exchange_particles![
       ! Deal with particles entering/leaving the domain.
       ! Deal with particles switching sub-domains
-      use hidden_mpi_vars
       implicit none
 
       ! local
@@ -923,9 +932,10 @@
 ! ---------------------------------------------------------------------
       subroutine exchange_data  ![
       ! orginally to exchange particles
-
-      use hidden_mpi_vars
-      use mpi
+      use hidden_mpi_vars, only:
+     &     p_e, p_n, p_ne, p_nw, p_s, p_se, p_sw,
+     &     p_w
+      use mpi, only: mpi_double_precision, mpi_status_size
 
       implicit none
 

@@ -31,11 +31,12 @@
 !         max_rec   current size of unlimited dimension
 !                   [=0, if there is no unlimited dimension].
 
-      use param
-      use netcdf
-      use roms_read_write
-      use nc_read_write
-      use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use param, only: n
+      use netcdf, only:
+     &     nf90_noerr, nf90_inquire,
+     &     nf90_inquire_dimension, nf90_strerror
+      use roms_read_write, only: eta_rho, eta_v, xi_rho, xi_u
+      use error_handling, only: handle_configuration_error, handle_netcdf_error
 
       implicit none
       character(len=9) :: fn_name="checkdims"
@@ -188,8 +189,12 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 
 ! returned value    error status [=nf90_noerr when no mismatches]
 
-      use param
-      use netcdf
+      use param, only:
+     &     ieast, isw_corn, iwest, jnorth, jsouth,
+     &     jsw_corn, llm, mmm
+      use netcdf, only:
+     &     nf90_noerr, nf90_inquire_variable,
+     &     nf90_inquire_dimension, nf90_strerror
       use error_handling, only: handle_configuration_error
 
       implicit none
@@ -287,8 +292,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 
       integer function check_scoord(ncid, fname, what_to_check)  ![
 
-      use param
-      use scoord
+      use scoord, only: hc, n, theta_b, theta_s, cs_w, cs_r
       use error_handling, only: handle_configuration_error
 
       implicit none
@@ -443,9 +447,13 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 !
 ! returned value  error status =0 means no error.
 
-      use param
-      use netcdf
-      use error_handling, only : handle_configuration_error
+      use param, only: mynode
+      use netcdf, only:
+     &     nf90_global, nf90_noerr,
+     &     nf90_inquire_attribute, nf90_get_att, nf90_strerror,
+     &     nf90_inq_varid, nf90_inquire_variable, nf90_inquire_dimension,
+     &     nf90_get_var
+      use error_handling, only: handle_configuration_error
 
       implicit none
       character(len=11) :: fn_name = "read_nc1dat"
