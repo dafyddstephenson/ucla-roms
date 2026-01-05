@@ -102,7 +102,7 @@ c--#define VERBOSE
               if (req_rec <= max_rec) then
                 record=req_rec
               else
-                write(error_info,'(/1x,2A,I4,1x,A/12x,A,I4,1x,3A/)')
+                write(error_info, *)
      &              'requested restart time ',
      &              'record',req_rec, 'exceeds number', 'of records',
      &                       max_rec,  'available in netCDF file ''',
@@ -120,7 +120,7 @@ c--#define VERBOSE
           endif
         endif
       else
-        write(error_info,'(/1x,4A/12x/)')
+        write(error_info, *)
      &        'Cannot open netCDF file ''', trim(ininame), '''.'
          call handle_netcdf_error(
      &        netcdf_status=ierr,
@@ -228,7 +228,7 @@ c--#define VERBOSE
       elseif (vname(3,indxTime)(1:3) == 'day') then
         time_scale=day2sec
       else
-        write(error_info,'(/1x,3A/12x,3A/)')
+        write(error_info, *)
      &  'unknown units for variable ''',trim(vname(1,indxTime)),
      &        '''', 'in netCDF file ''', trim(ininame), '''.'
         call handle_configuration_error(

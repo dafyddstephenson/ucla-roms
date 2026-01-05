@@ -459,7 +459,7 @@
      &       info="Cause of termination: netCDF input.")
         end if
       else
-         write(error_info,'(/1x,4A/12x)')  'Cannot ',
+         write(error_info, *)  'Cannot ',
      &        'open input NetCDF file ''', trim(grdname), '''.'
          call handle_netcdf_error(
      &        netcdf_status=ierr,
@@ -473,7 +473,7 @@
       if (ierr == nf90_noerr) then
         ierr=nf90_get_var(ncid, varid, char1)
         if (ierr /= nf90_noerr) then
-           write(error_info, '(/,1X,5A,/,12X/)')
+           write(error_info, *)
      &          "Cannot read variable ",
      &          "'spherical'",
      &          " from netCDF file ",
@@ -486,7 +486,7 @@
         end if
 
       else
-         write(error_info,'(/1x,5a/)')
+         write(error_info, *)
      &        'Cannot find variable ''',
      &        'spherical',
      &        ''' within netCDF file ''',
@@ -502,7 +502,7 @@
 # ifdef SPHERICAL
         mpi_master_only write(*,'(/1x,A/)') 'Spherical grid detected.'
 # else
-        write(error_info,'(/1x,2A/24x,A/)')
+        write(error_info, *)
      &          'Spherical grid file detected, but CPP-switch',
      &                                 'SPHERICAL is not set.'
            call handle_configuration_error(
@@ -516,7 +516,7 @@
         if (ierr == nf90_noerr) then
           ierr=nf90_get_var(ncid, varid, xl)
           if (ierr /= nf90_noerr) then
-           write(error_info, '(/,1X,5A,/,12X/)')
+           write(error_info, *)
      &            "Cannot read variable ",
      &            "xl",
      &            " from netCDF file ",
@@ -528,7 +528,7 @@
      &          info=error_info)
           endif
        else
-         write(error_info,'(/1x,5a/)')
+         write(error_info, *)
      &        "Cannot find variable ",
      &         "'xl'",
      &         " within netCDF file ",
@@ -544,7 +544,7 @@
         if (ierr == nf90_noerr) then
           ierr=nf90_get_var(ncid, varid, el)
           if (ierr /= nf90_noerr) then
-           write(error_info, '(/,1X,5A,/,12X/)')
+           write(error_info, *)
      &            "Cannot read variable ",
      &            "'el'",
      &            " from netCDF file ",
@@ -556,7 +556,7 @@
      &          info=error_info)
           endif
        else
-          write(error_info,'(/1x,5a/)')
+          write(error_info, *)
      &         "Cannot find variable ",
      &         "'el'",
      &         " within netCDF file ",
@@ -624,7 +624,7 @@
         endif
 #endif
       else
-        write(error_info,'(1x,3A/12x,A,1x,A,I4)'),
+        write(error_info, *),
      &                'Cannot close file ''', trim(grdname), '''.',
      &        nf90_strerror(ierr) MYID
         call handle_netcdf_error(

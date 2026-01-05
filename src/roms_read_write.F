@@ -773,14 +773,14 @@
 
 
       if (.not. found_var_ever) then
-        write(error_info,'(/1x,3A/)')
+        write(error_info, *)
      &        'Could not find var: ', vname, 'in forcing files.'
         call handle_configuration_error(
      &       context=module_name//"/"//sr_name,
      &       info=error_info)   ! TODO maybe a more appropriate SR
       endif
       if (.not. found_rec) then
-         write(error_info,'(/1x,3A,I3/)')
+         write(error_info, *)
      &        'Ran out of time records for ',
      &        vname, ' mynode=', mynode
          call handle_configuration_error(
@@ -801,7 +801,7 @@
       endif ! Handle initital timestep.
 
       if (irec==0) then
-         write(error_info,'(/1x,3A,I3/)')
+         write(error_info, *)
      &  'First available forcing record is past current time for var: ',
      &        vname, ' mynode=', mynode
          call handle_configuration_error(
@@ -1518,7 +1518,7 @@
       end if
 
       if (trim(var_units) /= trim(file_var_units)) then
-        write(error_info,'(/3x,3A/5x,3A/)')
+        write(error_info, *)
      &   trim(file_var_units),' for var: ',
      &   trim(var_name),',  Units must be: ', trim(var_units)
         call handle_configuration_error(

@@ -247,7 +247,7 @@
      &                 " to end of file"
                end if
             else
-               write(error_info, '(3A, I0, A)')
+               write(error_info, *)
      &              "error reading MARBL settings file ",
      &              trim(marbl_namelist_fname)," (read status ",
      &              read_status, ")"
@@ -277,7 +277,7 @@
 
 !     Check that the number of tracers in MARBL_instance agrees with ROMS' ntrc_bio:
       if ( nt_marbl .ne. ntrc_bio ) then
-         write(error_info,'(7x,A,I4,A,I4,A,I4,A)')
+         write(error_info, *)
      &        'Allocated no. of MARBL tracers'
      &        ,ntrc_bio
      &        ,' does not match no. expected by MARBL: '
@@ -515,7 +515,7 @@
      &              " to end of file"
             end if
          else
-               write(error_info, '(3A, I0, A)')
+               write(error_info, *)
      &              "error reading MARBL tracer list file ",
      &              trim(marbl_tracer_list_fname)," (read status ",
      &           read_status, ")"
@@ -598,7 +598,7 @@
 
 !     Throw error if counts don't match
             if (nr_marbl_ss_2d/=nr_marbl_ss_2d_check) then
-               write(error_info,'(7x,A,I4,A,I4,A)')
+               write(error_info, *)
      &              'Allocated no. of 2D marbl saved state vars '
      &              ,nr_marbl_ss_2d,
      &              ' does not match actual no. expected by MARBL: '
@@ -607,7 +607,7 @@
      &              context=module_name//"/"//sr_name,
      &              info=error_info)
             elseif (nr_marbl_ss_3d/=nr_marbl_ss_3d_check) then
-               write(error_info,'(7x,A,I4,A,I4,A)')
+               write(error_info, *)
      &              'Allocated no. of 3D marbl saved state vars '
      &              ,nr_marbl_ss_3d,
      &              ' does not match actual no. expected by MARBL: '
@@ -937,7 +937,7 @@
       if ( size(vname_marbl_diag_2d(1,:)) .ne.
      &     (diag_cnt_2d_tot) ) then
 
-         write(error_info,'(7x,A,I4,A,I4,A,I4,A)')
+         write(error_info, *)
      &        'Allocated no. of 2D BGC diagnostics: '
      &        ,size(vname_marbl_diag_2d(1,:))
      &        ,' does not match no. expected by MARBL: '
@@ -953,7 +953,7 @@
       elseif ( size(vname_marbl_diag_3d(1,:)) .ne.
      &        (diag_cnt_3d_tot) ) then
 
-         write(error_info,'(7x,A,I4,A,I4,A,I4,A)')
+         write(error_info, *)
      &        'Allocated no. of 3D BGC diagnostics: '
      &        ,size(vname_marbl_diag_3d(1,:))
      &        ,' does not match no. expected by MARBL: '
@@ -1147,7 +1147,7 @@
          end if
 
          if (.not. is_iostat_end(read_status)) then
-               write(error_info, '(3A, I0, A)')
+               write(error_info, *)
      &              "error reading MARBL diagnostic list file ",
      &              trim(marbl_diag_list_fname)," (read status ",
      &           read_status, ")"
