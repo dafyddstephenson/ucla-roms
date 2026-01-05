@@ -263,6 +263,7 @@
       use dimensions, only: i0, i1, j0, j1
       use error_handling, only: handle_netcdf_error, handle_configuration_error
       use mpi_exchanges, only: exchange_xxx
+      use nc_read_write, only: ncread
       implicit none
       character(len=10) :: sr_name = "read_tides"
       ! local

@@ -330,6 +330,7 @@ CR      write(*,*)  ' -2' MYID
      &     calc_avg_ocean_vars, wrt_avg_ocean_vars,
      &     wrt_his_ocean_vars, wrt_rst_ocean_vars
       use boundary, only: set_bry_all
+      use tides, only: set_tides
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
 #endif
