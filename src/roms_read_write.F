@@ -757,7 +757,7 @@
           ifile = ifile+1
           irec = 0                                                   ! Reset irec for new file
           if (present(ungridded_filename)) then
-             write(error_info, *),
+             write(error_info, *)
      &            'find_new_record: Ran out of time records ',
      &            'for ', vname, ' in single file ', ungridded_filename
 
@@ -863,7 +863,7 @@
       ! Fill a time slice of forcing data, not surface forcing
 
       use param, only: ocean_grid_comm
-      use mpi, only: mpi_double_precision, mpi_integer
+      use mpi, only: mpi_double_precision, mpi_integer, mpi_bcast, mpi_barrier
 
       implicit none
       character(len=19) :: sr_name = "fill_frc_slice_aux"
@@ -910,7 +910,7 @@
         call MPI_Bcast(irec_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
         call MPI_Bcast(ifile,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
         call MPI_Bcast(ifile_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
-        ! Send time and vdata to each rank
+!     Send time and vdata to each rankg
         call MPI_Bcast(nc%times(it),1,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
         call MPI_Bcast(nc%vdata(:,:,it),msg_size,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
       else
@@ -967,7 +967,7 @@
       ! Fill a time slice of forcing data, not surface forcing
 
       use param, only: ocean_grid_comm
-      use mpi, only: mpi_double_precision, mpi_integer
+      use mpi, only: mpi_double_precision, mpi_integer, mpi_bcast, mpi_barrier
 
       implicit none
       character(len=21) :: sr_name="fill_frc_slice_aux3d"
@@ -976,7 +976,6 @@
       real               ,intent(in)    :: modtime ! current time of the model
       integer            ,intent(in)    :: it      ! index (1 or 2) of the forcing data
       integer            ,intent(in)    :: bry     ! suppress terminal output of boundary
-
       ! local
       integer :: ierr,ncid
 
@@ -1008,7 +1007,7 @@
         call MPI_Bcast(irec_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
         call MPI_Bcast(ifile,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
         call MPI_Bcast(ifile_stride,1,MPI_INTEGER,0,ocean_grid_comm,ierr)
-        ! Send time and vdata to each rank
+! Send time and vdata to each rank
         call MPI_Bcast(nc%times(it),1,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
         call MPI_Bcast(nc%vdata(:,:,:,it),msg_size,MPI_DOUBLE_PRECISION,0,ocean_grid_comm,ierr)
       else
@@ -1729,7 +1728,7 @@
       ie=ie+is-1
 
       if (ie > max_options_string) then
-         write(error_info,*),
+         write(error_info,*)
      &    'character full:', trim(string_add)
          call handle_configuration_error(
      &        context=module_name//"/"//sr_name,
