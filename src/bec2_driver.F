@@ -8,8 +8,9 @@
 
        subroutine ecosys_bec2_tile(Istr,Iend,Jstr,Jend)
        ! Taken from PDamien's ecosys_bec2_td2.F
-
+#ifdef Ncycle_SY
        use tracers, only: in2, in2o
+#endif
        !, only: t, iTandS
        use surf_flux, only: srflx, sustr, svstr
 ! , only: sustr,sustr_r,svstr,svstr_r,srflx
@@ -24,7 +25,10 @@
      &      mynode, nt_passive, bgc_idx
        use bec2_vars, only:
      &      ifrac, landmask, press, ph_srf,
-     &      dtracer_module, lflux_gas_co2, lflux_gas_n2, lflux_gas_n2o,
+     &      dtracer_module, lflux_gas_co2,
+#ifdef Ncycle_SY
+     &      lflux_gas_n2, lflux_gas_n2o,
+#endif
      &      lflux_gas_o2, liron_flux, n, ntrc_bio
 #ifdef BEC2_DIAG
      &      ,bec2_diag_2d, atmpress_idx_t,
@@ -37,7 +41,10 @@
      &      idx_bec2_diag_2d
 
 #endif
-       use bgc_forces, only: swrad_avg, pco2air, iron, dust
+       use bgc_forces, only: pco2air, iron, dust
+#if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
+     &      ,swrad_avg
+#endif
        use bec2_params, only: c0, c1, parm_fe_bioavail
 
 
@@ -607,17 +614,21 @@
      &      f_graze_si_remin, f_graze_sp_poc_lim, f_photosp_caco3,
      &      f_qsw_par, fe_max_scale2, fe_scavenge_thres1, gqsi_0, gqsi_max,
      &      gqsi_min, loss_thres_zoo, par_thres_pchl, parm_f_prod_sp_caco3,
-     &      parm_fe_scavenge_rate0, parm_kao, parm_kax, parm_kden1,
+     &      parm_fe_scavenge_rate0, parm_denitrif_NO3_limit,
+#ifdef Ncycle_SY
+     &      parm_kao, parm_kax, parm_kden1,
      &      parm_kden2, parm_kden3, parm_kn2o_den3, parm_knh4_ao,
      &      parm_knh4_ax, parm_kno, parm_kno2_ax, parm_kno2_den2,
      &      parm_kno2_no, parm_kno3_den1, parm_ko2_ao, parm_ko2_ax,
      &      parm_ko2_den1, parm_ko2_den2, parm_ko2_den3, parm_ko2_no,
-     &      parm_ko2_oxic, parm_koxic, parm_labile_ratio, parm_n2o_ji_a,
-     &      parm_n2o_ji_b, parm_nitrif_par_lim, parm_o2_min,
+     &      parm_ko2_oxic, parm_koxic, parm_n2o_ji_a,
+     &      parm_n2o_ji_b, r_no2tonh4_ax, parm_red_d_c_o2_no2v,
+#endif
+     &      parm_labile_ratio,  parm_nitrif_par_lim, parm_o2_min,
      &      parm_o2_min_delta, parm_red_d_c_o2, parm_red_d_c_o2_diaz,
-     &      parm_red_d_c_o2_no2v, parm_remin_d_c_o2, parm_z_mort2_0,
+     &      parm_remin_d_c_o2, parm_z_mort2_0, parm_kappa_nitrif,
      &      parm_z_mort_0, q, q_10, qcaco3_max, qfe_zoo, qp_zoo_pom,
-     &      r_nfix_photo, r_no2tonh4_ax, sp_ind, spc_poc_fac, t0_kelvin,
+     &      r_nfix_photo, sp_ind, spc_poc_fac, t0_kelvin,
      &      thres_z1, thres_z2, tref, yps, ksio3, gqfe_0, kfe, gqfe_min,
      &      caco3_ind, temp_thres, loss_thres2, loss_thres, knh4, kno2,
      &      kno3, nfixer, kdop, kpo4, pcref, alphapi, qp, thetan_max,
@@ -663,10 +674,13 @@
      &      zoolossdic_idx_t, wrt_bec2_diag_3d, idx_bec2_diag_3d,
      &      wrt_bec2_diag_2d, idx_bec2_diag_2d
 #endif
+#if Ncycle_SY
+       use tracers, only: in2, in2o, ino2
+#endif
        use tracers, only:
      &      t, ialk, idiatc, idiatchl, idiatfe, idiatsi,
      &      idiazc, idiazchl, idiazfe, idic, idoc, idofe, idon, idonr, idop,
-     &      idopr, ife, in2, in2o, inh4, ino2, ino3, io2, ipo4, isio3, ispc,
+     &      idopr, ife, inh4, ino3, io2, ipo4, isio3, ispc,
      &      ispcaco3, ispchl, ispfe, izooc
 
         implicit none
