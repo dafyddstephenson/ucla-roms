@@ -52,9 +52,6 @@
 #ifdef NHY_FORCING
       use bgc_forces                  , only: nhy
 #endif
-#ifdef DDIC_DCO2_FORCING
-      use bgc_forces                  , only: ddic_dco2
-#endif
 #if defined ALK_SOURCE
       use bgc_forces                  , only: alksource
 #endif
@@ -85,7 +82,7 @@
       integer,public ::    u10_sqr_ind=-1,       sss_ind=-1,      sst_ind=-1,
      &                       ifrac_ind=-1,  dust_dep_ind=-1,   fe_dep_ind=-1,
      &                    nox_flux_ind=-1,  nhy_flux_ind=-1, atmpress_ind=-1,
-     &                        xco2_ind=-1,  xco2_alt_ind=-1, ddic_dco2_ind=-1
+     &                        xco2_ind=-1,  xco2_alt_ind=-1
 
 !     Interior tendency forcing variable indices (-1 means unused,default)
       integer,public ::       dustflux_ind=-1, PAR_col_frac_ind=-1,
@@ -356,8 +353,6 @@
             nox_flux_ind = idx
          case('NHy Flux')
             nhy_flux_ind = idx
-         case('ddic_dco2')
-            ddic_dco2_ind = idx
          case('Atmospheric Pressure')
             atmpress_ind = idx
          case('xco2')
@@ -1336,14 +1331,6 @@
                if (print_values) call sf_test_print(nhy_flux_ind,i,j)
             end if
 #endif
-! carbonate sensitivity
-#ifdef DDIC_DCO2_FORCING
-            if (ddic_dco2_ind > 0) then
-               marbl_instance%surface_flux_forcings(ddic_dco2_ind)%field_0d(1)=
-     &              ddic_dco2(i,j)
-               if (print_values) call sf_test_print(ddic_dco2_ind,i,j)
-            end if
-#endif            
 ! Surface tracer values            
             do m=1,nt_marbl
                marbl_instance%tracers_at_surface(1,m)=
