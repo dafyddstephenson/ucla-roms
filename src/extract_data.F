@@ -165,7 +165,7 @@
       ! Allocate space and compute interpolation coefficients
       ! for rho,u,and v variables.
 
-      use scoord
+      use scoord, only: theta_s, theta_b, hc
 
       implicit none
 
@@ -1019,8 +1019,6 @@
 
 ! ----------------------------------------------------------------------
       subroutine get_child_thickness(h_par, Hz_chd)
-
-      use mpi
 
       implicit none                      ! output: Cs_w(0:N), Cs_r(1:N)
 
