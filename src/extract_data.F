@@ -50,7 +50,7 @@
      &     nf90_inquire, nf90_inquire_variable, nf90_inquire_dimension,
      &     nf90_get_att
       use tracers, only: t, t_vname, t_lname, t_units  ! need to get names of tracers
-      use ocean_vars, only: zeta, ubar, vbar, u, v
+      use ocean_vars, only: zeta, ubar, vbar, u, v, hz, hz_u, hz_v
       use scalars, only: dt, knew, nstp, time
       use param, only: isalt, nt, itemp, isw_corn, jsw_corn,
      &     nt_passive, mynode, lm, mm
