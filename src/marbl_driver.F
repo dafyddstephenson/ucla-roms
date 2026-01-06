@@ -32,19 +32,19 @@
      &                                        marbl_saved_state_type
 #endif
       use param                       , only: mynode,nt,ntrc_bio,
-     &                                        isalt,itemp,Lm,Mm
+     &                                        isalt,itemp,Lm,Mm,
+     &                                        ocean_grid_comm
       use dimensions                  , only: nz
       use surf_flux                   , only: uwnd, vwnd
       use bgc_forces                  , only: pco2air,pco2air_alt,
      &                                        dust,iron
       use surf_flux                   , only: srflx
-      use nc_read_write
       use scalars                     , only: nstp,nnew,dt,iic,ntstart,
      &                                        Cp, rho0
       use grid                        , only : rmask
 #ifdef MPI
-      use mpi
-      use hidden_mpi_vars
+      use mpi                         , only: MPI_CHARACTER, MPI_INTEGER, mpi_bcast
+!      use hidden_mpi_vars
 #endif
 #ifdef NOX_FORCING
       use bgc_forces                  , only: nox
@@ -135,9 +135,11 @@
 ! ----------------------------------------------------------------------
 
       public :: marbldrv_configure_tracers
-      public :: marbldrv_configure_diagnostics
       public :: marbldrv_configure_saved_state
+#ifdef MARBL_DIAGS
       public :: marbldrv_compute_init_diagnostics
+      public :: marbldrv_configure_diagnostics
+#endif
       public :: marbldrv_write_ss_vars_to_rst
       public :: marbldrv_create_ss_vars_in_rst
       public :: marbldrv_read_ss_vars_from_rst
@@ -245,7 +247,7 @@
      &                 " to end of file"
                end if
             else
-               write(error_info, '(3A, I0, A)')
+               write(error_info, *)
      &              "error reading MARBL settings file ",
      &              trim(marbl_namelist_fname)," (read status ",
      &              read_status, ")"
@@ -275,7 +277,7 @@
 
 !     Check that the number of tracers in MARBL_instance agrees with ROMS' ntrc_bio:
       if ( nt_marbl .ne. ntrc_bio ) then
-         write(error_info,'(7x,A,I4,A,I4,A,I4,A)')
+         write(error_info, *)
      &        'Allocated no. of MARBL tracers'
      &        ,ntrc_bio
      &        ,' does not match no. expected by MARBL: '
@@ -513,7 +515,7 @@
      &              " to end of file"
             end if
          else
-               write(error_info, '(3A, I0, A)')
+               write(error_info, *)
      &              "error reading MARBL tracer list file ",
      &              trim(marbl_tracer_list_fname)," (read status ",
      &           read_status, ")"
@@ -596,7 +598,7 @@
 
 !     Throw error if counts don't match
             if (nr_marbl_ss_2d/=nr_marbl_ss_2d_check) then
-               write(error_info,'(7x,A,I4,A,I4,A)')
+               write(error_info, *)
      &              'Allocated no. of 2D marbl saved state vars '
      &              ,nr_marbl_ss_2d,
      &              ' does not match actual no. expected by MARBL: '
@@ -605,7 +607,7 @@
      &              context=module_name//"/"//sr_name,
      &              info=error_info)
             elseif (nr_marbl_ss_3d/=nr_marbl_ss_3d_check) then
-               write(error_info,'(7x,A,I4,A,I4,A)')
+               write(error_info, *)
      &              'Allocated no. of 3D marbl saved state vars '
      &              ,nr_marbl_ss_3d,
      &              ' does not match actual no. expected by MARBL: '
@@ -697,10 +699,9 @@
 !-----------------------------------------------------------------------
 
       use nc_read_write, only: ncread
-      use netcdf
+      use netcdf, only: nf90_noerr, nf90_inq_varid
       use dimensions, only : i0,i1,j0,j1
       use mpi_exchanges, only : exchange_xxx
-!      use hidden_mpi_vars
       use param, only : N
       implicit none
 
@@ -779,8 +780,8 @@
 !
 !-----------------------------------------------------------------------
 
-      use netcdf
-      use nc_read_write
+      use netcdf, only: nf90_double, nf90_put_att
+      use nc_read_write, only: nccreate
       use roms_read_write, only: dn_xr,dn_yr,dn_zr,dn_tm,xi_rho,eta_rho
       use param, only : N
 
@@ -936,7 +937,7 @@
       if ( size(vname_marbl_diag_2d(1,:)) .ne.
      &     (diag_cnt_2d_tot) ) then
 
-         write(error_info,'(7x,A,I4,A,I4,A,I4,A)')
+         write(error_info, *)
      &        'Allocated no. of 2D BGC diagnostics: '
      &        ,size(vname_marbl_diag_2d(1,:))
      &        ,' does not match no. expected by MARBL: '
@@ -952,7 +953,7 @@
       elseif ( size(vname_marbl_diag_3d(1,:)) .ne.
      &        (diag_cnt_3d_tot) ) then
 
-         write(error_info,'(7x,A,I4,A,I4,A,I4,A)')
+         write(error_info, *)
      &        'Allocated no. of 3D BGC diagnostics: '
      &        ,size(vname_marbl_diag_3d(1,:))
      &        ,' does not match no. expected by MARBL: '
@@ -1146,7 +1147,7 @@
          end if
 
          if (.not. is_iostat_end(read_status)) then
-               write(error_info, '(3A, I0, A)')
+               write(error_info, *)
      &              "error reading MARBL diagnostic list file ",
      &              trim(marbl_diag_list_fname)," (read status ",
      &           read_status, ")"
@@ -1289,8 +1290,6 @@
 !     4a. Update saved state array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_saved_state_values_surf(i,j)
-#ifdef MARBL_DIAGS
-#endif
 !     4b. Update tracer array in ROMS using newly computed values:
 !     ----------------------------------------------------------------------
             call marbldrv_update_roms_tracers_surf(i,j,tracer_array)
@@ -1963,8 +1962,7 @@
       subroutine get_tracer_indices(t_vname)  ![
 
       ! Store the indices in the tracer array corresponding to particular tracers
-      use param
-
+!
       implicit none
 
       character*42, dimension(nt), intent(inout) :: t_vname

@@ -9,6 +9,8 @@ MPI_WRAPPER ?=auto
 BUILD_MODE ?=regular
 # Keep pre-processed source code or not:
 KEEP_PPSRC ?=false
+# Allow additional FFLAGS to defaults without overriding them:
+USER_FFLAGS ?=
 ##############################
 #       FILE EXTENSIONS      #
 
@@ -217,7 +219,7 @@ ifeq ($(USENHMG),true)
 	LCDF += $(NHMG_INC)
 endif
 
-
+FFLAGS+=$(USER_FFLAGS)
 # Compilation rules for file types:
 #   (used for every file until the final linking step)
 

@@ -10,21 +10,30 @@
 
 #if defined MARBL && defined CDR_FORCING
 
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use scalars
-      use grid
-      use ocean_vars
-      use hidden_mpi_vars
-      use marbl_driver, only : iALK, iDIC
-      use vertical_remapping
+      use roms_read_write, only:
+     &     ncforce, ncforce3d, cdr_frc_opt,
+     &     set_frc_data, store_string_att
+      use scalars, only: nt, deg2rad, n, pi
+      use grid, only: rmask, lonr,latr
+      use dimensions, only: nx, ny, nz
+      use ocean_vars, only: hz, z_r0, hz0
+      use param, only: mynode, lm, mm, ocean_grid_comm
+      use nc_read_write, only: ncread
+      use marbl_driver, only: iALK, iDIC
+      use vertical_remapping, only: remap_src_to_grid
       use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use netcdf, only:
+     &     nf90_noerr, nf90_inq_dimid,
+     &     nf90_inquire_dimension, nf90_nowrite, nf90_open, nf90_close
+      use mpi, only:
+     &     mpi_double_precision, mpi_sum,
+     &     mpi_2double_precision, mpi_comm_world, mpi_in_place,
+     &     mpi_logical, mpi_lor, mpi_minloc
 
       implicit none
       private
       character(len=7) :: module_name="cdr_frc"
-      character(len=200) :: error_info = ''
+      character(len=200) :: error_info=""
 #include "cdr_frc.opt"
 
       !!! (1) Parameterized releases
@@ -82,7 +91,6 @@
       ! - all cdr variables need time interpolation only
       !   here so can use same generic routine.
       ! - input data in days!
-      use mpi
 
       implicit none
 
@@ -128,9 +136,6 @@
       ! Initialize cdr forcing:
       ! Open the NetCDF file and check which forcing mode we're using
 
-      use netcdf
-      use mpi
-
       implicit none
       character(len=12) :: sr_name = "init_cdr_frc"
       ! local
@@ -157,9 +162,10 @@
         ! Open file
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
         if(ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          context=module_name//"/"//sr_name,
-     &          info="Cannot open CDR forcing file")
+           call handle_netcdf_error(
+     &          netcdf_status=ierr,
+     &          info="Cannot open CDR forcing file",
+     &          context=module_name//"/"//sr_name)
         end if
 
         if (type_count>1) then
@@ -184,8 +190,6 @@
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc_dp(ncid)  ![
 
-      use netcdf
-      use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
@@ -195,6 +199,7 @@
       character(len=15) :: sr_name = "init_cdr_frc_dp"
       integer :: ierr
       integer :: dimid
+      character(len=16) :: sr_name = "init_cdr_frc_dp"
 
       ! Check how many vertical profiles (i.e. tracer releases) we will use
       ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
@@ -242,8 +247,6 @@
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc_3d  ![
 
-      use netcdf
-      use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
@@ -263,8 +266,6 @@
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc_parm(ncid)  ![
 
-      use netcdf
-      use mpi
       implicit none
 
       ! Initialize cdr forcing (depth profiles):
@@ -297,8 +298,6 @@
       ! Determine where tracer releases will take place
       ! (for depth profiles and parameterized releases):
 
-      use netcdf
-      use mpi
       implicit none
       character(len=23) :: sr_name = "find_release_locations"
       ! local
@@ -417,7 +416,6 @@
       ! Either figure out vertical structure of parameterized releases, or
       ! perform conservative remapping for depth profiles.
 
-      use mpi
       implicit none
 
       ! local
@@ -610,14 +608,9 @@
 #else /* defined MARBL && defined CDR_FORCING */
 
 !----------------------------------------------------------------------
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use scalars
-      use grid
-      use ocean_vars
-      use hidden_mpi_vars
+      use roms_read_write, only: ncforce, ncforce3d
       use error_handling, only: handle_configuration_error
+
       implicit none
 
       private
@@ -630,7 +623,8 @@
       contains
 
       subroutine set_cdr_frc    ![
-      ! Allocate and initialize arrays.
+! Allocate and initialize arrays.
+      use error_handling, only: handle_configuration_error
       implicit none
       character(len=11) :: sr_name = "set_cdr_frc"
 

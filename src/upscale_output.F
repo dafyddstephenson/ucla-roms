@@ -8,17 +8,22 @@
 
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
 
-      use dimensions
-      use grid
-      use nc_read_write
-      use roms_read_write
-      use netcdf
-      use marbl_driver, only: iALK, iDIC, iALK_alt, iDIC_alt
-      use ocean_vars
-      use basic_output, vn=>vname
-      use scalars
-      use diagnostics
+      use param, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, jnorth, jsouth, ieast, iwest, nsub_e, nsub_x
       use tracers, only: t_units
+      use dimensions, only: i0, i1, j0, j1
+      use grid, only: latr, lonr
+      use nc_read_write, only: nccreate, ncwrite
+      use roms_read_write, only: dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
+     &     xi_rho, create_file
+      use netcdf, only:
+     &     nf90_double, nf90_write, nf90_put_att,
+     &     nf90_open, nf90_close
+      use marbl_driver, only: iALK, iDIC, iALK_alt, iDIC_alt
+      use ocean_vars, only: hz
+      use basic_output, only: vn=>vname
+      use scalars, only: n, dt, time
 
       implicit none
       private
@@ -100,8 +105,8 @@
       subroutine init_upscale ![
       ! Allocate and initialize arrays.
 
-      use param
-      use hidden_mpi_vars
+      use param, only: lm, mm, mynode
+      use hidden_mpi_vars, only: inode, jnode
 
       implicit none
 
@@ -226,8 +231,6 @@
       subroutine calc_forcing_rates(itrc,k,FX,FE,istr,iend,jstr,jend) ![
       ! Calculate the instantaneous forcing rate in the halo by measuring the rate at
       ! which tracer mass is added via advection
-      use param
-      use hidden_mpi_vars
       implicit none
 
       ! local
@@ -312,8 +315,8 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use param
-      use hidden_mpi_vars
+      use hidden_mpi_vars, only: inode, jnode
+      use param, only: mynode
       implicit none
 
       ! local
@@ -482,8 +485,7 @@
       subroutine create_upscale_vars(ncid)  ![
       ! Add edata variables to an opened netcdf file
 
-      use nc_read_write
-      use hidden_mpi_vars
+      use hidden_mpi_vars, only: inode, jnode
       implicit none
 
       !import/export
@@ -622,18 +624,10 @@
 #else /* MARBL && MARBL_DIAGS && UPSCALING */
 
 !----------------------------------------------------------------------
-      use param
-      use tracers
-      use dimensions
-      use roms_read_write
-      use netcdf
-      use scalars
-      use ocean_vars
-
+      use netcdf, only: nf90_double
       implicit none
       character(len=15) :: module_name = "upscale_output"
       private
-
 #include "upscale_output.opt"
 
       ! Public functions
