@@ -166,6 +166,7 @@
       ! for rho,u,and v variables.
 
       use scoord, only: theta_s, theta_b, hc
+      use param, only: N 
 
       implicit none
 
