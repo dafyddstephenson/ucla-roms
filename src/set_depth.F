@@ -220,7 +220,7 @@
      &     west_exchng, ieast, iwest, jnorth, jsouth
       use grid, only: dn_u, dm_v
       use mpi_exchanges, only: exchange_xxx
-      use ocean_vars, only: flxu, u, hz, flxv, v
+      use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
       use scalars, only: n, nrhs
 #ifdef WEC
       use wec_frc, only: ust, vst
