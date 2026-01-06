@@ -624,7 +624,7 @@
         endif
 #endif
       else
-        write(error_info, *),
+        write(error_info, *)
      &                'Cannot close file ''', trim(grdname), '''.',
      &        nf90_strerror(ierr) MYID
         call handle_netcdf_error(
