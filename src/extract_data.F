@@ -56,7 +56,6 @@
      &     nt_passive, mynode, lm, mm
       use diagnostics, only: diag_pflx, up, vp
       use basic_output, only: vn=>vname
-      use vertical_remapping, only: remap_src_to_grid
 #ifdef SOLVE3D
      &     ,indxt, indxu, indxv, indxw
 #endif
@@ -64,6 +63,7 @@
 #ifdef SALINITY
      &     , indxs
 #endif
+      use vertical_remapping, only: remap_src_to_grid
       use error_handling, only : handle_configuration_error, handle_netcdf_error
 
       ! TODO: add averaging
