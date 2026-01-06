@@ -257,10 +257,15 @@
             call compute_coef(obj(i)%ipos,obj(i)%jpos,
      &                obj(i)%cfu,obj(i)%ipu,obj(i)%jpu,umask)
 
-            allocate(obj(i)%vi(obj(i)%np,nz))
-            allocate(obj(i)%cfv(obj(i)%np,4))
-            allocate(obj(i)%ipv(obj(i)%np))
-            allocate(obj(i)%jpv(obj(i)%np))
+!            allocate(obj(i)%vi(obj(i)%np,nz))
+!            allocate(obj(i)%cfv(obj(i)%np,4))
+!            allocate(obj(i)%ipv(obj(i)%np))
+!            allocate(obj(i)%jpv(obj(i)%np))
+
+            allocate(obj(i)%vi(np,nz))
+            allocate(obj(i)%cfv(np,4))
+            allocate(obj(i)%ipv(np))
+            allocate(obj(i)%jpv(np))
 
             ! from u-index to v-index
             obj(i)%ipos = obj(i)%ipos-0.5
@@ -733,8 +738,9 @@
 
 ! u variables --------------------------------------------------------
 
+            if ((obj(i)%u) .or. (obj(i)%up)) then
             ! Get thickness and depth at interpolated location
-            call interpolate(Hz_u(:,:,:),obj(i)%Hz_par_u,coef,ipu,jpu)
+            call interpolate(Hz_u(:,:,:),obj(i)%Hz_par_u,cfu,ipu,jpu)
             obj(i)%h_par_u(:) = 0
             do j=1,obj(i)%np
               do k=1,nz
@@ -745,6 +751,7 @@
             do j=1,obj(i)%np
               call get_child_thickness(obj(i)%h_par_u(j), obj(i)%Hz_chd_u(j,:))
             enddo
+            endif
 
             if (obj(i)%ubar) then
               oname = trim(obj(i)%set)//'_ubar'//trim(obj(i)%bnd)
@@ -780,8 +787,9 @@
 
 ! v variables --------------------------------------------------------
 
+            if ((obj(i)%v) .or. (obj(i)%vp)) then
             ! Get thickness and depth at interpolated location
-            call interpolate(Hz_v(:,:,:),obj(i)%Hz_par_v,coef,ipv,jpv)
+            call interpolate(Hz_v(:,:,:),obj(i)%Hz_par_v,cfv,ipv,jpv)
             obj(i)%h_par_v(:) = 0
             do j=1,obj(i)%np
               do k=1,nz
@@ -792,6 +800,7 @@
             do j=1,obj(i)%np
               call get_child_thickness(obj(i)%h_par_v(j), obj(i)%Hz_chd_v(j,:))
             enddo
+            endif
 
             if (obj(i)%vbar) then
               oname = trim(obj(i)%set)//'_vbar'//trim(obj(i)%bnd)

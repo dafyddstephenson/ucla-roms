@@ -15,6 +15,7 @@
       use scalars
       use ocean_vars
       use diagnostics
+      use nc_read_write, only : nccreate, ncwrite
       use error_handling, only : handle_configuration_error, handle_netcdf_error
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
@@ -219,9 +220,11 @@
       end subroutine define_cstar_output_variables
 
       subroutine init_cstar ![
+
+      implicit none
+
 ! Allocate and initialize arrays.
       character(len=9) :: sr_name = "init_cstar"
-      implicit none
 
       ! local
       logical,save :: done=.false.
@@ -535,7 +538,7 @@
       character(len=10) :: sr_name = "wrt_output"
       character(len=99),save :: fname
       integer,dimension(3)   :: start
-      integer                :: ncid,ierr
+      integer                :: idx,ncid,ierr
 
       if (record==nrpf) then
           call create_file('_cstar',fname)
@@ -642,6 +645,7 @@
         subroutine display_cstar_output_settings_to_terminal_cstar
 !     Basic header
         character(len=120) :: stdout_str
+        integer :: idx
         if (mynode==0) then
            if (.not. do_avg) then
               write(stdout_str,'(7x,A)')

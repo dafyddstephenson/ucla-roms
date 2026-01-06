@@ -19,10 +19,12 @@
       use hidden_mpi_vars
       use marbl_driver, only : iALK, iDIC
       use vertical_remapping
+      use error_handling, only: handle_configuration_error, handle_netcdf_error
 
       implicit none
       private
       character(len=7) :: module_name="cdr_frc"
+      character(len=200) :: error_info = ''
 #include "cdr_frc.opt"
 
       !!! (1) Parameterized releases
@@ -128,6 +130,7 @@
 
       use netcdf
       use mpi
+
       implicit none
       character(len=12) :: sr_name = "init_cdr_frc"
       ! local
@@ -154,9 +157,9 @@
         ! Open file
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
         if(ierr/=0) then
-           call handle_netcdf_error(
-     &          info="Cannot open CDR forcing file",
-     &          context=module_name//"/"//sr_name)
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          context=module_name//"/"//sr_name,
+     &          info="Cannot open CDR forcing file")
         end if
 
         if (type_count>1) then
@@ -189,6 +192,7 @@
       integer, intent(in) :: ncid
 
       ! local
+      character(len=15) :: sr_name = "init_cdr_frc_dp"
       integer :: ierr
       integer :: dimid
 
@@ -296,7 +300,7 @@
       use netcdf
       use mpi
       implicit none
-      chracter(len=23) :: sr_name = "find_release_locations"
+      character(len=23) :: sr_name = "find_release_locations"
       ! local
       integer :: i,j
       integer :: icdr, cidx, cidx_start, ierr

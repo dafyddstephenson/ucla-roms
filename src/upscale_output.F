@@ -13,11 +13,12 @@
       use nc_read_write
       use roms_read_write
       use netcdf
-      use marbl, only: iALK, iDIC, iALK_alt, iDIC_alt
+      use marbl_driver, only: iALK, iDIC, iALK_alt, iDIC_alt
       use ocean_vars
       use basic_output, vn=>vname
       use scalars
       use diagnostics
+      use tracers, only: t_units
 
       implicit none
       private
