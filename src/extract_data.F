@@ -53,7 +53,8 @@
       use ocean_vars, only: zeta, ubar, vbar, u, v, hz, hz_u, hz_v
       use scalars, only: dt, knew, nstp, time
       use param, only: isalt, nt, itemp, isw_corn, jsw_corn,
-     &     nt_passive, mynode, lm, mm
+     &     nt_passive, mynode, lm, mm, N
+      use scoord, only: theta_s, theta_b, hc
       use diagnostics, only: diag_pflx, up, vp
       use basic_output, only: vn=>vname
 #ifdef SOLVE3D
@@ -164,9 +165,6 @@
       subroutine init_extract_data  ![
       ! Allocate space and compute interpolation coefficients
       ! for rho,u,and v variables.
-
-      use scoord, only: theta_s, theta_b, hc
-      use param, only: N
 
       implicit none
 
