@@ -674,7 +674,7 @@
      &      zoolossdic_idx_t, wrt_bec2_diag_3d, idx_bec2_diag_3d,
      &      wrt_bec2_diag_2d, idx_bec2_diag_2d
 #endif
-#if Ncycle_SY
+#ifdef Ncycle_SY
        use tracers, only: in2, in2o, ino2
 #endif
        use tracers, only:
