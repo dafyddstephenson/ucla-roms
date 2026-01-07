@@ -220,7 +220,7 @@
      &     west_exchng, ieast, iwest, jnorth, jsouth
       use grid, only: dn_u, dm_v
       use mpi_exchanges, only: exchange_xxx
-      use ocean_vars, only: flxu, u, hz, flxv, v
+      use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
       use scalars, only: n, nrhs
 #ifdef WEC
       use wec_frc, only: ust, vst
@@ -244,6 +244,7 @@
 # if defined WEC && defined MASKING
             FlxU(i,j,k)=FlxU(i,j,k)*umask(i,j)
 # endif
+            Hz_u(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i-1,j,k))
           enddo
         enddo
         do j=jstr,jendR
@@ -259,6 +260,7 @@
 # if defined WEC && defined MASKING
             FlxV(i,j,k)=FlxV(i,j,k)*vmask(i,j)
 # endif
+            Hz_v(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i,j-1,k))
           enddo
         enddo
       enddo

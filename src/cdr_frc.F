@@ -196,6 +196,7 @@
       integer, intent(in) :: ncid
 
       ! local
+      character(len=15) :: sr_name = "init_cdr_frc_dp"
       integer :: ierr
       integer :: dimid
       character(len=16) :: sr_name = "init_cdr_frc_dp"
@@ -444,7 +445,7 @@
                  ! VERTICAL STRUCTURE FROM DATA
                  ! Conservatively remap the fluxes from the source grid to the current grid
                    do itrc=1,2
-                     call remap_src_to_grid(nz, cdr_hz(icdr,:), cdr_flx_dp(icdr,itrc,:), nz, Hz(i,j,:), cdr_flx_dp_remap)
+                     call remap_src_to_grid(nz_chd, cdr_hz(icdr,:), cdr_flx_dp(icdr,itrc,:), nz, Hz(i,j,:), cdr_flx_dp_remap)
                      cdr_prf(cidx,cdr_inds(itrc),:) = cdr_flx_dp_remap(:)
                    enddo
                  else
