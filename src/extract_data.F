@@ -89,7 +89,7 @@
       real, dimension(:),allocatable :: Cs_w_chd
 
       ! Different parent and child grid parameters?
-      logical :: diff_grids = .true.
+      logical :: parent_child_grid_mismatch = .true.
 
       type extract_object  ! contains all information for a data_extraction object
 
@@ -177,7 +177,7 @@
       call read_extraction_objects
 
       if ((N == N_chd) .and. (theta_s == theta_s_chd) .and. (theta_b == theta_b_chd) .and. (hc == hc_chd)) then
-        diff_grids = .false.
+        parent_child_grid_mismatch = .false.
         if (mynode == 0) then
           mpi_nonexit_warn write(*,*) 'init_extract_data :: Parent ',
      &     'and child grids have identical parameters. ',
@@ -193,7 +193,7 @@
         endif
       endif
 
-      if (diff_grids) then
+      if (parent_child_grid_mismatch) then
         allocate(Cs_w_chd(0:N_chd))
         call set_chd_scoord
       endif
@@ -688,7 +688,7 @@
             if (obj(i)%temp) then
               oname = trim(obj(i)%set)//'_temp'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,itemp),obj(i)%vari,coef,ip,jp)
-              if (diff_grids) then
+              if (parent_child_grid_mismatch) then
                 do j=1,obj(i)%np
                   call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
                 enddo
@@ -701,7 +701,7 @@
             if (obj(i)%salt) then
               oname = trim(obj(i)%set)//'_salt'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,isalt),obj(i)%vari,coef,ip,jp)
-              if (diff_grids) then
+              if (parent_child_grid_mismatch) then
                 do j=1,obj(i)%np
                   call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
                 enddo
@@ -715,7 +715,7 @@
               do indt=isalt+nt_passive+1,NT
               oname = trim(obj(i)%set)//'_'//trim(t_vname(indt))//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,indt),obj(i)%vari,coef,ip,jp)
-              if (diff_grids) then
+              if (parent_child_grid_mismatch) then
                 do j=1,obj(i)%np
                   call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
                 enddo
@@ -732,7 +732,7 @@
               call wvlcty (0,Wvl)
               oname = trim(obj(i)%set)//'_w'//trim(obj(i)%bnd)
               call interpolate(Wvl(-1:nx+2,-1:ny+2,1:nz),obj(i)%vari,coef,ip,jp)
-              if (diff_grids) then
+              if (parent_child_grid_mismatch) then
                 do j=1,obj(i)%np
                   call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
                 enddo
@@ -775,7 +775,7 @@
                 obj(i)%vari(:,k) = obj(i)%cosa*ui(:,k) - obj(i)%sina*vi(:,k)
               enddo
               oname = trim(obj(i)%set)//'_u'//trim(obj(i)%bnd)
-              if (diff_grids) then
+              if (parent_child_grid_mismatch) then
                 do j=1,obj(i)%np
                   call remap_src_to_grid(N, obj(i)%Hz_par_u(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd_u(j,:), obj(i)%vari_chd(j,:))
                 enddo
@@ -823,7 +823,7 @@
                 obj(i)%vari(:,k) = obj(i)%sina*ui(:,k) + obj(i)%cosa*vi(:,k)
               enddo
               oname = trim(obj(i)%set)//'_v'//trim(obj(i)%bnd)
-              if (diff_grids) then
+              if (parent_child_grid_mismatch) then
                 do j=1,obj(i)%np
                   call remap_src_to_grid(N, obj(i)%Hz_par_v(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd_v(j,:), obj(i)%vari_chd(j,:))
                 enddo
