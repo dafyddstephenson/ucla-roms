@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Script to download input data used by Example cases
 if command -v curl &> /dev/null;then
     DOWNLOAD_COMMAND="curl -O -L"
 elif command -v wget &> /dev/null;then
