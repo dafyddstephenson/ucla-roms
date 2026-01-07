@@ -63,9 +63,6 @@
       real :: total_t_diff
       real :: cellwise_mass_frac
 
-      real :: tt1, tt2
-
-      H_src_tot = 0.0
 
       tgt_frac_start(:) = 0.0
       tgt_frac_end(:)   = 0.0

@@ -196,6 +196,7 @@
       integer, intent(in) :: ncid
 
       ! local
+      character(len=15) :: sr_name = "init_cdr_frc_dp"
       integer :: ierr
       integer :: dimid
       character(len=16) :: sr_name = "init_cdr_frc_dp"

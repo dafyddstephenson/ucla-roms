@@ -541,7 +541,7 @@
       character(len=10) :: sr_name = "wrt_output"
       character(len=99),save :: fname
       integer,dimension(3)   :: start
-      integer                :: ncid,ierr
+      integer                :: idx,ncid,ierr
 
       if (record==nrpf) then
           call create_file('_cstar',fname)
