@@ -9,6 +9,8 @@ MPI_WRAPPER ?=auto
 BUILD_MODE ?=regular
 # Keep pre-processed source code or not:
 KEEP_PPSRC ?=false
+# Allow additional FFLAGS to defaults without overriding them:
+USER_FFLAGS ?=
 ##############################
 #       FILE EXTENSIONS      #
 
