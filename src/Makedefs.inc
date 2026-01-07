@@ -219,7 +219,7 @@ ifeq ($(USENHMG),true)
 	LCDF += $(NHMG_INC)
 endif
 
-
+FFLAGS+=$(USER_FFLAGS)
 # Compilation rules for file types:
 #   (used for every file until the final linking step)
 
