@@ -437,6 +437,7 @@
       use grid, only: pm, pn
       use dimensions, only: i0, i1, j0, j1
       use tracers, only: wrt_avg_trc
+      use roms_read_write, only: store_string_att
       implicit none
 
       ! local
