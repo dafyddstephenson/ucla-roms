@@ -3,7 +3,7 @@
 
       subroutine grid_stiffness (tile)
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
+
       implicit none
       integer tile
 # include "compute_tile_bounds.h"
@@ -31,6 +31,8 @@
       use grid, only: umask, vmask
       use ocean_vars, only: z_w
       use mpi_f08, only: mpi_double_precision, mpi_status_size
+      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: np_xi, np_eta
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k, NSUB

@@ -13,7 +13,9 @@
      &     nf90_get_var
       use scalars, only: time, dt, sec2day, tdays, akt_bak, akv_bak
       use nc_read_write, only: nccreate, ncread
-      use dimensions, only: bf, nx, ny, gnx, gny, i0, i1, j0, j1
+      use dimensions, only:
+     &     bf, nx, ny, gnx, gny, i0, i1, j0, j1,
+     &     eta_rho, xi_rho, xi_u, eta_v
       use param, only: mynode, nnodes
       use hidden_mpi_vars, only: inode, jnode
       use mpi_exchanges, only: exchange_xxx

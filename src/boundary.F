@@ -11,8 +11,8 @@
       use roms_read_write, only:
      &     ncforce, bc_options, set_frc_data,
      &     frctype, store_string_att
-      use dimensions, only: i0, i1, j0, j1, nz
-      use hidden_mpi_vars, only: inode
+      use dimensions, only: i0, i1, j0, j1, nz, npx, npy
+      use hidden_mpi_vars, only: inode, jnode
       implicit none
 
       ! Set module to private and make vars explicitly public

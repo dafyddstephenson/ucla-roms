@@ -20,10 +20,11 @@
       use nc_read_write, only: ncwrite, ncread
       use roms_read_write, only:
      &     diag_avg_output, diagnostic_opt, bfx,
-     &     bfy, dn_xu, dn_yv, dn_zr, eta_v, xi_u,
-     &     dn_tm, dn_xr, dn_yr, eta_rho, xi_rho,
+     &     bfy, dn_xu, dn_yv, dn_zr,
+     &     dn_tm, dn_xr, dn_yr,
      &     store_string_att, create_file
-      use dimensions, only: nz, nx, ny, i0, i1, j0, j1
+      use dimensions, only:
+     &     nz, nx, ny, i0, i1, j0, j1, eta_v, xi_u, eta_rho, xi_rho
       use param, only: lm, mm, ieast, iwest, jnorth, jsouth, mynode
       use grid, only:
      &     pn, pm,
