@@ -4,7 +4,7 @@
 
 #include "cppdefs.opt"
 #ifdef MPI
-      use mpi, only: mpi_comm_world
+      use mpi_f08, only: mpi_comm_world
 #endif
       use iso_fortran_env, only: error_unit
       use param, only: mynode

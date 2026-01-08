@@ -46,7 +46,10 @@
      &     west_exchng, south_exchng, nnodes, n, nt
       use mpi_exchanges, only: exchange_xxx
       use error_handling, only : handle_configuration_error, handle_netcdf_error
-
+#ifdef DIAGNOSTICS
+      use diagnostics, only : diag_pflx, get_init_slow
+#endif
+      use sponge_tune, only: ub_tune
       implicit none
       character(len=8) :: sr_name = "get_init"
       character(len=200) :: error_info

@@ -1,12 +1,14 @@
       module param
 
       ! Master module containing key roms variables used throughout the code
-      ! and by other modules. Direct copy of param.h into module format.
-
+! and by other modules. Direct copy of param.h into module format.
+#include "cppdefs.opt"
+#ifdef MPI
+      use mpi_f08, only: mpi_comm
+#endif
       implicit none
 
 ! DevinD: normally this was above param.opt in subroutines but since compiled alone need it here
-#include "cppdefs.opt"
 
 ! Need this here above param.opt for BGC to work:
       integer, parameter :: itemp=1,isalt=2
@@ -21,10 +23,9 @@
       integer ::
      &    Lm=(LLm+NP_XI-1)/NP_XI, Mm=(MMm+NP_ETA-1)/NP_ETA
 
-      integer ocean_grid_comm, mynode,  iSW_corn, jSW_corn,
-     &                         iwest, ieast, jsouth, jnorth
-!     logical west_exchng,  east_exchng
-!     logical south_exchng, north_exchng
+      integer mynode,  iSW_corn, jSW_corn,
+     &     iwest, ieast, jsouth, jnorth
+      type(mpi_comm) :: ocean_grid_comm
 #else
       integer, parameter :: Lm=LLm, Mm=MMm
 #endif

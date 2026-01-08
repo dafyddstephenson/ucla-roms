@@ -27,14 +27,17 @@
 !            the large-scale ocean circulation, JCP, 105, 333-338.
 
       use coupling, only: rufrc, rvfrc
-      use grid, only: pm, pn, dm_r, dn_r, pmask, dm_p, dn_p
+      use grid, only: pm, pn, dm_r, dn_r, pmask, dm_p, dn_p, nx,ny
       use param, only:
      &     east_exchng, ieast, iwest, jnorth, jsouth,
      &     north_exchng, south_exchng, west_exchng
       use mixing, only: visc2_r, visc2_p
       use ocean_vars, only: v, u, hz
       use scalars, only: dt, n, nstp
-
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag,
+     &  dxdyi_u, dxdyi_v, ihmix
+#endif
       implicit none
       integer istr,iend,jstr,jend, i,j,k, indx
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx,UFe,VFx,VFe

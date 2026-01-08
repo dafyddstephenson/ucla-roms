@@ -10,7 +10,7 @@
      &     isw_corn, jnode, jsw_corn, mynode, nnodes, north_msg_exch,
      &     p_e, p_n, p_ne, p_nw, p_s, p_se, p_sw, p_w,
      &     south_msg_exch, west_msg_exch
-      use mpi, only: mpi_comm_world
+      use mpi_f08, only: mpi_comm_world
       use roms_read_write, only: eta_rho, eta_v, xi_rho, xi_u
       implicit none
       integer :: ierr,newpart,ncid

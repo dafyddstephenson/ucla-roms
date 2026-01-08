@@ -92,7 +92,7 @@
      &     nf90_nowrite, nf90_open,
      &     nf90_close, nf90_noerr, nf90_inq_varid
       use param, only: ocean_grid_comm
-      use mpi, only: mpi_double_precision, mpi_max
+      use mpi_f08, only: mpi_double_precision, mpi_max
       use roms_read_write, only: frcfile
       use error_handling, only: handle_configuration_error, handle_netcdf_error
 

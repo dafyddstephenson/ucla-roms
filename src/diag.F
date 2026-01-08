@@ -70,7 +70,7 @@ c--#define MAX_BY_VERT_CFL_ONLY
       use scalars, only:
      &     diag_sync, dt, g, iic, may_day_flag, n, nstp,
      &     rho0, tdays
-      use mpi, only: mpi_real8, mpi_status_size, mpi_wtime
+      use mpi_f08, only: mpi_real8, mpi_status_size, mpi_wtime
       use timers, only: tstart
       use error_handling, only : handle_configuration_error
       implicit none
