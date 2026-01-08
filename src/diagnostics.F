@@ -1115,7 +1115,7 @@
 ! ----------------------------------------------------------------------
       subroutine wrt_diag_uv(ncid,record,ud,vd)  ![
       ! Write uv diagnostic vars to file
-
+      use hidden_mpi_vars, only: inode, jnode
       implicit none
 
       !import/export

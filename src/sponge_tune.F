@@ -11,11 +11,11 @@
      &     nf90_open, nf90_put_att, nf90_close
       use nc_read_write, only: nccreate, ncread, ncwrite
       use scalars, only: iic, tdays, time, dt
-      use dimensions, only: nx, ny
+      use dimensions, only: nx, ny, xi_rho, npx, npy
       use diagnostics, only: up, vp, diag_pflx
       use roms_read_write, only:
      &     ncforce, bfx, bfy, dn_tm, dn_xr,
-     &     dn_yr, xi_rho, bc_options, create_file, set_frc_data,
+     &     dn_yr, bc_options, create_file, set_frc_data,
      &     store_string_att
       use hidden_mpi_vars, only: inode, jnode
       use param, only:

@@ -3,14 +3,19 @@
       subroutine mpi_setup(ierr)
       use param, only:
      &     ieast, iwest, jnorth, jsouth, llm,
-     &     lm, mm, mmm, ocean_grid_comm, np_xi, np_eta
+     &     lm, mm, mmm, ocean_grid_comm, np_xi, np_eta, nsize
       use hidden_mpi_vars, only:
      &     east_msg_exch, exc_call_count, inode,
      &     isw_corn, jnode, jsw_corn, mynode, nnodes, north_msg_exch,
      &     p_e, p_n, p_ne, p_nw, p_s, p_se, p_sw, p_w,
      &     south_msg_exch, west_msg_exch
       use mpi_f08, only: mpi_comm_world
-      use roms_read_write, only: eta_rho, eta_v, xi_rho, xi_u
+      use dimensions, only:
+     &     eta_rho, eta_v, xi_rho, xi_u, gnx, gny,
+     &     npx, npy, grdname, i0, i1, j0, j1, nx, ny
+      use netcdf, only:
+     &     nf90_open, nf90_global, nf90_noerr, nf90_get_att, nf90_close,
+     &     nf90_nowrite
       implicit none
       integer :: ierr,newpart,ncid
       integer,dimension(8) :: neighbors
@@ -28,7 +33,7 @@
       new_part = .false.
 # else
       ierr=nf90_open(grdname,nf90_nowrite,ncid)
-       if (ierr/=nf90_noerr) call handle_ierr(ierr)
+c$$$       if (ierr/=nf90_noerr) call handle_ierr(ierr)
         ierr=nf90_get_att(ncid,nf90_global,"neighbors",neighbors)
         ! new style partitioning has the neighbors global attribute
         if (ierr.eq.nf90_noerr) then

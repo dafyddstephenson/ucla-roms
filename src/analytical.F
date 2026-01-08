@@ -6,12 +6,13 @@
       use ocean_vars, only: zeta, ubar, vbar, u, v, z_w, hz
       use grid, only: xr, pm, f
       use mpi_exchanges, only: exchange_xxx
-      use dimensions, only: nx, ny, nz
+      use dimensions, only: nx, ny, nz, npx, npy
       use tracers, only: t
       use mixing, only: akt, akv
       use scalars, only:
      &     akv_bak, forw_start, iic, ntstart, akt_bak, g, rho0
       use param, only: isalt, itemp
+      use hidden_mpi_vars, only: inode, jnode
 #ifdef FILAMENT_IDEAL
      &     , hd
 #endif
@@ -261,7 +262,7 @@
 ! Set kinematic surface flux of tracer type variables "stflx" (tracer
 !     units m/s) using analytical expressions.
       use surf_flux, only: stflx
-      use param, only: ieast, iwest, jnorth, jsouth,
+      use param, only: ieast, iwest, jnorth, jsouth
 
       implicit none
       integer istr,iend,jstr,jend, itrc, i,j

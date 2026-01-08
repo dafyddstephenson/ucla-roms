@@ -16,8 +16,8 @@
       use grid, only: f, rmask, umask, vmask
 !     flux_frc-> only: sustr, svstr, stflx, srflx
       use mpi_exchanges, only: exchange_xxx
-      use param, only: ieast, itemp, iwest, jnorth, jsouth
-
+      use hidden_mpi_vars, only: inode, jnode
+      use param, only: ieast, itemp, iwest, jnorth, jsouth, np_xi, np_eta
 #ifdef SALINITY
      &     , isalt
 #endif

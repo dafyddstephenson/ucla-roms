@@ -3,7 +3,6 @@
 
       subroutine prsgrd
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: a3d, a2d
       implicit none
       integer,save:: tile=0
@@ -30,7 +29,8 @@
      &                                                       rw,
 # endif
      &                                      dR,dZ, FC,dZx,rx,dRx)
-
+      use hidden_mpi_vars, only: inode, jnode
+      use param, only: np_xi, np_eta
 #ifdef WEC
       use wec_frc, only: cff1 => cff_ext, cff2 => cff_ext2
 #endif

@@ -3,13 +3,14 @@
 
 !!    program main               ! Open MP version of ROMS driver
 
-      use param, only: mynode, ocean_grid_comm
+      use param, only: mynode, ocean_grid_comm, nsize
 #ifdef NHMG
       use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
-      use mpi_f08, only: mpi_wtime
+      use mpi_f08, only: mpi_wtime, mpi_comm_world
       use timers, only: tstart, tend
+      use read_inp_mod, only: read_inp
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.

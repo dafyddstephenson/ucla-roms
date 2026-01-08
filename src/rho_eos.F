@@ -5,7 +5,6 @@
 
       subroutine rho_eos(tidx)
       use param, only: ieast, iwest, jnorth, jsouth
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: nsub_e, nsub_x
       implicit none
       integer, intent(in) :: tidx
@@ -118,9 +117,10 @@
 ! geopotential  surfaces,  that  is,  depth  and  pressure  are
 ! interchangeable. >>
 !                                          John Wilkin, 29 July 92
-
+      use hidden_mpi_vars, only: inode, jnode
       use tracers, only: t
       use coupling, only: rhos, rhoa
+      use dimensions, only: npx, npy
 #ifdef SPLIT_EOS
       use eos_vars, only: qp2, rho1, qp1
 #else

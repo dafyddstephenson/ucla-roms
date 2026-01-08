@@ -916,7 +916,7 @@
 
 #ifndef ANA_GRID
       subroutine kwread_grid(unit, ierr)
-      use roms_read_write, only: grdname
+      use dimensions, only: grdname
       implicit none
 
       integer, intent(in)    :: unit
