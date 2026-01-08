@@ -199,7 +199,6 @@
       character(len=15) :: sr_name = "init_cdr_frc_dp"
       integer :: ierr
       integer :: dimid
-      character(len=16) :: sr_name = "init_cdr_frc_dp"
 
       ! Check how many vertical profiles (i.e. tracer releases) we will use
       ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)

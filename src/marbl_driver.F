@@ -43,7 +43,7 @@
      &                                        Cp, rho0
       use grid                        , only : rmask
 #ifdef MPI
-      use mpi                         , only: MPI_CHARACTER, MPI_INTEGER, mpi_bcast
+      use mpi                         , only: MPI_CHARACTER, MPI_INTEGER
 !      use hidden_mpi_vars
 #endif
 #ifdef NOX_FORCING
