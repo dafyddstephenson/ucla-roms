@@ -92,11 +92,14 @@ C$OMP END MASTER                         ! is in uniform state]. This
      &     start_time, synchro_flag, tdays, time, proc
       use sponge_tune, only: ub_tune
       use particles, only: floats
-      use upscale_output, only: do_upscale
-      use random_output, only: do_random
-      use cstar_output, only: do_cstar
+      use upscale_output, only: do_upscale, init_upscale
+      use random_output, only: do_random, init_random
+      use cstar_output, only: do_cstar, init_cstar
       use frc_output, only: do_frc
       use analytical, only: ana_vmix
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,diag_pflx, init_diagnostics
+#endif
 #ifdef ANA_INITIAL
      &     , ana_init
 #endif
@@ -322,8 +325,8 @@ CR      write(*,*)  ' -2' MYID
       use sponge_tune, only: ub_tune
       use particles, only: floats
       use surf_flux, only: wrt_smflx, wrt_stflx
-      use random_output, only: do_random
-      use cstar_output, only: do_cstar
+      use random_output, only: do_random, wrt_random
+      use cstar_output, only: do_cstar, wrt_cstar
       use frc_output, only: do_frc
       use zslice_output, only: do_zslice
       use basic_output, only:
@@ -335,7 +338,9 @@ CR      write(*,*)  ' -2' MYID
       use bgc_io, only: wrt_bgc
 #endif
       use tides, only: bry_tides, pot_tides
-
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,diag_pflx, do_diagnostics
+#endif
       implicit none
 
       integer :: ierr

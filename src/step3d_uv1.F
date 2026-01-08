@@ -40,11 +40,12 @@
 # ifdef WEC
       use wec_frc, only: compute_wec_rhs_uv_terms
 # endif
-      use diagnostics, only: diag_uv, u_prev, v_prev
+      use diagnostics, only: diag_uv, u_prev, v_prev, calc_diag, udiag,
+     &  vdiag, icori, dxdyi_u, dxdyi_v, idiss, ipgr, iadv, ivmix
       use surf_flux, only: sustr, svstr
       use coupling, only: r_d, rufrc, rvfrc
       use grid, only:
-     &     nx, fomn, umask, vmask, pn, pm, dn_u,
+     &     nx,ny,nz, fomn, umask, vmask, pn, pm, dn_u,
      &     dm_u, dn_v, dm_v, dn_r, dm_r, pn_u, pm_v
 #if (defined CURVGRID && defined UV_ADV)
      &     , dmde,dndx
@@ -165,11 +166,12 @@
 
 #define IMPLICIT_BOTTOM_DRAG
 # ifdef IMPLICIT_BOTTOM_DRAG
+#ifdef DIAGNOSTICS
         if (diag_uv) then
           u_prev = u(1:nx,j,:,nnew)
           v_prev = v(1:nx,j,:,nnew)
         endif
-
+#endif
         do i=istrU,iend
           DC(i,0)=dt*0.25*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
 

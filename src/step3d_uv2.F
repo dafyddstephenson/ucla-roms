@@ -41,7 +41,7 @@
 
       use coupling, only: du_avg1, dv_avg1, du_avg2, dv_avg2
       use grid, only:
-     &     nz, dn_u, umask, dm_v, vmask, dm_u, dn_v, f,
+     &     nx,ny,nz, dn_u, umask, dm_v, vmask, dm_u, dn_v, f,
      &     dm_r, pn, pm
       use ocean_vars, only: z_r, wi
 #ifdef NHMG
@@ -56,6 +56,9 @@
 #endif
 #ifdef LMD_BKPP
      &     , hbbl
+#endif
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icoup
 #endif
       use ocean_vars, only: u, ubar, v, vbar, hz, flxu, flxv, z_w
       use scalars, only: n, knew, nnew, nstp, g, rho0, dt

@@ -62,7 +62,7 @@ c--# define CONST_TRACERS
       use river_frc, only: iriver, riv_depth, riv_uvel, riv_vvel,
      & river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
       use surf_flux, only: stflx, srflx
-      use tracers, only: t, itands
+      use tracers, only: t, itands, wrt_t_dia
 #ifdef MARBL
       use marbl_driver, only: marbldrv_column_physics, iALK, iDIC
 #endif
@@ -92,8 +92,10 @@ c--# define CONST_TRACERS
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx, drde, idrz
 #endif
-
-
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_trc, calc_diag, tdiag, tmixx, tadvx, tadvy,
+     &  tmixy, tadvy, tadvz, td, vflxd, zflx, tmixz
+#endif
       implicit none
       integer icdr, cidx, istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k!, td
       real, dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N) :: WC,FC,CF,DC
