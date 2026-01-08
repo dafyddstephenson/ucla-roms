@@ -703,7 +703,7 @@
 #include "cstar_output.opt"
 
       ! Public functions
-      public init_cstar
+      public init_cstar, wrt_cstar
 
       contains
 
@@ -729,6 +729,12 @@
 #endif
 
       end subroutine init_cstar !]
+
+      subroutine wrt_cstar ![
+!     Allocate and initialize arrays.
+      implicit none
+!     Nothing happening here!
+      end subroutine wrt_cstar !]
 !----------------------------------------------------------------------
 
 #endif /* MARBL && MARBL_DIAGS && CDR_FORCING */
