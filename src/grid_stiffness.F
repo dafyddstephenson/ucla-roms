@@ -31,7 +31,7 @@
      &     rx0, rx1, tile_count
       use grid, only: umask, vmask
       use ocean_vars, only: z_w
-      use mpi, only: mpi_double_precision, mpi_status_size
+      use mpi_f08, only: mpi_double_precision, mpi_status_size
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k, NSUB

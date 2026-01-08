@@ -7,7 +7,7 @@
      &     east_msg_exch, north_msg_exch, p_e,
      &     p_n, p_ne, p_nw, p_s, p_se, p_sw, p_w, south_msg_exch,
      &     west_msg_exch, inode, jnode, np_eta, np_xi, mynode
-      use mpi, only: mpi_double_precision, mpi_status_size
+      use mpi_f08, only: mpi_double_precision, mpi_status_size
       implicit none
 
       private

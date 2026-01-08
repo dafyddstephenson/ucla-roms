@@ -863,7 +863,7 @@
       ! Fill a time slice of forcing data, not surface forcing
 
       use param, only: ocean_grid_comm
-      use mpi, only: mpi_double_precision, mpi_integer, mpi_bcast, mpi_barrier
+      use mpi_f08, only: mpi_double_precision, mpi_integer, mpi_bcast, mpi_barrier
 
       implicit none
       character(len=19) :: sr_name = "fill_frc_slice_aux"
@@ -967,7 +967,7 @@
       ! Fill a time slice of forcing data, not surface forcing
 
       use param, only: ocean_grid_comm
-      use mpi, only: mpi_double_precision, mpi_integer, mpi_bcast, mpi_barrier
+      use mpi_f08, only: mpi_double_precision, mpi_integer, mpi_bcast, mpi_barrier
 
       implicit none
       character(len=21) :: sr_name="fill_frc_slice_aux3d"
