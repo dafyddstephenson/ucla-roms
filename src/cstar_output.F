@@ -4,25 +4,36 @@
 
 #include "cppdefs.opt"
 
-#if defined MARBL && defined MARBL_DIAGS
-      use param
-      use tracers
-      use marbl_driver
-      use bgc_shared_vars
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use netcdf
-      use scalars
-      use ocean_vars
-      use diagnostics
-      use cdr_frc
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
+      use tracers, only: t_units
+      use param, only: itemp, isalt
+      use marbl_driver, only:
+     &     marbl_saved_state_3d, ialk,
+     &     ialk_alt, idic, idic_alt, nr_marbl_ss_3d,
+     &     vname_marbl_ss_3d
+      use bgc_shared_vars, only:
+     &     t, bgc_diag_2d, mynode, lm, mm,
+     &     nr_bgc_diag_2d, vname_bgc_diag_2d, t_lname
+      use dimensions, only: i0, i1, j0, j1, nx, ny, nz
+      use roms_read_write, only:
+     &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
+     &     xi_rho, create_file
+      use nc_read_write, only: nccreate, ncwrite
+      use netcdf, only:
+     &     nf90_noerr, nf90_write, nf90_double, nf90_open,
+     &     nf90_put_att, nf90_close
+      use scalars, only: iic, knew, nnew, tdays, time, dt, n
+      use ocean_vars, only: zeta, hz
+      use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
+     &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
+     &                   cdr_jloc, cdr_source, forcing_3d
       implicit none
 
       private
 
 #include "cstar_output.opt"
-
+      character(len=12) :: module_name = "cstar_output"
       real    :: output_time = 0
       integer :: record = nrpf ! to trigger the first file creation
 
@@ -32,7 +43,6 @@
       real :: avg_begin_time, avg_end_time
 
       integer :: navg = 0
-      integer :: iALK, iDIC, iALK_alt, iDIC_alt
       integer :: iPH, iPH_alt, iFG, iFG_alt
       real,allocatable,dimension(:,:,:) :: hALK_tmp
       real,allocatable,dimension(:,:,:) :: hDIC_tmp
@@ -218,8 +228,9 @@
       end subroutine define_cstar_output_variables
 
       subroutine init_cstar ![
-      ! Allocate and initialize arrays.
+!     Allocate and initialize arrays.
       implicit none
+      character(len=9) :: sr_name = "init_cstar"
 
       ! local
       logical,save :: done=.false.
@@ -229,14 +240,13 @@
       if (done) then
         return
       else
-#ifndef MARBL
-        error stop 'ERROR: cstar_output must have MARBL enabled.'
-#endif
         done = .true.
       endif
 
       if (monthly_averages .and. .not. do_avg) then
-         error stop 'ERROR: cstar_output:: monthly avgs=t, but do_avg=f'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="`monthly_avg` is .true., but `do_avg` is .false.")
       endif
 
       ! Look one timestep ahead to initialize the "previous month", so that
@@ -247,26 +257,6 @@
       endif
 
       if (mynode==0) print *,'init cstar'
-
-      !  Get tracer indices
-      ! --------------------------------------------------------------------------------
-      ! Loop over MARBL tracers...
-      ! ...but use itot as index (to include other tracers)
-      do idx=1,ntrc_bio
-         itot=itot+1
-         if (t_vname(itot)=='ALK') then
-           iALK = itot
-         endif
-         if (t_vname(itot)=='DIC') then
-           iDIC = itot
-         endif
-         if (t_vname(itot)=='ALK_ALT_CO2') then
-           iALK_alt = itot
-         endif
-         if (t_vname(itot)=='DIC_ALT_CO2') then
-           iDIC_alt = itot
-         endif
-      enddo
 
       itot = 0
       ! Loop over 2D BGC diagnostics...
@@ -369,7 +359,6 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use param
       implicit none
 
       ! local
@@ -442,7 +431,6 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use param
       implicit none
 
       hALK_tmp(i0:i1,j0:j1,:) = t(i0:i1,j0:j1,:,knew,iALK)*Hz(i0:i1,j0:j1,:)
@@ -457,7 +445,6 @@
 !----------------------------------------------------------------------
       subroutine calc_cdr_source ![
       ! Update source terms from the CDR module
-      use param
       implicit none
 
       integer :: i,j,k,icdr,cidx
@@ -467,6 +454,17 @@
       DIC_source(:,:,:) = 0
       DIC_alt_source(:,:,:) = 0
 
+      if (forcing_3d) then
+        do k=1,nz
+          do j=1,ny
+            do i=1,nx
+              ALK_source(i,j,k) = cdr_flx_3d_ALK(i,j,k)
+              DIC_source(i,j,k) = cdr_flx_3d_DIC(i,j,k)
+            enddo
+          enddo
+        enddo
+
+      else
       ! Loop over cdr release locations in this subdomain
       do cidx=1,cdr_nprf
         icdr = cdr_icdr(cidx)
@@ -483,6 +481,8 @@
      &      + cdr_prf(cidx,iDIC_alt,k)*cdr_flx(icdr,iDIC_alt)
         enddo
       enddo
+
+      endif ! forcing_3d
 
       end subroutine calc_cdr_source !]
 
@@ -537,10 +537,11 @@
       ! Call wrt after completion of the time-step
       implicit none
 
-      ! local
+! local
+      character(len=10) :: sr_name = "wrt_output"
       character(len=99),save :: fname
       integer,dimension(3)   :: start
-      integer                :: ncid,ierr
+      integer                :: idx,ncid,ierr
 
       if (record==nrpf) then
           call create_file('_cstar',fname)
@@ -553,9 +554,11 @@
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
-        if (ierr/=nf90_noerr)
-     &      call handle_ierr(ierr,'wrt_cstar, opening: ',fname)
-
+        if (ierr/=nf90_noerr) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          info="error opening "//fname,
+     &          context=module_name//"/"//sr_name)
+        end if
         call multiply_by_thickness
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
@@ -645,6 +648,7 @@
         subroutine display_cstar_output_settings_to_terminal_cstar
 !     Basic header
         character(len=120) :: stdout_str
+        integer :: idx
         if (mynode==0) then
            if (.not. do_avg) then
               write(stdout_str,'(7x,A)')
@@ -688,17 +692,12 @@
 
 !----------------------------------------------------------------------
 
-#else /* MARBL && MARBL_DIAGS */
+#else /* MARBL && MARBL_DIAGS && CDR_FORCING */
 !----------------------------------------------------------------------
-      use param
-      use tracers
-      use dimensions
-      use roms_read_write
-      use scalars
-      use ocean_vars
+      use error_handling, only : handle_configuration_error
 
       implicit none
-
+      character(len=12) :: module_name = "cstar_output"
       private
 
 #include "cstar_output.opt"
@@ -709,20 +708,29 @@
       contains
 
       subroutine init_cstar ![
-      ! Allocate and initialize arrays.
+!     Allocate and initialize arrays.
       implicit none
+      character(len=9) :: sr_name = "init_cstar"
 
 #ifndef MARBL
-        error stop 'ERROR: cstar_output must have MARBL enabled.'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="cstar_output must have MARBL enabled.")
 #endif
 
 #ifndef MARBL_DIAGS
-        error stop 'ERROR: cstar_output must have MARBL_DIAGS enabled.'
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &        info="cstar_output must have MARBL_DIAGS enabled.")
+#endif
+
+#ifndef CDR_FORCING
+        error stop 'ERROR: cstar_output must have CDR_FORCING enabled.'
 #endif
 
       end subroutine init_cstar !]
 !----------------------------------------------------------------------
 
-#endif /* MARBL && MARBL_DIAGS */
+#endif /* MARBL && MARBL_DIAGS && CDR_FORCING */
 
       end module cstar_output

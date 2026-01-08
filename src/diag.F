@@ -20,12 +20,13 @@ c--#define MAX_BY_VERT_CFL_ONLY
 
 
       subroutine diag
-      use param
-      use hidden_mpi_vars
-      use private_scratch
-      use scalars
-      implicit none
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a2d
+      use scalars, only: iic, ninfo
 
+      implicit none
+      character(len=4) :: sr_name = "diag"
 
       integer   i,j
       integer,save:: tile=0
@@ -52,18 +53,28 @@ c--#define MAX_BY_VERT_CFL_ONLY
 #endif
      &                                                      )
 
-      use param
-      use comm_vars
-      use diag_vars
-      use eos_vars
-      use grid
-      use ocean_vars
-      use scalars
-      use mpi
+      use comm_vars, only: area, first_time, tile_count, volume
+      use diag_vars, only:
+     &     avke, avke2b, avke3bc, avkesrf, avpe,
+     &     avzeta, cu_adv, cu_w, i_cx_max, j_cx_max, k_cx_max, v2d_max
+#ifdef SPLIT_EOS
+      use eos_vars, only: qp1, rho1
+#else
+      use eos_vars, only: rho
+#endif
+      use grid, only: pn, pm, rmask
+      use ocean_vars, only: u, hz, v, z_w, wi, we, flxv, flxu, z_r
+      use param, only:
+     &     nnodes, ieast, isw_corn, iwest, jnorth, jsouth, jsw_corn,
+     &     mynode, nsub_e, nsub_x, ocean_grid_comm
+      use scalars, only:
+     &     diag_sync, dt, g, iic, may_day_flag, n, nstp,
+     &     rho0, tdays
+      use mpi, only: mpi_real8, mpi_status_size, mpi_wtime
       use timers, only: tstart
-
+      use error_handling, only : handle_configuration_error
       implicit none
-
+      character(len=9) :: sr_name = "diag_tile"
 #include "diag.opt"
 
       integer istr,iend,jstr,jend
@@ -462,7 +473,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
               i=buff(1)+0.0001
               if (i>0 .and. may_day_flag==0) may_day_flag=i
               avzeta=avzeta+buff(2)
-              avke=avke+buff(3)              ! Here "v2" is used as
+              avke=avke+buff(3) ! Here "v2" is used as
               avpe=avpe+buff(4)              ! a scratch variable to
               avke2b=avke2b+buff(5)          ! avoid type conflict
               avke3bc=avke3bc+buff(6)        ! in the case if "buff"
@@ -621,11 +632,10 @@ C$   &                                                 , proc(2)
               if ( check_line(i:i) /= ' ' .and.
      &             check_line(i:i) /= '+'  .and.
      &             check_line(i:i) /= '-'  .and.
-     &             check_line(i:i) /= '.') then
-                if (may_day_flag == 0) then
-                  write(*,*) '---> setting may day flag'
-                  may_day_flag=1    !--> BLOW UP
-                endif
+     &              check_line(i:i) /= '.') then
+                 call handle_configuration_error(
+     &                info="Abnormal termination: BLOWUP",
+     &                context=sr_name)
               endif
             endif
           enddo  ! <-- while(..)

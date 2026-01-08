@@ -14,8 +14,9 @@
       logical,public                     :: forcing_parameterized  = .true.      ! T if forcing with idealized Gaussian profiles
 
       ! INTERPOLATE FORCING IN TIME, OR NO?
-      logical                            :: time_interpolation = .false.   ! T if using time interpolation; if F, forcing is linearly
-                                                                           ! interpolated in time between consecutive records
+      logical                            :: time_interpolation = .false.   ! T if using time interpolation. If T, forcing is linearly
+                                                                           ! interpolated in time between consecutive records; otherwise,
+                                                                           ! forcing is held constant until the next record is reached
 
 
       ! PARAMETERIZED VERTICAL PROFILES ********************************
@@ -44,7 +45,10 @@
 
 
       ! 3D FORCING FROM FILE *************************************
-      ! Layerwise additionality
-      type (ncforce3d) :: nc_cdrflx_3d = ncforce3d( vname='cdr_trcflx_3d', tname='cdr_time')
+      type (ncforce3d) :: nc_cdrflx_3d_ALK = ncforce3d( vname='cdr_trcflx_3d_ALK', tname='cdr_time')
+      type (ncforce3d) :: nc_cdrflx_3d_DIC = ncforce3d( vname='cdr_trcflx_3d_DIC', tname='cdr_time')
+
+      integer, parameter :: nz_chd = 50  ! Number of vertical layers in the forcing file, or, if upscaling,
+                                         ! the number of vertical layers in the child grid.
 
       ! end user inputs

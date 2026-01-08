@@ -40,19 +40,32 @@
 
 #include "cppdefs.opt"
 
-      use dimensions
-      use grid
-      use nc_read_write
-      use roms_read_write
-      use netcdf
+      use grid, only: angler, rmask, umask, vmask
+      use dimensions, only: nx, ny, nz
+      use nc_read_write, only: nccreate, ncread, ncwrite
+      use roms_read_write, only: findstr, create_file
+      use netcdf, only:
+     &     nf90_double, nf90_write, nf90_nowrite,
+     &     nf90_put_att, nf90_inq_varid, nf90_open, nf90_close,
+     &     nf90_inquire, nf90_inquire_variable, nf90_inquire_dimension,
+     &     nf90_get_att
       use tracers, only: t, t_vname, t_lname, t_units  ! need to get names of tracers
-      use ocean_vars
-      use basic_output, vn=>vname
-      use scalars
-      use diagnostics
-#if defined(BIOLOGY_BEC2) || defined(MARBL)
-      use bgc_shared_vars
+      use ocean_vars, only: zeta, ubar, vbar, u, v, hz, hz_u, hz_v
+      use scalars, only: dt, knew, nstp, time
+      use param, only: isalt, nt, itemp, isw_corn, jsw_corn,
+     &     nt_passive, mynode, lm, mm, N
+      use scoord, only: theta_s, theta_b, hc
+      use diagnostics, only: diag_pflx, up, vp
+      use basic_output, only: vn=>vname
+#ifdef SOLVE3D
+     &     ,indxt, indxu, indxv, indxw
 #endif
+     &     ,indxvb, indxub,indxz
+#ifdef SALINITY
+     &     , indxs
+#endif
+      use vertical_remapping, only: remap_src_to_grid
+      use error_handling, only : handle_configuration_error, handle_netcdf_error
 
       ! TODO: add averaging
 
@@ -62,7 +75,7 @@
 
 #include "extract_data.opt"
 
-
+      character(len=12) :: module_name = "extract_data"
       integer :: total_rec=0 ! total records
       integer :: nobj  ! number of extraction objects
 
@@ -71,6 +84,12 @@
 
       ! For vertical velocity
       real,dimension(:,:,:),allocatable :: Wvl   ! Vertical velocity
+
+      ! Array for child vertical grid
+      real, dimension(:),allocatable :: Cs_w_chd
+
+      ! Different parent and child grid parameters?
+      logical :: parent_child_grid_mismatch = .true.
 
       type extract_object  ! contains all information for a data_extraction object
 
@@ -94,7 +113,17 @@
         integer                        :: record=nrpf   ! record number in file
         real                               :: otime=0   ! time since last output
 
+        real,   dimension(:,:),pointer     :: Hz_par    ! interpolated thickness for parent
+        real,   dimension(:,:),pointer     :: Hz_par_u  ! interpolated thickness for parent at u-interface
+        real,   dimension(:,:),pointer     :: Hz_par_v  ! interpolated thickness for parent at v-interface
+        real,   dimension(:)  ,pointer     :: h_par     ! interpolated bottom depth for parent
+        real,   dimension(:)  ,pointer     :: h_par_u   ! interpolated bottom depth for parent at u-interface
+        real,   dimension(:)  ,pointer     :: h_par_v   ! interpolated bottom depth for parent at v-interface
+        real,   dimension(:,:),pointer     :: Hz_chd    ! interpolated thickness for child
+        real,   dimension(:,:),pointer     :: Hz_chd_u  ! interpolated thickness for child at u-interface
+        real,   dimension(:,:),pointer     :: Hz_chd_v  ! interpolated thickness for child at v-interface
         real,   dimension(:,:),pointer     :: vari      ! data for output
+        real,   dimension(:,:),pointer     :: vari_chd  ! data for output
 
         ! these are only for scalars
         integer,dimension(:)  ,pointer     :: ip,jp     ! lower left hand point index
@@ -136,25 +165,49 @@
       subroutine init_extract_data  ![
       ! Allocate space and compute interpolation coefficients
       ! for rho,u,and v variables.
+
       implicit none
 
       !local
       character(len=30) :: preamb
       integer :: i,np,ierr,lpre
-      real,dimension(:),allocatable :: angp  ! grid angle
+      real,dimension(:),allocatable :: angp ! grid angle
+      character(len=17) :: sr_name = "init_extract_data"
 
       call read_extraction_objects
+
+      if ((N == N_chd) .and. (theta_s == theta_s_chd) .and. (theta_b == theta_b_chd) .and. (hc == hc_chd)) then
+        parent_child_grid_mismatch = .false.
+        if (mynode == 0) then
+          mpi_nonexit_warn write(*,*) 'init_extract_data :: Parent ',
+     &     'and child grids have identical parameters. ',
+     &     'Vertical remapping will not be used.'
+          call flush()
+        endif
+      else
+        if (mynode == 0) then
+          mpi_nonexit_warn write(*,*) 'init_extract_data :: Parent ',
+     &     'and child grids have different parameters. ',
+     &     'Using vertical remapping.'
+          call flush()
+        endif
+      endif
+
+      if (parent_child_grid_mismatch) then
+        allocate(Cs_w_chd(0:N_chd))
+        call set_chd_scoord
+      endif
 
       ! For vertical velocity
       allocate( Wvl(GLOBAL_2D_ARRAY,nz+1))
       if (diag_pflx) then
 #ifndef DIAGNOSTICS
-        if (mynode == 0) then
-          print *, 'ERROR: init_extract_data :: Must define CPP key '//
-     &    'DIAGNOSTICS if do_extract=.true. and diag_pflx=.true.'
-          call flush()
+         if (mynode == 0) then
+         call handle_configuration_error(
+     &        context=module_name//"/"//sr_name,
+     &           info="Must define CPP key DIAGNOSTICS if `do_extract`" //
+     &           "=.true. and diag_pflux=.true")
         endif
-        error stop
 #endif
         allocate( upe(GLOBAL_2D_ARRAY) ); upe = 0
         allocate( vpe(GLOBAL_2D_ARRAY) ); vpe = 0
@@ -169,7 +222,18 @@
           allocate(character(len=lpre) :: obj(i)%pre)
           obj(i)%pre = preamb(1:lpre)
 
+          allocate(obj(i)%Hz_par(np,nz))
+          allocate(obj(i)%Hz_par_u(np,nz))
+          allocate(obj(i)%Hz_par_v(np,nz))
+          allocate(obj(i)%h_par(np))
+          allocate(obj(i)%h_par_u(np))
+          allocate(obj(i)%h_par_v(np))
+          allocate(obj(i)%Hz_chd(np,N_chd))
+          allocate(obj(i)%Hz_chd_u(np,N_chd))
+          allocate(obj(i)%Hz_chd_v(np,N_chd))
+
           allocate(obj(i)%vari(np,nz))
+          allocate(obj(i)%vari_chd(np,N_chd))
           allocate(obj(i)%coef(np,4))
           allocate(obj(i)%ip(np))                          ! DON'T NEED THESE FOR U or V objects
           allocate(obj(i)%jp(np))
@@ -202,10 +266,15 @@
             call compute_coef(obj(i)%ipos,obj(i)%jpos,
      &                obj(i)%cfu,obj(i)%ipu,obj(i)%jpu,umask)
 
-            allocate(obj(i)%vi(obj(i)%np,nz))
-            allocate(obj(i)%cfv(obj(i)%np,4))
-            allocate(obj(i)%ipv(obj(i)%np))
-            allocate(obj(i)%jpv(obj(i)%np))
+!            allocate(obj(i)%vi(obj(i)%np,nz))
+!            allocate(obj(i)%cfv(obj(i)%np,4))
+!            allocate(obj(i)%ipv(obj(i)%np))
+!            allocate(obj(i)%jpv(obj(i)%np))
+
+            allocate(obj(i)%vi(np,nz))
+            allocate(obj(i)%cfv(np,4))
+            allocate(obj(i)%ipv(np))
+            allocate(obj(i)%jpv(np))
 
             ! from u-index to v-index
             obj(i)%ipos = obj(i)%ipos-0.5
@@ -222,7 +291,7 @@
       subroutine read_extraction_objects  ![
       ! Read all objects from file and determine local ranges
       implicit none
-
+      character(len=24) :: sr_name = "read_extraction_objects"
       ! local
       integer               :: iobj,ncid
       integer,dimension(2)  :: dimids
@@ -239,21 +308,39 @@
      &    'extract_data :: read objects: ',extract_file
       endif
       ierr = nf90_open(extract_file,nf90_nowrite,ncid)
-      if (ierr/=0)
-     &  call handle_ierr(ierr,'extract_data :: read objects file', extract_file)
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        info="error reading objects file "//extract_file,
+     &        context=module_name//"/"//sr_name)
+      end if
       ierr = nf90_inquire(ncid,nVariables=nobj)
-      if (ierr/=0) call handle_ierr(ierr,'read extr ')
-
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        context=module_name//"/"//sr_name,
+     &        info="read extr")
+      end if
       allocate(obj(nobj))
 
       ! Read all objects from file.
       do iobj = 1,nobj
         ierr = nf90_inquire_variable(ncid,iobj,name=objname,dimids=dimids)
-        if (ierr/=0) call handle_ierr(ierr,'read extr ')
+        if (ierr/=0) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          context=module_name//"/"//sr_name,
+     &          info="error during inquire,  variable:"//objname)
+        end if
         ierr = nf90_inquire_dimension(ncid,dimids(1),name=dname,len=n1)
-        if (ierr/=0) call handle_ierr(ierr,'read extr ')
+        if (ierr/=0) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          context=module_name//"/"//sr_name,
+     &          info="error during inquire,  dimension:"//dname)
+        end if
         ierr = nf90_inquire_dimension(ncid,dimids(2),len=n2)
-        if (ierr/=0) call handle_ierr(ierr,'read extr ')
+        if (ierr/=0) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          context=module_name//"/"//sr_name,
+     &          info="error during inquire")
+        end if
 
         lstr = len(trim(dname))
         allocate(character(len=lstr) :: obj(iobj)%dname)
@@ -292,7 +379,11 @@
 !       endif
 
         ierr = nf90_get_att(ncid,iobj,'output_period',period)
-        if (ierr/=0) call handle_ierr(ierr,'read extr ')
+        if (ierr/=0) then
+           call handle_netcdf_error(netcdf_status=ierr,
+     &          info="error when getting `output_period` attribute",
+     &          context=module_name//"/"//sr_name)
+        end if
         obj(iobj)%period   = period
 
         if (obj(iobj)%np>0) then
@@ -307,8 +398,11 @@
 
           ! Figure out which variables to output for this object
           ierr = nf90_get_att(ncid,iobj,'output_vars',variables)
-          if (ierr/=0) call handle_ierr(ierr,'read extr ')
-
+          if (ierr/=0) then
+             call handle_netcdf_error(netcdf_status=ierr,
+     &         info="error getting `output_vars` attribute",
+     &         context=module_name//"/"//sr_name)
+          end if
           if (findstr(variables,'zeta') ) obj(iobj)%zeta = .True.
           if (findstr(variables,'temp') ) obj(iobj)%temp = .True.
           if (findstr(variables,'salt') ) obj(iobj)%salt = .True.
@@ -323,18 +417,21 @@
 
           ! DIAGNOSTICS needs to be activated and diag_pflx=.true.
           if (obj(iobj)%up.and. .not.diag_pflx) then
-            print *,'Fatal ERROR: up extraction, diag_pflx is not set'
-            stop
+             call handle_configuration_error(
+     &            context=module_name//"/"//sr_name,
+     &            info="diag_pflx is not set for up extraction")
           endif
           if (obj(iobj)%vp.and. .not.diag_pflx) then
-            print *,'Fatal ERROR: vp extraction, diag_pflx is not set'
-            stop
+             call handle_configuration_error(
+     &            context=module_name//"/"//sr_name,
+     &            info="diag_pflx is not set for vp extraction")
           endif
 #if !defined(BIOLOGY_BEC2) && !defined(MARBL)
-         if (obj(iobj)%bgc) then
-            print *,'Fatal ERROR: BGC extraction, BIOLOGY_BEC2'//
-     &           ' or MARBL cpp key not set'
-            stop
+          if (obj(iobj)%bgc) then
+             call handle_configuration_error(
+     &            context=module_name//"/"//sr_name,
+     &            info="MARBL or BIOLOGY_BEC2 cpp key is not "//
+     &            "set for BGC extraction")
          endif
 #endif
 
@@ -434,7 +531,6 @@
 ! ----------------------------------------------------------------------
       subroutine interpolate_2D(var,vari,coef,ip,jp)  ![
       ! Interpolate a scalar variable
-      use dimensions
       implicit none
 
       ! inputs
@@ -459,7 +555,6 @@
 ! ----------------------------------------------------------------------
       subroutine interpolate_3D(var,vari,coef,ip,jp)  ![
       ! Interpolate a variable
-      use dimensions
       implicit none
 
       ! inputs
@@ -495,10 +590,11 @@
       subroutine do_extract_data ![
       ! extract data for all objects, for all vars
       ! and write to file
+
       implicit none
 
       ! local
-      integer :: i,itrc,ierr,ncid,k,record,indt
+      integer :: i,j,itrc,ierr,ncid,k,record,indt
       character(len=30) :: obj_name
       character(len=99),save :: fname
       character(len=20)              :: tname
@@ -511,6 +607,7 @@
       real,dimension(:),allocatable :: dummy
       integer,dimension(3) :: start2D
       integer,dimension(2) :: start1D
+      real, dimension(1:N_chd) :: tmpp
 
       if (.not.allocated(obj)) then
         call init_extract_data
@@ -567,36 +664,107 @@
             call ncwrite(ncid,tname,(/time/),(/record/))
             !if (mynode==0) print *,'writing extract: ',time,mynode,tname
 
+! rho variables --------------------------------------------------------
+
+            ! Get thickness and depth at interpolated location
+            call interpolate(Hz(:,:,:),obj(i)%Hz_par,coef,ip,jp)
+            obj(i)%h_par(:) = 0
+            do j=1,obj(i)%np
+              do k=1,nz
+                obj(i)%h_par(j) = obj(i)%h_par(j) + obj(i)%Hz_par(j,k)
+              enddo
+            enddo
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h_par(j), obj(i)%Hz_chd(j,:))
+            enddo
+
             if (obj(i)%zeta) then
               oname = trim(obj(i)%set)//'_zeta'//trim(obj(i)%bnd)
               call interpolate(zeta(:,:,knew),obj(i)%vari(:,1),coef,ip,jp)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
+
             if (obj(i)%temp) then
               oname = trim(obj(i)%set)//'_temp'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,itemp),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              if (parent_child_grid_mismatch) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
             endif
 #ifdef SALINITY
             if (obj(i)%salt) then
               oname = trim(obj(i)%set)//'_salt'//trim(obj(i)%bnd)
               call interpolate(t(:,:,:,nstp,isalt),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              if (parent_child_grid_mismatch) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
             endif
 #endif
+            if (obj(i)%bgc) then
+              do indt=isalt+nt_passive+1,NT
+              oname = trim(obj(i)%set)//'_'//trim(t_vname(indt))//trim(obj(i)%bnd)
+              call interpolate(t(:,:,:,nstp,indt),obj(i)%vari,coef,ip,jp)
+              if (parent_child_grid_mismatch) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
+              enddo
+            endif
+
+! w variables --------------------------------------------------------
+
+            if (obj(i)%w) then
+              call wvlcty (0,Wvl)
+              oname = trim(obj(i)%set)//'_w'//trim(obj(i)%bnd)
+              call interpolate(Wvl(-1:nx+2,-1:ny+2,1:nz),obj(i)%vari,coef,ip,jp)
+              if (parent_child_grid_mismatch) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
+              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+            endif
+
+! u variables --------------------------------------------------------
+
+            if ((obj(i)%u) .or. (obj(i)%up)) then
+            ! Get thickness and depth at interpolated location
+            call interpolate(Hz_u(:,:,:),obj(i)%Hz_par_u,cfu,ipu,jpu)
+            obj(i)%h_par_u(:) = 0
+            do j=1,obj(i)%np
+              do k=1,nz
+                obj(i)%h_par_u(j) = obj(i)%h_par_u(j) + obj(i)%Hz_par_u(j,k)
+              enddo
+            enddo
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h_par_u(j), obj(i)%Hz_chd_u(j,:))
+            enddo
+            endif
 
             if (obj(i)%ubar) then
               oname = trim(obj(i)%set)//'_ubar'//trim(obj(i)%bnd)
               call interpolate(ubar(:,:,knew),ui(:,1),cfu,ipu,jpu)
               call interpolate(vbar(:,:,knew),vi(:,1),cfv,ipv,jpv)
               obj(i)%vari(:,1) = obj(i)%cosa*ui(:,1) - obj(i)%sina*vi(:,1)
-              call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
-            endif
-            if (obj(i)%vbar) then
-              oname = trim(obj(i)%set)//'_vbar'//trim(obj(i)%bnd)
-              call interpolate(ubar(:,:,knew),ui(:,1),cfu,ipu,jpu)
-              call interpolate(vbar(:,:,knew),vi(:,1),cfv,ipv,jpv)
-              obj(i)%vari(:,1) = obj(i)%sina*ui(:,1) + obj(i)%cosa*vi(:,1)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
             if (obj(i)%u) then
@@ -607,22 +775,14 @@
                 obj(i)%vari(:,k) = obj(i)%cosa*ui(:,k) - obj(i)%sina*vi(:,k)
               enddo
               oname = trim(obj(i)%set)//'_u'//trim(obj(i)%bnd)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
-            endif
-            if (obj(i)%v) then
-              call interpolate(u(:,:,:,nstp),ui,cfu,ipu,jpu)
-              call interpolate(v(:,:,:,nstp),vi,cfv,ipv,jpv)
-              do k=1,nz
-                obj(i)%vari(:,k) = obj(i)%sina*ui(:,k) + obj(i)%cosa*vi(:,k)
-              enddo
-              oname = trim(obj(i)%set)//'_v'//trim(obj(i)%bnd)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
-            endif
-            if (obj(i)%w) then
-              call wvlcty (0,Wvl)
-              oname = trim(obj(i)%set)//'_w'//trim(obj(i)%bnd)
-              call interpolate(Wvl(-1:nx+2,-1:ny+2,1:nz),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              if (parent_child_grid_mismatch) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par_u(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd_u(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
             endif
             if (obj(i)%up) then
               call interpolate(upe,ui(:,1),cfu,ipu,jpu)
@@ -631,19 +791,54 @@
               oname = trim(obj(i)%set)//'_up'//trim(obj(i)%bnd)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
             endif
+
+! v variables --------------------------------------------------------
+
+            if ((obj(i)%v) .or. (obj(i)%vp)) then
+            ! Get thickness and depth at interpolated location
+            call interpolate(Hz_v(:,:,:),obj(i)%Hz_par_v,cfv,ipv,jpv)
+            obj(i)%h_par_v(:) = 0
+            do j=1,obj(i)%np
+              do k=1,nz
+                obj(i)%h_par_v(j) = obj(i)%h_par_v(j) + obj(i)%Hz_par_v(j,k)
+              enddo
+            enddo
+
+            do j=1,obj(i)%np
+              call get_child_thickness(obj(i)%h_par_v(j), obj(i)%Hz_chd_v(j,:))
+            enddo
+            endif
+
+            if (obj(i)%vbar) then
+              oname = trim(obj(i)%set)//'_vbar'//trim(obj(i)%bnd)
+              call interpolate(ubar(:,:,knew),ui(:,1),cfu,ipu,jpu)
+              call interpolate(vbar(:,:,knew),vi(:,1),cfv,ipv,jpv)
+              obj(i)%vari(:,1) = obj(i)%sina*ui(:,1) + obj(i)%cosa*vi(:,1)
+              call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
+            endif
+            if (obj(i)%v) then
+              call interpolate(u(:,:,:,nstp),ui,cfu,ipu,jpu)
+              call interpolate(v(:,:,:,nstp),vi,cfv,ipv,jpv)
+              do k=1,nz
+                obj(i)%vari(:,k) = obj(i)%sina*ui(:,k) + obj(i)%cosa*vi(:,k)
+              enddo
+              oname = trim(obj(i)%set)//'_v'//trim(obj(i)%bnd)
+              if (parent_child_grid_mismatch) then
+                do j=1,obj(i)%np
+                  call remap_src_to_grid(N, obj(i)%Hz_par_v(j,:), obj(i)%vari(j,:), N_chd, obj(i)%Hz_chd_v(j,:), obj(i)%vari_chd(j,:))
+                enddo
+                call ncwrite(ncid,oname,obj(i)%vari_chd,start2D)
+              else
+                call ncwrite(ncid,oname,obj(i)%vari,start2D)
+              endif
+              call ncwrite(ncid,oname,obj(i)%vari,start2D)
+            endif
             if (obj(i)%vp) then
               call interpolate(upe,ui(:,1),cfu,ipu,jpu)
               call interpolate(vpe,vi(:,1),cfv,ipv,jpv)
               obj(i)%vari(:,1) = obj(i)%sina*ui(:,1) + obj(i)%cosa*vi(:,1)
               oname = trim(obj(i)%set)//'_vp'//trim(obj(i)%bnd)
               call ncwrite(ncid,oname,obj(i)%vari(:,1),start1D)
-            endif
-            if (obj(i)%bgc) then
-              do indt=isalt+nt_passive+1,NT
-              oname = trim(obj(i)%set)//'_'//trim(t_vname(indt))//trim(obj(i)%bnd)
-              call interpolate(t(:,:,:,nstp,indt),obj(i)%vari,coef,ip,jp)
-              call ncwrite(ncid,oname,obj(i)%vari,start2D)
-              enddo
             endif
 
           endif
@@ -676,7 +871,6 @@
       subroutine create_edata_vars(ncid)  ![
       ! Add edata variables to an opened netcdf file
 
-      use nc_read_write
       implicit none
 
       !import/export
@@ -705,7 +899,7 @@
             dname3(1) = 'np'//label
             dname3(2) = 's_rho'
             dname3(3) = 'time_'//trim(obj(i)%set)
-            dsize3 = (/ obj(i)%np , nz, 0/)
+            dsize3 = (/ obj(i)%np , N_chd, 0/)
 
           tname = trim(obj(i)%set)//'_time'
           ierr=nf90_inq_varid(ncid,tname,varid)
@@ -744,6 +938,7 @@
 
       ! import/export
       integer :: ncid
+      character(len=10) :: sr_name = "create_var"
       type(extract_object),intent(in) ::obj
       character(len=*)              ,intent(in) :: vname
       character(len=20),dimension(:),intent(in) :: dname ! dimension names
@@ -761,7 +956,11 @@
       ierr = nf90_put_att(ncid,varid,'count',obj%np)
       ierr = nf90_put_att(ncid,varid,'dname',obj%dname)
       ierr = nf90_put_att(ncid,varid,'dsize',obj%dsize)
-      if (ierr/=0) call handle_ierr(ierr,'extract create var: '//vname)
+      if (ierr/=0) then
+         call handle_netcdf_error(netcdf_status=ierr,
+     &        info="error creating var "//vname,
+     &        context=module_name//"/"//sr_name)
+      end if
 
       if (present(idx)) then
         if (idx>=0) then
@@ -778,6 +977,75 @@
 
       end subroutine create_var  !]
 
+! ----------------------------------------------------------------------
+      subroutine set_chd_scoord
+
+      implicit none                         ! output: Cs_w(0:N
+
+      integer :: k                          ! Compute vertical stretching
+      real :: ds,sc                         ! curves at W-points
+
+      ds=1.D0/dble(N_chd)                   ! -1 < Cs_w < 0
+      Cs_w_chd(N_chd)=0.D0
+      do k=N_chd-1,1,-1
+        sc=ds*dble(k-N_chd)
+        call calc_cs(sc, Cs_w_chd(k))
+      enddo
+      Cs_w_chd(0)=-1.D0
+
+      end subroutine set_chd_scoord
+
+      subroutine calc_cs(sc, Cs)
+
+      implicit none
+
+      real, intent(in) :: sc
+      real, intent(out) :: Cs
+
+      real :: csrf
+
+      if (theta_s_chd > 0.D0) then
+        csrf=(1.D0-cosh(theta_s_chd*sc))/(cosh(theta_s_chd)-1.D0)
+      else
+        csrf=-sc**2                           ! Reference: This form of
+      endif                                   ! CSF corresponds exactly
+      if (theta_b_chd > 0.D0) then
+        Cs=(exp(theta_b_chd*csrf)-1.D0)/(1.D0-exp(-theta_b_chd))
+      else
+        Cs=csrf                               ! to Eq.(2.4) from SM2009
+      endif                                   ! article published in
+      end subroutine calc_cs                  ! J. Comput. Phys.
+
+! ----------------------------------------------------------------------
+      subroutine get_child_thickness(h_par, Hz_chd)
+
+      implicit none                      ! output: Cs_w(0:N), Cs_r(1:N)
+
+      real, intent(in)                    :: h_par
+      real, dimension(:), intent(out)     :: Hz_chd
+
+      integer :: k
+      real :: ds,hinv
+      real :: z_w_chd(0:N_chd)
+      real :: cff_w, cff1_w
+
+      ! Note that this calculation does not need the SSH, as it is already
+      ! implicitly included from when we calculated h_par
+      ds=1.D0/dble(N_chd)
+      hinv=1./(h_par+hc_chd)
+      z_w_chd(0)=-h_par
+
+      do k=1,N_chd,+1   !--> irreversible because of recursion in Hz
+        cff_w=hc_chd*ds*dble(k-N_chd)
+
+        cff1_w=Cs_w_chd(k)
+
+        z_w_chd(k)= h_par*(cff_w+cff1_w*h_par)*hinv
+
+        Hz_chd(k)=z_w_chd(k)-z_w_chd(k-1)
+      enddo
+
+      end subroutine get_child_thickness
 ! ----------------------------------------------------------------------
 
       end module extract_data

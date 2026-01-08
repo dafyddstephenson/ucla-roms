@@ -7,12 +7,16 @@
 
 #include "cppdefs.opt"
 
-      use param
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use netcdf
-      use scalars
+      use param, only: mynode, lm, mm
+      use dimensions, only: i0, i1, j0, j1
+      use roms_read_write, only:
+     &     ncforce, dn_tm, dn_xr, dn_xu, dn_yr
+     &     , dn_yv, eta_rho, eta_v, xi_rho, xi_u, create_file
+      use nc_read_write, only: nccreate, ncwrite
+      use netcdf, only:
+     &     nf90_global, nf90_write, nf90_nofill,
+     &     nf90_open, nf90_put_att, nf90_close, nf90_set_fill
+      use scalars, only: dt, iic, tdays, time
 
       implicit none
 
@@ -67,17 +71,18 @@
       public init_arrays_surf_flx
       public set_surf_field_corr
       public wrt_sflux
+      public apply_surf_field_corr
 
       contains
 
 ! ----------------------------------------------------------------------
       subroutine init_arrays_surf_flx  ![
-      use scalars
+      use scalars, only: init, nt
       implicit none
 
       ! local
-      allocate(  uwnd  (GLOBAL_2D_ARRAY)    );
-      allocate(  vwnd  (GLOBAL_2D_ARRAY)    );
+      allocate( uwnd  (GLOBAL_2D_ARRAY)     );
+      allocate( vwnd  (GLOBAL_2D_ARRAY)     );
       allocate( sustr  (GLOBAL_2D_ARRAY)    ); sustr=init
       allocate( sustr_r(GLOBAL_2D_ARRAY)    ); sustr_r=init
       allocate( svstr  (GLOBAL_2D_ARRAY)    ); svstr=init
@@ -85,10 +90,14 @@
       allocate( stflx  (GLOBAL_2D_ARRAY,nt) ); stflx=init
       allocate( srflx  (GLOBAL_2D_ARRAY)    ); srflx=init
 
+#if defined(Q_CORRECTION) && !defined(ANA_SST)
+      allocate( sst(GLOBAL_2D_ARRAY)        ); sst=init
+      allocate(nc_sst%vdata(GLOBAL_2D_ARRAY,2) )
+#endif
+
 #if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
       allocate( sss(GLOBAL_2D_ARRAY)        ); sss=init
       allocate(nc_sss%vdata(GLOBAL_2D_ARRAY,2) )
-
 #endif
 
       if (sflx_avg) then
@@ -103,10 +112,8 @@
       ! Set surface fields that will be restored towards
 
       implicit none
-
-#if defined QCORRECTION && !defined ANA_SST
+#if defined(QCORRECTION) && !defined(ANA_SST)
       ! Sea-surface temperature (SST) data
-      print *,'Allocate space for sst first!! '
       call set_frc_data(nc_sst,sst,'r')
 #endif
 
@@ -116,6 +123,40 @@
 #endif
 
       end subroutine set_surf_field_corr  !]
+! ----------------------------------------------------------------------
+      subroutine apply_surf_field_corr  ![
+      ! apply surface heat flux correction: stflx(itemp)
+      ! apply surface salinity  correction: stflx(isalt)
+
+      implicit none
+
+      ! local
+      integer i,j
+
+#if defined(QCORRECTION) && !defined(ANA_SST)
+! Add relaxation of sst back to climatological value to avoid long-
+! term drift. dSSTdt below is "piston velocity" expressed in [m/s].
+      do j=j0,j1
+        do i=i0,i1
+          stflx(i,j,itemp)=
+     &       -dSSTdt*(t(i,j,nz,nrhs,itemp)-sst(i,j))
+        enddo
+      enddo
+#endif
+
+# if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
+! Add relaxation of surface salinity back to climatological value to
+! avoid long-term drift.  Note that dSSSdt below is "piston velocity"
+! expressed in [m/s].
+      do j=j0,j1
+        do i=i0,i1
+          stflx(i,j,isalt)=stflx(i,j,isalt)-dSSSdt*
+     &         ( t(i,j,N,nrhs,isalt)-sss(i,j) )
+        enddo
+      enddo
+#endif
+
+      end subroutine apply_surf_field_corr  !]
 ! ----------------------------------------------------------------------
       subroutine calc_sflx_avg  ![
       implicit none
