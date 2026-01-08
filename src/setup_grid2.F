@@ -22,9 +22,8 @@
 ! boundaries.
 
       use param, only:
-     &     east_exchng, nnodes, north_exchng, south_exchng,
-     &     west_exchng,  ieast, iwest, jnorth, jsouth, mynode, nsub_e,
-     & nsub_x, ocean_grid_comm
+     &     ieast, iwest, jnorth, jsouth, mynode, nsub_e,
+     &     nsub_x, ocean_grid_comm
       use comm_vars, only:
      &     area, bc_crss, cg_max, cg_min, cu_cor,
      &     grdmax, grdmin, hmax, hmin, tile_count, volume

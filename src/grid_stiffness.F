@@ -24,8 +24,7 @@
 ! computations.
 
       use param, only:
-     &     east_exchng, n, nnodes, north_exchng,
-     &     south_exchng, west_exchng, ieast, iwest, jnorth, jsouth,
+     &     n, nnodes, ieast, iwest, jnorth, jsouth,
      &     mynode, nsub_e, nsub_x, ocean_grid_comm
       use comm_vars, only:
      &     rx0, rx1, tile_count

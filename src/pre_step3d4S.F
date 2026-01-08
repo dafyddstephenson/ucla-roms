@@ -48,10 +48,7 @@
      &     ,dmde, dndx
 #endif
       use mixing, only: akt, akv
-      use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng, lm, mm,
-     &     padd_e, padd_x
+      use param, only: ieast, iwest, jnorth, jsouth, lm, mm padd_e, padd_x
 #ifdef NHMG
       use mg_namelist, only: surface_neumann
 #endif

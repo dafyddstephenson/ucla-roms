@@ -218,9 +218,7 @@
       subroutine ana_smflux_tile(istr,iend,jstr,jend) ![
 
       use surf_flux, only: sustr,svstr
-      use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng
+      use param, only: ieast, iwest, jnorth, jsouth
 
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -244,9 +242,7 @@
 ! Set kinematic surface solar shortwave radiation flux "srflx"
 !     [degC m/s] using an analytical expression.
       use surf_flux, only: srflx
-      use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng
+      use param, only: ieast, iwest, jnorth, jsouth
 
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -265,10 +261,7 @@
 ! Set kinematic surface flux of tracer type variables "stflx" (tracer
 !     units m/s) using analytical expressions.
       use surf_flux, only: stflx
-      use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng
-
+      use param, only: ieast, iwest, jnorth, jsouth,
 
       implicit none
       integer istr,iend,jstr,jend, itrc, i,j

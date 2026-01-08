@@ -36,9 +36,7 @@
 #endif
       use grid, only: f, pm, pn, umask, dn_u, vmask, dm_v
       use tides, only: pot_tides, ptide
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth
       use ocean_vars, only: z_r, z_w, hz
 #ifdef NHMG
      &     , dzdeta, dzdxi

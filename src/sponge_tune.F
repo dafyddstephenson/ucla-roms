@@ -20,7 +20,6 @@
       use hidden_mpi_vars, only: inode, jnode
       use param, only:
      &     obc_east, obc_north, obc_south, obc_west,
-     &     east_exchng, north_exchng, south_exchng, west_exchng,
      &     mynode, np_eta, np_xi
       use error_handling, only: handle_netcdf_error
 

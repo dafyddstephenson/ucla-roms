@@ -2,9 +2,7 @@
 
 #include "cppdefs.opt"
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng, west_exchng,
-     &     mynode, ieast, iwest, jnorth, jsouth, lm, mm
+      use param, only: mynode, ieast, iwest, jnorth, jsouth, lm, mm
       use scalars, only: g, pi, dt, time
 ! For iic, ntstart, deg2rad, only:
       use roms_read_write, only:

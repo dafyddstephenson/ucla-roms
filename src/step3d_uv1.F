@@ -51,10 +51,7 @@
      &     , dmde,dndx
 #endif
       use mixing, only: akv
-      use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng, lm, mm,
-     &     padd_e, padd_x
+      use param, only: ieast, iwest, jnorth, jsouth, lm, mm, padd_e, padd_x
       use ocean_vars, only: u, v, hz, flxu, flxv, we, wi, z_w
       use scalars, only: n, dt, nnew, nrhs, ntstart
 #ifdef EXCHANGE

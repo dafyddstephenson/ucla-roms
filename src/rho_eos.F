@@ -134,9 +134,8 @@
 #endif
 
       use grid, only: rmask
-      use param, only:
-     &     east_exchng, ieast, isalt, itemp, iwest,
-     &     jnorth, jsouth, north_exchng, south_exchng, west_exchng
+      use param, only: ieast, isalt, itemp, iwest, jnorth, jsouth
+
 # if defined BVF_MIXING || defined LMD_MIXING  || defined LMD_KPP \
   || defined MY2_MIXING || defined MY25_MIXING || defined PP_MIXING\
   || defined LMD_BKPP

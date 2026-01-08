@@ -224,7 +224,6 @@
       end subroutine init_arrays_boundary !]
 !----------------------------------------------------------------------
       subroutine set_bry_all  ![
-      use param, only: east_exchng, north_exchng, south_exchng
       implicit none
 
       integer :: itrc

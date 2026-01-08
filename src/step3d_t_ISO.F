@@ -69,9 +69,7 @@ c--# define CONST_TRACERS
       use grid, only: umask, vmask, pn, pm, rmask, nx, ny, nz, dn_u, dm_v
       use param, only: mynode
       use mpi_exchanges, only: exchange_xxx
-      use mixing, only:
-     &     east_exchng, ieast, isalt, itemp, iwest,
-     &     jnorth, jsouth, north_exchng, south_exchng, west_exchng
+      use mixing, only: ieast, isalt, itemp, iwest, jnorth, jsouth
 #ifdef LMD_NONLOCAL
      &     , ghat
 #endif

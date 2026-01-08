@@ -16,9 +16,8 @@
       use grid, only: f, rmask, umask, vmask
 !     flux_frc-> only: sustr, svstr, stflx, srflx
       use mpi_exchanges, only: exchange_xxx
-      use param, only:
-     &     ieast, east_exchng, south_exchng, west_exchng,
-     &     north_exchng, itemp, iwest, jnorth, jsouth
+      use param, only: ieast, itemp, iwest, jnorth, jsouth
+
 #ifdef SALINITY
      &     , isalt
 #endif

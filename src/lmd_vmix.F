@@ -47,9 +47,7 @@
       use tracers, only: t
       use grid, only: umask, vmask
       use mixing, only: bvf
-      use param, only:
-     &     east_exchng, ieast, isalt, itemp, iwest,
-     &     jnorth, jsouth, north_exchng, south_exchng, west_exchng
+      use param, only: ieast, isalt, itemp, iwest, jnorth, jsouth
       use ocean_vars, only: z_r, u, v, z_w
       use scalars, only: n, akv_bak, pi, akt_bak
 

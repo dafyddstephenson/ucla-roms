@@ -4,9 +4,7 @@
 
 ! Set boundary conditions for free surface zeta_new
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth
       use grid, only:  h, pm, rmask, pn
       use ocean_vars, only: zeta
       use scalars, only: dtfast, g, kstp

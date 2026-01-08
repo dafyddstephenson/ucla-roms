@@ -19,9 +19,7 @@
 ! of vertical grid boxes "Hz" from fast-time-averaged free surface,
 ! topography h(i,j), and vertical coordinate transformation formula.
 
-      use coupling, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, du_avg1, dv_avg1
+      use coupling, only: du_avg1, dv_avg1
       use grid, only: h, hinv, dn_u, dm_v, pn, pm
       use param, only: ieast, jnorth, lm, mm
       use mpi_exchanges, only: exchange_xxx
@@ -215,9 +213,7 @@
       end
 
       subroutine set_HUV_tile (istr,iend,jstr,jend)
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth
       use grid, only: dn_u, dm_v
       use mpi_exchanges, only: exchange_xxx
       use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
@@ -286,10 +282,7 @@
       end
 
       subroutine set_HUV1_tile (istr,iend,jstr,jend, DC,FC)
-      use param, only:
-     &  east_exchng, north_exchng, south_exchng, west_exchng,
-     & ieast, iwest, jnorth, jsouth
-     &     , east_exchng
+      use param, only: ieast, iwest, jnorth, jsouth
       use coupling, only:
      &     du_avg1, du_avg_bak, du_avg2, dv_avg1, dv_avg_bak,
      &     dv_avg2

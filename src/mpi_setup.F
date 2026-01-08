@@ -2,9 +2,8 @@
 
       subroutine mpi_setup(ierr)
       use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth, llm,
-     &     lm, mm, mmm, north_exchng, ocean_grid_comm, south_exchng,
-     &     west_exchng, np_xi, np_eta
+     &     ieast, iwest, jnorth, jsouth, llm,
+     &     lm, mm, mmm, ocean_grid_comm, np_xi, np_eta
       use hidden_mpi_vars, only:
      &     east_msg_exch, exc_call_count, inode,
      &     isw_corn, jnode, jsw_corn, mynode, nnodes, north_msg_exch,

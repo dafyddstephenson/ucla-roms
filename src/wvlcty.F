@@ -25,9 +25,7 @@
 ! purposes and does not have any feedback onto the model.
 ! Unlike W, absolute vertical velocity is defined at RHO-points.
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     & west_exchng, lm, mm, ieast, iwest, jnorth, jsouth
+      use param, only: lm, mm, ieast, iwest, jnorth, jsouth
       use grid, only:  pn, pm
       use ocean_vars, only: flxv, flxu, z_r, u, v
 #ifdef NHMG

@@ -35,9 +35,7 @@
 ! below which vertical advection is fully explicit; "cu_max" is the
 ! maximum CN which the explicit component "We" is allowed to reach.
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth
       use dimensions, only: nx, ny, nz
       use grid, only: pn, pm
       use pipe_frc, only:

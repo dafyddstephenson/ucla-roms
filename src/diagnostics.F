@@ -1115,7 +1115,6 @@
       subroutine wrt_diag_uv(ncid,record,ud,vd)  ![
       ! Write uv diagnostic vars to file
 
-      use param, only: south_exchng, west_exchng
       implicit none
 
       !import/export

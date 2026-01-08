@@ -11,9 +11,7 @@
       end
 
       subroutine setup_Corls_tile(istr,iend,jstr,jend)
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth
       use grid, only: f, latr, fomn, pn, pm
       use scalars, only: deg2rad, pi
       implicit none
@@ -57,9 +55,7 @@
 
 
       subroutine setup_grid1_tile (istr,iend,jstr,jend)
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth
       use grid, only: dm_r, pm, dn_r, pn,
      &     pmon_u, dm_u, dn_u, pn_u,
      &     umask, rmask, pmask, vmask, ia_u, pnom_v, dn_p,

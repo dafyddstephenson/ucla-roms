@@ -188,9 +188,7 @@
      &     sustr, svstr, apply_surf_field_corr
       use tracers, only: t
       use grid, only: rmask, umask, vmask
-      use mixing, only:
-     &     east_exchng, ieast, isalt, itemp, iwest,
-     &     jnorth, jsouth, north_exchng, south_exchng, west_exchng
+      use mixing, only: ieast, isalt, itemp, iwest, jnorth, jsouth
       use ocean_vars, only: u, v
       use scalars, only: cp, g, n, nrhs, pi, rho0, vonkar
 

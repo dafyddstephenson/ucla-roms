@@ -53,10 +53,7 @@
       use work_mod, only: init_arrays_work_mod
       use boundary, only: init_arrays_boundary
       use buffer, only: init_arrays_buffer
-      use param, only:
-     &     ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng, east_exchng,
-     &     n
+      use param, only: ieast, iwest, jnorth, jsouth, n
       use mess_buffers, only: init_arrays_mess_buffers
       use flux_frc, only: init_arrays_flux_frc
       use pipe_frc, only: pipe_source, init_arrays_pipes

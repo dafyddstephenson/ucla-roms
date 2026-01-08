@@ -38,9 +38,7 @@
      &     rhos, rhoa, weight, du_avg_bak, du_avg2,
      &     du_avg1, dv_avg_bak, dv_avg2, dv_avg1, zt_avg1, rufrc, rvfrc
       use grid, only: h, dn_u, dm_v, pn, pm, rmask, umask, vmask
-      use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng
+      use param, only: ieast, iwest, jnorth, jsouth
       use ocean_vars, only: zeta, ubar, vbar
       use scalars, only: dtfast, g, iif, knew, kstp, nfast
       use mpi_exchanges, only: exchange_xxx
