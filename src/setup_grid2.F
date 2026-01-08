@@ -29,7 +29,7 @@
      &     area, bc_crss, cg_max, cg_min, cu_cor,
      &     grdmax, grdmin, hmax, hmin, tile_count, volume
       use scalars, only: dt, dtfast, g
-      use mpi, only: mpi_real8, mpi_status_size
+      use mpi_f08, only: mpi_real8, mpi_status_size
       use grid, only:
      &     rmask, h, pn, pm, f, umask, dn_u,
      &     vmask, dm_v

@@ -1,7 +1,7 @@
       module read_inp_mod
 
       use param, only: mynode, nnodes, ocean_grid_comm
-      use mpi, only: mpi_byte
+      use mpi_f08, only: mpi_byte
       use roms_read_write, only: git_hash
       use keyword_registry, only:
      &     init_registry, registry, register_keyword,
