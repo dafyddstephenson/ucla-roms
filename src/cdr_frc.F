@@ -25,7 +25,7 @@
       use netcdf, only:
      &     nf90_noerr, nf90_inq_dimid,
      &     nf90_inquire_dimension, nf90_nowrite, nf90_open, nf90_close
-      use mpi, only:
+      use mpi_f08, only:
      &     mpi_double_precision, mpi_sum,
      &     mpi_2double_precision, mpi_comm_world, mpi_in_place,
      &     mpi_logical, mpi_lor, mpi_minloc

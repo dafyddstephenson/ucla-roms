@@ -8,7 +8,7 @@
       use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
-      use mpi, only: mpi_wtime
+      use mpi_f08, only: mpi_wtime
       use timers, only: tstart, tend
 
       implicit none                                        ! with single parallel region using
