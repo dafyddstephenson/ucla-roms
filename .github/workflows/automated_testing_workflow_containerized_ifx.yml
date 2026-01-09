@@ -46,9 +46,8 @@ jobs:
         run: |
           source $GITHUB_ENV
           cd Work/
-          make nhmg COMPILER=intel
           cd ${ROMS_ROOT}/Tools-Roms/
-          make COMPILER=intel
+          make partit COMPILER=intel
 
       - name: Cache input_data
         id: cache-input

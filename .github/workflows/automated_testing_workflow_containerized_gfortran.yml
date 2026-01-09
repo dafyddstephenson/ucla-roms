@@ -44,9 +44,8 @@ jobs:
         micromamba run -n roms-ci bash -c '
         #Copy GNU-compatible makefiles
         cd Work/
-        make nhmg COMPILER=gnu
         cd ${ROMS_ROOT}/Tools-Roms/
-        make COMPILER=gnu
+        make partit COMPILER=gnu
         '
     - name: Cache input_data
       id: cache-input
