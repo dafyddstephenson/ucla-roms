@@ -15,11 +15,6 @@
      &     dn_yr, dn_yv, dn_zr, dn_zw,
      &     avg_output, create_file, sec2date
       use sponge_tune, only: ub_tune, wrt_rst_ub
->>>>>>> variant B
-     &     dn_yr, dn_yv, dn_zr, eta_rho, eta_v, xi_rho, xi_u, dn_zw,
-     &     avg_output, create_file, sec2date
-      use sponge_tune, only: ub_tune, wrt_rst_ub
-======= end
       use diagnostics, only: diag_pflx
       use scalars, only:
      &     NT, iic, knew, nstp, time,
