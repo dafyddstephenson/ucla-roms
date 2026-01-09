@@ -337,7 +337,7 @@ CR      write(*,*)  ' -2' MYID
       use particles, only: floats, do_particles
       use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
       use random_output, only: do_random, wrt_random
-      use cstar_output, only: do_cstar
+      use cstar_output, only: do_cstar, wrt_cstar
       use frc_output, only: do_frc, wrt_frc
       use zslice_output, only: do_zslice, wrt_zslice
       use basic_output, only:
