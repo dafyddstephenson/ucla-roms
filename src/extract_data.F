@@ -66,6 +66,7 @@
 #endif
       use vertical_remapping, only: remap_src_to_grid
       use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use mpi_exchanges, only: exchange_xxx
 
       ! TODO: add averaging
 

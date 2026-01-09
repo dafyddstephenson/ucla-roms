@@ -53,7 +53,10 @@
 #endif
       use dimensions, only:  nx, ny, nz
       use scalars, only: n, g, rho0, nrhs
-
+#ifdef DIAGNOSTICS
+      use diagnostics, only: rho_d, p_int, calc_diag, diag_uv, udiag,
+     &  vdiag, ipgr, dxdyi_u, dxdyi_v, diag_pflx, calc_diag_pflux
+#endif
       implicit none
       integer istr,iend,jstr,jend, i,j,k, imin,imax,jmin,jmax
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY,N) :: ru,rv, P

@@ -23,6 +23,9 @@
      &     w_avg, wvl_avg, zeta, ubar, vbar, u, v, z_r, We, Wi
       use param, only: Lm, Mm, isalt, itemp, mynode, nt_passive
       use error_handling, only : handle_configuration_error, handle_netcdf_error
+#ifdef DIAGNOSTICS
+      use diagnostics, only: wrt_rst_diag_slow
+#endif
       implicit none
       private
 

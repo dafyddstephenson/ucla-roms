@@ -935,7 +935,7 @@
       use hidden_mpi_vars, only:
      &     p_e, p_n, p_ne, p_nw, p_s, p_se, p_sw,
      &     p_w
-      use mpi, only: mpi_double_precision, mpi_status_size
+      use mpi_f08, only: mpi_double_precision, mpi_status_size
 
       implicit none
 

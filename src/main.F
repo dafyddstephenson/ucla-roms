@@ -8,7 +8,7 @@
       use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
-      use mpi, only: mpi_wtime
+      use mpi_f08, only: mpi_wtime
       use timers, only: tstart, tend
 
       implicit none                                        ! with single parallel region using
@@ -97,6 +97,9 @@ C$OMP END MASTER                         ! is in uniform state]. This
       use cstar_output, only: do_cstar, init_cstar
       use frc_output, only: do_frc, init_frc
       use analytical, only: ana_vmix
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,diag_pflx, init_diagnostics
+#endif
 #ifdef ANA_INITIAL
      &     , ana_init
 #endif
@@ -325,7 +328,7 @@ CR      write(*,*)  ' -2' MYID
       use particles, only: floats, do_particles
       use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
       use random_output, only: do_random, wrt_random
-      use cstar_output, only: do_cstar
+      use cstar_output, only: do_cstar, wrt_cstar
       use frc_output, only: do_frc, wrt_frc
       use zslice_output, only: do_zslice, wrt_zslice
       use basic_output, only:
@@ -337,7 +340,9 @@ CR      write(*,*)  ' -2' MYID
       use bgc_io, only: wrt_bgc
 #endif
       use tides, only: bry_tides, pot_tides
-
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,diag_pflx, do_diagnostics
+#endif
       implicit none
 
       integer :: ierr

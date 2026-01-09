@@ -96,7 +96,7 @@
       use netcdf, only:
      &     nf90_double, nf90_noerr, nf90_nowrite,
      &     nf90_write, nf90_open, nf90_put_att, nf90_close, nf90_inq_varid
-      use mpi, only: mpi_double_precision, mpi_max
+      use mpi_f08, only: mpi_double_precision, mpi_max
       implicit none
 
       character(len=14) :: sr_name = "init_river_frc"

@@ -42,7 +42,7 @@
       use tracers, only: iTandS, t
       use coupling, only: r_d
       use mpi_exchanges, only: exchange_xxx
-      use grid, only:
+      use grid, only: nx,ny,
      &     pn, pm, umask, vmask, fomn, dn_u, dm_v, pn_u, pm_v
 #if (defined CURVGRID && defined UV_ADV)
      &     ,dmde, dndx
@@ -59,6 +59,10 @@
       use scalars, only:
      &     n, dt, forw_start, iic, nnew, nrhs, nstp, nt,
      &     rdrg, vonkar, zob, ntstart
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icori,
+     &  dxdyi_u, dxdyi_v
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k
