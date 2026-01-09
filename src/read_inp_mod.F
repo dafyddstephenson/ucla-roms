@@ -115,7 +115,7 @@
          implicit none
          integer, intent(inout) :: ierr
 
-         call check_tiling(ierr)
+!         call check_tiling(ierr)
          call check_switches1(ierr)
 #ifdef SOLVE3D
          call check_pre_step_switches(ierr)
