@@ -11,8 +11,8 @@
       use mixing, only: akt, akv
       use scalars, only:
      &     akv_bak, forw_start, iic, ntstart, akt_bak, g, rho0
-      use param, only: isalt, itemp
       use hidden_mpi_vars, only: inode, jnode
+      use param, only: isalt, itemp
 #ifdef FILAMENT_IDEAL
      &     , hd
 #endif
