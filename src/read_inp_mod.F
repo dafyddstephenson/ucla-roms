@@ -114,7 +114,7 @@
 
          implicit none
 
-         call check_tiling()
+!         call check_tiling()
          call check_switches1()
 #ifdef SOLVE3D
          call check_pre_step_switches()
