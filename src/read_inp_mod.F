@@ -1,6 +1,6 @@
       module read_inp_mod
 
-      use param, only: mynode, nnodes, ocean_grid_comm
+      use param, only: mynode, nnodes, ocean_grid_comm, nsize
       use mpi_f08, only: mpi_byte
       use roms_read_write, only: git_hash
       use keyword_registry, only:
@@ -933,7 +933,7 @@
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-      call insert_node(fname, lstr, mynode, NNODES, ierr)
+      call insert_node(fname, lstr, mynode, nsize, ierr)
 # endif
 
       open(newunit=testunit, file=fname(1:lstr), status='old',
@@ -981,7 +981,7 @@
          lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-         call insert_node(fname, lstr, mynode, NNODES, ierr)
+         call insert_node(fname, lstr, mynode, nsize, ierr)
 # endif
          open(newunit=testunit, file=fname(1:lstr), status='old',
      &        iostat=ios)
@@ -1034,7 +1034,7 @@
          if (lstr > 0) then
 
 # if defined MPI && defined PARALLEL_FILES
-            call insert_node(fname, lstr, mynode, NNODES, ierr)
+            call insert_node(fname, lstr, mynode, nsize, ierr)
 # endif
 
 ! Test file availability
@@ -1116,7 +1116,7 @@
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-      call insert_node(fname, lstr, mynode, NNODES, ierr)
+      call insert_node(fname, lstr, mynode, nsize, ierr)
 # endif
 
       open(newunit=testunit, file=fname(1:lstr), status='old',
