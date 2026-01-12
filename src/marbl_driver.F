@@ -1885,8 +1885,9 @@
 
 ! If MARBL needs to abort, stop the program
       if (log_to_print%labort_marbl) then
-         call handle_configuration_error(context=module_name,
-     &        info="error reported from MARBL (external library)")
+         call handle_local_error(context=module_name,
+     &        info="error reported from MARBL (external library)",
+     &        i=i, j=j, tile=mynode))
       end if
 
 
