@@ -1,35 +1,35 @@
-      module param
+module param
 
-      ! Master module containing key roms variables used throughout the code
+   ! Master module containing key roms variables used throughout the code
 ! and by other modules. Direct copy of param.h into module format.
 #include "cppdefs.opt"
 #ifdef MPI
-      use mpi_f08, only: mpi_comm
+   use mpi_f08, only: mpi_comm
 #endif
-      implicit none
+   implicit none
 
 ! DevinD: normally this was above param.opt in subroutines but since compiled alone need it here
 
 ! Need this here above param.opt for BGC to work:
-      integer, parameter :: itemp=1,isalt=2
+   integer, parameter :: itemp=1,isalt=2
 
 #include "param.opt"
 
 ! Array dimensions and bounds of the used portions of sub-arrays:
 
 #ifdef MPI
-      integer, parameter :: nnodes=NP_XI*NP_ETA
+   integer, parameter :: nnodes=NP_XI*NP_ETA
 
-      integer ::
-     &    Lm=(LLm+NP_XI-1)/NP_XI, Mm=(MMm+NP_ETA-1)/NP_ETA
+   integer ::&
+        &Lm=(LLm+NP_XI-1)/NP_XI, Mm=(MMm+NP_ETA-1)/NP_ETA
 
-      integer mynode,  iSW_corn, jSW_corn,
-     &     iwest, ieast, jsouth, jnorth
-      type(mpi_comm) :: ocean_grid_comm
-      logical west_exchng,  east_exchng
-      logical south_exchng, north_exchng
+   integer mynode,  iSW_corn, jSW_corn,&
+        &iwest, ieast, jsouth, jnorth
+   type(mpi_comm) :: ocean_grid_comm
+   logical west_exchng,  east_exchng
+   logical south_exchng, north_exchng
 #else
-      integer, parameter :: Lm=LLm, Mm=MMm
+   integer, parameter :: Lm=LLm, Mm=MMm
 #endif
 
 ! Derived dimension parameters, number of tracers and tracer
@@ -37,39 +37,39 @@
 
 !     integer, parameter :: padd_X=(Lm_old+2)/2-(Lm_old+1)/2,
 !    &                      padd_E=(Mm_old+2)/2-(Mm_old+1)/2
-      integer, parameter :: padd_X= 0,padd_E= 0
+   integer, parameter :: padd_X= 0,padd_E= 0
 
 # ifdef EW_PERIODIC
-      logical,parameter :: ew_periodic =.true.
+   logical,parameter :: ew_periodic =.true.
 # else
-      logical,parameter :: ew_periodic =.false.
+   logical,parameter :: ew_periodic =.false.
 # endif
 # ifdef NS_PERIODIC
-      logical,parameter :: ns_periodic =.true.
+   logical,parameter :: ns_periodic =.true.
 # else
-      logical,parameter :: ns_periodic =.false.
+   logical,parameter :: ns_periodic =.false.
 # endif
 
 # ifdef OBC_WEST
-      logical,parameter :: obc_west =.true.
+   logical,parameter :: obc_west =.true.
 # else
-      logical,parameter :: obc_west =.false.
+   logical,parameter :: obc_west =.false.
 # endif
 # ifdef OBC_EAST
-      logical,parameter :: obc_east =.true.
+   logical,parameter :: obc_east =.true.
 # else
-      logical,parameter :: obc_east =.false.
+   logical,parameter :: obc_east =.false.
 # endif
 # ifdef OBC_NORTH
-      logical,parameter :: obc_north=.true.
+   logical,parameter :: obc_north=.true.
 # else
-      logical,parameter :: obc_north=.false.
+   logical,parameter :: obc_north=.false.
 # endif
 # ifdef OBC_SOUTH
-      logical,parameter :: obc_south=.true.
+   logical,parameter :: obc_south=.true.
 # else
-      logical,parameter :: obc_south=.false.
+   logical,parameter :: obc_south=.false.
 # endif
 
 
-      end module
+end module param
