@@ -98,15 +98,17 @@
       public :: write_partial_files
       public :: make_joined_file
       public :: write_joined_file
+      public :: show_use_optimal
 
       contains
 ! ----------------------------------------------------------------------
-      subroutine cmd_args_optimal(cores,grdfile)  ![
+      subroutine cmd_args_optimal(cores,grdfile,prct)  ![
       implicit none
 
 !     import/export
       real,intent(out)            :: cores
       character(len=128),intent(out) :: grdfile
+      real,intent(out)            :: prct
 
 !     local
       integer            :: nargs
@@ -122,6 +124,18 @@
 !     grdfile
       call get_command_argument(2,arg);
       grdfile = arg
+
+      call get_command_argument(3,arg)
+      if (index(arg,'-min_percentage')) then
+        print *, 'Optional min_percentage flag detected.'
+        print *, 'Applying a min value for the number of cores used.'
+        print *, ''
+        call get_command_argument(4,arg);
+        read(arg, *) prct
+        prct = prct / 100.0
+      else
+        prct = 0
+      endif
 
       end subroutine cmd_args_optimal !]
 ! ----------------------------------------------------------------------
@@ -334,28 +348,49 @@
       subroutine show_use_optimal ![
       implicit none
 
-      print *, 'Usage of optimal should be: ',
-     &         'optimal_part cores grdfile.nc'
-
-      stop
+      print *, 'OPTIMAL_PART is a tool to inform the user about how to '
+      print *, 'partition their domain (NP_XI, NP_ETA) to optimize '
+      print *, 'the number of computational cores that are assigned to '
+      print *, 'tiles containing wet points. '
+      print *, ''
+      print *, 'Usage of OPTIMAL_PART should be: '
+      print *, ' optimal_part avail_cores grid.nc'
+      print *, ' or'
+      print *, ' optimal_part avail_cores grid.nc -min_percentage XX'
+      print *, ''
+      print *, 'The results are sorted such that the most efficient '
+      print *, 'tilings are presented first. Here a tiling is'
+      print *, 'considered to become more efficient as less gridpoints'
+      print *, 'are used per core, since less gridpoints per core'
+      print *, 'should result in faster computation.'
+      print *, ''
+      print *, 'The argument avail_cores represents that maximum number'
+      print *, 'of cores the user wishes to use.'
+      print *, ''
+      print *, 'The optional -min_percentage argument tells the program'
+      print *, 'to only display results that use a number of cores >='
+      print *, 'than XX percent of the "avail_cores" argument. XX'
+      print *, 'should be a real number between 0 and 100.'
 
       end subroutine show_use_optimal !]
 ! ----------------------------------------------------------------------
-      subroutine check_mask(npx,npy,gnx,gny,mask)   ![
+      subroutine check_mask(npx,npy,gnx,gny,mask,nx,ny)   ![
       implicit none
 
       ! input/outputs
       integer, intent(in)                        :: npx,npy,gnx,gny
       real,dimension(0:gnx+1,0:gny+1),intent(in) :: mask
+      integer, intent(out)                       :: nx,ny
 
       ! local
       real,dimension(:,:),allocatable :: rflx
       real    :: msk_mx,rfx_mx
-      integer :: nx,ny
+!      integer :: nx,ny
       integer :: surplus_x,surplus_y
       integer :: loc_x,loc_y
       integer :: npi,npj
       integer :: count
+      integer :: tot_x, tot_y
 
       ! Get interior subdomain size
       nx = ceiling(1.0*gnx/npx)
@@ -369,6 +404,7 @@
       allocate(jloc(npy,3)) ! lny = jloc(:,1), js = jloc(:,2), je = jloc(:,3)
 
       loc_x = 1
+      tot_x = 0
       do npi = 1,npx
         if (npi==1) then ! left-most subdomain
           iloc(npi,1) = nx - surplus_x/2
@@ -380,9 +416,11 @@
         iloc(npi,2) = loc_x
         iloc(npi,3) = loc_x + iloc(npi,1) -1
         loc_x = loc_x + iloc(npi,1)
+        tot_x = tot_x + iloc(npi,1)
       enddo
 
       loc_y = 1
+      tot_y = 0
       do npj = 1,npy
         if (npj==1) then ! left-most subdomain
           jloc(npj,1) = ny - surplus_y/2
@@ -394,6 +432,7 @@
         jloc(npj,2) = loc_y
         jloc(npj,3) = loc_y + jloc(npj,1) -1
         loc_y = loc_y + jloc(npj,1)
+        tot_y = tot_y + jloc(npj,1)
       enddo
 
       allocate(node_map(0:npy+1,0:npx+1))
