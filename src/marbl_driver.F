@@ -1791,7 +1791,6 @@
       call marbl_instance%interior_tendency_compute()
 
       if (marbl_instance%StatusLog%labort_marbl) then
-         print *, 'abort during interior tendency compute'
          call marbl_instance%StatusLog%log_error_trace(
      &        "marbl_instance%interior_tendency_compute()",
      &        "marbl_driver/marbldrv_compute_interior_tendency")
@@ -1823,7 +1822,7 @@
 !     - Adapted from the equivalent subroutine in MOM6
 !
 !-----------------------------------------------------------------------
-
+      use error_handling, only: handle_local_error
       use marbl_logging, only: marbl_status_log_entry_type, marbl_log_type
 !     ----------------------------------------------------------------------
       integer              , optional, intent(in) :: i,j
@@ -1831,66 +1830,79 @@
       character(len=256)                          :: message_prefix,
      &                                               message_location,
      &                                               log_message
+      character(:), allocatable :: accumulated_log
 
       type(marbl_status_log_entry_type), pointer  :: marbl_status_log_pointer
 
       marbl_status_log_pointer => log_to_print%FullLog
 
 !     ----------------------------------------------------------------------
-
+      accumulated_log = ''
 
       do while (associated(marbl_status_log_pointer))
          write(message_prefix, "(A,I0,A)") "Task ",mynode,")"
 
-! Check we are either on principal cpu OR all cpus can write:
-         if ((.not. marbl_status_log_pointer%lonly_master_writes) .or.
-     &        (mynode==printnode)) then
-
 ! Check if we know the location of this log message and write
-            if (marbl_status_log_pointer%ElementInd .gt. 0) then
-               if (present(i) .and. present(j)) then
-                  write(message_location, "(A,I0,A,I0,A,I0)")
-     &                 "Message from (i,j) (", i,",",j,") at level ",
-     &                 marbl_status_log_pointer%ElementInd
-               else
-                  write(message_location, "(A)")
-     &                 "grid cell responsible for message unknown"
-               end if ! i,j present
+         if (marbl_status_log_pointer%ElementInd .gt. 0) then
+            if (present(i) .and. present(j)) then
+               write(message_location, "(A,I0,A,I0,A,I0)")
+     &              "Message from (i,j) (", i,",",j,") at level ",
+     &              marbl_status_log_pointer%ElementInd
+            else
+               write(message_location, "(A)")
+     &              "grid cell responsible for message unknown"
+            end if              ! i,j present
 
 
-! Also write the calling CPU unless on the principal CPU
-               if (mynode==printnode) then
-                  write(log_message,"(A)") trim(message_location)
-               else
-                  write(log_message,"(A,1X,A)")
-     &                 trim(message_prefix), trim(message_location)
-               end if           ! (mynode==printnode)
-               print *, trim(log_message)
-            end if              ! (ElementInd > 0)
-
-! Now write the actual statuslog message from MARBL
+!     Also write the calling CPU unless on the principal CPU
             if (mynode==printnode) then
-               write(log_message,"(A)")
-     &              trim(marbl_status_log_pointer%LogMessage)
+               write(log_message,"(A)") trim(message_location)
             else
                write(log_message,"(A,1X,A)")
-     &              trim(message_prefix),
-     &              trim(marbl_status_log_pointer%LogMessage)
+     &              trim(message_prefix), trim(message_location)
             end if              ! (mynode==printnode)
-            print *, trim(log_message)
-         end if                 ! mynode 0 or not master task only
+            call append_to_log(log_message)
+
+         end if                 ! (ElementInd > 0)
+
+!     Now write the actual statuslog message from MARBL
+         if (mynode==printnode) then
+            write(log_message,"(A)")
+     &           trim(marbl_status_log_pointer%LogMessage)
+         else
+            write(log_message,"(A,1X,A)")
+     &           trim(message_prefix),
+     &           trim(marbl_status_log_pointer%LogMessage)
+         end if                 ! (mynode==printnode)
+         call append_to_log(log_message)
 
          marbl_status_log_pointer => marbl_status_log_pointer%next
       end do                    ! while(associated(marbl_status_log_pointer))
 
 ! If MARBL needs to abort, stop the program
       if (log_to_print%labort_marbl) then
-         call handle_local_error(context=module_name,
-     &        info="error reported from MARBL (external library)",
-     &        i=i, j=j, tile=mynode))
+         call handle_local_error(
+     &        context = module_name,
+     &        info    = accumulated_log,
+     &        tile    = mynode,
+     &        i       = merge(i,-1,present(i)),
+     &        j       = merge(j,-1,present(j)) )
+      elseif ((.not. log_to_print%FullLog%lonly_master_writes) .or.
+     &        (mynode == printnode)) then
+         print *, accumulated_log
       end if
 
+      contains
 
+      subroutine append_to_log(line)
+      character(len=*), intent(in) :: line
+
+      if (accumulated_log /= '') then
+         accumulated_log = accumulated_log // new_line('a')
+      end if
+      accumulated_log = accumulated_log // trim(line)
+
+      end subroutine append_to_log
 
       end subroutine print_marbl_log
 !-----------------------------------------------------------------------
