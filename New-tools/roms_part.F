@@ -390,6 +390,7 @@
       integer :: loc_x,loc_y
       integer :: npi,npj
       integer :: count
+      integer :: tot_x, tot_y
 
       ! Get interior subdomain size
       nx = ceiling(1.0*gnx/npx)
@@ -403,6 +404,7 @@
       allocate(jloc(npy,3)) ! lny = jloc(:,1), js = jloc(:,2), je = jloc(:,3)
 
       loc_x = 1
+      tot_x = 0
       do npi = 1,npx
         if (npi==1) then ! left-most subdomain
           iloc(npi,1) = nx - surplus_x/2
@@ -414,9 +416,11 @@
         iloc(npi,2) = loc_x
         iloc(npi,3) = loc_x + iloc(npi,1) -1
         loc_x = loc_x + iloc(npi,1)
+        tot_x = tot_x + iloc(npi,1)
       enddo
 
       loc_y = 1
+      tot_y = 0
       do npj = 1,npy
         if (npj==1) then ! left-most subdomain
           jloc(npj,1) = ny - surplus_y/2
@@ -428,6 +432,7 @@
         jloc(npj,2) = loc_y
         jloc(npj,3) = loc_y + jloc(npj,1) -1
         loc_y = loc_y + jloc(npj,1)
+        tot_y = tot_y + jloc(npj,1)
       enddo
 
       allocate(node_map(0:npy+1,0:npx+1))

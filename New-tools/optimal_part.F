@@ -17,7 +17,7 @@
       integer :: ncid,npid,ierr,       ! netcdf error handling
      &           dimid,                ! netcdf dimensions
      &           npx0,npx1,npy0,npy1,  ! loop ranges
-     &           npx,npy,nx,ny,i,k
+     &           npx,npy,nx,ny,i,k,nt
       real                              :: cores,ocean,ar
       !integer                           :: min_part_size
       real :: prct
@@ -81,7 +81,7 @@
       npx0 = 1 !min_part_size
       npy0 = 1 !min_part_size
 
-      allocate(active(1:(npx1*npy1),1:5)); active(:,:) = 0
+      allocate(active(1:(npx1*npy1),1:7)); active(:,:) = 0
       i = 0
       do npy = npy0,npy1
         do npx = npx0,npx1
@@ -94,6 +94,8 @@
               active(i,3) = npy
               active(i,4) = real(npx*npy) / nparts
               active(i,5) = nx*ny
+              active(i,6) = nx
+              active(i,7) = ny
             endif
           endif
         enddo
@@ -104,10 +106,15 @@
       call sort(active)
 
       write(*,*) ""
+      nt = 0
       do k=i,i-min(10,i)+1,-1
-        write(*,'(a8,i0,a3,i0)') 'Tiling: ',int(active(k,2)),' x ',int(active(k,3))
+        nt = nt + 1
+        write(*,'(a8,i0,a1)') 'Tiling #', nt, ":"
+        write(*,'(a9,i0)') 'NP_XI  = ' ,int(active(k,2))
+        write(*,'(a9,i0)') 'NP_ETA = ' ,int(active(k,3))
         write(*,'(i0,a36,i0,a15)') int(active(k,1)),' cores used for ocean points out of ',int(active(k,2)*active(k,3)),' tiles overall.'
         write(*,'(a28,i0)') "Horizontal points per tile: ", int(active(k,5))
+        write(*,'(a27,i0,a1)') "Please run with 'mpirun -n ", int(active(k,1)), "'"
         write(*,*)
       enddo
 
