@@ -65,7 +65,7 @@
      &     , indxs
 #endif
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use error_handling, only : handle_configuration_error, handle_netcdf_status
       use mpi_exchanges, only: exchange_xxx
 
       ! TODO: add averaging
@@ -309,39 +309,33 @@
      &    'extract_data :: read objects: ',extract_file
       endif
       ierr = nf90_open(extract_file,nf90_nowrite,ncid)
-      if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
-     &        info="error reading objects file "//extract_file,
-     &        context=module_name//"/"//sr_name)
-      end if
+      call handle_netcdf_status(netcdf_status=ierr,
+     &     info="error reading objects file "//extract_file,
+     &     context=module_name//"/"//sr_name)
+
       ierr = nf90_inquire(ncid,nVariables=nobj)
-      if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
-     &        context=module_name//"/"//sr_name,
-     &        info="read extr")
-      end if
+      call handle_netcdf_status(netcdf_status=ierr,
+     &     context=module_name//"/"//sr_name,
+     &     info="read extr")
+
       allocate(obj(nobj))
 
       ! Read all objects from file.
       do iobj = 1,nobj
         ierr = nf90_inquire_variable(ncid,iobj,name=objname,dimids=dimids)
-        if (ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          context=module_name//"/"//sr_name,
-     &          info="error during inquire,  variable:"//objname)
-        end if
+        call handle_netcdf_status(netcdf_status=ierr,
+     &       context=module_name//"/"//sr_name,
+     &       info="error during inquire,  variable:"//objname)
+
         ierr = nf90_inquire_dimension(ncid,dimids(1),name=dname,len=n1)
-        if (ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          context=module_name//"/"//sr_name,
-     &          info="error during inquire,  dimension:"//dname)
-        end if
+        call handle_netcdf_status(netcdf_status=ierr,
+     &       context=module_name//"/"//sr_name,
+     &       info="error during inquire,  dimension:"//dname)
+
         ierr = nf90_inquire_dimension(ncid,dimids(2),len=n2)
-        if (ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          context=module_name//"/"//sr_name,
-     &          info="error during inquire")
-        end if
+        call handle_netcdf_status(netcdf_status=ierr,
+     &       context=module_name//"/"//sr_name,
+     &       info="error during inquire")
 
         lstr = len(trim(dname))
         allocate(character(len=lstr) :: obj(iobj)%dname)
@@ -380,11 +374,10 @@
 !       endif
 
         ierr = nf90_get_att(ncid,iobj,'output_period',period)
-        if (ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          info="error when getting `output_period` attribute",
-     &          context=module_name//"/"//sr_name)
-        end if
+        call handle_netcdf_status(netcdf_status=ierr,
+     &       info="error when getting `output_period` attribute",
+     &       context=module_name//"/"//sr_name)
+
         obj(iobj)%period   = period
 
         if (obj(iobj)%np>0) then
@@ -399,11 +392,10 @@
 
           ! Figure out which variables to output for this object
           ierr = nf90_get_att(ncid,iobj,'output_vars',variables)
-          if (ierr/=0) then
-             call handle_netcdf_error(netcdf_status=ierr,
+          call handle_netcdf_status(netcdf_status=ierr,
      &         info="error getting `output_vars` attribute",
      &         context=module_name//"/"//sr_name)
-          end if
+
           if (findstr(variables,'zeta') ) obj(iobj)%zeta = .True.
           if (findstr(variables,'temp') ) obj(iobj)%temp = .True.
           if (findstr(variables,'salt') ) obj(iobj)%salt = .True.
@@ -957,11 +949,9 @@
       ierr = nf90_put_att(ncid,varid,'count',obj%np)
       ierr = nf90_put_att(ncid,varid,'dname',obj%dname)
       ierr = nf90_put_att(ncid,varid,'dsize',obj%dsize)
-      if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
-     &        info="error creating var "//vname,
-     &        context=module_name//"/"//sr_name)
-      end if
+      call handle_netcdf_status(netcdf_status=ierr,
+     &     info="error creating var "//vname,
+     &     context=module_name//"/"//sr_name)
 
       if (present(idx)) then
         if (idx>=0) then

@@ -6,7 +6,7 @@
      &     nf90_float, nf90_noerr, nf90_strerror,
      &     nf90_inq_dimid, nf90_def_dim, nf90_def_var, nf90_inq_varid,
      &     nf90_put_var, nf90_get_var
-      use error_handling, only: handle_netcdf_error, handle_configuration_error
+      use error_handling, only: handle_netcdf_status, handle_configuration_error
       implicit none
       private
 
@@ -48,7 +48,7 @@
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncread inq_varid var="//trim(vname))
       end if
@@ -60,7 +60,7 @@
         ierr = nf90_get_var(ncid,varid,dat)
       endif
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
@@ -85,7 +85,7 @@
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncread inq_varid var="//trim(vname))
       end if
@@ -97,7 +97,7 @@
         ierr = nf90_get_var(ncid,varid,dat)
       endif
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
@@ -126,7 +126,7 @@
       ierr = nf90_inq_varid(ncid,vname,varid)
 
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncread inq_varid var="//trim(vname))
       end if
@@ -141,7 +141,7 @@
       endif
 
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
@@ -170,7 +170,7 @@
 
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncwrite inq_varid var="//trim(vname))
       end if
@@ -183,7 +183,7 @@
         ierr = nf90_put_var(ncid,varid,dat)
       endif
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncwrite write var="//trim(vname))
       end if
@@ -209,7 +209,7 @@
 
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncwrite inq_varid var="//trim(vname))
       end if
@@ -221,13 +221,13 @@
         ierr = nf90_put_var(ncid,varid,dat)
       endif
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncwrite write var="//trim(vname))
       end if
 
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        info="error writing variable "//trim(vname),
      &        context=module_name//"/"//sr_name)
       end if
@@ -255,7 +255,7 @@
       tmp = dat
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncwrite inq_varid var="//trim(vname))
       end if
@@ -269,7 +269,7 @@
         ierr = nf90_put_var(ncid,varid,tmp)
       endif
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//'/'//sr_name,
      &        info="ncwrite write var="//trim(vname))
       end if
@@ -317,7 +317,7 @@
           endif
           ierr=nf90_def_dim(ncid,dimname(i),dimsize(i),did)
           if (ierr/=0) then
-             call handle_netcdf_error(netcdf_status=ierr,
+             call handle_netcdf_status(netcdf_status=ierr,
      &            info="unable to define dim, variable: "//varname,
      &            context=module_name//"/"//fn_name)
           end if
@@ -329,7 +329,7 @@
       ierr=nf90_def_var(ncid,varname,xtype,dimid,varid,
      &                  deflate_level=deflate_level, shuffle=shuffle)
       if (ierr/=nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//fn_name,
      &        info="when creating var: "//varname)
       endif

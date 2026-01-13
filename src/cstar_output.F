@@ -24,7 +24,7 @@
      &     nf90_put_att, nf90_close
       use scalars, only: iic, knew, nnew, tdays, time, dt, n
       use ocean_vars, only: zeta, hz
-      use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use error_handling, only : handle_configuration_error, handle_netcdf_status
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
      &                   cdr_jloc, cdr_source, forcing_3d
@@ -554,11 +554,10 @@
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
-        if (ierr/=nf90_noerr) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          info="error opening "//fname,
-     &          context=module_name//"/"//sr_name)
-        end if
+        call handle_netcdf_status(netcdf_status=ierr,
+     &       info="error opening "//fname,
+     &       context=module_name//"/"//sr_name)
+
         call multiply_by_thickness
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))

@@ -261,7 +261,7 @@
      &     nf90_global, nf90_nowrite, nf90_open,
      &     nf90_inq_varid, nf90_get_var, nf90_get_att
       use dimensions, only: i0, i1, j0, j1
-      use error_handling, only: handle_netcdf_error, handle_configuration_error
+      use error_handling, only: handle_netcdf_status, handle_configuration_error
       use mpi_exchanges, only: exchange_xxx
       use nc_read_write, only: ncread
       implicit none
@@ -284,7 +284,7 @@
 
         ierr=nf90_open(frcfile(var_file_indx), nf90_nowrite, ncid)
         if(ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
+           call handle_netcdf_status(netcdf_status=ierr,
      &          context=module_name//"/"//sr_name,
      &          info="error opening tidal forcing file")
         end if
@@ -309,7 +309,7 @@
         ierr=nf90_inq_varid(ncid, 'omega', var_id)
         ierr=nf90_get_var(ncid,var_id,ftide(itide),(/itide/))
         if(ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
+           call handle_netcdf_status(netcdf_status=ierr,
      &          info="unable to get var 'omega' from tidal file",
      &          context=module_name//"/"//sr_name)
         end if

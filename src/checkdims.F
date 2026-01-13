@@ -36,7 +36,7 @@
      &     nf90_noerr, nf90_inquire,
      &     nf90_inquire_dimension, nf90_strerror
       use roms_read_write, only: eta_rho, eta_v, xi_rho, xi_u
-      use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use error_handling, only: handle_configuration_error, handle_netcdf_status
 
       implicit none
       character(len=9) :: fn_name="checkdims"
@@ -64,11 +64,10 @@
 
       if (ierr == nf90_noerr) then
         ierr=nf90_inquire(ncid,unlimiteddimid = recdim)
-        if (ierr/=0) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          info="cannot find unlimited dimension",
-     &          context=fn_name)
-        end if
+        call handle_netcdf_status(netcdf_status=ierr,
+     &       info="cannot find unlimited dimension",
+     &       context=fn_name)
+
         do id=1,ndims
           ierr=nf90_inquire_dimension (ncid, id, dname, dsize)
           if (ierr == nf90_noerr) then

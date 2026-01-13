@@ -17,7 +17,7 @@
      &     grdname, pm, rmask, riv_umask, riv_vmask, xr
       use dimensions, only: i0, i1, j0, j1, nx, ny
       use param, only: lm, mm, mynode, ocean_grid_comm
-      use error_handling, only : handle_configuration_error, handle_netcdf_error, handle_local_error
+      use error_handling, only : handle_configuration_error, handle_netcdf_status, handle_local_error
 
       implicit none
 
@@ -198,7 +198,7 @@
      &              ') or as a combined variable, '// trim(riv_flx_name) //
      &              ',  in grid (' // trim(grdname)//
      &              ') file.'
-               call handle_netcdf_error(
+               call handle_netcdf_status(
      &              netcdf_status=ierr,
      &              context=module_name//"/"//sr_name,
      &              info=error_info)

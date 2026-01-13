@@ -21,7 +21,7 @@
       use nc_read_write, only: ncread
       use marbl_driver, only: iALK, iDIC
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use error_handling, only: handle_configuration_error, handle_netcdf_status
       use netcdf, only:
      &     nf90_noerr, nf90_inq_dimid,
      &     nf90_inquire_dimension, nf90_nowrite, nf90_open, nf90_close
@@ -161,12 +161,10 @@
 
         ! Open file
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
-        if(ierr/=0) then
-           call handle_netcdf_error(
-     &          netcdf_status=ierr,
-     &          info="Cannot open CDR forcing file",
-     &          context=module_name//"/"//sr_name)
-        end if
+        call handle_netcdf_status(
+     &       netcdf_status=ierr,
+     &       info="Cannot open CDR forcing file",
+     &       context=module_name//"/"//sr_name)
 
         if (type_count>1) then
            call handle_configuration_error(
@@ -202,22 +200,20 @@
 
       ! Check how many vertical profiles (i.e. tracer releases) we will use
       ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
-      if (ierr /= nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
-     &        context=module_name//"/"//sr_name,
-     &        info="CDR forcing file is missing "//
-     &        "necessary dimension ncdr_prof.")
-      endif
+      call handle_netcdf_status(netcdf_status=ierr,
+     &     context=module_name//"/"//sr_name,
+     &     info="CDR forcing file is missing "//
+     &     "necessary dimension ncdr_prof.")
+
       ierr = nf90_inquire_dimension(ncid, dimid, len=ncdr_prof)
 
       ! How many vertical levels did the child/source grid have?
       ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
-      if (ierr /= nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
-     &   info="CDR forcing file is missing "//
-     &        "necessary dimension s_rho.",
-     &   context=module_name//"/"//sr_name)
-      endif
+      call handle_netcdf_status(netcdf_status=ierr,
+     &     info="CDR forcing file is missing "//
+     &     "necessary dimension s_rho.",
+     &     context=module_name//"/"//sr_name)
+
       ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
       ncdr = ncdr_prof

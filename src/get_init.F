@@ -45,7 +45,8 @@
      &     nsub_e, nsub_x, north_exchng, east_exchng,
      &     west_exchng, south_exchng, nnodes, n, nt
       use mpi_exchanges, only: exchange_xxx
-      use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use error_handling, only : handle_configuration_error,
+     &     handle_netcdf_status, handle_local_error
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow
 #endif
@@ -97,40 +98,42 @@ c--#define VERBOSE
 
       init_type=0
       ierr=nf90_open(ininame, nf90_nowrite, ncid)
-      if (ierr == nf90_noerr) then
-        ierr=checkdims (ncid, ininame, max_rec)
-        if (ierr == nf90_noerr) then
-          if (max_rec > 0) then
-            if (req_rec > 0) then
-              if (req_rec <= max_rec) then
-                record=req_rec
-              else
-                write(error_info, *)
-     &              'requested restart time ',
-     &              'record',req_rec, 'exceeds number', 'of records',
-     &                       max_rec,  'available in netCDF file ''',
-     &                trim(ininame), '''.'
-                call handle_netcdf_error(
-     &               netcdf_status=ierr,
-     &               context=sr_name,
-     &               info=error_info)
-              endif
-            else
-              record=max_rec
-            endif
-          else
-            record=1
-          endif
-        endif
-      else
         write(error_info, *)
      &        'Cannot open netCDF file ''', trim(ininame), '''.'
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info=error_info)
-      endif
 
+         if (ierr == nf90_noerr) then
+        ierr=checkdims (ncid, ininame, max_rec)
+        if (ierr == nf90_noerr) then
+           if (max_rec > 0) then
+              if (req_rec > 0) then
+                 if (req_rec <= max_rec) then
+                    record=req_rec
+                 else
+                    write(error_info, *)
+     &                   'requested restart time ',
+     &                   'record',req_rec,
+     &                   'exceeds number', 'of records',
+     &                   max_rec,  'available in netCDF file ''',
+     &                   trim(ininame), '''.'
+                    call handle_local_error(
+     &                   context=sr_name,
+     &                   info=error_info,
+     &                   i=-1,j=-1,tile=mynode)
+                    ! NOTE this requires rank-level, not local, handling
+              endif
+            else !(if (req_rec > 0))
+              record=max_rec
+            endif
+          else !if (max_rec > 0)
+            record=1
+          endif
+       endif
+      else ! if(ierr == nf90_noerr)
+      endif                     ! if(ierr == nf90_noerr)
 
 
 ! Read in evolving model variables:
@@ -207,21 +210,21 @@ c--#define VERBOSE
         ierr=nf90_inq_varid(ncid, 'scrum_time', varid)
       endif
       if (ierr/=0) then
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info="time var not found")
       end if
       ierr=nf90_get_var(ncid, varid, start_time, start=(/record/) )
       if (ierr/=0) then
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info="unable to get time var")
       end if
       ierr=nf90_get_att(ncid, varid, 'units', vname(3,indxTime))
       if (ierr/=0) then
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info="unable to get time units")
@@ -293,7 +296,7 @@ c--#define VERBOSE
       endif
 #endif
       if (ierr /= nf90_noerr) then
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info="Cause of termination: netCDF input.")
@@ -310,14 +313,14 @@ c--#define VERBOSE
       if (ierr == nf90_noerr) then
         ierr=nf90_inquire_variable(ncid, varid, dimids=ibuff)
         if (ierr/=0) then
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info="Cannot get time_step dimids.")
         end if
         ierr=nf90_inquire_dimension(ncid, ibuff(1), len=count(1))
         if (ierr/=0) then
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &          info="Cannot get time dim size")
@@ -326,7 +329,7 @@ c--#define VERBOSE
         ibuff(1:iaux)=0
         ierr=nf90_get_var(ncid, varid, ibuff, start, count)
         if (ierr/=0) then
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &          info="Cannot read time_step")
@@ -338,7 +341,7 @@ c--#define VERBOSE
           start(2)=record+1
           ierr=nf90_get_var(ncid, varid, ibuff, start, count)
         if (ierr/=0) then
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &          info="Cannot read second time_step")
@@ -369,7 +372,7 @@ c--#define VERBOSE
         init_type=rst_run
 #endif
         if (ierr/=0) then
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &          info="Cause of termination: netCDF input.")
@@ -477,7 +480,7 @@ c--#define VERBOSE
           call ncread(ncid,'rufrc_bak', rufrc_bak( 1:i1,j0:j1,tindx),start)    ! DevinD this update was untested
           call ncread(ncid,'rvfrc_bak', rvfrc_bak(i0:i1, 1:j1,tindx),start)
           if (ierr/=nf90_noerr) then
-             call handle_netcdf_error(
+             call handle_netcdf_status(
      &        netcdf_status=ierr,
      &            context=sr_name,
      &            info="Cause of termination: netCDF input.")
@@ -534,7 +537,7 @@ c--#define VERBOSE
      &             trim(ininame),
      &             '''',
      &             nf90_strerror(ierr)
-              call handle_netcdf_error(
+              call handle_netcdf_status(
      &        netcdf_status=ierr,
      &             context=sr_name,
      &             info=error_info)

@@ -17,7 +17,7 @@
       use param, only: mynode, nnodes
       use hidden_mpi_vars, only: inode, jnode
       use mpi_exchanges, only: exchange_xxx
-      use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use error_handling, only: handle_configuration_error, handle_netcdf_status
 
       implicit none
       character(len=15) :: module_name="roms_read_write"
@@ -684,7 +684,7 @@
         if (present(ungridded_filename)) then
           ierr = nf90_open(ungridded_filename, nf90_nowrite, ncid)
           if (ierr/=nf90_noerr) then
-          call handle_netcdf_error(
+          call handle_netcdf_status(
      &         netcdf_status=ierr,
      &         context=module_name//"/"//sr_name,
      &            info=("error opening "//ungridded_filename))
@@ -692,7 +692,7 @@
        else
           ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
           if (ierr/=nf90_noerr) then
-          call handle_netcdf_error(
+          call handle_netcdf_status(
      &         netcdf_status=ierr,
      &         context=module_name//"/"//sr_name,
      &         info=("error opening "//frcfile(ifile)))
@@ -707,7 +707,7 @@
 
           ierr = nf90_inq_varid(ncid,tname,tid)                      ! get time ID
           if (ierr/=nf90_noerr) then
-             call handle_netcdf_error(netcdf_status=ierr,
+             call handle_netcdf_status(netcdf_status=ierr,
      &            context=module_name//"/"//sr_name,
      &            info="error searching for "//tname)
           end if
@@ -719,7 +719,7 @@
           elseif (ierr==nf90_enotatt) then                           ! non-cyclical var won't have attribute
             cycle_length = -1                                        ! nf90_enotatt = attribute not found
          else                   ! any other netcdf error is a problem.
-            call handle_netcdf_error(netcdf_status=ierr,
+            call handle_netcdf_status(netcdf_status=ierr,
      &           context=module_name//"/"//sr_name,
      &           info="error getting cycle_length attribute")
           endif
@@ -1172,7 +1172,7 @@
 
       ierr=nf90_create(trim(fname),nf90_netcdf4,ncid)
       if (ierr/=nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info="unable to create file "//trim(fname))
       end if
@@ -1185,7 +1185,7 @@
 
       call put_global_atts(ncid, ierr)                     ! put global attributes in file
       if (ierr/=nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info="unable to create attributes in file"//trim(fname))
       end if
@@ -1498,20 +1498,20 @@
 !     ierr = nf90_open(frcfile(ifile), nf90_nowrite, ncid)
       ierr = nf90_open(file_name,nf90_nowrite,ncid)
       if (ierr/=nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info = "error opening "//file_name)
       end if
 
       ierr = nf90_inq_varid(ncid, var_name, var_id)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        info="cannot find var "//var_name,
      &        context=module_name//"/"//sr_name)
       end if
       ierr = nf90_get_att(ncid, var_id, 'units', file_var_units)
       if (ierr/=0) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info="cannot find units.")
       end if

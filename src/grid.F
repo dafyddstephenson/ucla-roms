@@ -325,7 +325,7 @@
 
       use netcdf, only: nf90_put_var
       use nc_read_write, only: ncwrite
-      use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use error_handling, only: handle_configuration_error, handle_netcdf_status
 
       implicit none
       ! input
@@ -349,13 +349,13 @@
      &                                         'F')
 #endif
           if (ierr /= nf90_noerr) then
-             call handle_netcdf_error(
+             call handle_netcdf_status(
      &            netcdf_status=ierr,
      &            context=sr_name,
      &            info="failed to put variable `spherical`")
           endif
        else
-          call handle_netcdf_error(
+          call handle_netcdf_status(
      &            netcdf_status=ierr,
      &            context=sr_name,
      &            info="spherical var not found")
@@ -368,13 +368,13 @@
         if (ierr == nf90_noerr) then
           ierr=nf90_put_var(ncid, varid, xl)
           if (ierr /= nf90_noerr) then
-             call handle_netcdf_error(
+             call handle_netcdf_status(
      &            netcdf_status=ierr,
      &            context=sr_name,
      &            info="failed to put variable `xl`")
           endif
        else
-          call handle_netcdf_error(
+          call handle_netcdf_status(
      &            netcdf_status=ierr,
      &            context=sr_name,
      &            info="`xl` var not found")
@@ -383,13 +383,13 @@
         if (ierr == nf90_noerr) then
           ierr=nf90_put_var(ncid, varid, el)
           if (ierr /= nf90_noerr) then
-             call handle_netcdf_error(
+             call handle_netcdf_status(
      &            netcdf_status=ierr,
      &            context=sr_name,
      &            info="failed to put variable `el`")
           endif
        else
-          call handle_netcdf_error(
+          call handle_netcdf_status(
      &         netcdf_status=ierr,
      &         context=sr_name,
      &         info="`el` var not found")
@@ -432,7 +432,7 @@
 !----------------------------------------------------------------------
       subroutine get_grid  ![
 ! read in grid data from NetCDF file or define analytical grid
-      use error_handling, only: handle_netcdf_error, handle_configuration_error
+      use error_handling, only: handle_netcdf_status, handle_configuration_error
       implicit none
 
       character*1 char1
@@ -453,7 +453,7 @@
       if (ierr == nf90_noerr) then
         ierr=checkdims (ncid, grdname, varid)
         if (ierr. ne. nf90_noerr) then
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &          netcdf_status=ierr,
      &       context=sr_name,
      &       info="Cause of termination: netCDF input.")
@@ -461,7 +461,7 @@
       else
          write(error_info, *)  'Cannot ',
      &        'open input NetCDF file ''', trim(grdname), '''.'
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &       context=sr_name,
      &       info=error_info)
@@ -479,7 +479,7 @@
      &          " from netCDF file ",
      &          trim(grdname),
      &          "."
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &          netcdf_status=ierr,
      &          context=sr_name,
      &          info=error_info)
@@ -492,7 +492,7 @@
      &        ''' within netCDF file ''',
      &        trim(grdname),
      &        '''.'
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &          context=sr_name,
      &          info=error_info)
@@ -522,7 +522,7 @@
      &            " from netCDF file ",
      &            trim(grdname),
      &            "."
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &          netcdf_status=ierr,
      &          context=sr_name,
      &          info=error_info)
@@ -534,7 +534,7 @@
      &         " within netCDF file ",
      &         trim(grdname),
      &         "."
-         call handle_netcdf_error(
+         call handle_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info=error_info)
@@ -550,7 +550,7 @@
      &            " from netCDF file ",
      &            trim(grdname),
      &            "."
-           call handle_netcdf_error(
+           call handle_netcdf_status(
      &          netcdf_status=ierr,
      &          context=sr_name,
      &          info=error_info)
@@ -562,7 +562,7 @@
      &         " within netCDF file ",
      &         trim(grdname),
      &         "."
-          call handle_netcdf_error(
+          call handle_netcdf_status(
      &         netcdf_status=ierr,
      &        context=sr_name,
      &        info=error_info)
@@ -627,7 +627,7 @@
         write(error_info, *)
      &                'Cannot close file ''', trim(grdname), '''.',
      &        nf90_strerror(ierr) MYID
-        call handle_netcdf_error(
+        call handle_netcdf_status(
      &       netcdf_status=ierr,
      &       context=sr_name,
      &       info=error_info)

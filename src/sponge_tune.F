@@ -22,7 +22,7 @@
      &     obc_east, obc_north, obc_south, obc_west,
      &     east_exchng, north_exchng, south_exchng, west_exchng,
      &     mynode, np_eta, np_xi
-      use error_handling, only: handle_netcdf_error
+      use error_handling, only: handle_netcdf_status
 
       implicit none
       private
@@ -300,7 +300,7 @@
 
       ierr=nf90_open(fname, nf90_write, ncid)
       if (ierr/=nf90_noerr) then
-         call handle_netcdf_error(netcdf_status=ierr,
+         call handle_netcdf_status(netcdf_status=ierr,
      &        info="error opening "//fname,
      &        context=module_name//"/"//sr_name)
       end if
