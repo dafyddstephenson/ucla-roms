@@ -6,7 +6,7 @@
       use scalars, only:
      &     day2sec, dt, forw_start, iic, ntstart,
      &     sec2day, start_time, may_day_flag
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use tracers, only: t_vname, t, iTandS
 #ifdef MARBL
       use marbl_driver, only: marbldrv_read_ss_vars_from_rst
@@ -44,7 +44,7 @@
      &     ieast, iwest, jnorth, jsouth, mynode,
      &     nsub_e, nsub_x, nnodes, n, nt,
      &     np_xi, np_eta
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use error_handling, only : handle_configuration_error, handle_netcdf_error
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow

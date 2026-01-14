@@ -29,7 +29,7 @@
      &                                                       rw,
 # endif
      &                                      dR,dZ, FC,dZx,rx,dRx)
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: np_xi, np_eta
 #ifdef WEC
       use wec_frc, only: cff1 => cff_ext, cff2 => cff_ext2

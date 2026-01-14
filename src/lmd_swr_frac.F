@@ -4,7 +4,7 @@
       subroutine swr_frac (tile)
 
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use private_scratch, only: a2d
 
       implicit none
@@ -32,7 +32,7 @@
       use scalars, only: n
       use ocean_vars, only: hz
       use mixing, only: swr_frac
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
 
       implicit none
       integer istr,iend,jstr,jend,     i,j,k, Jwt

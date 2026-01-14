@@ -21,8 +21,8 @@
       use coupling, only: du_avg1, dv_avg1
       use grid, only: h, hinv, dn_u, dm_v, pn, pm
       use param, only: ieast, jnorth, lm, mm, np_eta, np_xi
-      use mpi_exchanges, only: exchange_xxx
-      use hidden_mpi_vars, only: inode, jnode
+      use roms_mpi, only: exchange_xxx
+      use dimensions, only: inode, jnode
       use ocean_vars, only:
      &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0
 # if defined NHMG || defined NONTRAD_COR
@@ -214,9 +214,9 @@
       subroutine set_HUV_tile (istr,iend,jstr,jend)
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use grid, only: dn_u, dm_v
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use scalars, only: n, nrhs
 #ifdef WEC
       use wec_frc, only: ust, vst
@@ -282,13 +282,13 @@
 
       subroutine set_HUV1_tile (istr,iend,jstr,jend, DC,FC)
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use coupling, only:
      &     du_avg1, du_avg_bak, du_avg2, dv_avg1, dv_avg_bak,
      &     dv_avg2
       use grid, only:  dn_u, umask, dm_v,
      &     vmask
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use ocean_vars, only: u, v, hz, flxu, flxv
       use scalars, only: n, forw_start, iic, nnew
       use dimensions, only: nz

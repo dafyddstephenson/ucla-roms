@@ -28,7 +28,7 @@
      &     grdmax, grdmin, hmax, hmin, tile_count, volume
       use scalars, only: dt, dtfast, g
       use mpi_f08, only: mpi_real8, mpi_status_size
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use grid, only:
      &     rmask, h, pn, pm, f, umask, dn_u,
      &     vmask, dm_v

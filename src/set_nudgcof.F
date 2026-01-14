@@ -14,7 +14,7 @@
       end
 
       subroutine set_nudgcof_tile (istr,iend,jstr,jend, wrk)
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: isw_corn, jsw_corn, llm, mmm, mynode,
      &     ieast, iwest, jnorth, jsouth
       use dimensions, only: npx, npy

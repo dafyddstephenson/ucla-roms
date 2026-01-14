@@ -21,7 +21,7 @@ c--#define MAX_BY_VERT_CFL_ONLY
 
       subroutine diag
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use private_scratch, only: a2d
       use scalars, only: iic, ninfo
 

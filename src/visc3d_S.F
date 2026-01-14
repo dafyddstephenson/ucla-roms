@@ -27,7 +27,7 @@
 
       use coupling, only: rufrc, rvfrc
       use grid, only: pm, pn, dm_r, dn_r, pmask, dm_p, dn_p, nx,ny
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: ieast, iwest, jnorth, jsouth, np_eta, np_xi
       use mixing, only: visc2_r, visc2_p
       use ocean_vars, only: v, u, hz

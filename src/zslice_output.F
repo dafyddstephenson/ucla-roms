@@ -5,7 +5,7 @@
 
       use grid, only: rmask
       use param, only: lm, mm, mynode
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use dimensions, only: nx, ny, nz, eta_rho, eta_v, xi_rho, xi_u
       use roms_read_write, only:
      &     bfx, bfy, dn_tm, dn_xr, dn_xu, dn_yr,

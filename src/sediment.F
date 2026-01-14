@@ -6,7 +6,7 @@
 
       use param
       use grid
-      use hidden_mpi_vars
+      use dimensions
       use private_scratch
 
       implicit none

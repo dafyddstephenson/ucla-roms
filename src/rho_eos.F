@@ -117,7 +117,7 @@
 ! geopotential  surfaces,  that  is,  depth  and  pressure  are
 ! interchangeable. >>
 !                                          John Wilkin, 29 July 92
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use tracers, only: t
       use coupling, only: rhos, rhoa
       use dimensions, only: npx, npy

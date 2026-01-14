@@ -8,7 +8,7 @@
 
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use boundary, only: u_west, u_east, u_south, u_north
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use ocean_vars, only: u, v
       use scalars, only: dt, n, nnew, nrhs, nstp, gamma2
 #if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \

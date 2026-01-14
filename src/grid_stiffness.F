@@ -32,7 +32,7 @@
       use grid, only: umask, vmask
       use ocean_vars, only: z_w
       use mpi_f08, only: mpi_double_precision, mpi_status_size
-      use hidden_mpi_vars, only: inode, jnode, np_xi, np_eta
+      use dimensions, only: inode, jnode
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k, NSUB

@@ -97,7 +97,7 @@
       ! this routine is called by # if defined BIOLOGY_BEC2 in set_forces.F of ETH code
 
       use scalars, only: cp, nrhs, rho0
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use bgc_forces, only: dust, iron, pco2air
 #ifdef MARBL
      &     , pco2air_alt
@@ -652,7 +652,7 @@
 ! ----------------------------------------------------------------------
       subroutine wrt_bgc(init)  ![
 #ifdef MARBL_DIAGS
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: nsub_e, nsub_x
 #endif
       implicit none

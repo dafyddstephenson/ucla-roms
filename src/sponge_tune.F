@@ -17,7 +17,7 @@
      &     ncforce, bfx, bfy, dn_tm, dn_xr,
      &     dn_yr, bc_options, create_file, set_frc_data,
      &     store_string_att
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only:
      &     obc_east, obc_north, obc_south, obc_west,
      &     mynode, np_eta, np_xi

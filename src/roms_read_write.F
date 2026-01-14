@@ -17,9 +17,10 @@
      &     bf, nx, ny, gnx, gny, i0, i1, j0, j1,
      &     eta_rho, xi_rho, xi_u, eta_v
       use param, only: mynode, nnodes
-      use hidden_mpi_vars, only: inode, jnode
-      use mpi_exchanges, only: exchange_xxx
+      use dimensions, only: inode, jnode
+      use roms_mpi, only: exchange_xxx
       use error_handling, only: handle_configuration_error, handle_netcdf_error
+      use roms_mpi, only: new_part
 
       implicit none
       character(len=15) :: module_name="roms_read_write"
@@ -225,7 +226,7 @@
       ! Used so we can read in coarse surface
       ! forcing data
       !
-      use hidden_mpi_vars, only: np_eta, np_xi
+      use param, only: np_eta, np_xi
       implicit none
 
       integer :: gnxc,gnyc
@@ -1206,7 +1207,7 @@
       subroutine coarse2fine(cdata,fdata,gtype) ![
       ! interpolates from (possibly partitioned) coarse to fine surface forcing data
       ! NOT correct for u-grid or v-grid variables
-      use hidden_mpi_vars, only: isw_corn, jsw_corn
+      use param, only: isw_corn, jsw_corn
       implicit none
 
       ! input/output
@@ -1547,8 +1548,7 @@
      & , v_sponge
 #endif
       use scoord, only:
-     &     cs_r, cs_w, hc, isw_corn, iwest, jsouth,
-     &     jsw_corn, theta_b, theta_s
+     &     cs_r, cs_w, hc, theta_b, theta_s
 #ifndef NONLIN_EOS
       use eos_vars, only: T0, Tcoef
 #ifdef SALINITY
@@ -1557,6 +1557,7 @@
 #endif
       use strings, only: cpps, srcs
       use netcdf, only: nf90_def_dim
+      use param, only: np_eta, np_xi, isw_corn, iwest, jsouth, jsw_corn
 
       implicit none
       character(len=15) :: sr_name = "put_global_atts"
@@ -1590,6 +1591,10 @@
 #endif
 !     ierr=nf90_put_att(ncid, nf90_global, 'global_x', gnx)
 !     ierr=nf90_put_att(ncid, nf90_global, 'global_y', gny)
+      if (new_part) then
+        ierr=nf90_put_att(ncid, nf90_global, 'ij_nodes', (/NP_XI,NP_ETA/))
+        ierr=nf90_put_att(ncid, nf90_global, 'subdompos', (/inode,jnode/))
+      endif
       ierr=nf90_put_att(ncid, nf90_global, 'globaldims', (/gnx+2,gny+2/))
 
       ierr=nf90_put_att(ncid, nf90_global, 'global_x', gnx)
