@@ -232,7 +232,7 @@ FFLAGS+=$(USER_FFLAGS)
 
 #Unprocessed F90 -> object file (typically .F90->.o)
 $(UPF90_ext)$(OBJ_ext):
-	$(CPP) -P $(CPPFLAGS) $*$(UPF90_ext) | mpc > $*$(PPF90_ext)
+	$(CPP) -P $(CPPFLAGS) $*$(UPF90_ext)  > $*$(PPF90_ext)
 	$(CFT) -c $(FFLAGS) -o $*$(OBJ_ext) $*$(PPF90_ext) $(LCDF)
 	@if [ "$(KEEP_PPSRC)" = "false" ]; then rm -f $*$(PPF90_ext); fi
 
@@ -254,8 +254,7 @@ $(PPF77_ext)$(OBJ_ext):
 	fi
 # Unprocessed F90 -> preprocessed F90
 $(UPF90_ext)$(PPF90_ext):
-	@echo "DEBUG: preprocessing F90 $*$(UPF90_ext) -> $*$(PPF90_ext)"
-	$(CPP) -P $(CPPFLAGS) $*$(UPF90_ext) | mpc > $*$(PPF90_ext)
+	$(CPP) -P $(CPPFLAGS) $*$(UPF90_ext)  > $*$(PPF90_ext)
 # preprocessed F90 -> object file
 $(PPF90_ext)$(OBJ_ext):
 	$(CFT) -c $(FFLAGS) -o $*$(OBJ_ext) $*$(PPF90_ext) $(LCDF)
