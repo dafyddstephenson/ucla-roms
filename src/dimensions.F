@@ -29,6 +29,12 @@
       integer, public ::  xi_rho, xi_u, eta_rho, eta_v
       integer,public :: inode,jnode     ! location of subdomain in the grid
 
+# ifdef ANA_GRID
+      logical,parameter,public :: analytical_grid = .true.
+# else
+      logical,parameter,public :: analytical_grid = .false.
+# endif
+
       public :: init_dimensions
       character(len=256), public :: grdname
       contains

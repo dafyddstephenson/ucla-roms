@@ -24,7 +24,7 @@
       use mpi_f08, only: mpi_comm_world
       use dimensions, only: bf, i0, i1, j0, j1, nz, npx, npy,
      &     inode, jnode, eta_rho, eta_v, xi_rho, xi_u, grdname, nx, ny,
-     &     gnx, gny
+     &     gnx, gny, analytical_grid
       use mpi_f08, only: mpi_double_precision, mpi_status_size
       use error_handling, only: handle_netcdf_error
       use netcdf, only: nf90_nowrite, nf90_open, nf90_global, nf90_noerr,
@@ -81,10 +81,10 @@
       integer :: offx,offy
       character(len=9) :: sr_name = "mpi_setup"
 
-!      if (analytical_grid) then
-!        nnodes = np_xi*np_eta
-!        new_part = .false.
-!      else
+      if (analytical_grid) then
+        nnodes = np_xi*np_eta
+        new_part = .false.
+      else
         ! Check in gridfile to check if mpi masking is present
         ierr=nf90_open(grdname,nf90_nowrite,ncid)
 !        if (ierr/=nf90_noerr) call handle_ierr(ierr)
@@ -107,7 +107,7 @@
           nnodes = np_xi*np_eta
         endif
         ierr=nf90_close(ncid)
-!      endif
+      endif
 
       ! Check whether the number of expected nodes
       ! matches the mpirun or mpiexec argument
