@@ -140,7 +140,7 @@
       subroutine set_pflx ![
       ! Read parent grid baroclinic pressure fluxes from bry file
       ! and interpolate to the correct time
-
+      use error_handling_mod, only: error_log
       use grid, only: rmask
 
       !local
@@ -171,7 +171,7 @@
           if (abs(pflx_north(i))>100) pflx_north(i) = 0.
         enddo
       endif
-
+      call error_log%handle_abort()
       end subroutine set_pflx !]
 ! ----------------------------------------------------------------------
       subroutine comp_cflx ![

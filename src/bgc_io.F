@@ -147,12 +147,12 @@
       call set_frc_data(nc_nhy,nhy,'r')
 #endif /* NHY_FORCING */
 
-
+      call error_log%handle_abort()
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       ! Daily average Short wave radiation
 !     call set_frc_var_tile( istr, iend, jstr, jend, nc_swrad_avg, swrad_avg, interp_frc )
       call set_frc_data(nc_swrad_avg,swrad_avg,'r')
-
+      call error_log%handle_abort()
       do j=jstrR,jendR
         do i=istrR,iendR
           swrad_avg(i,j)= swrad_avg(i,j)/(rho0*Cp)
@@ -166,10 +166,8 @@
 #   endif
           endif
 #endif
-
         enddo !<- istrR
       enddo   !<- jstrR
-
 #endif /* DAILYPAR_PHOTOINHIBITION */
 
       end subroutine set_bgc_surf_frc  !]

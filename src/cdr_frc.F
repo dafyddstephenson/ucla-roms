@@ -106,19 +106,19 @@
 
         call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
         call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
+        call error_log%handle_abort()
         call create_cdr_vertical_structure
 
       else if (forcing_3d) then
 
         call set_frc_data(nc_cdrflx_3d_ALK,var3d=cdr_flx_3d_ALK)
         call set_frc_data(nc_cdrflx_3d_DIC,var3d=cdr_flx_3d_DIC)
-
       else if (forcing_parameterized) then
 
         if (cdr_volume) then
           call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
           call set_frc_data(nc_cdrtrc,var2d=cdr_trc)          ! set cdr tracers conc. for all cdrs at current time
-
+          call error_log%handle_abort()
           do icdr=1,ncdr
             cdr_flx(icdr,:) = cdr_vol(icdr)*cdr_trc(icdr,:)
           enddo
@@ -128,7 +128,7 @@
         endif
 
       endif
-
+      call error_log%handle_abort()
 
       end subroutine set_cdr_frc !]
 ! ----------------------------------------------------------------------

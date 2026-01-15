@@ -6,7 +6,7 @@
      &     nf90_float, nf90_noerr, nf90_strerror,
      &     nf90_inq_dimid, nf90_def_dim, nf90_def_var, nf90_inq_varid,
      &     nf90_put_var, nf90_get_var
-      use error_handling, only: handle_netcdf_status, handle_configuration_error
+      use error_handling, only: handle_netcdf_status
       implicit none
       private
 
@@ -285,7 +285,8 @@
       ! varname: name of the variable
       ! dimname: Names of dimensions of the variable
       ! dimsize: Dimension length (used if dimension is not yet defined)
-      ! vartype: netcdf data type
+! vartype: netcdf data type
+      use error_handling_mod, only: error_log
       implicit none
       character(len=8) :: fn_name = "nccreate"
       ! import/export
@@ -311,7 +312,7 @@
         ierr = nf90_inq_dimid(ncid,dimname(i),did)
         if (ierr/=nf90_noerr) then
            if (.not. present(dimsize)) then ! only an issue if dimension doesn't exist yet
-              call handle_configuration_error(
+              call error_log%raise_global(
      &             context=module_name//"/"//fn_name,
      &             info="no dimsize given for var="//varname)
           endif
@@ -324,7 +325,7 @@
         endif
         dimid(i) = did
       enddo
-
+      call error_log%handle_abort()
       if (varname /= '') then
       ierr=nf90_def_var(ncid,varname,xtype,dimid,varid,
      &                  deflate_level=deflate_level, shuffle=shuffle)

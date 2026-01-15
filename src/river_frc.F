@@ -17,7 +17,8 @@
      &     grdname, pm, rmask, riv_umask, riv_vmask, xr
       use dimensions, only: i0, i1, j0, j1, nx, ny
       use param, only: lm, mm, mynode, ocean_grid_comm
-      use error_handling, only : handle_configuration_error, handle_netcdf_status, handle_local_error
+      use error_handling, only : handle_netcdf_status, handle_local_error
+      use error_handling_mod, only: error_log
 
       implicit none
 
@@ -170,19 +171,21 @@
                   write(error_info,*) 'nriv=', nriv,
      &                 'but index ', global_maxval,
      &                 ' found in river input file.'
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=module_name//"/"//sr_name,
      &                 info=error_info)
               endif
             endif
-
+            call error_log%handle_abort()
 !     Check for non-integer values
             ridx(i0:i1, j0:j1) = int(ridx_real(i0:i1, j0:j1))
-            if (any(abs(ridx_real(i0:i1,j0:j1) - ridx(i0:i1,j0:j1)) > 1.0e-6)) then
-            call handle_configuration_error(
-     &           context=module_name//"/"//sr_name,
-     &           info="river_index contains non-integers!")
+            if (any(abs(ridx_real(i0:i1,j0:j1) - ridx(i0:i1,j0:j1))
+     &           > 1.0e-6)) then
+               call error_log%raise_global(
+     &              context=module_name//"/"//sr_name,
+     &              info="river_index contains non-integers!")
             endif
+            call error_log%handle_abort()
          else ! if not in the forcing file, look for a single variable in the grid file
             ierr=nf90_close(ncid)
             ierr=nf90_open(grdname, nf90_nowrite, ncid)
@@ -198,8 +201,8 @@
      &              ') or as a combined variable, '// trim(riv_flx_name) //
      &              ',  in grid (' // trim(grdname)//
      &              ') file.'
-               call handle_netcdf_status(
-     &              netcdf_status=ierr,
+               call error_log%raise_from_rank(
+     &              rank=mynode,
      &              context=module_name//"/"//sr_name,
      &              info=error_info)
             else
@@ -214,6 +217,7 @@
                end where
             end if ! found in grid file
          end if                 ! Separate variables found in forcing file
+         call error_log%handle_abort()
       endif !analytical
 
       call calc_river_flux                                           ! compute uflx,vflx from rflx

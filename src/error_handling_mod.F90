@@ -87,11 +87,18 @@ contains
     class(error_log_type), intent(inout) :: this
     integer, intent(in)                  :: rank
     character(len=*), intent(in)         :: context, info
-    integer, intent(in)                  :: level
+    integer, intent(in), optional        :: level
+    integer                              :: used_level
+
+    if (present(level)) then
+       used_level = level
+    else
+       used_level = LOG_LEVEL_ERROR
+    end if
 
     call this%raise_internal( &
       scope   = SCOPE_RANK, &
-      level   = level, &
+      level   = used_level, &
       context = context, &
       info = info, &
       rank    = rank )
@@ -102,11 +109,18 @@ contains
     class(error_log_type), intent(inout) :: this
     integer, intent(in)                  :: i, j, k, rank
     character(len=*), intent(in)         :: context, info
-    integer, intent(in)                  :: level
+    integer, intent(in), optional        :: level
+    integer                              :: used_level
+
+    if (present(level)) then
+       used_level = level
+    else
+       used_level = LOG_LEVEL_ERROR
+    end if
 
     call this%raise_internal( &
       scope   = SCOPE_POINT, &
-      level   = level, &
+      level   = used_level, &
       context = context, &
       info = info, &
       rank    = rank, &

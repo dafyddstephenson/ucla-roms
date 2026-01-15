@@ -325,7 +325,7 @@
 
       use netcdf, only: nf90_put_var
       use nc_read_write, only: ncwrite
-      use error_handling, only: handle_configuration_error, handle_netcdf_status
+      use error_handling, only: handle_netcdf_status
 
       implicit none
       ! input
@@ -432,7 +432,8 @@
 !----------------------------------------------------------------------
       subroutine get_grid  ![
 ! read in grid data from NetCDF file or define analytical grid
-      use error_handling, only: handle_netcdf_status, handle_configuration_error
+      use error_handling, only: handle_netcdf_status
+      use error_handling_mod, only: error_log
       implicit none
 
       character*1 char1
@@ -496,7 +497,7 @@
      &        netcdf_status=ierr,
      &          context=sr_name,
      &          info=error_info)
-      endif
+      endif !ierr / inq_varid
 
       if (char1=='t' .or. char1=='T') then
 # ifdef SPHERICAL
@@ -505,11 +506,11 @@
         write(error_info, *)
      &          'Spherical grid file detected, but CPP-switch',
      &                                 'SPHERICAL is not set.'
-           call handle_configuration_error(
+           call error_log%raise_global(
      &          context=sr_name,
      &          info=error_info)
 # endif
-      else
+      else ! char1 = t/T
 
 ! Physical dimensions of the basin in XI- and ETA-directions:
         ierr=nf90_inq_varid (ncid, 'xl', varid)
@@ -567,7 +568,8 @@
      &        context=sr_name,
      &        info=error_info)
         endif
-      endif
+      endif                     !char1 = t/T
+      call error_log%handle_abort()
 
 ! Read in grid arrays.
 !===== == ==== =======

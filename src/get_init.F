@@ -45,8 +45,9 @@
      &     nsub_e, nsub_x, north_exchng, east_exchng,
      &     west_exchng, south_exchng, nnodes, n, nt
       use mpi_exchanges, only: exchange_xxx
-      use error_handling, only : handle_configuration_error,
+      use error_handling, only :
      &     handle_netcdf_status, handle_local_error
+      use error_handling_mod, only: error_log
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow
 #endif
@@ -237,10 +238,11 @@ c--#define VERBOSE
         write(error_info, *)
      &  'unknown units for variable ''',trim(vname(1,indxTime)),
      &        '''', 'in netCDF file ''', trim(ininame), '''.'
-        call handle_configuration_error(
+        call error_log%raise_global(
      &       context=sr_name,
      &       info=error_info)
       endif
+      call error_log%handle_abort()
       start_time=start_time*time_scale
 !     start_time=start_time*time_scale + 288
 
@@ -281,7 +283,7 @@ c--#define VERBOSE
      &           'rec =', record,
      &           'file = ''', trim(ininame), '''',
      &           nf90_strerror(ierr)
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=sr_name,
      &           info=error_info)
           endif
@@ -295,6 +297,7 @@ c--#define VERBOSE
         forw_start=0
       endif
 #endif
+      call error_log%handle_abort()
       if (ierr /= nf90_noerr) then
          call handle_netcdf_status(
      &        netcdf_status=ierr,
@@ -620,7 +623,7 @@ c--#define VERBOSE
      &     'rec =', record, '.'
 #endif
         else
-              call handle_configuration_error(
+              call error_log%raise_global(
      &             context=sr_name,
      &             info="Unknown Error.")
          endif
@@ -628,7 +631,7 @@ c--#define VERBOSE
 #ifdef MPI_SILENT_MODE
       endif
 #endif
-
+      call error_log%handle_abort()
       ! Here we catch an initial file that does not have the boundary values of u/v
       ! set to zero, even though we prescribed a closed boundary. This is necessary
       ! for conservation tests.

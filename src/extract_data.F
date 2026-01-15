@@ -65,7 +65,8 @@
      &     , indxs
 #endif
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling, only : handle_configuration_error, handle_netcdf_status
+      use error_handling, only : handle_netcdf_status
+      use error_handling_mod, only: error_log
       use mpi_exchanges, only: exchange_xxx
 
       ! TODO: add averaging
@@ -203,12 +204,12 @@
       allocate( Wvl(GLOBAL_2D_ARRAY,nz+1))
       if (diag_pflx) then
 #ifndef DIAGNOSTICS
-         if (mynode == 0) then
-         call handle_configuration_error(
+
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
-     &           info="Must define CPP key DIAGNOSTICS if `do_extract`" //
-     &           "=.true. and diag_pflux=.true")
-        endif
+     &        info="Must define CPP key DIAGNOSTICS if `do_extract`" //
+     &        "=.true. and diag_pflux=.true")
+         call error_log%handle_abort()
 #endif
         allocate( upe(GLOBAL_2D_ARRAY) ); upe = 0
         allocate( vpe(GLOBAL_2D_ARRAY) ); vpe = 0
@@ -410,18 +411,18 @@
 
           ! DIAGNOSTICS needs to be activated and diag_pflx=.true.
           if (obj(iobj)%up.and. .not.diag_pflx) then
-             call handle_configuration_error(
+             call error_log%raise_global(
      &            context=module_name//"/"//sr_name,
      &            info="diag_pflx is not set for up extraction")
           endif
           if (obj(iobj)%vp.and. .not.diag_pflx) then
-             call handle_configuration_error(
+             call error_log%raise_global(
      &            context=module_name//"/"//sr_name,
      &            info="diag_pflx is not set for vp extraction")
           endif
 #if !defined(BIOLOGY_BEC2) && !defined(MARBL)
           if (obj(iobj)%bgc) then
-             call handle_configuration_error(
+             call error_log%raise_global(
      &            context=module_name//"/"//sr_name,
      &            info="MARBL or BIOLOGY_BEC2 cpp key is not "//
      &            "set for BGC extraction")
