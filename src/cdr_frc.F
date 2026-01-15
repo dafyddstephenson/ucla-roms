@@ -21,7 +21,8 @@
       use nc_read_write, only: ncread
       use marbl_driver, only: iALK, iDIC
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling, only: handle_configuration_error, handle_netcdf_status
+      use error_handling, only: handle_netcdf_status
+      use error_handling_mod, only: error_log
       use netcdf, only:
      &     nf90_noerr, nf90_inq_dimid,
      &     nf90_inquire_dimension, nf90_nowrite, nf90_open, nf90_close
@@ -149,7 +150,7 @@
       if (forcing_parameterized)  type_count = type_count+1
 
       if (type_count==0) then
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info="cdr_source set to true, "//
      &        "but no forcing type selected")
@@ -167,7 +168,7 @@
      &       context=module_name//"/"//sr_name)
 
         if (type_count>1) then
-           call handle_configuration_error(
+           call error_log%raise_global(
      &          info="More than one CDR forcing type selected.",
      &          context=module_name//"/"//sr_name)
         end if
@@ -180,7 +181,7 @@
 
         ierr = nf90_close(ncid)
       endif ! forcing_3d
-
+      call error_log%handle_abort()
       init_cdr_done = .true.
       if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
 
@@ -299,14 +300,10 @@
       integer :: i,j
       integer :: icdr, cidx, cidx_start, ierr
       integer, dimension(2) :: lmi
-      logical, dimension(ncdr) :: bad_releases
       real,dimension(:,:)  ,allocatable :: dist
       real :: local_min_val
       real, dimension(2) :: local_minloc
       real, dimension(2) :: global_minloc
-
-
-      bad_releases(:) = .false.
 
       ! Figure out where to apply CDR forcing
       ! Find fractional cdr fluxes for this subdomain
@@ -376,24 +373,15 @@
         ! Check for releases on land
         if ((frac(lmi(1),lmi(2),icdr) ==1 ) .and.
      &  (rmask(lmi(1),lmi(2))==0)) then
-           bad_releases(icdr) = .true.
+         call error_log%raise_global(
+     &     context=module_name//"/"//sr_name,
+     &     info="CDR release "//icdr//" is on land.")
         end if
 
         cidx_start = cidx
       enddo                    ! icdr
 
-      ! Report any releases on land and stop
-      call MPI_Allreduce(MPI_IN_PLACE, bad_releases, ncdr, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierr)
-
-      ! Now every rank has the same bad_releases array
-      if (any(bad_releases)) then
-         write(error_info,*) "the following CDR releases are on land ",
-     &        "(Note 1-indexing): ",pack([(i,i=1,ncdr)], bad_releases)
-         call handle_configuration_error(
-     &     context=module_name//"/"//sr_name,
-     &     info=error_info)
-      end if
-
+      call error_log%handle_abort()
 
       cdr_nprf = cidx
 
@@ -604,7 +592,7 @@
 
 !----------------------------------------------------------------------
       use roms_read_write, only: ncforce, ncforce3d
-      use error_handling, only: handle_configuration_error
+      use error_handling_mod, only: error_log
 
       implicit none
 
@@ -619,17 +607,17 @@
 
       subroutine set_cdr_frc    ![
 ! Allocate and initialize arrays.
-      use error_handling, only: handle_configuration_error
+
       implicit none
       character(len=11) :: sr_name = "set_cdr_frc"
 
 #if (!defined MARBL)
-      call handle_configuration_error(context=module_name//"/"//sr_name,
+      call error_log%raise_global(context=module_name//"/"//sr_name,
      &     info="CDR module must have MARBL enabled.")
 #endif
 
 #if (!defined CDR_FORCING)
-      call handle_configuration_error(context=module_name//"/"//sr_name,
+      call error_log%raise_global(context=module_name//"/"//sr_name,
      &     info="CDR module must have CDR_FORCING enabled.")
 #endif
 

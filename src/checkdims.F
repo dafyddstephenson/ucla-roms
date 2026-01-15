@@ -36,7 +36,8 @@
      &     nf90_noerr, nf90_inquire,
      &     nf90_inquire_dimension, nf90_strerror
       use roms_read_write, only: eta_rho, eta_v, xi_rho, xi_u
-      use error_handling, only: handle_configuration_error, handle_netcdf_status
+      use error_handling, only: handle_netcdf_status
+      use error_handling_mod, only: error_log
 
       implicit none
       character(len=9) :: fn_name="checkdims"
@@ -77,7 +78,7 @@
                if (dsize/=xi_rho) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), xi_rho, dsize)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -87,7 +88,7 @@
                if (dsize /= xi_u) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), xi_u, dsize)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -97,7 +98,7 @@
                if (dsize/=eta_rho) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), eta_rho, dsize)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -107,7 +108,7 @@
                if (dsize /= eta_v) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), eta_v, dsize)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -118,7 +119,7 @@
               if (dsize /= N+1) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), N+1, dsize)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
               endif
@@ -127,7 +128,7 @@
               if (dsize /= N) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), N, dsize)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -141,7 +142,7 @@
      &            'Cannot get size of dimension #', id,
      &            'from netCDF file ''',fname(1:lname),'''.',
      &            nf90_strerror(ierr)
-             call handle_configuration_error(
+             call error_log%raise_global(
      &            context=fn_name,
      &            info=error_info)
 
@@ -152,7 +153,7 @@
         write(error_info,*)
      &          'Cannot get number of dimensions in netCDF file '''//
      &        fname(1:lname)// '''.'// nf90_strerror(ierr)
-        call handle_configuration_error(
+        call error_log%raise_global(
      &       context=fn_name,
      &       info=error_info)
 
@@ -194,7 +195,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
       use netcdf, only:
      &     nf90_noerr, nf90_inquire_variable,
      &     nf90_inquire_dimension, nf90_strerror
-      use error_handling, only: handle_configuration_error
+      use error_handling_mod, only: error_log
 
       implicit none
       character(len=13) :: fn_name="check_vardims"
@@ -226,7 +227,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                    'for variable ''', vname(1:lvar), ''' in ''',
      &                     fname(1:lfnm),  ''': expecting',   count(i),
      &                 'instead of', size, 'in the file.'
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 ierr=nf90_noerr-1
@@ -236,7 +237,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &              'Cannot determine size of dimension #', i,
      &              'for variable ''', vname(1:lvar), ''' in ''',
      &              fname(1:lfnm), ''', ', nf90_strerror(ierr)
-              call handle_configuration_error(
+              call error_log%raise_global(
      &             context=fn_name,
      &             info=error_info)
             endif
@@ -252,7 +253,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                    'mismatch in dimension #3 of variable ''',
      &                        vname(1:lvar), ''' in ''', fname(1:lfnm),
      &              ''': expecting',n3,'instead of',size,'in the file.'
-              call handle_configuration_error(
+              call error_log%raise_global(
      &             context=fn_name,
      &             info=error_info)
 
@@ -263,7 +264,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &            'Cannot determine size of dimension #3 for variable''',
      &            vname(1:lvar), ''' in ''', fname(1:lfnm), ''', ',
      &            nf90_strerror(ierr)
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
 
@@ -273,7 +274,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
         write(error_info,*)
      &      'Cannot make inquiry for variable varid =', varid, 'in ''',
      &        fname(1:lfnm), ''', ', nf90_strerror(ierr)
-        call handle_configuration_error(
+        call error_log%raise_global(
      &       context=fn_name,
      &       info=error_info)
       endif
@@ -292,7 +293,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
       integer function check_scoord(ncid, fname, what_to_check)  ![
 
       use scoord, only: hc, n, theta_b, theta_s, cs_w, cs_r
-      use error_handling, only: handle_configuration_error
+      use error_handling_mod, only: error_log
 
       implicit none
       character(len=12) :: fn_name = "check_scoord"
@@ -324,7 +325,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
           write(error_info,*)
      &                  'Mismatch in ''hc'': should be', hc, 'found',
      &               tst_val(1), 'in file ''', fname(1:lfile), '''.'
-          call handle_configuration_error(
+          call error_log%raise_global(
      &         context=fn_name,
      &         info=error_info)
           icount=icount+1
@@ -347,7 +348,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Mismatch in ''Cs_w'' ',
      &            'values in file ''', fname(1:lfile), '''.'
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
             icount=icount+1
@@ -371,7 +372,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Mismatch in ''Cs_r'' ',
      &            'values in file ''', fname(1:lfile), '''.'
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
             icount=icount+1
@@ -390,7 +391,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Mismatch in ''theta_s'': should be',   theta_s,
      &            'found',tst_val(1),'in file ''', fname(1:lfile),'''.'
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
 # ifdef VERBOSE
@@ -405,7 +406,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &      'Mismatch in ''theta_b'': should be',   theta_b, 'found',
      &            tst_val(1), 'in file ''', fname(1:lfile), '''.'
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
 
@@ -452,7 +453,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &     nf90_inquire_attribute, nf90_get_att, nf90_strerror,
      &     nf90_inq_varid, nf90_inquire_variable, nf90_inquire_dimension,
      &     nf90_get_var
-      use error_handling, only: handle_configuration_error
+      use error_handling_mod, only: error_log
 
       implicit none
       character(len=11) :: fn_name = "read_nc1dat"
@@ -474,7 +475,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &          'Cannot retrieve global attribute ''',   vname(1:lvar),
      &            ''' from ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
           endif
@@ -504,7 +505,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &                'read_nc1dat :: Cannot find size of dimension #',
      &                 dimids(i),  'in file ''', fname(1:lfile), '''.',
      &                  nf90_strerror(ierr)
-                  call handle_configuration_error(
+                  call error_log%raise_global(
      &                 context=fn_name,
      &                 info=error_info)
                 endif
@@ -512,7 +513,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
                 write(error_info,*)
      &                'Cannot determine dimension IDs for ''', vname(1:lvar),
      &                ''' in file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-                call handle_configuration_error(
+                call error_log%raise_global(
      &               context=fn_name,
      &               info=error_info)
               endif
@@ -521,7 +522,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Cannot determine number of dimensions for ''', vname(1:lvar),
      &            ''' in file ''',  fname(1:lfile), '''.', nf90_strerror(ierr)
-            call handle_configuration_error(
+            call error_log%raise_global(
      &           context=fn_name,
      &           info=error_info)
           endif
@@ -531,7 +532,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
               write(error_info,*)
      &              'Cannot read variable ''',  vname(1:lvar),
      &              ''' from file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-              call handle_configuration_error(
+              call error_log%raise_global(
      &             context=fn_name,
      &             info=error_info)
             endif
@@ -548,7 +549,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
      &        'Unexpected size of ''', vname(1:lvar),
      &        ''' in file ''',  fname(1:lfile),  ''':', 'should be',
      &        nlen, 'but found', size
-        call handle_configuration_error(
+        call error_log%raise_global(
      &       context=fn_name,
      &       info=error_info)
         ierr=+1
