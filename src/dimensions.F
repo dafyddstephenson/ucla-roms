@@ -5,8 +5,7 @@
       ! ========================================
 
       ! coded by Jeroen Molemaker
-      use param, only: llm, mmm, n, lm, mm
-      use hidden_mpi_vars, only: inode, jnode, np_eta, np_xi
+      use param, only: llm, mmm, n, lm, mm, np_eta, np_xi
 
       implicit none
       private
@@ -28,6 +27,13 @@
 
       integer,public :: i0,i1,j0,j1     ! accounts for physical boundary buffers
       integer, public ::  xi_rho, xi_u, eta_rho, eta_v
+      integer,public :: inode,jnode     ! location of subdomain in the grid
+
+# ifdef ANA_GRID
+      logical,parameter,public :: analytical_grid = .true.
+# else
+      logical,parameter,public :: analytical_grid = .false.
+# endif
 
       public :: init_dimensions
       character(len=256), public :: grdname

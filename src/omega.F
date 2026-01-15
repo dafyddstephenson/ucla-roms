@@ -4,7 +4,7 @@
       subroutine omega
 
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use private_scratch, only: a2d
 
       implicit none
@@ -46,10 +46,10 @@
      &     cdr_nprf, cdr_source, cdr_volume, cdr_icdr,
      &     cdr_iloc, cdr_prf, cdr_vol
 #endif
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use ocean_vars, only: wi, flxv, flxu, z_w, we, hz
       use scalars, only: n, dt, forw_start, iic, nrhs
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k, icdr, cidx

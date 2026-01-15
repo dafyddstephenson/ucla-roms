@@ -5,13 +5,13 @@
 #include "cppdefs.opt"
       use ocean_vars, only: zeta, ubar, vbar, u, v, z_w, hz
       use grid, only: xr, pm, f
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use dimensions, only: nx, ny, nz, npx, npy
       use tracers, only: t
       use mixing, only: akt, akv
       use scalars, only:
      &     akv_bak, forw_start, iic, ntstart, akt_bak, g, rho0
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: isalt, itemp
 #ifdef FILAMENT_IDEAL
      &     , hd

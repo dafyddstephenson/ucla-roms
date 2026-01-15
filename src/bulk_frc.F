@@ -6,7 +6,7 @@
       use roms_read_write, only:
      &     ncforce, bulk_frc_opt, frcfile,
      &     nc_check_units, set_frc_data, store_string_att
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use dimensions, only: npx, npy
       implicit none
 

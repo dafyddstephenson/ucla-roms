@@ -53,7 +53,7 @@ c--# define CONST_TRACERS
      &                                                             )
       use pipe_frc, only: pidx, pipe_source, pipe_idx, pipe_trc,
      &     pipe_prf, pipe_flx
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 #if defined CDR_FORCING && defined MARBL
       use cdr_frc, only: cdr_nprf, cdr_icdr, cdr_source, cdr_iloc,
      &      cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d_ALK, cdr_flx_3d_DIC,
@@ -68,7 +68,7 @@ c--# define CONST_TRACERS
 #endif
       use grid, only: umask, vmask, pn, pm, rmask, nx, ny, nz, dn_u, dm_v
       use param, only: mynode, np_eta, np_xi
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use mixing, only: ieast, isalt, itemp, iwest, jnorth, jsouth
 #ifdef LMD_NONLOCAL
      &     , ghat

@@ -4,7 +4,7 @@
 
       subroutine ext_copy_prv2shr_2d_tile (istr,iend,jstr,jend, A,B)
       use param, only: lm, mm, ieast, iwest, jnorth, jsouth
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use dimensions, only: npx, npy
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -23,7 +23,7 @@
 #ifdef SOLVE3D
       subroutine ext_copy_prv2shr_tile (istr,iend,jstr,jend, A,B,nmax)
       use param, only: lm, mm, ieast, iwest, jnorth, jsouth
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use dimensions, only: npx, npy
       implicit none
       integer istr,iend,jstr,jend, nmax, i,j,k
@@ -44,7 +44,7 @@
 # define XI_ONLY
       subroutine ext_copy_prv2shr_1Dslb_tile (istr,iend,j, A,B,nmax)
       use param, only: lm, mm,  ieast, iwest
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use dimensions, only: npx, npy
       implicit none
       integer istr,iend, nmax, i,j,k

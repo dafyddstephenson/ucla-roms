@@ -15,8 +15,8 @@
 !     bulk_frc-> only: sustr_r, svstr_r, stflx, srflx, only:
       use grid, only: f, rmask, umask, vmask
 !     flux_frc-> only: sustr, svstr, stflx, srflx
-      use mpi_exchanges, only: exchange_xxx
-      use hidden_mpi_vars, only: inode, jnode
+      use roms_mpi, only: exchange_xxx
+      use dimensions, only: inode, jnode
       use param, only: ieast, itemp, iwest, jnorth, jsouth, np_xi, np_eta
 #ifdef SALINITY
      &     , isalt

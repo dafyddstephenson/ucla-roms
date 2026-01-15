@@ -13,7 +13,7 @@
       use param, only: ieast, iwest, jnorth, jsouth
       use grid, only: f, latr, fomn, pn, pm
       use scalars, only: deg2rad, pi
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use dimensions, only: npx, npy
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -57,7 +57,7 @@
 
       subroutine setup_grid1_tile (istr,iend,jstr,jend)
       use param, only: ieast, iwest, jnorth, jsouth, np_eta, np_xi
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use grid, only: dm_r, pm, dn_r, pn,
      &     pmon_u, dm_u, dn_u, pn_u,
      &     umask, rmask, pmask, vmask, ia_u, pnom_v, dn_p,
@@ -65,7 +65,7 @@
 #if (defined CURVGRID && defined UV_ADV)
      &     , dndx, dmde
 #endif
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       implicit none
       integer :: istr,iend,jstr,jend, i,j
 

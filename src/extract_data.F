@@ -66,7 +66,7 @@
 #endif
       use vertical_remapping, only: remap_src_to_grid
       use error_handling, only : handle_configuration_error, handle_netcdf_error
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
 
       ! TODO: add averaging
 
@@ -591,7 +591,7 @@
       subroutine do_extract_data ![
       ! extract data for all objects, for all vars
       ! and write to file
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       implicit none
 
       ! local

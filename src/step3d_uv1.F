@@ -26,7 +26,7 @@
      &                                            ,rw
 # endif
      &                                                              )
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 # ifdef NHMG
       use ocean_vars, only:
      &     nh_ubar, nh_vbar, nh_wcor, nhdu,
@@ -56,7 +56,7 @@
       use ocean_vars, only: u, v, hz, flxu, flxv, we, wi, z_w
       use scalars, only: n, dt, nnew, nrhs, ntstart
 #ifdef EXCHANGE
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
 #endif
 # if defined ADV_ISONEUTRAL && defined EXCHANGE
       use eos_vars, only: drde, drdx

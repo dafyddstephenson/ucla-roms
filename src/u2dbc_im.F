@@ -6,7 +6,7 @@
 ! integrated) XI-component velocity ubar(:,:,knew).
 
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
-      use hidden_mpi_vars, only: np_xi, np_eta, inode, jnode
+      use dimensions, only: inode, jnode
 #ifdef WEC
       use wec_frc, only: ust2d
 #endif

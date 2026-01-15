@@ -310,7 +310,7 @@
 ! ----------------------------------------------------------------------
       subroutine create_frc_vars(ncid)  ![
 
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       implicit none
 
       !import/export

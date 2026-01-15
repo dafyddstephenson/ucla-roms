@@ -11,6 +11,7 @@
       use mpi_f08, only: mpi_wtime, mpi_comm_world
       use timers, only: tstart, tend
       use read_inp_mod, only: read_inp
+      use roms_mpi, only: mpi_setup
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.

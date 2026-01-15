@@ -50,7 +50,7 @@
      &     ieast, isalt, itemp, iwest, jnorth, jsouth, np_xi, np_eta
       use ocean_vars, only: z_r, u, v, z_w
       use scalars, only: n, akv_bak, pi, akt_bak
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 
       implicit none
 

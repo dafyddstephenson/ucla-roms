@@ -1,7 +1,7 @@
       module tides
 
 #include "cppdefs.opt"
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only:
      &     mynode, ieast, iwest, jnorth, jsouth, lm, mm, np_xi, np_eta
       use scalars, only: g, pi, dt, time
@@ -260,7 +260,7 @@
      &     nf90_inq_varid, nf90_get_var, nf90_get_att
       use dimensions, only: i0, i1, j0, j1
       use error_handling, only: handle_netcdf_error, handle_configuration_error
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use nc_read_write, only: ncread
       implicit none
       character(len=10) :: sr_name = "read_tides"

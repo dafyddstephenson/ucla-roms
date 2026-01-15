@@ -9,7 +9,7 @@
 #ifdef WEC
       use wec_frc, only: vst2d
 #endif
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use boundary, only:
      &     zeta_south, vbar_south, zeta_north,
      &     vbar_north, vbar_west, vbar_east

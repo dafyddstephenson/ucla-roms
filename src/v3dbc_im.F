@@ -7,7 +7,7 @@
 ! v(:,:,:,nnew)
 
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use boundary, only: v_south, v_north, v_west, v_east
       use grid, only: pmask, pn, vmask, pm
       use ocean_vars, only: v, u

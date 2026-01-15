@@ -23,7 +23,7 @@
       subroutine step2d_FB_tile( istr,iend,jstr,jend, zeta_new,Dnew,
      &                           rubar,rvbar, urhs,vrhs,  DUon,DVom,
      &                                       Drhs, UFx,UFe,VFx,VFe)
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use river_frc, only:
      &     iriver, river_flux, river_source, riv_uflx,
      &     riv_vol, riv_vflx
@@ -40,7 +40,7 @@
       use param, only: ieast, iwest, jnorth, jsouth, np_eta, np_xi
       use ocean_vars, only: zeta, ubar, vbar
       use scalars, only: dtfast, g, iif, knew, kstp, nfast
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
 
       implicit none
       integer istr,iend,jstr,jend, i,j, kbak, kold, icdr, cidx

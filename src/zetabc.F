@@ -8,7 +8,7 @@
       use grid, only:  h, pm, rmask, pn
       use ocean_vars, only: zeta
       use scalars, only: dtfast, g, kstp
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 
       implicit none
       integer istr,iend,jstr,jend, i,j

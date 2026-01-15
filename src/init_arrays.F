@@ -24,7 +24,7 @@
       end
 
       subroutine init_arrays_tile (istr,iend,jstr,jend)
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 
 ! This routine initialize "first-touches" model shared arrays. Most
 ! of them are assigned to zeros, vertical mixing coefficients are set

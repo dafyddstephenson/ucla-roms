@@ -23,7 +23,7 @@
 ! surface. This computation is done solely for diagnostic/output
 ! purposes and does not have any feedback onto the model.
 ! Unlike W, absolute vertical velocity is defined at RHO-points.
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: lm, mm, ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use dimensions, only: npx, npy
       use grid, only:  pn, pm

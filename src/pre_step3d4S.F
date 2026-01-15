@@ -26,7 +26,7 @@
      &                                            ,rw
 # endif
      &                                                              )
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
@@ -40,7 +40,7 @@
       use surf_flux, only: sustr, svstr
       use tracers, only: iTandS, t
       use coupling, only: r_d
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use grid, only: nx,ny,
      &     pn, pm, umask, vmask, fomn, dn_u, dm_v, pn_u, pm_v
 #if (defined CURVGRID && defined UV_ADV)

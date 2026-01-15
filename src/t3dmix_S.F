@@ -20,8 +20,8 @@
 ! Computes horizontal mixing of tracers along S-surfaces.
 
       use grid, only: nz, umask, pmon_u, vmask, pnom_v, pn, pm
-      use mpi_exchanges, only: exchange_xxx
-      use hidden_mpi_vars, only: inode, jnode
+      use roms_mpi, only: exchange_xxx
+      use dimensions, only: inode, jnode
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use mixing, only: diff2
       use ocean_vars, only: hz

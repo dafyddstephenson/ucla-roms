@@ -20,7 +20,7 @@
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_vflx
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx, drde, idrz
@@ -60,7 +60,7 @@
 #endif
       use ocean_vars, only: u, ubar, v, vbar, hz, flxu, flxv, z_w
       use scalars, only: n, knew, nnew, nstp, g, rho0, dt
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
