@@ -55,8 +55,7 @@
      &     nf90_put_att, nf90_enddef
       use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
       use dimensions, only: i0, i1, j0, j1
-      use error_handling, only: handle_configuration_error
-
+      use error_handling_mod, only: error_log
       implicit none
 
       private ! Make all variable private to this module unless public specified
@@ -206,7 +205,7 @@
      &        "output_period_his (",
      &        output_period_his, ")"
 
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -217,7 +216,7 @@
      &        "output_period_avg (",
      &        output_period_avg, ")"
 
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -328,7 +327,7 @@
      &        "output_period_his_dia (",
      &        output_period_his_dia, ")"
 
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -339,11 +338,11 @@
      &        "output_period_avg_dia (",
      &        output_period_avg_dia, ")"
 
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-
+      call error_log%handle_abort()
 
       if (wrt_avg_dia) then
 

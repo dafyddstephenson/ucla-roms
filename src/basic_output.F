@@ -22,7 +22,8 @@
      &     zeta_avg, ubar_avg, vbar_avg, u_avg, v_avg,
      &     w_avg, wvl_avg, zeta, ubar, vbar, u, v, z_r, We, Wi
       use param, only: Lm, Mm, isalt, itemp, mynode, nt_passive
-      use error_handling, only : handle_configuration_error, handle_netcdf_status
+      use error_handling, only : handle_netcdf_status
+      use error_handling_mod, only: error_log
 #ifdef DIAGNOSTICS
       use diagnostics, only: wrt_rst_diag_slow
 #endif
@@ -134,7 +135,7 @@
      &        "output_period_his (",
      &        output_period_his, ")"
 
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -144,11 +145,11 @@
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_avg (",
      &        output_period_avg, ")"
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-
+      call error_log%handle_abort()
 
       if (wrt_file_avg) then
         if (wrt_avg_Z)  then
