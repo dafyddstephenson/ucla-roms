@@ -1281,8 +1281,8 @@ c$$$            if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
         ierr = nf90_close(npid)
       endif
 
-      gnx = gdims(1)+2
-      gny = gdims(2)+2
+      gnx = gdims(1)
+      gny = gdims(2)
       nz  = gdims(3)
 
       if (mynode==0) then ! single node to create joined file
