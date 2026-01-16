@@ -47,6 +47,7 @@ module error_handling_mod
     procedure :: raise_global
     procedure :: raise_from_rank
     procedure :: raise_from_point
+    procedure :: check_netcdf_status
     procedure :: handle_abort
     procedure :: clear
     procedure, private :: raise_internal
@@ -129,6 +130,29 @@ contains
       k       = k )
   end subroutine raise_from_point
 
+  subroutine check_netcdf_status(this, netcdf_status, context, info)
+    use param, only: mynode
+    use netcdf, only: nf90_noerr, nf90_strerror
+    class(error_log_type), intent(inout) :: this
+    integer, intent(in) :: netcdf_status
+    character(len=*), intent(in) :: context
+    character(len=*), intent(in), optional :: info
+
+    character(len=:), allocatable :: final_info
+    character(len=32) :: status_str
+
+    if (netcdf_status == nf90_noerr) return
+
+    write(status_str,'(I0)') netcdf_status
+
+    final_info = ''
+    if (present(info)) final_info = trim(info)//new_line('A')
+
+    final_info = final_info // &
+         'NF90 STATUS CODE: ' // trim(status_str) // new_line('A') // &
+         'NF90 ERROR MESSAGE: ' // trim(nf90_strerror(netcdf_status))
+    call this%raise_from_rank(mynode, context, final_info)
+  end subroutine check_netcdf_status
 
   !=========================================================
   ! Internal implementation

@@ -42,7 +42,7 @@
 
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
-      use nc_read_write, only: nccreate, ncread, ncwrite, handle_netcdf_status
+      use nc_read_write, only: nccreate, ncread, ncwrite
       use roms_read_write, only: findstr, create_file
       use netcdf, only:
      &     nf90_double, nf90_write, nf90_nowrite,
@@ -309,12 +309,12 @@
      &    'extract_data :: read objects: ',extract_file
       endif
       ierr = nf90_open(extract_file,nf90_nowrite,ncid)
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     info="error reading objects file "//extract_file,
      &     context=module_name//"/"//sr_name)
 
       ierr = nf90_inquire(ncid,nVariables=nobj)
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="read extr")
 
@@ -323,17 +323,17 @@
       ! Read all objects from file.
       do iobj = 1,nobj
         ierr = nf90_inquire_variable(ncid,iobj,name=objname,dimids=dimids)
-        call handle_netcdf_status(netcdf_status=ierr,
+        call error_log%check_netcdf_status(netcdf_status=ierr,
      &       context=module_name//"/"//sr_name,
      &       info="error during inquire,  variable:"//objname)
 
         ierr = nf90_inquire_dimension(ncid,dimids(1),name=dname,len=n1)
-        call handle_netcdf_status(netcdf_status=ierr,
+        call error_log%check_netcdf_status(netcdf_status=ierr,
      &       context=module_name//"/"//sr_name,
      &       info="error during inquire,  dimension:"//dname)
 
         ierr = nf90_inquire_dimension(ncid,dimids(2),len=n2)
-        call handle_netcdf_status(netcdf_status=ierr,
+        call error_log%check_netcdf_status(netcdf_status=ierr,
      &       context=module_name//"/"//sr_name,
      &       info="error during inquire")
 
@@ -374,7 +374,7 @@
 !       endif
 
         ierr = nf90_get_att(ncid,iobj,'output_period',period)
-        call handle_netcdf_status(netcdf_status=ierr,
+        call error_log%check_netcdf_status(netcdf_status=ierr,
      &       info="error when getting `output_period` attribute",
      &       context=module_name//"/"//sr_name)
 
@@ -392,7 +392,7 @@
 
           ! Figure out which variables to output for this object
           ierr = nf90_get_att(ncid,iobj,'output_vars',variables)
-          call handle_netcdf_status(netcdf_status=ierr,
+          call error_log%check_netcdf_status(netcdf_status=ierr,
      &         info="error getting `output_vars` attribute",
      &         context=module_name//"/"//sr_name)
 
@@ -949,7 +949,7 @@
       ierr = nf90_put_att(ncid,varid,'count',obj%np)
       ierr = nf90_put_att(ncid,varid,'dname',obj%dname)
       ierr = nf90_put_att(ncid,varid,'dsize',obj%dsize)
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     info="error creating var "//vname,
      &     context=module_name//"/"//sr_name)
 

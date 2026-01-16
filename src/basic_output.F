@@ -8,7 +8,7 @@
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
      &     nf90_nofill, nf90_set_fill
-      use nc_read_write, only: nccreate, ncwrite, handle_netcdf_status
+      use nc_read_write, only: nccreate, ncwrite
       use roms_read_write, only:
      &     max_name_size, dn_tm, dn_xr, dn_xu,
      &     dn_yr, dn_yv, dn_zr, eta_rho, eta_v, xi_rho, xi_u, dn_zw,
@@ -1153,12 +1153,12 @@
       start(2)=record ; count(2)=1
 
       ierr=nf90_inq_varid(ncid, 'time_step', var_id_tmp)
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="variable: time_step")
 
       ierr=nf90_put_var(ncid, var_id_tmp, ibuff, start, count) ! & record time step info
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="variable: time_step")
       ! can't use ncwrite() as ibuff is an integer array not real

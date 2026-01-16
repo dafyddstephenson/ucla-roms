@@ -21,7 +21,6 @@
       use nc_read_write, only: ncread
       use marbl_driver, only: iALK, iDIC
       use vertical_remapping, only: remap_src_to_grid
-      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log
       use netcdf, only:
      &     nf90_noerr, nf90_inq_dimid,
@@ -162,7 +161,7 @@
 
         ! Open file
         ierr=nf90_open(cdr_file, nf90_nowrite, ncid)
-        call handle_netcdf_status(
+        call error_log%check_netcdf_status(
      &       netcdf_status=ierr,
      &       info="Cannot open CDR forcing file",
      &       context=module_name//"/"//sr_name)
@@ -201,7 +200,7 @@
 
       ! Check how many vertical profiles (i.e. tracer releases) we will use
       ierr = nf90_inq_dimid(ncid, 'ncdr_prof', dimid)
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="CDR forcing file is missing "//
      &     "necessary dimension ncdr_prof.")
@@ -210,11 +209,12 @@
 
       ! How many vertical levels did the child/source grid have?
       ierr = nf90_inq_dimid(ncid, 's_rho', dimid)
-      call handle_netcdf_status(netcdf_status=ierr,
+      call error_log%check_netcdf_status(netcdf_status=ierr,
      &     info="CDR forcing file is missing "//
      &     "necessary dimension s_rho.",
      &     context=module_name//"/"//sr_name)
 
+      call error_log%handle_abort()
       ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
       ncdr = ncdr_prof

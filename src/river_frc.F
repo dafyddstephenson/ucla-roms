@@ -11,7 +11,7 @@
 
       use roms_read_write, only: ncforce, frcfile, set_frc_data, xi_rho
       use nc_read_write, only:
-     &     nccreate, ncread, ncwrite, handle_netcdf_status
+     &     nccreate, ncread, ncwrite
       use scalars, only: nt
       use grid, only:
      &     ana_grdname, dn_xr, dn_yr, eta_rho, xl,

@@ -18,7 +18,7 @@
      &     set_frc_data, store_string_att
       use nc_read_write, only: ncread
       use param, only: n, lm, mm, nt, mynode
-      use nc_read_write, only: handle_netcdf_status
+      use error_handling_mod, only: error_log
       implicit none
 
       private
@@ -94,7 +94,6 @@
       use param, only: ocean_grid_comm
       use mpi_f08, only: mpi_double_precision, mpi_max
       use roms_read_write, only: frcfile
-      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log
 
       implicit none
@@ -159,7 +158,7 @@
      &              ') or as a combined variable, '// trim(pipe_flx_name) //
      &              ',  in grid (' // trim(grdname)//
      &              ') file.'
-               call handle_netcdf_status(
+               call error_log%check_netcdf_status(
      &              netcdf_status=ierr,
      &              context=module_name//"/"//sr_name,
      &              info=error_info)

@@ -18,7 +18,7 @@
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
      &     xi_rho, create_file
-      use nc_read_write, only: nccreate, ncwrite, handle_netcdf_status
+      use nc_read_write, only: nccreate, ncwrite
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_double, nf90_open,
      &     nf90_put_att, nf90_close
@@ -554,7 +554,7 @@
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
-        call handle_netcdf_status(netcdf_status=ierr,
+        call error_log%check_netcdf_status(netcdf_status=ierr,
      &       info="error opening "//fname,
      &       context=module_name//"/"//sr_name)
 
