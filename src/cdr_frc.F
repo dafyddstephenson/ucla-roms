@@ -21,7 +21,7 @@
       use nc_read_write, only: ncread
       use marbl_driver, only: iALK, iDIC
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log
       use netcdf, only:
      &     nf90_noerr, nf90_inq_dimid,

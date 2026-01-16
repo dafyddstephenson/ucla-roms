@@ -18,7 +18,7 @@
      &     set_frc_data, store_string_att
       use nc_read_write, only: ncread
       use param, only: n, lm, mm, nt, mynode
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       implicit none
 
       private
@@ -94,7 +94,7 @@
       use param, only: ocean_grid_comm
       use mpi_f08, only: mpi_double_precision, mpi_max
       use roms_read_write, only: frcfile
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log
 
       implicit none

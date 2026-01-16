@@ -17,7 +17,7 @@
       use scalars, only: n, dt, iic, tdays, time, nnew
       use ocean_vars, only: u, v, z_w, z_r
       use tracers, only: t, t_vname, t_lname, t_units
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
 
       implicit none
 

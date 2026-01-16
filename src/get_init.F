@@ -35,7 +35,7 @@
      &     nf90_inquire_dimension, nf90_noerr, nf90_nowrite,
      &     nf90_strerror, nf90_inq_varid, nf90_get_var, nf90_close,
      &     nf90_open
-      use nc_read_write, only: ncread
+      use nc_read_write, only: ncread, handle_netcdf_status
       use roms_read_write, only: ininame
       use grid, only:
      &     riv_umask, riv_vmask, rmask, umask, vmask
@@ -45,8 +45,7 @@
      &     nsub_e, nsub_x, north_exchng, east_exchng,
      &     west_exchng, south_exchng, nnodes, n, nt
       use mpi_exchanges, only: exchange_xxx
-      use error_handling, only :
-     &     handle_netcdf_status, handle_local_error
+      use error_handling, only : handle_local_error
       use error_handling_mod, only: error_log
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow

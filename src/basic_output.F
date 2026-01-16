@@ -8,7 +8,7 @@
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
      &     nf90_nofill, nf90_set_fill
-      use nc_read_write, only: nccreate, ncwrite
+      use nc_read_write, only: nccreate, ncwrite, handle_netcdf_status
       use roms_read_write, only:
      &     max_name_size, dn_tm, dn_xr, dn_xu,
      &     dn_yr, dn_yv, dn_zr, eta_rho, eta_v, xi_rho, xi_u, dn_zw,
@@ -22,7 +22,6 @@
      &     zeta_avg, ubar_avg, vbar_avg, u_avg, v_avg,
      &     w_avg, wvl_avg, zeta, ubar, vbar, u, v, z_r, We, Wi
       use param, only: Lm, Mm, isalt, itemp, mynode, nt_passive
-      use error_handling, only : handle_netcdf_status
       use error_handling_mod, only: error_log
 #ifdef DIAGNOSTICS
       use diagnostics, only: wrt_rst_diag_slow

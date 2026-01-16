@@ -14,7 +14,7 @@
      &     nf90_put_att, nf90_close
       use scalars, only: dt, iic, knew, nnew, tdays, time
       use ocean_vars, only: zeta, u, v
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       implicit none
 
       private

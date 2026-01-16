@@ -261,7 +261,7 @@
      &     nf90_global, nf90_nowrite, nf90_open,
      &     nf90_inq_varid, nf90_get_var, nf90_get_att
       use dimensions, only: i0, i1, j0, j1
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log
       use mpi_exchanges, only: exchange_xxx
       use nc_read_write, only: ncread

@@ -325,7 +325,7 @@
 
       use netcdf, only: nf90_put_var
       use nc_read_write, only: ncwrite
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
 
       implicit none
       ! input
@@ -432,7 +432,7 @@
 !----------------------------------------------------------------------
       subroutine get_grid  ![
 ! read in grid data from NetCDF file or define analytical grid
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log
       implicit none
 

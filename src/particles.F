@@ -23,7 +23,7 @@
      &     dn_tm, create_file, store_string_att,
      &     particle_opt
       use nc_read_write, only: nccreate
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       implicit none
       private
 

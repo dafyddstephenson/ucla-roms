@@ -42,7 +42,7 @@
 
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
-      use nc_read_write, only: nccreate, ncread, ncwrite
+      use nc_read_write, only: nccreate, ncread, ncwrite, handle_netcdf_status
       use roms_read_write, only: findstr, create_file
       use netcdf, only:
      &     nf90_double, nf90_write, nf90_nowrite,
@@ -65,7 +65,6 @@
      &     , indxs
 #endif
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling, only : handle_netcdf_status
       use error_handling_mod, only: error_log
       use mpi_exchanges, only: exchange_xxx
 

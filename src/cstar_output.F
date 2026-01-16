@@ -18,13 +18,12 @@
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
      &     xi_rho, create_file
-      use nc_read_write, only: nccreate, ncwrite
+      use nc_read_write, only: nccreate, ncwrite, handle_netcdf_status
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_double, nf90_open,
      &     nf90_put_att, nf90_close
       use scalars, only: iic, knew, nnew, tdays, time, dt, n
       use ocean_vars, only: zeta, hz
-      use error_handling, only :  handle_netcdf_status
       use error_handling_mod, only: error_log
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,

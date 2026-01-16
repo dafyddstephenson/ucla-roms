@@ -6,7 +6,7 @@
      &     nf90_float, nf90_noerr, nf90_strerror,
      &     nf90_inq_dimid, nf90_def_dim, nf90_def_var, nf90_inq_varid,
      &     nf90_put_var, nf90_get_var
-      use error_handling, only: handle_netcdf_status
+      use error_handling_mod, only: error_log
       implicit none
       private
 
@@ -25,6 +25,7 @@
       public :: ncread
       public :: ncwrite
       public :: nccreate
+      public :: handle_netcdf_status
 
       contains
 
@@ -339,6 +340,43 @@
       nccreate = varid
 
       end function nccreate  !]
+
+      subroutine handle_netcdf_status(netcdf_status, context, info)
+
+      use netcdf, only: nf90_noerr, nf90_strerror
+      use param, only: mynode
+
+      implicit none
+
+      integer, intent(in) :: netcdf_status
+      character(len=*), intent(in) :: context
+      character(len=*), intent(in), optional :: info
+      character(len=1024) :: final_info
+      character(len=32) :: status_str
+
+      if (netcdf_status == nf90_noerr) return
+
+      write(status_str,'(I0)') netcdf_status
+
+      if (present(info)) then
+         final_info = trim(info)//new_line('A')
+      else
+         final_info = ''
+      endif
+
+      final_info = final_info //
+     &     'NF90 STATUS CODE: ' // trim(status_str)
+     &     // new_line('A') //
+     &     'NF90_ERROR_MESSAGE: ' // trim(nf90_strerror(netcdf_status))
+
+
+      call error_log%raise_from_rank(
+     &     rank=mynode,
+     &     context=context,
+     &     info = final_info)
+      call error_log%handle_abort()
+
+      end subroutine handle_netcdf_status
 
 
       end module nc_read_write

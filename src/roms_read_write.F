@@ -17,7 +17,7 @@
       use param, only: mynode, nnodes
       use hidden_mpi_vars, only: inode, jnode
       use mpi_exchanges, only: exchange_xxx
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
 
       implicit none

@@ -22,7 +22,7 @@
      &     obc_east, obc_north, obc_south, obc_west,
      &     east_exchng, north_exchng, south_exchng, west_exchng,
      &     mynode, np_eta, np_xi
-      use error_handling, only: handle_netcdf_status
+      use nc_read_write, only: handle_netcdf_status
 
       implicit none
       private
