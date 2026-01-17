@@ -18,7 +18,6 @@
      &     grdname, pm, rmask, riv_umask, riv_vmask, xr
       use dimensions, only: i0, i1, j0, j1, nx, ny
       use param, only: lm, mm, mynode, ocean_grid_comm
-      use error_handling, only : handle_local_error
       use error_handling_mod, only: error_log
 
       implicit none
@@ -253,9 +252,10 @@
 #ifdef MASKING
             faces =  rmask(i-1,j)+rmask(i+1,j)+rmask(i,j-1)+rmask(i,j+1) !! amount of unmasked cells around
             if ( faces == 0 .or. rmask(i,j)>0  ) then
-               call handle_local_error(context=module_name//"/"//sr_name,
+               call error_log%raise_from_point(
+     &              context=module_name//"/"//sr_name,
      &              info='river grid position error',
-     &              i=i, j=j, k=N, tile=mynode)
+     &              i=i, j=j, k=N)
             endif
             ! 10*iriver needed because uflx/vflx can be positive or negative around
             ! the iriver number, and hence nearest integer is safest done with 10*.

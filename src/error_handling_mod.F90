@@ -109,10 +109,17 @@ contains
   subroutine raise_from_point(this, i, j, k, context, info, level)
     use param, only: mynode
     class(error_log_type), intent(inout) :: this
-    integer, intent(in)                  :: i, j, k
+    integer, intent(in)                  :: i, j
+    integer, intent(in), optional        :: k
     character(len=*), intent(in)         :: context, info
     integer, intent(in), optional        :: level
-    integer                              :: used_level
+    integer                              :: used_level, used_k
+
+    if (present(k)) then
+       used_k = k
+    else
+       used_k = -1
+    end if
 
     if (present(level)) then
        used_level = level
@@ -128,7 +135,7 @@ contains
       rank    = mynode, &
       i       = i, &
       j       = j, &
-      k       = k )
+      k       = used_k)
   end subroutine raise_from_point
 
   subroutine check_netcdf_status(this, netcdf_status, context, info)
@@ -178,7 +185,9 @@ contains
     if (present(rank)) error_entry%rank = rank
     if (present(i))    error_entry%i = i
     if (present(j))    error_entry%j = j
-    if (present(k))    error_entry%k = k
+    if (present(k) .and. k>-1) then
+       error_entry%k = k
+    end if
 
     if (associated(this%tail)) then
       this%tail%next => error_entry

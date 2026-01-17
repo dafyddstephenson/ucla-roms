@@ -45,7 +45,6 @@
      &     nsub_e, nsub_x, north_exchng, east_exchng,
      &     west_exchng, south_exchng, nnodes, n, nt
       use mpi_exchanges, only: exchange_xxx
-      use error_handling, only : handle_local_error
       use error_handling_mod, only: error_log
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow

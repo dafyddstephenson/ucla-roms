@@ -1828,7 +1828,6 @@
 !     - Adapted from the equivalent subroutine in MOM6
 !
 !-----------------------------------------------------------------------
-      use error_handling, only: handle_local_error
       use marbl_logging, only: marbl_status_log_entry_type, marbl_log_type
 !     ----------------------------------------------------------------------
       integer              , optional, intent(in) :: i,j
@@ -1887,17 +1886,16 @@
 
 ! If MARBL needs to abort, stop the program
       if (log_to_print%labort_marbl) then
-         call handle_local_error(
+         call error_log%raise_from_point(
      &        context = module_name,
      &        info    = accumulated_log,
-     &        tile    = mynode,
      &        i       = merge(i,-1,present(i)),
      &        j       = merge(j,-1,present(j)) )
       elseif ((.not. log_to_print%FullLog%lonly_master_writes) .or.
      &        (mynode == printnode)) then
          print *, accumulated_log
       end if
-
+      call error_log%handle_abort()
       contains
 
       subroutine append_to_log(line)
