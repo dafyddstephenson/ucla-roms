@@ -313,6 +313,7 @@
      &          info="unable to get var 'omega' from tidal file",
      &          context=module_name//"/"//sr_name)
         end if
+        call error_log%handle_abort()
         start(3) = itide
 
         if (bry_tides) then
@@ -334,8 +335,7 @@
           call ncread(ncid,'pot_Im',ptide_i(i0:i1,j0:j1,itide),start)
 !         call exchange_xxx(ptide_r(:,:,itide),ptide_i(:,:,itide))
         endif
-
-      end do ! <-- itide=1,ntides
+      end do                    ! <-- itide=1,ntides
 
       ! add tide info to forcing attributes - embedded in here due to tides init
       if (mynode == 0) then

@@ -394,7 +394,6 @@
           call ncwrite(ncid,'v',Vz(1:nx,1:ny,:),(/bfx,1,1,record/))
           endif
         endif
-
         ierr=nf90_close (ncid)
 
         if (mynode == 0) then
@@ -407,7 +406,7 @@
         navg = 0
 
       endif
-
+      call error_log%handle_abort()
       end subroutine wrt_zslice !]
 !----------------------------------------------------------------------
 

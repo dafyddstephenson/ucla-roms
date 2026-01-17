@@ -121,7 +121,7 @@
 
         output_time=0
       endif
-
+      call error_log%handle_abort()
       end subroutine wrt_random !]
 !----------------------------------------------------------------------
 

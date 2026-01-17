@@ -304,7 +304,7 @@
      &        info="error opening "//fname,
      &        context=module_name//"/"//sr_name)
       end if
-
+      call error_log%handle_abort()
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
       ! fluxes and ub coefficients are defined as nx, ny sized arrays
@@ -331,8 +331,7 @@
          write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')      ! confirm work completed
      &    'orlanski_tune :: wrote output, tdays =', tdays,
      &    'step =', iic-1, 'rec =', record
-        endif
-
+      endif
 
       end subroutine write_sp_tune !]
 ! ----------------------------------------------------------------------

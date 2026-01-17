@@ -325,7 +325,7 @@
 
       use netcdf, only: nf90_put_var
       use nc_read_write, only: ncwrite
-      use error_handling_mod, only: error_log
+      use error_handling_mod, only: error_log ! do not abort here, mynode==0
 
       implicit none
       ! input
@@ -395,7 +395,6 @@
      &         info="`el` var not found")
         endif
 #endif
-
 
 #if defined MPI && !defined PARALLEL_FILES
       endif
@@ -634,6 +633,7 @@
      &       info=error_info)
 
       endif
+      call error_log%handle_abort()
       return                                     !--> NORMAL RETURN
 
 #endif /* ifdef ANA_GRID */

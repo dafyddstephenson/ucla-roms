@@ -467,7 +467,7 @@
      &                                ,'Tag/x/y/z/u/v/w')
 
       ierr=nf90_put_att( ncid, nf90_global, 'big_number', big_number )
-
+      call error_log%handle_abort()
       ierr = nf90_close(ncid)
 
       end subroutine create_particles_file !]

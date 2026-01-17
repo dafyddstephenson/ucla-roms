@@ -557,6 +557,7 @@
         call error_log%check_netcdf_status(netcdf_status=ierr,
      &       info="error opening "//fname,
      &       context=module_name//"/"//sr_name)
+        call error_log%handle_abort()
 
         call multiply_by_thickness
         ! always add time

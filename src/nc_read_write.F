@@ -325,7 +325,6 @@
         endif
         dimid(i) = did
       enddo
-      call error_log%handle_abort()
       if (varname /= '') then
       ierr=nf90_def_var(ncid,varname,xtype,dimid,varid,
      &                  deflate_level=deflate_level, shuffle=shuffle)
@@ -335,7 +334,7 @@
      &        info="when creating var: "//varname)
       endif
       endif
-
+      call error_log%handle_abort()
       nccreate = varid
 
       end function nccreate  !]

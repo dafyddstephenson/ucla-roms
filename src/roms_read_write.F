@@ -784,7 +784,6 @@ c$$$      call error_log%handle_abort
      &       context=module_name//"/"//sr_name,
      &       info=error_info)
       endif
-c$$$      call error_log%handle_abort() !TODO
       if (first) then  ! Handle initital timestep. Need vtime < model_time. As per (A) above.
 
         ! find_new_rec_cycle deals internally with this
@@ -805,7 +804,6 @@ c$$$      call error_log%handle_abort() !TODO
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-c$$$      call error_log%handle_abort()
       end subroutine find_new_record  !]
 ! ----------------------------------------------------------------------
       subroutine find_new_record_cycle(ncid,tid,time,irec,vtime,cycle_length,first) ![
@@ -954,7 +952,7 @@ c$$$      call error_log%handle_abort()
      &        context=module_name//"/"//sr_name,
      &        info="bry error")
       endif
-c$$$      call error_log%handle_abort()
+
       nc%irec  = irec
       nc%ifile = ifile
 
@@ -1453,7 +1451,6 @@ c$$$      call error_log%handle_abort()
      &        context=module_name//"/"//sr_name,
      &        info="no .nc in file name")
       endif
-c$$$      call error_log%handle_abort()
 
 #if defined MPI && defined PARALLEL_FILES
       if (nnodes<10) then
@@ -1522,7 +1519,6 @@ c$$$      call error_log%handle_abort()
      &       info=error_info)
       end if
       ierr = nf90_close(ncid)
-c$$$      call error_log%handle_abort()
       end subroutine nc_check_units  !]
 ! ---------------------------------------------------------------------
       subroutine put_global_atts (ncid, ierr)  ![
@@ -1731,7 +1727,6 @@ c$$$      call error_log%handle_abort()
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-c$$$      call error_log%handle_abort()
       char_string(is:ie) = string_add
 
       end subroutine store_string_att  !]

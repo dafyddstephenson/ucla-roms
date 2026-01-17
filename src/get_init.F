@@ -5,7 +5,7 @@
 
       use scalars, only:
      &     day2sec, dt, forw_start, iic, ntstart,
-     &     sec2day, start_time, may_day_flag
+     &     sec2day, start_time!, may_day_flag
       use hidden_mpi_vars, only: inode, jnode
       use tracers, only: t_vname, t, iTandS
 #ifdef MARBL
@@ -75,9 +75,9 @@
 c--#define VERBOSE
 #ifdef VERBOSE
       write(*,'(3(2x,A,I3))') 'enter get_init: req_rec =', req_rec,
-     &            'tindx =', tindx, 'may_day_flag =', may_day_flag
+     &            'tindx =', tindx!, 'may_day_flag =', may_day_flag
 #endif
-      if (may_day_flag /= 0) return      !-->  EXIT
+!      if (may_day_flag /= 0) return      !-->  EXIT
 
 ! Open conditions netCDF file for reading.  Check that all spatial
 ! dimensions in that file are consistent with the model, determine how
@@ -130,7 +130,7 @@ c--#define VERBOSE
       else                      !if (max_rec > 0)
          record=1
       endif
-
+      call error_log%handle_abort()
 
 ! Read in evolving model variables:
 !----- -- -------- ----- ----------
@@ -292,14 +292,13 @@ c--#define VERBOSE
         forw_start=0
       endif
 #endif
-      call error_log%handle_abort()
       if (ierr /= nf90_noerr) then
          call error_log%check_netcdf_status(
      &        netcdf_status=ierr,
      &        context=sr_name,
      &        info="Cause of termination: netCDF input.")
       endif
-
+      call error_log%handle_abort()
 ! Check whether variable 'time_step' is present, which can be a
 ! structure of four to up to eight integer numbers storing time step
 ! number and the corresponding record numbers for output files.
@@ -391,7 +390,7 @@ c--#define VERBOSE
       write(*,'(1x,2A,F12.4,1x,A,I4)')   'get_init: reading initial ',
      &   'fields for time =', start_time*sec2day, 'record =', record
 #endif
-
+      call error_log%handle_abort()
 ! Read initial fields:
 !---------------------
 ! River mask (needed for exact restarts)
@@ -490,6 +489,7 @@ c--#define VERBOSE
       else
         forw_start=ntstart    !--> cancel exact restart
       endif
+      call error_log%handle_abort()
 #  endif
 # endif /*EXACT_RESTART*/
 
@@ -536,7 +536,7 @@ c--#define VERBOSE
      &             '''',
      &             nf90_strerror(ierr)
               call error_log%check_netcdf_status(
-     &        netcdf_status=ierr,
+     &             netcdf_status=ierr,
      &             context=sr_name,
      &             info=error_info)
           else
@@ -549,7 +549,7 @@ c--#define VERBOSE
 
         endif
       enddo
-
+      call error_log%handle_abort()
       start=1; start(3)=record                                       ! 2D vars
 # ifdef LMD_KPP
       ierr=nf90_inq_varid(ncid, vname(1,indxHbls), varid)
