@@ -1161,6 +1161,7 @@
       call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="variable: time_step")
+      call error_log%handle_abort()
       ! can't use ncwrite() as ibuff is an integer array not real
 
       end subroutine write_time_step  !]

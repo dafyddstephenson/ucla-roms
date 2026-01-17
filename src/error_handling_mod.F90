@@ -84,9 +84,9 @@ contains
   end subroutine raise_global
 
 
-  subroutine raise_from_rank(this, rank, context, info, level)
+  subroutine raise_from_rank(this, context, info, level)
+    use param, only: mynode
     class(error_log_type), intent(inout) :: this
-    integer, intent(in)                  :: rank
     character(len=*), intent(in)         :: context, info
     integer, intent(in), optional        :: level
     integer                              :: used_level
@@ -102,13 +102,14 @@ contains
       level   = used_level, &
       context = context, &
       info = info, &
-      rank    = rank )
+      rank    = mynode )
   end subroutine raise_from_rank
 
 
-  subroutine raise_from_point(this, i, j, k, rank, context, info, level)
+  subroutine raise_from_point(this, i, j, k, context, info, level)
+    use param, only: mynode
     class(error_log_type), intent(inout) :: this
-    integer, intent(in)                  :: i, j, k, rank
+    integer, intent(in)                  :: i, j, k
     character(len=*), intent(in)         :: context, info
     integer, intent(in), optional        :: level
     integer                              :: used_level
@@ -124,7 +125,7 @@ contains
       level   = used_level, &
       context = context, &
       info = info, &
-      rank    = rank, &
+      rank    = mynode, &
       i       = i, &
       j       = j, &
       k       = k )
@@ -151,7 +152,7 @@ contains
     final_info = final_info // &
          'NF90 STATUS CODE: ' // trim(status_str) // new_line('A') // &
          'NF90 ERROR MESSAGE: ' // trim(nf90_strerror(netcdf_status))
-    call this%raise_from_rank(mynode, context, final_info)
+    call this%raise_from_rank(context, final_info, level=LOG_LEVEL_ERROR)
   end subroutine check_netcdf_status
 
   !=========================================================

@@ -77,7 +77,7 @@
                if (dsize/=xi_rho) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), xi_rho, dsize)
-                  call error_log%raise_global(
+                  call error_log%raise_from_rank(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -87,7 +87,7 @@
                if (dsize /= xi_u) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), xi_u, dsize)
-                  call error_log%raise_global(
+                  call error_log%raise_from_rank(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -97,7 +97,7 @@
                if (dsize/=eta_rho) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), eta_rho, dsize)
-                  call error_log%raise_global(
+                  call error_log%raise_from_rank(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -107,7 +107,7 @@
                if (dsize /= eta_v) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), eta_v, dsize)
-                  call error_log%raise_global(
+                  call error_log%raise_from_rank(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -118,7 +118,7 @@
               if (dsize /= N+1) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), N+1, dsize)
-                  call error_log%raise_global(
+                  call error_log%raise_from_rank(
      &                 context=fn_name,
      &                 info=error_info)
               endif
@@ -127,7 +127,7 @@
               if (dsize /= N) then
                   error_info=write_dim_error_info(
      &                 dname(1:ldim), fname(1:lname), N, dsize)
-                  call error_log%raise_global(
+                  call error_log%raise_from_rank(
      &                 context=fn_name,
      &                 info=error_info)
                 icount=icount+1
@@ -141,18 +141,18 @@
      &            'Cannot get size of dimension #', id,
      &            'from netCDF file ''',fname(1:lname),'''.',
      &            nf90_strerror(ierr)
-             call error_log%raise_global(
+             call error_log%raise_from_rank(
      &            context=fn_name,
      &            info=error_info)
 
-            icount=icount+1
+             icount=icount+1
           endif
         enddo
       else
         write(error_info,*)
      &          'Cannot get number of dimensions in netCDF file '''//
      &        fname(1:lname)// '''.'// nf90_strerror(ierr)
-        call error_log%raise_global(
+        call error_log%raise_from_rank(
      &       context=fn_name,
      &       info=error_info)
 
@@ -163,9 +163,7 @@
         icount=icount+check_scoord(ncid, fname, chk_Cs_wr)
       endif
 #endif
-c$$$  1   format(/'wrong size of dimension ''',
-c$$$     &                  A, ''' =', i5 / 12x, 'in netCDF file ''', A,
-c$$$     &                            ''': must be', i5,1x, 'instead.'/)
+
       checkdims=icount
 
       end  !]
@@ -347,7 +345,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Mismatch in ''Cs_w'' ',
      &            'values in file ''', fname(1:lfile), '''.'
-            call error_log%raise_global(
+            call error_log%raise_from_rank(
      &           context=fn_name,
      &           info=error_info)
             icount=icount+1
@@ -371,7 +369,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Mismatch in ''Cs_r'' ',
      &            'values in file ''', fname(1:lfile), '''.'
-            call error_log%raise_global(
+            call error_log%raise_from_rank(
      &           context=fn_name,
      &           info=error_info)
             icount=icount+1
@@ -390,7 +388,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &            'Mismatch in ''theta_s'': should be',   theta_s,
      &            'found',tst_val(1),'in file ''', fname(1:lfile),'''.'
-            call error_log%raise_global(
+            call error_log%raise_from_rank(
      &           context=fn_name,
      &           info=error_info)
 # ifdef VERBOSE
@@ -405,7 +403,7 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
             write(error_info,*)
      &      'Mismatch in ''theta_b'': should be',   theta_b, 'found',
      &            tst_val(1), 'in file ''', fname(1:lfile), '''.'
-            call error_log%raise_global(
+            call error_log%raise_from_rank(
      &           context=fn_name,
      &           info=error_info)
 
@@ -424,27 +422,27 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
 
 
 
-      function read_nc1dat(ncid, fname, vname, nlen, value)  ![
+      function read_nc1dat(ncid, fname, vname, nlen, value) ![
 
-! A basic function to retrieve a simple variable [stored as either
-! a scalar or fixed-size array], which can be stored in netCDF file
-! as a global attribute or a variable.
+!     A basic function to retrieve a simple variable [stored as either
+!     a scalar or fixed-size array], which can be stored in netCDF file
+!     as a global attribute or a variable.
 !
-! input: ncid     netCDF ID and name of input file [both arguments
-!        fname    are assumed to be defined at entry (hence the file
-!                 in already open state) however fname is used only
-!                 to write error messages something goes wrong.]
+!     input: ncid     netCDF ID and name of input file [both arguments
+!     fname    are assumed to be defined at entry (hence the file
+!     in already open state) however fname is used only
+!     to write error messages something goes wrong.]
 !
-!        vname    name of the variable to be read and its expected
-!        nlen     length, which will be checked against the actual
-!                 size of the global attribute (or variable) in
-!                 the file.
+!     vname    name of the variable to be read and its expected
+!     nlen     length, which will be checked against the actual
+!     size of the global attribute (or variable) in
+!     the file.
 !
-! output: value   value(s, if array) of the variables. Note that
-!                 the value is read as a whole [there is no
-!                 provision to read a subset of values, a record.]
+!     output: value   value(s, if array) of the variables. Note that
+!     the value is read as a whole [there is no
+!     provision to read a subset of values, a record.]
 !
-! returned value  error status =0 means no error.
+!     returned value  error status =0 means no error.
 
       use param, only: mynode
       use netcdf, only:
@@ -462,99 +460,113 @@ c$$$     &                            ''': must be', i5,1x, 'instead.'/)
       real value(nlen)
 
       integer ndims, dimids(8), varid, vtype, size,
-     &               i,j, ierr,  lvar, lfile, lenstr
+     &     i,j, ierr,  lvar, lfile, lenstr
 
       lvar=lenstr(vname) ; lfile=lenstr(fname)
 
       ierr=nf90_inquire_attribute(ncid, nf90_global, vname, vtype, size)
+!     #################################
       if (ierr == nf90_noerr) then
-        if (size == nlen) then
-          ierr=nf90_get_att(ncid, nf90_global, vname, value)
-          if (ierr /= nf90_noerr) then
-            write(error_info,*)
-     &          'Cannot retrieve global attribute ''',   vname(1:lvar),
-     &            ''' from ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-            call error_log%raise_global(
-     &           context=fn_name,
-     &           info=error_info)
-          endif
-        endif
+         if (size == nlen) then
+            ierr=nf90_get_att(ncid, nf90_global, vname, value)
+            if (ierr /= nf90_noerr) then
+               write(error_info,*)
+     &              'Cannot retrieve global attribute ''',   vname(1:lvar),
+     &              ''' from ''', fname(1:lfile), '''.'
+               call error_log%check_netcdf_status(
+     &              netcdf_status=ierr,
+     &              context=fn_name,
+     &              info=error_info)
+            endif
+         endif
       else
-        size=1
-        ierr=nf90_inq_varid(ncid, vname, varid)
-        if (ierr == nf90_noerr) then
-!          ierr=nf_inq_varndims(ncid, varid, ndims)
-          ierr=nf90_inquire_variable(ncid, varid, ndims=ndims)
-          if (ierr == nf90_noerr) then
-            if (ndims > 0) then
-!              ierr=nf_inq_vardimid(ncid, varid, dimids)
-              ierr=nf90_inquire_variable(ncid, varid, dimids=dimids)
-              if (ierr == nf90_noerr) then
-                i=0
-                do while (i<ndims .and. ierr==nf90_noerr)
-                  i=i+1
-!                  ierr=nf_inq_dimlen(ncid, dimids(i), j)
-                  ierr=nf90_inquire_dimension(ncid, dimids(i), len=j)
+         size=1
+         ierr=nf90_inq_varid(ncid, vname, varid)
+!     =================================
+         if (ierr == nf90_noerr) then
+            ierr=nf90_inquire_variable(ncid, varid, ndims=ndims)
+!     ---------------------------------
+            if (ierr == nf90_noerr) then
+               if (ndims > 0) then
+                  ierr=nf90_inquire_variable(ncid, varid, dimids=dimids)
                   if (ierr == nf90_noerr) then
-                    size=size*j
+                     i=0
+                     do while (i<ndims .and. ierr==nf90_noerr)
+                        i=i+1
+                        ierr=nf90_inquire_dimension(ncid, dimids(i), len=j)
+                        if (ierr == nf90_noerr) then
+                           size=size*j
+                        endif
+                     enddo
+                     if (ierr /= nf90_noerr) then
+                        write(error_info,*)
+     &                       'Cannot find size of dimension #',
+     &                       dimids(i),  'in file ''',
+     &                       fname(1:lfile), '''.'
+                        call error_log%check_netcdf_status(
+     &                       netcdf_status=ierr,
+     &                       context=fn_name,
+     &                       info=error_info)
+                     endif
+                  else
+                     write(error_info,*)
+     &                    'Cannot determine dimension IDs for ''', vname(1:lvar),
+     &                    ''' in file ''', fname(1:lfile), '''.'
+                     call error_log%check_netcdf_status(
+     &                    netcdf_status=ierr,
+     &                    context=fn_name,
+     &                    info=error_info)
                   endif
-                enddo
-                if (ierr /= nf90_noerr) then
+               endif
+!     ---------------------------------
+            else ! nf90_inquire_variable noerr
+!     ---------------------------------
+               write(error_info,*)
+     &              'Cannot determine number of dimensions for ''', vname(1:lvar),
+     &              ''' in file ''',  fname(1:lfile), '''.'
+               call error_log%check_netcdf_status(
+     &              netcdf_status=ierr,
+     &              context=fn_name,
+     &              info=error_info)
+            endif !nf90_inquire_variable noerr
+!     ---------------------------------
+            if (size == nlen .and. ierr == nf90_noerr) then
+               ierr=nf90_get_var(ncid, varid, value)
+               if (ierr/=nf90_noerr) then
                   write(error_info,*)
-     &                'read_nc1dat :: Cannot find size of dimension #',
-     &                 dimids(i),  'in file ''', fname(1:lfile), '''.',
-     &                  nf90_strerror(ierr)
-                  call error_log%raise_global(
+     &                 'Cannot read variable ''',  vname(1:lvar),
+     &                 ''' from file ''', fname(1:lfile), '''.'
+                  call error_log%check_netcdf_status(
+     &                 netcdf_status=ierr,
      &                 context=fn_name,
      &                 info=error_info)
-                endif
-              else
-                write(error_info,*)
-     &                'Cannot determine dimension IDs for ''', vname(1:lvar),
-     &                ''' in file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-                call error_log%raise_global(
-     &               context=fn_name,
-     &               info=error_info)
-              endif
+               endif
             endif
-          else
-            write(error_info,*)
-     &            'Cannot determine number of dimensions for ''', vname(1:lvar),
-     &            ''' in file ''',  fname(1:lfile), '''.', nf90_strerror(ierr)
-            call error_log%raise_global(
-     &           context=fn_name,
-     &           info=error_info)
-          endif
-          if (size == nlen .and. ierr == nf90_noerr) then
-            ierr=nf90_get_var(ncid, varid, value)
-            if (ierr/=nf90_noerr) then
-              write(error_info,*)
-     &              'Cannot read variable ''',  vname(1:lvar),
-     &              ''' from file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-              call error_log%raise_global(
-     &             context=fn_name,
-     &             info=error_info)
-            endif
-          endif
-        else
-          mpi_master_only write(*,'(/1x,6A/14x,A/)')
-     &             '### WARNING: read_nc1dat :: ',
-     &            'Cannot determine netCDF ID for ''',  vname(1:lvar),
-     &      ''' in file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
-        endif
-      endif
+!     =================================
+         else ! nf90_inq_varid noerr
+!     =================================
+            mpi_master_only write(*,'(/1x,6A/14x,A/)')
+     &           '### WARNING: read_nc1dat :: ',
+     &           'Cannot determine netCDF ID for ''',  vname(1:lvar),
+     &           ''' in file ''', fname(1:lfile), '''.', nf90_strerror(ierr)
+         endif  ! nf90_inq_varid noerr
+!     =================================
+      endif ! nf90_inquire_attribute noerr
+!     #################################
+
       if (size /= nlen .and. ierr == nf90_noerr) then
-        write(error_info,*)
+         write(error_info,*)
      &        'Unexpected size of ''', vname(1:lvar),
      &        ''' in file ''',  fname(1:lfile),  ''':', 'should be',
      &        nlen, 'but found', size
-        call error_log%raise_global(
-     &       context=fn_name,
-     &       info=error_info)
-        ierr=+1
+         call error_log%raise_from_rank(
+     &        context=fn_name,
+     &        info=error_info)
+         ierr=+1
+
       endif
       read_nc1dat=ierr
 
-      end  !]
+      end                       !]
 
 

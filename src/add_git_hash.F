@@ -11,6 +11,5 @@
       call error_log%check_netcdf_status(netcdf_status=ierr,
      &     info="unable to add git hash attribute to netcdf file",
      &     context="add_git_hash")
-
       end subroutine add_git_hash
 

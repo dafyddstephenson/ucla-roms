@@ -758,7 +758,6 @@
      &            'find_new_record: Ran out of time records ',
      &            'for ', vname, ' in single file ', ungridded_filename
              call error_log%raise_from_rank(
-     &            rank=mynode,
      &            context=module_name//"/"//sr_name,
      &            info=error_info)
           endif
@@ -773,7 +772,6 @@ c$$$      call error_log%handle_abort
         write(error_info, *)
      &        'Could not find var: ', vname, 'in forcing files.'
         call error_log%raise_from_rank(
-     &       rank=mynode,
      &       context=module_name//"/"//sr_name,
      &       info=error_info)
       endif
@@ -783,7 +781,6 @@ c$$$      call error_log%handle_abort
      &        'Ran out of time records for ',
      &        vname, ' mynode=', mynode
         call error_log%raise_from_rank(
-     &       rank=mynode,
      &       context=module_name//"/"//sr_name,
      &       info=error_info)
       endif
@@ -805,7 +802,6 @@ c$$$      call error_log%handle_abort() !TODO
      &  'First available forcing record is past current time for var: ',
      &        vname, ' mynode=', mynode
          call error_log%raise_from_rank(
-     &        rank=mynode,
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
@@ -955,7 +951,6 @@ c$$$      call error_log%handle_abort()
      &    call display_read_time_to_log(vname,nc%times(it),irec )
       else
          call error_log%raise_from_rank(
-     &        rank=mynode,
      &        context=module_name//"/"//sr_name,
      &        info="bry error")
       endif
@@ -1045,7 +1040,6 @@ c$$$      call error_log%handle_abort()
      &    call display_read_time_to_log(vname,nc%times(it),irec )
       else
          call error_log%raise_from_rank(
-     &        rank=mynode,
      &        context=module_name//"/"//sr_name,
      &        info="bry error")
         stop 'fill_frc_slice - bry error'
@@ -1192,8 +1186,8 @@ c$$$      call error_log%handle_abort()
      &        context=module_name//"/"//sr_name,
      &        info="unable to create attributes in file"//trim(fname))
       end if
-
       ierr = nf90_close(ncid)
+      call error_log%handle_abort()
       if (mynode == 0) then
         write(*,'(7x,2A)')
      &    'created new netcdf file ', trim(fname)
@@ -1456,7 +1450,6 @@ c$$$      call error_log%handle_abort()
         fname(istart:istart+2) = '   '
       else
          call error_log%raise_from_rank(
-     &        rank=mynode,
      &        context=module_name//"/"//sr_name,
      &        info="no .nc in file name")
       endif
@@ -1525,7 +1518,6 @@ c$$$      call error_log%handle_abort()
      &   trim(file_var_units),' for var: ',
      &   trim(var_name),',  Units must be: ', trim(var_units)
         call error_log%raise_from_rank(
-     &       rank=mynode,
      &       context=module_name//"/"//sr_name,
      &       info=error_info)
       end if
@@ -1736,7 +1728,6 @@ c$$$      call error_log%handle_abort()
          write(error_info,*)
      &    'character full:', trim(string_add)
          call error_log%raise_from_rank(
-     &        rank=mynode,
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif

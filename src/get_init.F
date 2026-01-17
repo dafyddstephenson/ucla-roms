@@ -98,42 +98,38 @@ c--#define VERBOSE
 
       init_type=0
       ierr=nf90_open(ininame, nf90_nowrite, ncid)
-        write(error_info, *)
-     &        'Cannot open netCDF file ''', trim(ininame), '''.'
-         call error_log%check_netcdf_status(
-     &        netcdf_status=ierr,
-     &        context=sr_name,
-     &        info=error_info)
+      write(error_info, *)
+     &     'Cannot open netCDF file ''', trim(ininame), '''.'
+      call error_log%check_netcdf_status(
+     &     netcdf_status=ierr,
+     &     context=sr_name,
+     &     info=error_info)
+      call error_log%handle_abort()
 
-         if (ierr == nf90_noerr) then
-        ierr=checkdims (ncid, ininame, max_rec)
-        if (ierr == nf90_noerr) then
-           if (max_rec > 0) then
-              if (req_rec > 0) then
-                 if (req_rec <= max_rec) then
-                    record=req_rec
-                 else
-                    write(error_info, *)
-     &                   'requested restart time ',
-     &                   'record',req_rec,
-     &                   'exceeds number', 'of records',
-     &                   max_rec,  'available in netCDF file ''',
-     &                   trim(ininame), '''.'
-                    call handle_local_error(
-     &                   context=sr_name,
-     &                   info=error_info,
-     &                   i=-1,j=-1,tile=mynode)
-                    ! NOTE this requires rank-level, not local, handling
-              endif
-            else !(if (req_rec > 0))
-              record=max_rec
+      ierr=checkdims (ncid, ininame, max_rec)
+      call error_log%handle_abort()
+
+      if (max_rec > 0) then
+         if (req_rec > 0) then
+            if (req_rec <= max_rec) then
+               record=req_rec
+            else
+               write(error_info, *)
+     &              'requested restart time ',
+     &              'record',req_rec,
+     &              'exceeds number', 'of records',
+     &              max_rec,  'available in netCDF file ''',
+     &              trim(ininame), '''.'
+               call error_log%raise_from_rank(
+     &              context=sr_name,
+     &              info=error_info)
             endif
-          else !if (max_rec > 0)
-            record=1
-          endif
-       endif
-      else ! if(ierr == nf90_noerr)
-      endif                     ! if(ierr == nf90_noerr)
+         else                   !(if (req_rec > 0))
+            record=max_rec
+         endif
+      else                      !if (max_rec > 0)
+         record=1
+      endif
 
 
 ! Read in evolving model variables:

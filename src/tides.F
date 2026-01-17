@@ -298,7 +298,6 @@
 
       if (found_rec==0) then
          call error_log%raise_from_rank(
-     &        rank=mynode,
      &        context=module_name//"/"//sr_name,
      &        info="tide input data not found")
       endif

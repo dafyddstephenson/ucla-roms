@@ -203,7 +203,6 @@
      &              ',  in grid (' // trim(grdname)//
      &              ') file.'
                call error_log%raise_from_rank(
-     &              rank=mynode,
      &              context=module_name//"/"//sr_name,
      &              info=error_info)
             else
