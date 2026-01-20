@@ -1040,7 +1040,6 @@ c$$$      call error_log%handle_abort
          call error_log%raise_from_rank(
      &        context=module_name//"/"//sr_name,
      &        info="bry error")
-        stop 'fill_frc_slice - bry error'
       endif
 
       nc%irec  = irec
@@ -1159,11 +1158,6 @@ c$$$      call error_log%handle_abort
       else
         call append_date_node(fname)
       endif
-
-!      if (mynode==0) then
-!        print *,'creating: ',fname
-!        stop
-!      endif
 
       ierr=nf90_create(trim(fname),nf90_netcdf4,ncid)
       if (ierr/=nf90_noerr) then
@@ -1388,6 +1382,8 @@ c$$$      call error_log%handle_abort
       integer :: label
       integer,parameter :: period=900
 
+      character(len=17) :: sr_name = "append_date_node"
+
       if (.not.present(nodate)) then
         call sec2date(time,date)
         select case (dt_format)
@@ -1418,8 +1414,10 @@ c$$$      call error_log%handle_abort
       elseif (nnodes<100000) then
         write(indxstr,'(A,I0.5)') '.',mynode
       elseif (nnodes>100000) then
-         print *, 'ROMS is not ready for this future'
-         stop
+         call error_log%raise_global(
+     &        info='ROMS is not ready for this future',
+     &        context=module_name//"/"//sr_name)
+         call error_log%handle_abort()
       endif
       fname = trim(fname) //trim(indxstr)
 #endif
@@ -1464,8 +1462,10 @@ c$$$      call error_log%handle_abort
       elseif (nnodes<100000) then
         write(indxstr,'(A,I0.5)') '.',mynode
       elseif (nnodes>100000) then
-         print *, 'ROMS is not ready for this future'
-         stop
+         call error_log%raise_global(
+     &        info='ROMS is not ready for this future',
+     &        context=module_name//"/"//sr_name)
+         call error_log%handle_abort()
       endif
       fname = trim(fname) //trim(indxstr)
 #endif
