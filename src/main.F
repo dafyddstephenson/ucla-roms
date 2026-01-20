@@ -18,31 +18,30 @@ c$$$      real*8 tstart, tend
 C$    integer level,req_lev
 
 c**   call system('uname -nmr')
-      ierr=1
+
 C$    req_lev=MPI_THREAD_MULTIPLE
 C$    call MPI_Init_thread(req_lev, level, ierr)
 C$ !!   write(*,*) 'MPI thread support levels =', req_lev,level
 C$    ierr=0
-      if (ierr == 1) call MPI_Init(ierr)
+      call MPI_Init(ierr)
 
-      call mpi_setup(ierr)
+      call mpi_setup
       tstart=MPI_Wtime()
-      if (ierr == 0) then
+
 # endif
-        call init_scalars(ierr)          ! Initialize global scalars,
-        call init_tracers
-        if (ierr == 0) then
+      call init_scalars         ! Initialize global scalars,
+      call init_tracers
 C$        call omp_set_dynamic(.false.)
 C$OMP PARALLEL                           ! fast-time averaging weights
-          call roms_thread               ! for barotropic mode, and
+      call roms_thread          ! for barotropic mode, and
 C$OMP END PARALLEL                       ! launch the model in OpenMP
-        endif                            ! parallel regime.
+                                         ! parallel regime.
 #ifdef NHMG
       ! write nhmg statistics to fort.10
       call nhmg_clean()
 #endif
 # ifdef MPI
-      endif
+
       call MPI_Barrier(ocean_grid_comm, ierr)
       tend=MPI_Wtime()
       mpi_master_only write(*,*) 'MPI_run_time =', tend-tstart
@@ -121,7 +120,6 @@ C$OMP END MASTER                         ! is in uniform state]. This
 
       integer trd, tile, my_first, my_last, range
 C$    integer omp_get_thread_num, omp_get_num_threads
-      integer ierr
 
       numthreads=1 ; trd=0
 C$    numthreads=omp_get_num_threads()
@@ -345,7 +343,6 @@ CR      write(*,*)  ' -2' MYID
 #endif
       implicit none
 
-      integer :: ierr
 
 ! Increment time-step index and set model clock. Note that "time" set
 ! below corresponds to step "n" (denoted here as "nstp"), while counter

@@ -1,6 +1,6 @@
 #include "cppdefs.opt"
 
-      subroutine init_scalars (ierr)
+      subroutine init_scalars()
 
 ! Set initial values for globally accessable (stored in common blocks)
 ! scalar variables.  Typically these are associated with time indices,
@@ -24,7 +24,7 @@
       use, intrinsic :: iso_fortran_env, only: real32
 
       implicit none
-      integer ierr, i
+      integer  i
 
       real :: nan  !real(real32) :: nan
       nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
@@ -76,14 +76,9 @@ c      write(*,*) 'kmp_stacksize =', size
       call init_dimensions                                 ! needs to come before init_output_indices
       call init_output_indices      ! retire this soon (the bfx, bfy thing)
 
-
-      ierr=0
       call read_inp()
-      if (ierr==0) then
 #ifdef SOLVE3D
         call set_weights
 #endif
-
-      endif
 
       end

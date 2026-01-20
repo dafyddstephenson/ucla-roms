@@ -494,7 +494,7 @@
       end
 
 
-      subroutine check_set_HUV1_switches(ierr)
+      subroutine check_set_HUV1_switches
 
 ! This code must be placed here rather than in a separate file in order
 ! to be exposed to the relevant CPP-macros defined locally in this file
@@ -505,7 +505,7 @@
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
 
       integer lstr
       character(len=16) tmpstr
@@ -581,9 +581,7 @@
 
       cpps(is:ie)='(N-M+B-1)/B='/ /tmpstr(1:lstr)
 # endif
-      return
-      ierr=ierr+1
-      end
+      end subroutine check_set_HUV1_switches
 #else
       subroutine set_depth_empty
       end

@@ -1,18 +1,18 @@
 #include "cppdefs.opt"
                                            ! Checking compatibility of
-      subroutine check_tiling (ierr) ! dimensions of the grid and
+      subroutine check_tiling () ! dimensions of the grid and
       use error_handling_mod, only: error_log
       use param, only: nsub_e, nsub_x
       implicit none                        ! partitioning parameters:
-      integer ierr, tile                   ! logic of the code requires
+      integer tile                   ! logic of the code requires
 
       do tile=0,NSUB_X*NSUB_E-1            ! all the tiles to be at
-        call check_tile_bounds (tile,ierr) ! least two point wide.
+        call check_tile_bounds (tile) ! least two point wide.
       enddo                                ! Setting NSUB_X and NSUB_E
       call error_log%handle_abort()        ! incorrectly may result in
       end                                  ! smaller size.
 
-      subroutine check_tile_bounds (tile, ierr)
+      subroutine check_tile_bounds (tile)
 
       use param, only:
      &     ieast, iwest, jnorth, jsouth, lm, mm, nsub_e, nsub_x
@@ -22,14 +22,13 @@
       implicit none
       character(len=17) :: sr_name="check_tile_bounds"
       character(len=200) :: error_info
-      integer tile, ierr, isize,jsize
+      integer tile, isize,jsize
 #include "compute_tile_bounds.h"
 
       isize=iend-istr+1                    ! NOTE: run terminates, if
       jsize=jend-jstr+1                    ! violation occurs here.
 
       if (isize<2) then
-        ierr=ierr+1
         write(error_info, *)
      &          'NSUB_X =', NSUB_X,  'is incompatible with Lm =', Lm,
      &       'i_X =', i_X,  '==> istr,iend =', istr,iend
@@ -40,7 +39,6 @@
 
       endif
       if (jsize<2) then
-        ierr=ierr+1
         write(error_info, *)
      &          'NSUB_E =', NSUB_E,  'is incompatible with Mm =', Mm,
      &       'j_E =', j_E,  '==> jstr,jend =', jstr,jend
@@ -97,7 +95,7 @@
       end                            ! it into 80-character width.
 
 
-      subroutine check_switches2(ierr)
+      subroutine check_switches2()
 
 ! Manually check mutual consistency of settings of CPP switches, report
 ! contradictions (if any), and raise errors flag to terminate the run.
@@ -109,7 +107,7 @@
       implicit none
       character(len=16) :: sr_name = "check_switches2"
       character(len=200) :: error_info
-      integer ierr, nobc_west, nobc_east, nobc_south, nobc_north,
+      integer nobc_west, nobc_east, nobc_south, nobc_north,
      &                                ncoupl, nAk, is,ie, lenstr
 
       ie=lenstr(cpps)
@@ -189,7 +187,6 @@
      &        context=sr_name,
      &        info=error_info)
 
-        ierr=ierr+1
       elseif (ncoupl>1) then
         write(error_info, *)     'misconfigured '//
      &          'switches PRED_COUPLED_MODE and CORR_COUPLED_MODE '//
@@ -199,7 +196,6 @@
      &        context=sr_name,
      &        info=error_info)
 
-        ierr=ierr+1
       endif
 
 ! Checking the number of selections of boundary conditions.
@@ -223,7 +219,6 @@
          call error_log%raise_global(
      &        context=sr_name,
      &        info=error_info)
-        ierr=ierr+1
       endif
       if (nobc_east>1) then
         write(*,'(A)') 'more than one '//
@@ -231,7 +226,6 @@
          call error_log%raise_global(
      &        context=sr_name,
      &        info=error_info)
-        ierr=ierr+1
       endif
 
 #ifdef NS_PERIODIC
@@ -253,7 +247,6 @@
          call error_log%raise_global(
      &        context=sr_name,
      &        info=error_info)
-        ierr=ierr+1
       endif
       if (nobc_north>1) then
         write(error_info, *) 'more than one '//
@@ -262,7 +255,6 @@
      &        context=sr_name,
      &        info=error_info)
 
-        ierr=ierr+1
       endif
 
 ! Checking the number of selections vertical mixing schemes.
@@ -293,7 +285,6 @@
      &        context=sr_name,
      &        info=error_info)
 
-        ierr=ierr+1
       endif
 
 /*
@@ -306,7 +297,6 @@
      &        context=sr_name,
      &        info=error_info)
 
-      ierr=ierr+1
 # endif
 #endif
 */
@@ -322,7 +312,6 @@
       call error_log%raise_global(
      &        context=sr_name,
      &        info=error_info)
-        ierr=ierr+1
       endif
 #endif
       return
@@ -332,6 +321,5 @@
       call error_log%raise_global(
      &        context=sr_name,
      &        info=error_info)
-      ierr=ierr+1
       return
       end

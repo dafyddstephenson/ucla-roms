@@ -786,7 +786,7 @@
       end
 
 !------------------------------------------------------------------------------------------
-      subroutine check_pre_step_switches (ierr)
+      subroutine check_pre_step_switches
 
 ! This routine keeps track of the status of local CPP-settings in
 ! "pre_step3d4S.F".  It must be placed here rather than a separate
@@ -798,7 +798,7 @@
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
       character(len=24) :: sr_name = "check_pre_step_switches"
       character(len=1024) :: error_info =""
 
@@ -817,10 +817,7 @@
 
 # include "track_advec_switches.h"
       call error_log%handle_abort()
-      return
-      ierr=ierr+1
-      return
-      end
+      end subroutine check_pre_step_switches
 
 #else
       subroutine pre_step3d_empty

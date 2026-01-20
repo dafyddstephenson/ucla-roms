@@ -53,7 +53,6 @@
 !
 !     ARGUMENTS:
 !       unit  - input unit positioned at the keyword’s data
-!       ierr  - incremental error flag
 !-----------------------------------------------------------------------
          subroutine keyword_handler(unit)
             integer, intent(in) :: unit

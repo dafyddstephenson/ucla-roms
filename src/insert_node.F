@@ -2,12 +2,12 @@ c--#define TEST_INSERT  ! <-- self testing
 
 #ifdef TIME_INDEX
 # ifdef EXTRACT_INDEX
-      subroutine extract_time_index(name, lstr, indx, ierr)
+      subroutine extract_time_index(name, lstr, indx)
 # else
-      subroutine   insert_time_index(name, lstr, indx, ierr)
+      subroutine   insert_time_index(name, lstr, indx)
 # endif
 #else
-      subroutine insert_node(name, lstr, node, nnodes, ierr)
+      subroutine insert_node(name, lstr, node, nnodes)
 #endif
 
 ! Insert MPI-node number "node" into character string "name" and
@@ -30,18 +30,14 @@ c--#define TEST_INSERT  ! <-- self testing
 !                    in this code nnodes is used only to determine
 !                    how many digits are needed to accommodate all
 !                    possible MPI node numbers.
-!         ierr   input/output error counter incremented by 1 for each
-!                    error occurring here; if no errors it remains
-!                    untouched.  Note that "ierr" is ASSUMED TO BE
-!                    INITIALIZED FROM THE OUTSIDE, normally to 0.
 !
 ! output: name    modified string with node number inserted.
 !         lstr    length of the modified string
-!         ierr    same as at entry, if no errors; incremented, if any
+
       use error_handling_mod, only: error_log
       implicit none
       character(len=*) name
-      integer lstr, ierr, i,j,k, lsffx, ndots, idot(3)
+      integer lstr, i,j,k, lsffx, ndots, idot(3)
 #ifdef TIME_INDEX
      &                                , indx
 #else
@@ -187,7 +183,6 @@ c--#define TEST_INSERT  ! <-- self testing
          call error_log%raise_from_rank(
      &     context=sr_name,
      &     info=error_info)
-        ierr=ierr+1
         return
       endif
       call error_log%handle_abort()

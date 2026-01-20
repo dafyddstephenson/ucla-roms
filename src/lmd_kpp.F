@@ -669,7 +669,7 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       end
 
 
-      subroutine check_kpp_switches (ierr)
+      subroutine check_kpp_switches
 
 ! This routine is to keep track of the status of CPP-switches defined
 ! locally in this file above. It must be placed here rather than stored
@@ -681,7 +681,7 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       use error_handling_mod, only: error_log
 
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
       character(len=19) :: sr_name = "check_kpp_switches"
       character(len=1024) :: error_info = ""
 
@@ -726,9 +726,7 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       cpps(is:ie)='MERGE_OVERLAP'
 # endif
       call error_log%handle_abort()
-      return
-      ierr=ierr+1
-      end
+      end subroutine check_kpp_switches
 #else
       subroutine lmd_kpp_empty
       end
