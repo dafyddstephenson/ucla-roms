@@ -1714,7 +1714,6 @@ c$$$      call error_log%handle_abort
 
       ! local
       integer :: is, ie
-      print *, "HERE WE ARE"
       is=len_trim( char_string )
       is=is+2
       ie=len_trim( string_add )

@@ -617,7 +617,7 @@ c--#define VERBOSE
      &     'rec =', record, '.'
 #endif
         else
-              call error_log%raise_global(
+              call error_log%raise_from_rank(
      &             context=sr_name,
      &             info="Unknown Error.")
          endif

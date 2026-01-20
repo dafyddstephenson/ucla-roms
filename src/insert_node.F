@@ -38,7 +38,7 @@ c--#define TEST_INSERT  ! <-- self testing
 ! output: name    modified string with node number inserted.
 !         lstr    length of the modified string
 !         ierr    same as at entry, if no errors; incremented, if any
-
+      use error_handling_mod, only: error_log
       implicit none
       character(len=*) name
       integer lstr, ierr, i,j,k, lsffx, ndots, idot(3)
@@ -55,6 +55,16 @@ c--#define TEST_INSERT  ! <-- self testing
       character(len=1), parameter :: filesep='/'
       integer fname_start, last_dot, digit
 
+#ifdef TIME_INDEX
+# ifdef EXTRACT_INDEX
+      character(len=19) :: sr_name = "extract_time_index"
+# else
+      character(len=18) :: sr_name = "insert_time_index"
+# endif
+#else
+      character(len=12) :: sr_name = "insert_node"
+#endif
+      character(len=1024) :: error_info = ""
       ! Find the last filesep to isolate just the filename
       fname_start = 1
       do i = 1, lstr
@@ -169,22 +179,18 @@ c--#define TEST_INSERT  ! <-- self testing
         power=10*power                   ! the largest possible MPI-
       enddo                              ! node number (rank).
       if (power >= 10**digits) then
-        write(*,'(/1x,2A/6x,2A/6x,A/)')
-#ifdef TIME_INDEX
-# ifdef EXTRACT_INDEX
-     &                          '### ERROR: extract_time_index :: ',
-# else
-     &                            '### ERROR: insert_time_index :: ',
-# endif
-#else
-     &                                  '### ERROR: insert_node :: ',
-#endif
-     &   'Possible ambiguity between MPI-node segment',    'length ',
-     &   'and time index segment length. To fix: increase parameter',
-     &   '''digits'' in file "insert_node.F" and recompile.'
+         write(error_info,*)
+     &      'Possible ambiguity between MPI-node segment length ',
+     &        'and time index segment length. ',
+     &        'To fix: increase parameter',
+     &        '''digits'' in file "insert_node.F" and recompile.'
+         call error_log%raise_from_rank(
+     &     context=sr_name,
+     &     info=error_info)
         ierr=ierr+1
         return
       endif
+      call error_log%handle_abort()
 # endif
       do while(power > 9)              ! Insert time index or MPI node
         power=power/10                 ! number (rank) into the string,
@@ -201,7 +207,7 @@ c--#define TEST_INSERT  ! <-- self testing
         lstr = i
       endif
 #endif  /* EXTRACT_INDEX */
-      end
+      end subroutine
 
 #ifndef TIME_INDEX
 # define TIME_INDEX

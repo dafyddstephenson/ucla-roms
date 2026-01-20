@@ -571,21 +571,30 @@
 
       use param, only: mynode
       use strings, only: cpps, max_opt_size
+      use error_handling_mod, only: error_log
 
       implicit none
       integer ierr, is,ie, lenstr
+      character(len=24) :: sr_name = "check_step_uv1_switches"
+      character(len=1024) :: error_info =""
+
+      write(error_info,*)
+     &  'Insufficient length of string "cpps" in file "strings".',
+     &        'Increase parameter "max_opt_size" and recompile.'
+
 
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+13
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='<step3d_uv1.F>'
 
 # include "track_advec_switches.h"
 
       return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
       ierr=ierr+1
       end
 

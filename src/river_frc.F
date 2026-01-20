@@ -176,7 +176,6 @@
      &                 info=error_info)
               endif
             endif
-            call error_log%handle_abort()
 !     Check for non-integer values
             ridx(i0:i1, j0:j1) = int(ridx_real(i0:i1, j0:j1))
             if (any(abs(ridx_real(i0:i1,j0:j1) - ridx(i0:i1,j0:j1))
@@ -185,7 +184,6 @@
      &              context=module_name//"/"//sr_name,
      &              info="river_index contains non-integers!")
             endif
-            call error_log%handle_abort()
          else ! if not in the forcing file, look for a single variable in the grid file
             ierr=nf90_close(ncid)
             ierr=nf90_open(grdname, nf90_nowrite, ncid)
@@ -216,10 +214,10 @@
                end where
             end if ! found in grid file
          end if                 ! Separate variables found in forcing file
-         call error_log%handle_abort()
-      endif !analytical
 
-      call calc_river_flux                                           ! compute uflx,vflx from rflx
+      endif !analytical
+      call error_log%handle_abort()
+      call calc_river_flux      ! compute uflx,vflx from rflx
 
       init_riv_done = .true.
 
@@ -276,10 +274,10 @@
               riv_vmask(i,j+1) = 1.0
             endif
 #endif
-          endif
+         endif
         enddo
       enddo
-
+      call error_log%handle_abort()
       end subroutine calc_river_flux  !]
 ! ----------------------------------------------------------------------
       subroutine set_ana_river_frc  ![

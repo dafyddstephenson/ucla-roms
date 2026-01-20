@@ -6,8 +6,11 @@
       use keyword_registry, only:
      &     init_registry, registry, register_keyword,
      &     report_keyword_mismatch, lookup_keyword
+      use error_handling_mod, only: error_log
 
       implicit none
+      character(len=12) :: module_name = "read_inp_mod"
+      character(len=1024) :: error_info = ""
       contains
 
 #include "cppdefs.opt"
@@ -164,7 +167,7 @@
       integer iargc
 #endif
       logical :: eof = .false.
-
+      character(len=8) :: sr_name = "read_inp"
 
       ierr=0                    ! <-- reset error counter
 
@@ -217,18 +220,15 @@
          if (associated(registry(idx)%handler)) then
             call registry(idx)%handler(input, ierr)
          else
-            write(*,*) "ERROR: No handler registered for keyword ", trim(keyword)
+            write(error_info,*) "No handler registered for keyword ", trim(keyword)
             ierr = ierr + 1
             return
          end if
       end do
-      close (input)
 
-      if (ierr /= 0) then
-        write(*,'(/1x,2A,I3,1x,A/)') '### ERROR: read_inp :: ',
-     &  'A total of', ierr, 'configuration errors discovered.'
-       return
-      endif
+      close (input)
+      call error_log%handle_abort()
+
 !     call check_srcs
 #ifdef MPI
       call MPI_Barrier (ocean_grid_comm, ierr)
@@ -246,15 +246,14 @@
 
       character(len=*), intent(in) :: fname
       integer, intent(inout) :: ierr
-
+      integer :: lstr
       integer :: unit, ios, kwlen, idx
       character(len=256) :: keyword
       logical :: eof
 
       open(newunit=unit, file=fname, status='old', action='read', iostat=ios)
       if (ios /= 0) then
-         mpi_master_only write(*,*)
-     &        "ERROR opening file in first_pass_check:", trim(fname)
+         call report_opening_error(fname(1:lstr), mynode, ierr)
          ierr = ierr + 1
          return
       end if
@@ -291,11 +290,11 @@
       character(len=*), intent(in) :: fname
       integer,          intent(in) :: mynode
       integer,          intent(inout) :: ierr
-      character(len=:), allocatable :: msg
 
-      msg = "### ERROR: read_inp :: Cannot find input file '" // trim(fname) // "'"
-
-      write(*,'(/i4,1x,A/)') mynode, msg
+      error_info = "Cannot find input file '" // trim(fname) // "'"
+      call error_log%raise_global(
+     &     info=error_info,
+     &     context=module_name)
 
       ierr = ierr + 1
       end subroutine report_opening_error
@@ -309,11 +308,11 @@
       implicit none
       character(len=*), intent(in) :: keyword
       integer,          intent(inout) :: ierr
-      character(len=:), allocatable :: msg
 
-      msg = "### ERROR: read_inp :: Cannot read entry '" // trim(keyword) // "'"
-
-      write(*,'(/A/)') msg
+      error_info = "Cannot read entry '" // trim(keyword) // "'"
+      call error_log%raise_global(
+     &     info=error_info,
+     &     context=module_name)
 
       ierr = ierr + 1
       end subroutine report_read_error
@@ -935,7 +934,6 @@
 # if defined MPI && defined PARALLEL_FILES
       call insert_node(fname, lstr, mynode, NNODES, ierr)
 # endif
-
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
       close(testunit)
@@ -1012,6 +1010,7 @@
 
       integer :: ios, lstr, testunit, lenstr
       character(len=256) :: fname
+      character(len=15) :: sr_name = "kwread_forcing"
 
 !  Reset forcing storage.
 
@@ -1074,13 +1073,17 @@ c$$$                  end if TODO
                call store_string_att(force_files,
      &              frcfile(max_frc)(1:lstr))
 
-            else
-                mpi_master_only write(*,'(1x,2A/12x,2A/)')
-     &          '### ERROR: read_inp :: Too many forcing files are ',
-     &          'specified in input script.',  'Increase parameter ',
-     &           '''max_frc_files'' in roms_read_write and recompile.'
+            else !(if max_frc < max_frc_files )
+               write(error_info,*)
+     &              'Too many forcing files are ',
+     &              'specified in input script.',  'Increase parameter ',
+     &              '''max_frc_files'' in ',
+     &              'roms_read_write and recompile.'
+               call error_log%raise_global(
+     &              info=error_info,
+     &              context=module_name//"/"//sr_name)
                 ierr=ierr+1
-            end if
+            end if !(max_frc < max_frc_files)
          end if   ! lstr > 0
       end do      ! filename loop
 

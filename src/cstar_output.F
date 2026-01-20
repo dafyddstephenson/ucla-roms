@@ -725,9 +725,11 @@
 #endif
 
 #ifndef CDR_FORCING
-        error stop 'ERROR: cstar_output must have CDR_FORCING enabled.'
+        call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info='cstar_output must have CDR_FORCING enabled.')
 #endif
-
+        call error_log%handle_abort()
       end subroutine init_cstar !]
 
       subroutine wrt_cstar ![

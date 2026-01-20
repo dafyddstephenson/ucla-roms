@@ -218,7 +218,7 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-
+      call error_log%handle_abort()
       if (avg) then
 
 !        if (.not. first_step_avg) then

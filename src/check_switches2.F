@@ -1,6 +1,7 @@
 #include "cppdefs.opt"
                                            ! Checking compatibility of
-      subroutine check_tiling (ierr)       ! dimensions of the grid and
+      subroutine check_tiling (ierr) ! dimensions of the grid and
+      use error_handling_mod, only: error_log
       use param, only: nsub_e, nsub_x
       implicit none                        ! partitioning parameters:
       integer ierr, tile                   ! logic of the code requires
@@ -8,8 +9,8 @@
       do tile=0,NSUB_X*NSUB_E-1            ! all the tiles to be at
         call check_tile_bounds (tile,ierr) ! least two point wide.
       enddo                                ! Setting NSUB_X and NSUB_E
-      end                                  ! incorrectly may result in
-                                           ! smaller size.
+      call error_log%handle_abort()        ! incorrectly may result in
+      end                                  ! smaller size.
 
       subroutine check_tile_bounds (tile, ierr)
 
