@@ -213,15 +213,6 @@ contains
 
     class(error_log_type), intent(inout) :: this
     type(error_entry_type), pointer :: error_entry
-    ! if (mynode==0) then
-    !    print *, "--------------------"
-    !    !call sleep(1)
-    ! end if
-    ! print *, "in handle_abort on",mynode
-    ! if (mynode==0) then
-    !    print *, "--------------------"
-    !    !call sleep(1)
-    ! end if
     local_abort = merge(1, 0, this%abort_requested)
     call MPI_Allreduce(local_abort, global_abort, 1, MPI_INTEGER, MPI_MAX, ocean_grid_comm)
 

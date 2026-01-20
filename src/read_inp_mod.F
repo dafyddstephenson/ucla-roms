@@ -91,7 +91,7 @@
 
       end subroutine register_keywords
 
-      subroutine check_setup(ierr)
+      subroutine check_setup()
 !-----------------------------------------------------------------------
 !     SUBROUTINE: check_setup
 !     DESCRIPTION:
@@ -110,30 +110,26 @@
 !     contains traps for mutually exclussive definitions of non-project
 !     switches (e.g. it traps multiply defined vertical mixing schemes or
 !     lateral boundary conditions; this code is also hand written).
-!     All the checking routines codes are written in transparent mode:
-!     they assumed that error flag (ierr) is initialized at the entry and
-!     they add 1 for each error discovered.
 !-----------------------------------------------------------------------
 
          implicit none
-         integer, intent(inout) :: ierr
 
-         call check_tiling(ierr)
-         call check_switches1(ierr)
+         call check_tiling()
+         call check_switches1()
 #ifdef SOLVE3D
-         call check_pre_step_switches(ierr)
-         call check_step_uv1_switches(ierr)
-         call check_step_uv2_switches(ierr)
-         call check_step_t_switches(ierr)
-         call check_set_HUV1_switches(ierr)
+         call check_pre_step_switches()
+         call check_step_uv1_switches()
+         call check_step_uv2_switches()
+         call check_step_t_switches()
+         call check_set_HUV1_switches()
 # ifdef LMD_KPP
-         call check_kpp_switches(ierr)
+         call check_kpp_switches()
 # endif
-         call check_switches2(ierr)
+         call check_switches2()
 #endif
       end subroutine check_setup
 
-      subroutine read_inp(ierr)
+      subroutine read_inp()
 !-----------------------------------------------------------------------
 !     SUBROUTINE: read_inp
 !     DESCRIPTION:
@@ -152,7 +148,7 @@
 
 
       implicit none
-      integer ierr, ios, idx
+      integer  ios, idx, ierr
 
       integer, parameter :: input=15, testunit=40,
      &                  max_fname=256, max_kwsize=256
@@ -169,11 +165,8 @@
       logical :: eof = .false.
       character(len=8) :: sr_name = "read_inp"
 
-      ierr=0                    ! <-- reset error counter
-
       ! Configuration checks
-      call check_setup(ierr)
-      if (ierr /= 0) return
+      call check_setup()
 
       ! Print relevant information
       mpi_master_only call print_switches
@@ -195,19 +188,19 @@
 ! Setup keyword registry and check input file against registry
       call init_registry()
       call register_keywords()
-      call check_input_file_keywords(fname, ierr)
+      call check_input_file_keywords(fname)
 
 
 ! Open input file to read keywords
       open(input, file=fname, status='old', form='formatted', iostat=ios)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode, ierr)
+         call report_opening_error(fname(1:lstr), mynode)
          return
       end if
 
 ! Read keywords in loop over lines
       do while (.not. eof)
-         call extract_keyword(input, keyword, kwlen, eof, ierr)
+         call extract_keyword(input, keyword, kwlen, eof)
          if (eof) exit
          if (kwlen == 0) cycle  ! no keyword on this line → read next
          if (keyword(1:kwlen) == end_signal) exit
@@ -218,10 +211,9 @@
             cycle
          end if
          if (associated(registry(idx)%handler)) then
-            call registry(idx)%handler(input, ierr)
+            call registry(idx)%handler(input)
          else
             write(error_info,*) "No handler registered for keyword ", trim(keyword)
-            ierr = ierr + 1
             return
          end if
       end do
@@ -230,12 +222,9 @@
       call error_log%handle_abort()
 
 !     call check_srcs
-#ifdef MPI
-      call MPI_Barrier (ocean_grid_comm, ierr)
-#endif
       end subroutine read_inp
 
-      subroutine check_input_file_keywords(fname, ierr)
+      subroutine check_input_file_keywords(fname)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: check_input_file_keywords
 !     DESCRIPTION:
@@ -245,7 +234,6 @@
       implicit none
 
       character(len=*), intent(in) :: fname
-      integer, intent(inout) :: ierr
       integer :: lstr
       integer :: unit, ios, kwlen, idx
       character(len=256) :: keyword
@@ -253,14 +241,13 @@
 
       open(newunit=unit, file=fname, status='old', action='read', iostat=ios)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode, ierr)
-         ierr = ierr + 1
+         call report_opening_error(fname(1:lstr), mynode)
          return
       end if
 
       eof = .false.
       do while(.not.eof)
-         call extract_keyword(unit, keyword, kwlen, eof, ierr)
+         call extract_keyword(unit, keyword, kwlen, eof)
          if (eof) exit
          if (kwlen == 0) cycle
          if (keyword == "end") exit
@@ -276,10 +263,10 @@
 
       close(unit)
 
-      call report_keyword_mismatch(ierr)
+      call report_keyword_mismatch()
       end subroutine check_input_file_keywords
 
-      subroutine report_opening_error(fname, mynode, ierr)
+      subroutine report_opening_error(fname, mynode)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: report_opening_error
 !     DESCRIPTION:
@@ -289,17 +276,15 @@
       implicit none
       character(len=*), intent(in) :: fname
       integer,          intent(in) :: mynode
-      integer,          intent(inout) :: ierr
 
       error_info = "Cannot find input file '" // trim(fname) // "'"
       call error_log%raise_global(
      &     info=error_info,
      &     context=module_name)
 
-      ierr = ierr + 1
       end subroutine report_opening_error
 
-      subroutine report_read_error(keyword, ierr)
+      subroutine report_read_error(keyword)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: report_read_error
 !     DESCRIPTION:
@@ -307,17 +292,15 @@
 !-----------------------------------------------------------------------
       implicit none
       character(len=*), intent(in) :: keyword
-      integer,          intent(inout) :: ierr
 
       error_info = "Cannot read entry '" // trim(keyword) // "'"
       call error_log%raise_global(
      &     info=error_info,
      &     context=module_name)
 
-      ierr = ierr + 1
       end subroutine report_read_error
 
-      subroutine extract_keyword(unit, keyword, kwlen, eof, ierr)
+      subroutine extract_keyword(unit, keyword, kwlen, eof)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: extract_keyword
 !     DESCRIPTION:
@@ -333,7 +316,6 @@
          character(len=*), intent(out) :: keyword
          integer, intent(out) :: kwlen
          logical, intent(out) :: eof
-         integer, intent(inout) :: ierr
 
          character(len=256) :: line
          integer :: ios, start, colon_pos, lenline
@@ -350,7 +332,6 @@
                eof = .true.
                return
             else if (ios /= 0) then
-               ierr = ierr + 1
                return
             end if
             if (trim(line) /= '' .and. line(1:1) /= '!') exit
@@ -425,27 +406,25 @@
 !     time via a call to `register_keyword`.
 !***********************************************************************
 
-      subroutine kwread_title(unit, ierr)
+      subroutine kwread_title(unit)
       use roms_read_write, only: title
       implicit none
          integer, intent(in) :: unit
-         integer, intent(inout) :: ierr
          integer ios
 
          read(unit,'(A)',iostat=ios) title
          if (ios /= 0) then
-            call report_read_error("title", ierr)
+            call report_read_error("title")
             return
          end if
          mpi_master_only write(*,'(/1x,A)') trim(title)
       end subroutine
 
-      subroutine kwread_time_stepping(unit, ierr)
+      subroutine kwread_time_stepping(unit)
       use scalars, only: dt, dtfast, ndtfast, ntimes, ninfo
       implicit none
 
       integer, intent(in) :: unit
-      integer, intent(inout) :: ierr
 
       integer :: ios
       integer :: lstr
@@ -453,7 +432,7 @@
 ! Read ntimes, dt, ndtfast, ninfo
       read(unit, *, iostat=ios) ntimes, dt, ndtfast, ninfo
       if (ios /= 0) then
-         call report_read_error("time_stepping", ierr)
+         call report_read_error("time_stepping")
          return
       end if
 
@@ -476,7 +455,7 @@
       end subroutine kwread_time_stepping
 
 #ifdef MARBL
-      subroutine kwread_marbl_bgc(unit, ierr)
+      subroutine kwread_marbl_bgc(unit)
       use marbl_driver, only: marbl_namelist_fname, marbl_tracer_list_fname
 #ifdef MARBL_DIAGS
       use marbl_driver, only: marbl_diag_list_fname
@@ -484,7 +463,6 @@
       implicit none
 
       integer, intent(in) :: unit
-      integer, intent(inout) :: ierr
       integer :: ios, lstr, lenstr
 
 ! ---------------------------------------------------------
@@ -492,7 +470,7 @@
 ! ---------------------------------------------------------
       read(unit,'(A)',iostat=ios) marbl_namelist_fname
       if (ios /= 0) then
-         call report_read_error("MARBL_biogeochemistry", ierr)
+         call report_read_error("MARBL_biogeochemistry")
          return
       end if
 
@@ -505,7 +483,7 @@
 ! ---------------------------------------------------------
       read(unit,'(A)',iostat=ios) marbl_tracer_list_fname
       if (ios /= 0) then
-         call report_read_error("MARBL_biogeochemistry", ierr)
+         call report_read_error("MARBL_biogeochemistry")
          return
       end if
 
@@ -519,7 +497,7 @@
 ! ---------------------------------------------------------
       read(unit,'(A)',iostat=ios) marbl_diag_list_fname
       if (ios /= 0) then
-         call report_read_error("MARBL_biogeochemistry", ierr)
+         call report_read_error("MARBL_biogeochemistry")
          return
       end if
 
@@ -532,20 +510,19 @@
 #endif
 
 #ifdef SOLVE3D
-      subroutine kwread_scoord(unit, ierr)
+      subroutine kwread_scoord(unit)
 !     Vertical S-coordinates transformation. Note that "hc" may be chosen
 !     to be very large (infinity) if vertically uniform sigma is desired.
       use scoord, only: hc, theta_b, theta_s
       implicit none
 
       integer, intent(in) :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
 ! Read three S-coordinate parameters
       read(unit, *, iostat=ios) theta_s, theta_b, hc
       if (ios /= 0) then
-         call report_read_error("S-coord", ierr)
+         call report_read_error("S-coord")
          return
       end if
 
@@ -562,19 +539,18 @@
 
       end subroutine kwread_scoord
 
-      subroutine kwread_rho0(unit, ierr)
+      subroutine kwread_rho0(unit)
 !--> Boussinesq  reference density.
       use scalars, only: rho0
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
 ! Read rho0 (Boussinesq reference density)
       read(unit, *, iostat=ios) rho0
       if (ios /= 0) then
-         call report_read_error("rho0", ierr)
+         call report_read_error("rho0")
          return
       end if
 
@@ -583,7 +559,7 @@
 
       end subroutine kwread_rho0
 # ifndef NONLIN_EOS
-      subroutine kwread_lin_rho_eos(unit, ierr)
+      subroutine kwread_lin_rho_eos(unit)
       use eos_vars, only: Tcoef, T0
 #  ifdef SALINITY
      &                       , Scoef, S0
@@ -592,7 +568,6 @@
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) Tcoef, T0
@@ -600,7 +575,7 @@
      &                       , Scoef, S0
 #  endif
       if (ios /= 0) then
-         call report_read_error('lin_rho_eos', ierr)
+         call report_read_error('lin_rho_eos')
          return
       end if
 
@@ -617,18 +592,17 @@
 
 #endif /*SOLVE3D*/
 #ifdef UV_VIS2
-      subroutine kwread_lateral_visc(unit, ierr)
+      subroutine kwread_lateral_visc(unit)
 !     Lateral viscosity coefficients.
       use scalars, only: visc2
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) visc2
       if (ios /= 0) then
-         call report_read_error('lateral_visc', ierr)
+         call report_read_error('lateral_visc')
          return
       end if
 
@@ -639,18 +613,17 @@
       end subroutine kwread_lateral_visc
 
 #if !defined EW_PERIODIC || !defined NS_PERIODIC
-      subroutine kwread_gamma2(unit, ierr)
+      subroutine kwread_gamma2(unit)
 !     Lateral boundary slipperness.
       use scalars, only: gamma2
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) gamma2
       if (ios /= 0) then
-         call report_read_error('gamma2', ierr)
+         call report_read_error('gamma2')
          return
       end if
 
@@ -664,18 +637,17 @@
 #endif
 
 #if defined SOLVE3D && defined TS_DIF2
-      subroutine kwread_tracer_diff2(unit, ierr)
+      subroutine kwread_tracer_diff2(unit)
       use scalars, only: nt, tnu2
       use param, only: itemp
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios, itrc
 
       read(unit,*,iostat=ios) (tnu2(itrc), itrc=1,NT)
       if (ios /= 0) then
-         call report_read_error('tracer_diff2', ierr)
+         call report_read_error('tracer_diff2')
          return
       end if
 
@@ -698,12 +670,11 @@
       end subroutine kwread_tracer_diff2
 #endif
 
-      subroutine kwread_bottom_drag(unit, ierr)
+      subroutine kwread_bottom_drag(unit)
       use scalars, only: rdrg, rdrg2, zob
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
 #ifdef SOLVE3D
@@ -713,7 +684,7 @@
 #endif
 
       if (ios /= 0) then
-         call report_read_error('bottom_drag', ierr)
+         call report_read_error('bottom_drag')
          return
       end if
 
@@ -737,13 +708,12 @@
 !# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING \
 !      &&                        !defined MY2_MIXING && !defined MY25_MIXING
 
-      subroutine kwread_vertical_mixing(unit, ierr)
+      subroutine kwread_vertical_mixing(unit)
 !     Background vertical viscosity and mixing coefficients for tracers.
       use scalars, only: akv_bak, akt_bak, nt
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios, itrc, lstr, lenstr
       character(len=10) :: mixing_type
 
@@ -751,7 +721,7 @@
 
       read(unit,*,iostat=ios) Akv_bak, (Akt_bak(itrc), itrc=1,NT)
       if (ios /= 0) then
-         call report_read_error('vertical_mixing', ierr)
+         call report_read_error('vertical_mixing')
          return
       end if
 
@@ -777,12 +747,11 @@
 !# endif
 
 # ifdef MY25_MIXING
-      subroutine kwread_MY_bak_mixing(unit, ierr)
+      subroutine kwread_MY_bak_mixing(unit)
 !     Mellor-Yamada Level 2.5 turbulent closure parameters.
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) Akq_bak
@@ -793,7 +762,7 @@
      &                       , q2nu4
 #  endif
       if (ios /= 0) then
-         call report_read_error('MY_bak_mixing', ierr)
+         call report_read_error('MY_bak_mixing')
          return
       end if
 
@@ -817,16 +786,15 @@
 #endif
 
 #if defined SFLX_CORR && defined SALINITY
-      subroutine kwread_SSS_correction(unit, ierr)
+      subroutine kwread_SSS_correction(unit)
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) dSSSdt
       if (ios /= 0) then
-         call report_read_error('SSS_correction', ierr)
+         call report_read_error('SSS_correction')
          return
       end if
 
@@ -842,16 +810,15 @@
 #endif
 
 # ifdef QCORRECTION
-      subroutine kwread_SST_correction(unit, ierr)
+      subroutine kwread_SST_correction(unit)
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) dSSTdt
       if (ios /= 0) then
-         call report_read_error('SST_correction', ierr)
+         call report_read_error('SST_correction')
          return
       end if
 
@@ -870,17 +837,16 @@
 #if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
   || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
   || defined M3NUDGING  || defined WKB_FRC_BRY
-      subroutine kwread_ubind(unit, ierr)
+      subroutine kwread_ubind(unit)
       use scalars, only: ubind
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) ubind
       if (ios /= 0) then
-         call report_read_error('ubind', ierr)
+         call report_read_error('ubind')
          return
       end if
 
@@ -892,17 +858,16 @@
 #endif
 
 #ifdef SPONGE
-      subroutine kwread_v_sponge(unit, ierr)
+      subroutine kwread_v_sponge(unit)
       use scalars, only: v_sponge
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,*,iostat=ios) v_sponge
       if (ios /= 0) then
-         call report_read_error('v_sponge', ierr)
+         call report_read_error('v_sponge')
          return
       end if
 
@@ -914,31 +879,30 @@
 #endif
 
 #ifndef ANA_GRID
-      subroutine kwread_grid(unit, ierr)
+      subroutine kwread_grid(unit)
       use roms_read_write, only: grdname
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios, testunit, lstr, lenstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname
       if (ios /= 0) then
-         call report_read_error('grid', ierr)
+         call report_read_error('grid')
          return
       end if
 
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-      call insert_node(fname, lstr, mynode, NNODES, ierr)
+      call insert_node(fname, lstr, mynode, NNODES)
 # endif
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
       close(testunit)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode, ierr)
+         call report_opening_error(fname(1:lstr), mynode)
          return
       end if
 
@@ -949,7 +913,7 @@
       end subroutine kwread_grid
 #endif /* !ANA_GRID */
 
-      subroutine kwread_initial(unit, ierr)
+      subroutine kwread_initial(unit)
 !     Initial conditions file name. Check its availability (in the case
 !     of analytical initial conditions and nrrec=0 initial conditions are
 !     created internally and no file is needed).
@@ -957,13 +921,12 @@
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios, lstr, testunit, lenstr
       character(len=256) :: fname
 
       read(unit,*,iostat=ios) nrrec
       if (ios /= 0) then
-         call report_read_error('initial', ierr)
+         call report_read_error('initial')
          return
       end if
 
@@ -972,20 +935,20 @@
 #endif
          read(unit,'(A)',iostat=ios) fname
          if (ios /= 0) then
-            call report_read_error('initial', ierr)
+            call report_read_error('initial')
             return
          end if
 
          lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-         call insert_node(fname, lstr, mynode, NNODES, ierr)
+         call insert_node(fname, lstr, mynode, NNODES)
 # endif
          open(newunit=testunit, file=fname(1:lstr), status='old',
      &        iostat=ios)
          close(testunit)
          if (ios /= 0) then
-            call report_opening_error(fname(1:lstr), mynode, ierr)
+            call report_opening_error(fname(1:lstr), mynode)
             return
          end if
          ininame = fname(1:lstr)
@@ -999,14 +962,13 @@
 
       end subroutine kwread_initial
 
-      subroutine kwread_forcing(unit, ierr)
+      subroutine kwread_forcing(unit)
       use roms_read_write, only:
      &     force_files, force_info, max_frc_files,
      &     store_string_att, frcfile, max_frc
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
 
       integer :: ios, lstr, testunit, lenstr
       character(len=256) :: fname
@@ -1024,7 +986,7 @@
 
          read(unit,'(A)',iostat=ios) fname
          if (ios /= 0) then
-            call report_read_error('forcing', ierr)
+            call report_read_error('forcing')
             return
          end if
 
@@ -1033,7 +995,7 @@
          if (lstr > 0) then
 
 # if defined MPI && defined PARALLEL_FILES
-            call insert_node(fname, lstr, mynode, NNODES, ierr)
+            call insert_node(fname, lstr, mynode, NNODES)
 # endif
 
 ! Test file availability
@@ -1042,7 +1004,7 @@
      &           iostat=ios)
             close(testunit)
             if (ios /= 0) then
-               call report_opening_error(fname(1:lstr), mynode, ierr)
+               call report_opening_error(fname(1:lstr), mynode)
                return
             end if
 
@@ -1082,7 +1044,6 @@ c$$$                  end if TODO
                call error_log%raise_global(
      &              info=error_info,
      &              context=module_name//"/"//sr_name)
-                ierr=ierr+1
             end if !(max_frc < max_frc_files)
          end if   ! lstr > 0
       end do      ! filename loop
@@ -1092,7 +1053,7 @@ c$$$                  end if TODO
 #if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
     defined T_FRC_BRY )) &&   !defined ANA_TCLIMA
 
-      subroutine kwread_climatology(unit, ierr)
+      subroutine kwread_climatology(unit)
 ! Climatology file name. Climatology data is needed for (1) to supply
 ! boundary data for T,S,u,v at open boundaries (just one row of points)
 ! and (2) nudging to T,S data inside the domain within the  nudging
@@ -1107,27 +1068,26 @@ c$$$                  end if TODO
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios, lstr, testunit, lenstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname
       if (ios /= 0) then
-         call report_read_error('climatology', ierr)
+         call report_read_error('climatology')
          return
       end if
 
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-      call insert_node(fname, lstr, mynode, NNODES, ierr)
+      call insert_node(fname, lstr, mynode, NNODES)
 # endif
 
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
       close(testunit)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode, ierr)
+         call report_opening_error(fname(1:lstr), mynode)
          return
       end if
       clm_file = fname(1:lstr)
@@ -1137,7 +1097,7 @@ c$$$                  end if TODO
       end subroutine kwread_climatology
 #endif
 
-      subroutine kwread_output_root_name(unit, ierr)
+      subroutine kwread_output_root_name(unit)
       ! read from .in file the root-name
       ! for all output netcdf result files
       ! this is called from read_inp.F
@@ -1149,12 +1109,11 @@ c$$$                  end if TODO
       implicit none
 
       integer, intent(in)    :: unit
-      integer, intent(inout) :: ierr
       integer :: ios
 
       read(unit,'(A)',iostat=ios) output_root_name
       if (ios /= 0) then
-         call report_read_error('output_root_name', ierr)
+         call report_read_error('output_root_name')
          return
       end if
 

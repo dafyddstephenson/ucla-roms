@@ -78,7 +78,7 @@ c      write(*,*) 'kmp_stacksize =', size
 
 
       ierr=0
-      call read_inp (ierr)
+      call read_inp()
       if (ierr==0) then
 #ifdef SOLVE3D
         call set_weights
