@@ -126,44 +126,75 @@
 ! useful information.
 
 !----->>>>>>>>> begin copy-pasted section.
+      write(error_info, *)
+     &     'Insufficient size of string "cpps" ',
+     &     'in file "strings".', 'Increase the size it and recompile.'
 
       is=ie+2 ; ie=is+25
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='<set_global_definitions.h>'
       cpps(ie+1:ie+1)=' '
 #ifdef PRED_COUPLED_MODE
       is=ie+2 ; ie=is+16
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='PRED_COUPLED_MODE'
       cpps(ie+1:ie+1)=' '
 #endif
 #ifdef CORR_COUPLED_MODE
       is=ie+2 ; ie=is+16
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='CORR_COUPLED_MODE'
       cpps(ie+1:ie+1)=' '
 #endif
 #ifdef EXTRAP_BAR_FLUXES
       is=ie+2 ; ie=is+16
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='EXTRAP_BAR_FLUXES'
       cpps(ie+1:ie+1)=' '
 #endif
 #ifdef KEEP_CORIOLIS
       is=ie+2 ; ie=is+12
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='KEEP_CORIOLIS'
       cpps(ie+1:ie+1)=' '
 #endif
 #ifdef IMPLCT_NO_SLIP_BTTM_BC
       is=ie+2 ; ie=is+21
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='IMPLCT_NO_SLIP_BTTM_BC'
       cpps(ie+1:ie+1)=' '
 #endif
 #ifdef VAR_RHO_2D
       is=ie+2 ; ie=is+9
-      if (ie >= max_opt_size) goto 99
+      if (ie >= max_opt_size) then
+         call error_log%raise_global(
+     &        context=sr_name,
+     &        info=error_info)
+      end if
       cpps(is:ie)='VAR_RHO_2D'
       cpps(ie+1:ie+1)=' '
 #endif
@@ -314,12 +345,5 @@
      &        info=error_info)
       endif
 #endif
-      return
-  99  mpi_master_only write(error_info, *)
-     &     'Insufficient size of string "cpps" ',
-     &     'in file "strings".', 'Increase the size it and recompile.'
-      call error_log%raise_global(
-     &        context=sr_name,
-     &        info=error_info)
-      return
-      end
+
+      end subroutine
