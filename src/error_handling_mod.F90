@@ -1,5 +1,6 @@
 module error_handling_mod
   use mpi
+  use timers, only: stop_timers
   implicit none
   private
   save
@@ -245,7 +246,7 @@ contains
       end if
       error_entry => error_entry%next
     end do
-
+    call stop_timers()
     call MPI_Barrier(ocean_grid_comm)
     call MPI_Abort(ocean_grid_comm, 1)
     call sleep(30) ! prevent any further outputs

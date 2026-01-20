@@ -21,7 +21,7 @@
       use roms_read_write, only:
      &     grdname, dn_xr, dn_yr, eta_rho,
      &     xi_rho, dn_tm, particle_opt, nrrec, create_file, store_string_att
-      use scalars, only: may_day_flag, init
+      use scalars, only:  init
       use mpi_exchanges, only: exchange_xxx
       implicit none
 !

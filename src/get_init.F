@@ -5,7 +5,7 @@
 
       use scalars, only:
      &     day2sec, dt, forw_start, iic, ntstart,
-     &     sec2day, start_time!, may_day_flag
+     &     sec2day, start_time
       use hidden_mpi_vars, only: inode, jnode
       use tracers, only: t_vname, t, iTandS
 #ifdef MARBL
@@ -74,9 +74,9 @@
 c--#define VERBOSE
 #ifdef VERBOSE
       write(*,'(3(2x,A,I3))') 'enter get_init: req_rec =', req_rec,
-     &            'tindx =', tindx!, 'may_day_flag =', may_day_flag
+     &            'tindx =', tindx
 #endif
-!      if (may_day_flag /= 0) return      !-->  EXIT
+
 
 ! Open conditions netCDF file for reading.  Check that all spatial
 ! dimensions in that file are consistent with the model, determine how

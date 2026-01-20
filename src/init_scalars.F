@@ -13,7 +13,7 @@
      &     tile_count, trd_count, volume
       use scalars, only:
      &     barr_count, gamma2, iic, iif, init, knew,
-     &     kstp, may_day_flag, nfast, nnew, nrhs, nstp, ntstart, start_time
+     &     kstp, nfast, nnew, nrhs, nstp, ntstart, start_time
       use roms_read_write, only:
      &     max_frc_files, ncfrc,
      &     init_output_indices
@@ -45,7 +45,7 @@ c      write(*,*) 'kmp_stacksize =', size
       nrhs=1  ; nnew=1               ! of model fields.
 #endif
                                      ! Reset intra-thread
-      may_day_flag=0                 ! communication signal
+                                     ! communication signal
       trd_count=0                    ! variables and counters.
       cpu_all=0.   !<-- array
       barr_count=0 !<-- array
