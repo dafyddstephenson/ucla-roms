@@ -216,7 +216,7 @@
          end if                 ! Separate variables found in forcing file
 
       endif !analytical
-      call error_log%handle_abort()
+      call error_log%abort_check()
       call calc_river_flux      ! compute uflx,vflx from rflx
 
       init_riv_done = .true.
@@ -277,7 +277,7 @@
          endif
         enddo
       enddo
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine calc_river_flux  !]
 ! ----------------------------------------------------------------------
       subroutine set_ana_river_frc  ![

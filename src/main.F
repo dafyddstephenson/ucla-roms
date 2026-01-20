@@ -138,7 +138,7 @@ C$OMP END MASTER
 C$OMP BARRIER
 
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
                                        ! NOTE: This code is written
       iic=0  ; kstp=1 ; knew=1         ! under an assumption that all
 #ifdef SOLVE3D

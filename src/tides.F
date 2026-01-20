@@ -301,7 +301,7 @@
      &        context=module_name//"/"//sr_name,
      &        info="tide input data not found")
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       start = 1                                                      ! netcdf start indices
 
       do itide = 1,ntides
@@ -313,7 +313,7 @@
      &          info="unable to get var 'omega' from tidal file",
      &          context=module_name//"/"//sr_name)
         end if
-        call error_log%handle_abort()
+        call error_log%abort_check()
         start(3) = itide
 
         if (bry_tides) then

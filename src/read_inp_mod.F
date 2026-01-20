@@ -219,7 +219,7 @@
       end do
 
       close (input)
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
 !     call check_srcs
       end subroutine read_inp

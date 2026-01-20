@@ -207,7 +207,7 @@ C$    endif
      &        info=error_info,
      &        context=sr_name)
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine mpi_setup
 
 ! Convert processor-grid indices i,jnode into MPI rank. Check whether

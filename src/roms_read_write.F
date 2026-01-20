@@ -766,7 +766,7 @@
         ierr=nf90_close (ncid)
 
       enddo                            ! search through files: while .not. found_rec .and. ifile<=nfiles.
-c$$$      call error_log%handle_abort
+
 
       if (.not. found_var_ever) then
         write(error_info, *)
@@ -1179,7 +1179,7 @@ c$$$      call error_log%handle_abort
      &        info="unable to create attributes in file"//trim(fname))
       end if
       ierr = nf90_close(ncid)
-      call error_log%handle_abort()
+      call error_log%abort_check()
       if (mynode == 0) then
         write(*,'(7x,2A)')
      &    'created new netcdf file ', trim(fname)
@@ -1417,7 +1417,7 @@ c$$$      call error_log%handle_abort
          call error_log%raise_global(
      &        info='ROMS is not ready for this future',
      &        context=module_name//"/"//sr_name)
-         call error_log%handle_abort()
+         call error_log%abort_check()
       endif
       fname = trim(fname) //trim(indxstr)
 #endif
@@ -1465,7 +1465,7 @@ c$$$      call error_log%handle_abort
          call error_log%raise_global(
      &        info='ROMS is not ready for this future',
      &        context=module_name//"/"//sr_name)
-         call error_log%handle_abort()
+         call error_log%abort_check()
       endif
       fname = trim(fname) //trim(indxstr)
 #endif

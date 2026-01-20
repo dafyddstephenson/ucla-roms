@@ -406,7 +406,7 @@
         navg = 0
 
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine wrt_zslice !]
 !----------------------------------------------------------------------
 

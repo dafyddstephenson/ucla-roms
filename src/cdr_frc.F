@@ -105,7 +105,7 @@
 
         call set_frc_data(nc_cdrhz,var2d=cdr_hz)          ! set layer thicknesses for all cdrs at current time
         call set_frc_data(nc_cdrflx_dp,var3d=cdr_flx_dp)
-        call error_log%handle_abort()
+        call error_log%abort_check()
         call create_cdr_vertical_structure
 
       else if (forcing_3d) then
@@ -117,7 +117,7 @@
         if (cdr_volume) then
           call set_frc_data(nc_cdrvol,cdr_vol)                ! set cdr volume for all cdrs at current time
           call set_frc_data(nc_cdrtrc,var2d=cdr_trc)          ! set cdr tracers conc. for all cdrs at current time
-          call error_log%handle_abort()
+          call error_log%abort_check()
           do icdr=1,ncdr
             cdr_flx(icdr,:) = cdr_vol(icdr)*cdr_trc(icdr,:)
           enddo
@@ -127,7 +127,7 @@
         endif
 
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       end subroutine set_cdr_frc !]
 ! ----------------------------------------------------------------------
@@ -180,7 +180,7 @@
 
         ierr = nf90_close(ncid)
       endif ! forcing_3d
-      call error_log%handle_abort()
+      call error_log%abort_check()
       init_cdr_done = .true.
       if(mynode==0) write(*,'(/7x,A/)') 'cdr_frc: init cdr locations'
 
@@ -214,7 +214,7 @@
      &     "necessary dimension s_rho.",
      &     context=module_name//"/"//sr_name)
 
-      call error_log%handle_abort()
+      call error_log%abort_check()
       ierr = nf90_inquire_dimension(ncid, dimid, len=N_src)
 
       ncdr = ncdr_prof
@@ -381,7 +381,7 @@
         cidx_start = cidx
       enddo                    ! icdr
 
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       cdr_nprf = cidx
 

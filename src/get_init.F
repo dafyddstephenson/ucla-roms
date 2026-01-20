@@ -103,10 +103,10 @@ c--#define VERBOSE
      &     netcdf_status=ierr,
      &     context=sr_name,
      &     info=error_info)
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       ierr=checkdims (ncid, ininame, max_rec)
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       if (max_rec > 0) then
          if (req_rec > 0) then
@@ -129,7 +129,7 @@ c--#define VERBOSE
       else                      !if (max_rec > 0)
          record=1
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
 ! Read in evolving model variables:
 !----- -- -------- ----- ----------
@@ -236,7 +236,7 @@ c--#define VERBOSE
      &       context=sr_name,
      &       info=error_info)
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       start_time=start_time*time_scale
 !     start_time=start_time*time_scale + 288
 
@@ -297,7 +297,7 @@ c--#define VERBOSE
      &        context=sr_name,
      &        info="Cause of termination: netCDF input.")
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 ! Check whether variable 'time_step' is present, which can be a
 ! structure of four to up to eight integer numbers storing time step
 ! number and the corresponding record numbers for output files.
@@ -389,7 +389,7 @@ c--#define VERBOSE
       write(*,'(1x,2A,F12.4,1x,A,I4)')   'get_init: reading initial ',
      &   'fields for time =', start_time*sec2day, 'record =', record
 #endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 ! Read initial fields:
 !---------------------
 ! River mask (needed for exact restarts)
@@ -488,7 +488,7 @@ c--#define VERBOSE
       else
         forw_start=ntstart    !--> cancel exact restart
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 #  endif
 # endif /*EXACT_RESTART*/
 
@@ -548,7 +548,7 @@ c--#define VERBOSE
 
         endif
       enddo
-      call error_log%handle_abort()
+      call error_log%abort_check()
       start=1; start(3)=record                                       ! 2D vars
 # ifdef LMD_KPP
       ierr=nf90_inq_varid(ncid, vname(1,indxHbls), varid)
@@ -625,7 +625,7 @@ c--#define VERBOSE
 #ifdef MPI_SILENT_MODE
       endif
 #endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       ! Here we catch an initial file that does not have the boundary values of u/v
       ! set to zero, even though we prescribed a closed boundary. This is necessary
       ! for conservation tests.

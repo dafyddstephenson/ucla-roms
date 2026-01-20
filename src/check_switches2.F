@@ -9,7 +9,7 @@
       do tile=0,NSUB_X*NSUB_E-1            ! all the tiles to be at
         call check_tile_bounds (tile) ! least two point wide.
       enddo                                ! Setting NSUB_X and NSUB_E
-      call error_log%handle_abort()        ! incorrectly may result in
+      call error_log%abort_check()        ! incorrectly may result in
       end                                  ! smaller size.
 
       subroutine check_tile_bounds (tile)

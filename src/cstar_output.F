@@ -557,7 +557,7 @@
         call error_log%check_netcdf_status(netcdf_status=ierr,
      &       info="error opening "//fname,
      &       context=module_name//"/"//sr_name)
-        call error_log%handle_abort()
+        call error_log%abort_check()
 
         call multiply_by_thickness
         ! always add time
@@ -729,7 +729,7 @@
      &        context=module_name//"/"//sr_name,
      &        info='cstar_output must have CDR_FORCING enabled.')
 #endif
-        call error_log%handle_abort()
+        call error_log%abort_check()
       end subroutine init_cstar !]
 
       subroutine wrt_cstar ![

@@ -114,7 +114,7 @@
 !       call exchange_xxx(stflx)
 
       enddo
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine set_surf_tracer_flx  !]
 ! ----------------------------------------------------------------------
       subroutine set_ana_surf_tracer_flx(itrc)  ![

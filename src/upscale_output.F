@@ -658,7 +658,7 @@
      &     context=module_name//"/"//sr_name,
      &     info="upscale module must have UPSCALING cpp key enabled.")
 #endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine init_upscale !]
 !----------------------------------------------------------------------
 

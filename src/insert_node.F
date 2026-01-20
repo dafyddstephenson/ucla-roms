@@ -185,7 +185,7 @@ c--#define TEST_INSERT  ! <-- self testing
      &     info=error_info)
         return
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 # endif
       do while(power > 9)              ! Insert time index or MPI node
         power=power/10                 ! number (rank) into the string,

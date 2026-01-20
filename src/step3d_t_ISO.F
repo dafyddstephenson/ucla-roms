@@ -1192,7 +1192,7 @@ c??         enddo
      &        info=error_info,
      &        context=sr_name)
       end if
-      call error_log%handle_abort()
+      call error_log%abort_check()
       cpps(is:ie)='<step3d_t_ISO.F>'
 
 # include "track_advec_switches.h"

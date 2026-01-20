@@ -176,7 +176,7 @@
       character(len=17) :: sr_name = "init_extract_data"
 
       call read_extraction_objects
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       if ((N == N_chd) .and. (theta_s == theta_s_chd) .and. (theta_b == theta_b_chd) .and. (hc == hc_chd)) then
         parent_child_grid_mismatch = .false.
@@ -209,7 +209,7 @@
      &        context=module_name//"/"//sr_name,
      &        info="Must define CPP key DIAGNOSTICS if `do_extract`" //
      &        "=.true. and diag_pflux=.true")
-         call error_log%handle_abort()
+         call error_log%abort_check()
 #endif
         allocate( upe(GLOBAL_2D_ARRAY) ); upe = 0
         allocate( vpe(GLOBAL_2D_ARRAY) ); vpe = 0
@@ -850,7 +850,7 @@
       ierr=nf90_open(fname,nf90_write,ncid)
 
       call create_edata_vars(ncid)
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       ierr = nf90_close(ncid)
 

@@ -147,12 +147,12 @@
       call set_frc_data(nc_nhy,nhy,'r')
 #endif /* NHY_FORCING */
 
-      call error_log%handle_abort()
+      call error_log%abort_check()
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       ! Daily average Short wave radiation
 !     call set_frc_var_tile( istr, iend, jstr, jend, nc_swrad_avg, swrad_avg, interp_frc )
       call set_frc_data(nc_swrad_avg,swrad_avg,'r')
-      call error_log%handle_abort()
+      call error_log%abort_check()
       do j=jstrR,jendR
         do i=istrR,iendR
           swrad_avg(i,j)= swrad_avg(i,j)/(rho0*Cp)
@@ -218,7 +218,7 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       if (avg) then
 
 !        if (.not. first_step_avg) then
@@ -340,7 +340,7 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       if (wrt_avg_dia) then
 

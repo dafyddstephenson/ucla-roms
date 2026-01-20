@@ -816,7 +816,7 @@
       cpps(is:ie)='<pre_step3d4S.F>'
 
 # include "track_advec_switches.h"
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine check_pre_step_switches
 
 #else

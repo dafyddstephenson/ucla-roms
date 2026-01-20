@@ -171,7 +171,7 @@
           if (abs(pflx_north(i))>100) pflx_north(i) = 0.
         enddo
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine set_pflx !]
 ! ----------------------------------------------------------------------
       subroutine comp_cflx ![
@@ -304,7 +304,7 @@
      &        info="error opening "//fname,
      &        context=module_name//"/"//sr_name)
       end if
-      call error_log%handle_abort()
+      call error_log%abort_check()
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
       ! fluxes and ub coefficients are defined as nx, ny sized arrays

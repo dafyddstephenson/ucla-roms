@@ -116,13 +116,13 @@
 #if defined(QCORRECTION) && !defined(ANA_SST)
       ! Sea-surface temperature (SST) data
       call set_frc_data(nc_sst,sst,'r')
-      call error_log%handle_abort()
+      call error_log%abort_check()
 #endif
 
 #if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
       ! Sea-surface salinity (SSS) data
       call set_frc_data(nc_sss,sss,'r')
-      call error_log%handle_abort()
+      call error_log%abort_check()
 #endif
 
       end subroutine set_surf_field_corr  !]

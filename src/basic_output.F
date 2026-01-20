@@ -148,7 +148,7 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       if (wrt_file_avg) then
         if (wrt_avg_Z)  then
@@ -1161,7 +1161,7 @@
       call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="variable: time_step")
-      call error_log%handle_abort()
+      call error_log%abort_check()
       ! can't use ncwrite() as ibuff is an integer array not real
 
       end subroutine write_time_step  !]

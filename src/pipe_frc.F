@@ -180,7 +180,7 @@
             endif
           enddo
        enddo
-       call error_log%handle_abort()
+       call error_log%abort_check()
       end if ! p_analytical
       init_pipe_done = .true.
       if(mynode==0) write(*,'(/7x,A/)') 'pipe_frc: init pipe locations'

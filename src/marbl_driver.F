@@ -258,7 +258,7 @@
 
             close(marbl_settings_in)
          endif ! open_status 0
-         call error_log%handle_abort()
+         call error_log%abort_check()
 !     2. Now generate a MARBL instance with these settings:
 ! ---------------------------------------------------------
 
@@ -288,7 +288,7 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       end if
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       call print_marbl_log(marbl_instance%StatusLog)
       call marbl_instance%StatusLog%erase()
@@ -531,7 +531,7 @@
      &           trim(marbl_tracer_list_fname)
          end if
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       end subroutine marbldrv_read_tracer_output_list
 
@@ -619,7 +619,7 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       end if
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
 !     2. Populate saved state metadata arrays in ROMS using MARBL instance
 !     ----------------------------------------------------------------------
@@ -970,7 +970,7 @@
      &        info=error_info)
 
       end if
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
 !     2. Fill BGC diagnostics metadata arrays in ROMS from MARBL instance
 !     ----------------------------------------------------------------------
@@ -1163,7 +1163,7 @@
 
          close(marbl_diag_list)
       endif                     !mynode==0
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
       end subroutine marbldrv_read_diagnostic_output_list
 
@@ -1895,7 +1895,7 @@
      &        (mynode == printnode)) then
          print *, accumulated_log
       end if
-      call error_log%handle_abort()
+      call error_log%abort_check()
       contains
 
       subroutine append_to_log(line)

@@ -653,7 +653,7 @@ C$   &                                                 , proc(2)
 #endif
       endif  ! <-- tile_count==nsubs
 C$OMP END CRITICAL (diag_cr_rgn)
-      call error_log%handle_abort()
+      call error_log%abort_check()
       diag_sync=.true.          !<-- to signal that "diag" has been called
       end
 

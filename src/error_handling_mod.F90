@@ -49,7 +49,7 @@ module error_handling_mod
     procedure :: raise_from_rank
     procedure :: raise_from_point
     procedure :: check_netcdf_status
-    procedure :: handle_abort
+    procedure :: abort_check
     procedure :: clear
     procedure, private :: raise_internal
   end type error_log_type
@@ -204,7 +204,7 @@ contains
   ! Collective abort handling
   !=========================================================
 
-  subroutine handle_abort(this)
+  subroutine abort_check(this)
     use param, only: ocean_grid_comm, mynode
     use mpi_f08, only: MPI_Allreduce, MPI_Comm_rank, MPI_Abort, MPI_MAX, MPI_INTEGER, MPI_Barrier
     use iso_fortran_env, only: error_unit
@@ -250,7 +250,7 @@ contains
     call MPI_Barrier(ocean_grid_comm)
     call MPI_Abort(ocean_grid_comm, 1)
     call sleep(30) ! prevent any further outputs
-  end subroutine handle_abort
+  end subroutine abort_check
 
 
   !=========================================================

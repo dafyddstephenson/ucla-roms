@@ -116,7 +116,7 @@
       call set_frc_data(nc_tauy,tauy,'r')
 !     call exchange_xxx(taux,tauy)
 #endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
 !     call exchange_xxx(srflx,lwrad)
 !     call exchange_xxx(uwnd,vwnd)
 !     call exchange_xxx(tair,Q)

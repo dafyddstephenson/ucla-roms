@@ -567,7 +567,7 @@
      &        info=error_info)
         endif
       endif                     !char1 = t/T
-      call error_log%handle_abort()
+      call error_log%abort_check()
 
 ! Read in grid arrays.
 !===== == ==== =======
@@ -633,7 +633,7 @@
      &       info=error_info)
 
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       return                                     !--> NORMAL RETURN
 
 #endif /* ifdef ANA_GRID */

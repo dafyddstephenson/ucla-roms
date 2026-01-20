@@ -725,7 +725,7 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       end if
       cpps(is:ie)='MERGE_OVERLAP'
 # endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine check_kpp_switches
 #else
       subroutine lmd_kpp_empty

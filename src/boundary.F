@@ -334,7 +334,7 @@
 #   endif
 #  endif
       endif
-      call error_log%handle_abort()
+      call error_log%abort_check()
       end subroutine set_bry_all  !]
 
 !----------------------------------------------------------------------
