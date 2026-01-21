@@ -2,6 +2,8 @@ module error_handling_mod
   use mpi_f08, only: MPI_Gather, MPI_Gatherv, MPI_comm, MPI_INTEGER, MPI_CHARACTER, MPI_MAX, MPI_Allreduce, MPI_Barrier, MPI_Abort
   use timers, only: stop_timers
   use param, only: mynode, nnodes
+  use utils_mod, only: replace_string
+
   implicit none
   private
   save
@@ -36,6 +38,8 @@ module error_handling_mod
     character(len=:), allocatable :: context
     character(len=:), allocatable :: info
     type(error_entry_type), pointer :: next => null()
+  contains
+    procedure, private :: serialize => serialize_log_entry
   end type error_entry_type
 
   !==============================
@@ -72,6 +76,7 @@ module error_handling_mod
     procedure :: abort_check
     procedure, private :: raise_internal
     procedure, private :: append_entry
+    procedure, private :: serialize => serialize_log
   end type error_log_type
 
   !==============================
@@ -80,26 +85,6 @@ module error_handling_mod
   type(error_log_type) :: error_log
 
 contains
-  function replace_string(str, old, new) result(out)
-    character(len=*), intent(in) :: str
-    character(len=*), intent(in) :: old
-    character(len=*), intent(in) :: new
-    character(len=:), allocatable :: out
-
-    integer :: pos, start
-    out = ''
-    start = 1
-
-    do
-       pos = index(str(start:), old)
-       if (pos == 0) exit
-
-       out = out // str(start:start+pos-2) // new
-       start = start + pos - 1 + len(old)
-    end do
-
-    out = out // str(start:)
-  end function replace_string
   !=========================================================
   ! Public API
   !=========================================================
@@ -258,29 +243,29 @@ contains
   ! Collective abort handling
   !=========================================================
 
-  subroutine serialize_entry(e, s)
-    type(error_entry_type), intent(in) :: e
+  subroutine serialize_log_entry(this, s)
+    class(error_entry_type), intent(in) :: this
     character(len=:), allocatable, intent(out) :: s
     character(len=:), allocatable :: safe_info
     character(len=1024) :: tmp
 
-    safe_info = e%info
+    safe_info = this%info
     safe_info = replace_string(safe_info, new_line('A'), '\n')
 
     write(tmp, '(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0,A,A,A,A)') &
-         'L=', e%level, &
-         '|S=', e%scope, &
-         '|R=', e%rank, &
-         '|I=', e%i, &
-         '|J=', e%j, &
-         '|K=', e%k, &
-         '|C=', trim(e%context), &
+         'L=',  this%level, &
+         '|S=', this%scope, &
+         '|R=', this%rank, &
+         '|I=', this%i, &
+         '|J=', this%j, &
+         '|K=', this%k, &
+         '|C=', trim(this%context), &
          '|M=', trim(safe_info)
 
     s = trim(tmp)
-  end subroutine serialize_entry
+  end subroutine serialize_log_entry
 
-  subroutine serialize_local_log(this, buffer)
+  subroutine serialize_log(this, buffer)
     class(error_log_type), intent(in) :: this
     character(len=:), allocatable, intent(out) :: buffer
 
@@ -291,11 +276,11 @@ contains
     e => this%head
 
     do while (associated(e))
-       call serialize_entry(e, line)
+       call e%serialize(line)
        buffer = buffer // line // new_line('A')
        e => e%next
     end do
-  end subroutine serialize_local_log
+  end subroutine serialize_log
 
   subroutine gather_all_error_buffers(local_buf, global_buf, comm)
     character(len=*), intent(in) :: local_buf
@@ -515,10 +500,10 @@ contains
                'ERROR [global] [', trim(g%context), ']:'
        case (SCOPE_RANK)
           write(error_unit,'(A,I0,A,I0,A,A,A)') &
-               'ERROR [raised ',total_raises,' times across ', n_locs, ' ranks] [', trim(g%context), ']:'
+               'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' rank(s)] [', trim(g%context), ']:'
        case (SCOPE_POINT)
           write(error_unit,'(A,I0,A,I0,A,A,A)') &
-               'ERROR [raised ',total_raises,' times across ', n_locs, ' points] [', trim(g%context), ']:'
+               'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' point(s)] [', trim(g%context), ']:'
        end select
 
        !==================================================
@@ -571,7 +556,7 @@ contains
 
     if (global_abort == 0) return
 
-    call serialize_local_log(this, local_buf)
+    call this%serialize(local_buf)
     call gather_all_error_buffers(local_buf, global_buf, ocean_grid_comm)
 
     if (mynode == 0) then
