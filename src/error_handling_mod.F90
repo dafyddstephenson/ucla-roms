@@ -98,7 +98,7 @@ module error_handling_mod
 
 contains
   !=========================================================
-  !    Public API
+  !    Public API (error_log_type)
   !=========================================================
 
   subroutine raise_global(this, context, info, level)
@@ -176,8 +176,8 @@ contains
   end subroutine raise_from_point
 
   subroutine check_netcdf_status(this, netcdf_status, context, info)
-    use param, only: mynode
     use netcdf, only: nf90_noerr, nf90_strerror
+
     class(error_log_type), intent(inout) :: this
     integer, intent(in) :: netcdf_status
     character(len=*), intent(in) :: context
@@ -200,7 +200,6 @@ contains
   end subroutine check_netcdf_status
 
   subroutine abort_check(this)
-    use param, only: ocean_grid_comm, mynode
     class(error_log_type), intent(inout) :: this
     type(error_log_entry_group_type), pointer :: groups
 
@@ -273,21 +272,26 @@ contains
 
   end subroutine raise_internal
 
-  subroutine append_entry_to_log(this, e)
+  subroutine append_entry_to_log(this, entry_to_append)
     class(error_log_type), intent(inout) :: this
-    type(error_log_entry_type), intent(in) :: e
-    type(error_log_entry_type), pointer :: p
+    type(error_log_entry_type), intent(in) :: entry_to_append
+    type(error_log_entry_type), pointer :: appended_entry
 
-    allocate(p)
-    p = e
-    p%next => null()
+    ! Allocate new log entry
+    allocate(appended_entry)
+    ! Copy contents into newly allocated entry
+    appended_entry = entry_to_append
+    ! Clear any previous associations copied in from entry_to_append
+    appended_entry%next => null()
 
+    ! Redefine indexing of the updated log
     if (associated(this%tail)) then
-       this%tail%next => p
+       this%tail%next => appended_entry
     else
-       this%head => p
+       this%head => appended_entry
     end if
-    this%tail => p
+    this%tail => appended_entry
+
   end subroutine append_entry_to_log
 
 
@@ -441,10 +445,10 @@ contains
     end do
   end subroutine print_error_log_entry_groups
 
+#ifdef MPI
 !--------------------------------------------------------------------------------
 ! MPI-SPECIFIC SUBROUTINES
 !--------------------------------------------------------------------------------
-#ifdef MPI
 
   subroutine gather_serialized_error_logs_on_primary_rank( &
        local_serialized_log, global_serialized_log)
@@ -453,46 +457,84 @@ contains
 
     integer ::  i
     integer :: local_len, total_len
-    integer, allocatable :: recvcounts(:), displs(:)
+    integer, allocatable :: gathered_local_lens(:), rank_start_positions(:)
 
+    !#########################################
+    ! Create a global serialized log on rank 0
+    !#########################################
+    ! Collect each rank's local log length on
+    ! rank 0, then determine the total length
+    ! of the overall log string, and the
+    ! starting position/index of each rank's
+    ! contribution
+
+    ! Length of serialized log string on this rank
     local_len = len(local_serialized_log)
 
-    allocate(recvcounts(nnodes), displs(nnodes))
+    ! Allocate vars to track how many characters each rank will send
+    ! to 0 and where rank 'i's contribution starts in the overall log:
+    allocate(gathered_local_lens(nnodes))
+    allocate(rank_start_positions(nnodes))
 
-    call MPI_Gather(local_len, 1, MPI_INTEGER, &
-         recvcounts, 1, MPI_INTEGER, &
-         0, ocean_grid_comm)
+    ! Gather array of all local lengths on rank 0
+    call MPI_Gather( &
+         sendbuf  = local_len, &
+         sendcount= 1, &
+         sendtype = MPI_INTEGER, &
+         recvbuf  = gathered_local_lens, &
+         recvcount= 1, &
+         recvtype = MPI_INTEGER, &
+         root     = 0, &
+         comm     = ocean_grid_comm )
 
+    ! Now on primary rank, determine where to insert each rank's
+    ! contribution to the global log:
     if (mynode == 0) then
-       displs(1) = 0
+       rank_start_positions(1) = 0
        do i = 2, nnodes
-          displs(i) = displs(i-1) + recvcounts(i-1)
+          rank_start_positions(i) = rank_start_positions(i-1) + gathered_local_lens(i-1)
        end do
-       total_len = sum(recvcounts)
+
+       ! ... and allocate the global log:
+       total_len = sum(gathered_local_lens)
        allocate(character(len=total_len) :: global_serialized_log)
     end if
 
-    call MPI_Gatherv(local_serialized_log, local_len, MPI_CHARACTER, &
-         global_serialized_log, recvcounts, displs, MPI_CHARACTER, &
-         0, ocean_grid_comm)
+    !#########################################
+    ! Populate the global serialized log
+    !#########################################
+    !
+    ! Now we have an allocated fixed-length string for the global log, we can populate it
+    ! from each local log using a variable-size gather with our calculated indices
+    call MPI_Gatherv( &
+         sendbuf  = local_serialized_log, &
+         sendcount= local_len, &
+         sendtype = MPI_CHARACTER, &
+         recvbuf  = global_serialized_log, &
+         recvcounts = gathered_local_lens, &
+         displs  = rank_start_positions, &
+         recvtype = MPI_CHARACTER, &
+         root     = 0, &
+         comm     = ocean_grid_comm )
 
-    deallocate(recvcounts, displs)
+    deallocate(gathered_local_lens, rank_start_positions)
+
   end subroutine gather_serialized_error_logs_on_primary_rank
 
-  subroutine serialize_log(this, buffer)
+  subroutine serialize_log(this, serialized_log)
     class(error_log_type), intent(in) :: this
-    character(len=:), allocatable, intent(out) :: buffer
+    character(len=:), allocatable, intent(out) :: serialized_log
 
-    type(error_log_entry_type), pointer :: e
-    character(len=:), allocatable :: line
+    type(error_log_entry_type), pointer :: entry_to_serialize
+    character(len=:), allocatable :: serialized_entry
 
-    buffer = ''
-    e => this%head
+    serialized_log = ''
+    entry_to_serialize => this%head
 
-    do while (associated(e))
-       call e%serialize(line)
-       buffer = buffer // line // new_line('A')
-       e => e%next
+    do while (associated(entry_to_serialize))
+       call entry_to_serialize%serialize(serialized_entry)
+       serialized_log = serialized_log // serialized_entry // new_line('A')
+       entry_to_serialize => entry_to_serialize%next
     end do
   end subroutine serialize_log
 
@@ -500,33 +542,38 @@ contains
     character(len=*), intent(in) :: serialized_log
     type(error_log_type), intent(out) :: deserialized_log
 
-    integer :: pos, next
+    integer :: pos, entry_len
     type(error_log_entry_type) :: deserialized_log_entry
     character(len=:), allocatable :: serialized_log_entry
 
     pos = 1
     do
-       next = index(serialized_log(pos:), new_line('A'))
-       if (next == 0) exit
+       ! Find index of end of entry starting at current position:
+       entry_len = index(serialized_log(pos:), new_line('A'))
+       if (entry_len == 0) exit
 
-       serialized_log_entry = serialized_log(pos:pos+next-2)
-       pos = pos + next
+       ! Extract entry and deserialize
+       serialized_log_entry = serialized_log(pos:pos+entry_len-2)
+       pos = pos + entry_len
 
        call deserialize_log_entry(serialized_log_entry,deserialized_log_entry)
 
        deserialized_log_entry%next => null()
+
+       ! Append deserialized entry to output log
        call deserialized_log%append_entry(deserialized_log_entry)
     end do
   end subroutine deserialize_log
 
-  subroutine serialize_log_entry(this, s)
+  subroutine serialize_log_entry(this, serialized_log_entry)
     class(error_log_entry_type), intent(in) :: this
-    character(len=:), allocatable, intent(out) :: s
-    character(len=:), allocatable :: safe_info
+    character(len=:), allocatable, intent(out) :: serialized_log_entry
+    character(len=:), allocatable :: info_no_newlines
+    ! Fixed-length temporary to hold the serialized log entry
     character(len=1024) :: tmp
 
-    safe_info = this%info
-    safe_info = replace_string(safe_info, new_line('A'), '\n')
+    info_no_newlines = this%info
+    info_no_newlines = replace_string(info_no_newlines, new_line('A'), '\n')
 
     write(tmp, '(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0,A,A,A,A)') &
          'L=',  this%level, &
@@ -536,43 +583,47 @@ contains
          '|J=', this%j, &
          '|K=', this%k, &
          '|C=', trim(this%context), &
-         '|M=', trim(safe_info)
+         '|M=', trim(info_no_newlines)
 
-    s = trim(tmp)
+    serialized_log_entry = trim(tmp)
+
   end subroutine serialize_log_entry
 
-  subroutine deserialize_log_entry(serialized_entry, deserialized_entry)!level, scope, rank, i, j, k, context, info)
+  subroutine deserialize_log_entry(serialized_entry, deserialized_entry)
     character(len=*), intent(in) :: serialized_entry
-    ! integer, intent(out) :: level, scope, rank, i, j, k
-    ! character(len=:), allocatable, intent(out) :: context, info
     character(len=:), allocatable :: entry_info
     type(error_log_entry_type), intent(out) :: deserialized_entry
 
+    ! Extract integer fields (level,scope,rank,i,j,k) from serialzied entry:
     call extract_int(serialized_entry, 'L=', deserialized_entry%level)
     call extract_int(serialized_entry, 'S=', deserialized_entry%scope)
     call extract_int(serialized_entry, 'R=', deserialized_entry%rank)
     call extract_int(serialized_entry, 'I=', deserialized_entry%i)
     call extract_int(serialized_entry, 'J=', deserialized_entry%j)
     call extract_int(serialized_entry, 'K=', deserialized_entry%k)
+    ! Extract character fields (context, info) from serialized_entry:
     call extract_str(serialized_entry, 'C=', deserialized_entry%context)
     call extract_str(serialized_entry, 'M=', entry_info)
+    ! Replace placeholder character with true newline in 'info'
     entry_info = replace_string(entry_info, '\n', new_line('A'))
-
     deserialized_entry%info = entry_info
 
   contains
 
-  subroutine extract_int(line, key, val)
-    character(len=*), intent(in) :: line, key
+  subroutine extract_int(serialized_entry, key, val)
+    character(len=*), intent(in) :: serialized_entry, key
     integer, intent(out) :: val
     integer :: p1, p2
 
-    p1 = index(line, key) + len(key)
-    p2 = index(line(p1:), '|')
+    ! Start position and end position of integer to extract:
+    p1 = index(serialized_entry, key) + len(key)
+    p2 = index(serialized_entry(p1:), '|')
+
+    ! If int is final entry in line, read to end of line
     if (p2 == 0) then
-       read(line(p1:), *) val
+       read(serialized_entry(p1:), *) val
     else
-       read(line(p1:p1+p2-2), *) val
+       read(serialized_entry(p1:p1+p2-2), *) val
     end if
   end subroutine extract_int
 
@@ -580,9 +631,10 @@ contains
     character(len=*), intent(in) :: line, key
     character(len=:), allocatable, intent(out) :: val
     integer :: p1, p2
-
+    ! Start position and end position of char to extract:
     p1 = index(line, key) + len(key)
     p2 = index(line(p1:), '|')
+    ! If char is final entry in line, read to end of line
     if (p2 == 0) then
        val = line(p1:)
     else
