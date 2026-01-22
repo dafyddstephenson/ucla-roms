@@ -68,7 +68,6 @@ module error_handling_mod
      character(len=:), allocatable :: context
      character(len=:), allocatable :: info
      type(error_log_entry_group_id_type), allocatable :: id(:)
-     type(error_log_entry_group_type), pointer :: next => null()
   end type error_log_entry_group_type
 
   !==============================
@@ -201,7 +200,7 @@ contains
 
   subroutine abort_check(this)
     class(error_log_type), intent(inout) :: this
-    type(error_log_entry_group_type), pointer :: groups
+    type(error_log_entry_group_type), allocatable :: groups(:)
 
 #ifdef MPI
     type(error_log_type) :: global_log
@@ -301,130 +300,121 @@ contains
 
   subroutine group_error_log_entries(log, groups)
     type(error_log_type), intent(in) :: log
-    type(error_log_entry_group_type), pointer :: groups
+    type(error_log_entry_group_type), allocatable, intent(out) :: groups(:)
 
     type(error_log_entry_type), pointer :: e
-    type(error_log_entry_group_type), pointer :: g
-    type(error_log_entry_group_id_type), allocatable :: tmp(:)
-    integer :: n, p
+    integer :: g, p, n_groups
     logical :: found_group, found_id
+    type(error_log_entry_group_id_type), allocatable :: tmp_ids(:)
+    type(error_log_entry_group_type), allocatable :: tmp_groups(:)
 
-    groups => null()
+    ! Start with no groups
+    allocate(groups(0))
+    n_groups = 0
+
     e => log%head
-
     do while (associated(e))
 
-       !#########################################
-       ! Find existing group (same error content)
-       !#########################################
-       g => groups
+       !-----------------------------------------
+       ! Find matching group
+       !-----------------------------------------
        found_group = .false.
-       do while (associated(g))
-          if ( e%level   == g%level   .and. &
-               e%scope   == g%scope   .and. &
-               e%context == g%context .and. &
-               e%info    == g%info ) then
+       do g = 1, n_groups
+          if ( e%level   == groups(g)%level   .and. &
+               e%scope   == groups(g)%scope   .and. &
+               e%context == groups(g)%context .and. &
+               e%info    == groups(g)%info ) then
              found_group = .true.
              exit
           end if
-          g => g%next
        end do
 
-       !#########################################
+       !-----------------------------------------
        ! Create new group if needed
-       !#########################################
+       !-----------------------------------------
        if (.not. found_group) then
-          allocate(g)
-          g%level   = e%level
-          g%scope   = e%scope
-          g%context = e%context
-          g%info    = e%info
-          allocate(g%id(0))
-          g%next => groups
-          groups => g
+          allocate(tmp_groups(n_groups+1))
+          if (n_groups > 0) tmp_groups(1:n_groups) = groups
+
+          g = n_groups + 1
+          tmp_groups(g)%level   = e%level
+          tmp_groups(g)%scope   = e%scope
+          tmp_groups(g)%context = e%context
+          tmp_groups(g)%info    = e%info
+          allocate(tmp_groups(g)%id(0))
+
+          call move_alloc(tmp_groups, groups)
+          n_groups = g
        end if
 
-       !#########################################
-       ! Find existing id inside the group
-       !#########################################
+       !-----------------------------------------
+       ! Find matching ID within group
+       !-----------------------------------------
        found_id = .false.
-       do p = 1, size(g%id)
-          if ( g%id(p)%rank == e%rank .and. &
-               g%id(p)%i    == e%i    .and. &
-               g%id(p)%j    == e%j    .and. &
-               g%id(p)%k    == e%k ) then
-             g%id(p)%count = g%id(p)%count + 1
+       do p = 1, size(groups(g)%id)
+          if ( groups(g)%id(p)%rank == e%rank .and. &
+               groups(g)%id(p)%i    == e%i    .and. &
+               groups(g)%id(p)%j    == e%j    .and. &
+               groups(g)%id(p)%k    == e%k ) then
+             groups(g)%id(p)%count = groups(g)%id(p)%count + 1
              found_id = .true.
              exit
           end if
        end do
 
-       !#########################################
+       !-----------------------------------------
        ! Append new ID if needed
-       !#########################################
+       !-----------------------------------------
        if (.not. found_id) then
-          n = size(g%id)
-          allocate(tmp(n+1))
-          if (n > 0) tmp(1:n) = g%id
+          allocate(tmp_ids(size(groups(g)%id) + 1))
+          if (size(groups(g)%id) > 0) tmp_ids(1:size(groups(g)%id)) = groups(g)%id
 
-          tmp(n+1)%rank  = e%rank
-          tmp(n+1)%i     = e%i
-          tmp(n+1)%j     = e%j
-          tmp(n+1)%k     = e%k
-          tmp(n+1)%count = 1
+          p = size(tmp_ids)
+          tmp_ids(p)%rank  = e%rank
+          tmp_ids(p)%i     = e%i
+          tmp_ids(p)%j     = e%j
+          tmp_ids(p)%k     = e%k
+          tmp_ids(p)%count = 1
 
-          call move_alloc(tmp, g%id)
+          call move_alloc(tmp_ids, groups(g)%id)
        end if
 
        e => e%next
     end do
   end subroutine group_error_log_entries
 
-
   subroutine print_error_log_entry_groups(groups)
     use iso_fortran_env, only: error_unit
-    type(error_log_entry_group_type), pointer :: groups
-    type(error_log_entry_group_type), pointer :: g
-    integer :: n_locs, i, total_raises
+    type(error_log_entry_group_type), intent(in) :: groups(:)
 
-    g => groups
-    do while (associated(g))
+    integer :: g, i, n_locs, total_raises
 
-       n_locs = size(g%id)
-       total_raises = sum(g%id(:)%count)
+    do g = 1, size(groups)
 
-       !#########################################
-       ! Header
-       !#########################################
+       n_locs = size(groups(g)%id)
+       total_raises = sum(groups(g)%id(:)%count)
 
-       select case (g%scope)
+       select case (groups(g)%scope)
        case (SCOPE_GLOBAL)
           write(error_unit,*) &
-               'ERROR [global] [', trim(g%context), ']:'
+               'ERROR [global] [', trim(groups(g)%context), ']:'
        case (SCOPE_RANK)
           write(error_unit,'(A,I0,A,I0,A,A,A)') &
-               'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' rank(s)] [', trim(g%context), ']:'
+               'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' rank(s)] [', &
+               trim(groups(g)%context), ']:'
        case (SCOPE_POINT)
           write(error_unit,'(A,I0,A,I0,A,A,A)') &
-               'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' point(s)] [', trim(g%context), ']:'
+               'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' point(s)] [', &
+               trim(groups(g)%context), ']:'
        end select
 
-       !#########################################
-       ! Message body
-       !#########################################
+       write(error_unit,*) trim(groups(g)%info)
 
-       write(error_unit,*) trim(g%info)
-
-       !#########################################
-       ! IDs
-       !#########################################
-
-       select case (g%scope)
-
+       select case (groups(g)%scope)
        case (SCOPE_RANK)
           write(error_unit,'(A)', advance='no') 'RANKS: '
           do i = 1, n_locs
-             write(error_unit,'(I0)', advance='no') g%id(i)%rank
+             write(error_unit,'(I0)', advance='no') groups(g)%id(i)%rank
              if (i < n_locs) write(error_unit,'(A)', advance='no') ', '
           end do
           write(error_unit,*)
@@ -432,16 +422,14 @@ contains
        case (SCOPE_POINT)
           do i = 1, n_locs
              write(error_unit,*) &
-                  '  rank ', g%id(i)%rank, &
-                  ' (i,j,k)=(', g%id(i)%i, ',', &
-                  g%id(i)%j, ',', &
-                  g%id(i)%k, ')'
+                  '  rank ', groups(g)%id(i)%rank, &
+                  ' (i,j,k)=(', groups(g)%id(i)%i, ',', &
+                  groups(g)%id(i)%j, ',', &
+                  groups(g)%id(i)%k, ')'
           end do
-
        end select
 
-       write(error_unit,*)  ! blank line between groups
-       g => g%next
+       write(error_unit,*)
     end do
   end subroutine print_error_log_entry_groups
 
