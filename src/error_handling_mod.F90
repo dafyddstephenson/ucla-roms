@@ -200,7 +200,7 @@ contains
 
   subroutine abort_check(this)
     class(error_log_type), intent(inout) :: this
-    type(error_log_entry_group_type), allocatable :: groups(:)
+    type(error_log_entry_group_type), allocatable :: grouped_error_log_entries(:)
 
 #ifdef MPI
     type(error_log_type) :: global_log
@@ -217,8 +217,8 @@ contains
 
     if (mynode == 0) then
        call deserialize_log(global_serialized_log, global_log)
-       call group_error_log_entries(global_log, groups)
-       call print_error_log_entry_groups(groups)
+       call group_error_log_entries(global_log, grouped_error_log_entries)
+       call print_error_log_entry_groups(grouped_error_log_entries)
     end if
 
     call stop_timers()
@@ -227,8 +227,8 @@ contains
     call sleep(30) ! stop further output leaking through
 #else
     if (this%abort_requested) then
-       call group_error_log_entries(this, groups)
-       call print_error_log_entry_groups(groups)
+       call group_error_log_entries(this, grouped_error_log_entries)
+       call print_error_log_entry_groups(grouped_error_log_entries)
        call stop_timers()
        error stop
     end if
@@ -298,89 +298,102 @@ contains
   ! GROUPING ENTRIES AND PRINTING
   !--------------------------------------------------------------------------------
 
-  subroutine group_error_log_entries(log, groups)
+  subroutine group_error_log_entries(log, grouped_log_entries)
     type(error_log_type), intent(in) :: log
-    type(error_log_entry_group_type), allocatable, intent(out) :: groups(:)
-
-    type(error_log_entry_type), pointer :: e
-    integer :: g, p, n_groups
-    logical :: found_group, found_id
-    type(error_log_entry_group_id_type), allocatable :: tmp_ids(:)
-    type(error_log_entry_group_type), allocatable :: tmp_groups(:)
+    type(error_log_entry_group_type), allocatable, intent(out) :: grouped_log_entries(:)
+    type(error_log_entry_type), pointer :: entry_to_group
+    integer :: i, found_group_idx, new_idx, n_groups
+    logical :: group_found, id_found
+    type(error_log_entry_group_id_type), allocatable :: tmp_id(:)
+    type(error_log_entry_group_type), allocatable :: tmp_grouped_log_entries(:)
 
     ! Start with no groups
-    allocate(groups(0))
+    allocate(grouped_log_entries(0))
     n_groups = 0
 
-    e => log%head
-    do while (associated(e))
+    entry_to_group => log%head
 
-       !-----------------------------------------
+    do while (associated(entry_to_group))
+
+       !#########################################
        ! Find matching group
-       !-----------------------------------------
-       found_group = .false.
-       do g = 1, n_groups
-          if ( e%level   == groups(g)%level   .and. &
-               e%scope   == groups(g)%scope   .and. &
-               e%context == groups(g)%context .and. &
-               e%info    == groups(g)%info ) then
-             found_group = .true.
+       !#########################################
+       group_found=.false.
+       do i = 1, n_groups
+          if ( entry_to_group%level   == grouped_log_entries(i)%level   .and. &
+               entry_to_group%scope   == grouped_log_entries(i)%scope   .and. &
+               entry_to_group%context == grouped_log_entries(i)%context .and. &
+               entry_to_group%info    == grouped_log_entries(i)%info ) then
+             group_found = .true.
+             found_group_idx = i
              exit
           end if
        end do
 
-       !-----------------------------------------
+       !#########################################
        ! Create new group if needed
-       !-----------------------------------------
-       if (.not. found_group) then
-          allocate(tmp_groups(n_groups+1))
-          if (n_groups > 0) tmp_groups(1:n_groups) = groups
-
-          g = n_groups + 1
-          tmp_groups(g)%level   = e%level
-          tmp_groups(g)%scope   = e%scope
-          tmp_groups(g)%context = e%context
-          tmp_groups(g)%info    = e%info
-          allocate(tmp_groups(g)%id(0))
-
-          call move_alloc(tmp_groups, groups)
-          n_groups = g
-       end if
-
-       !-----------------------------------------
-       ! Find matching ID within group
-       !-----------------------------------------
-       found_id = .false.
-       do p = 1, size(groups(g)%id)
-          if ( groups(g)%id(p)%rank == e%rank .and. &
-               groups(g)%id(p)%i    == e%i    .and. &
-               groups(g)%id(p)%j    == e%j    .and. &
-               groups(g)%id(p)%k    == e%k ) then
-             groups(g)%id(p)%count = groups(g)%id(p)%count + 1
-             found_id = .true.
-             exit
+       !#########################################
+       if (.not. group_found) then
+          allocate(tmp_grouped_log_entries(n_groups+1))
+          if (n_groups > 0) then
+             tmp_grouped_log_entries(1:n_groups) = grouped_log_entries
           end if
-       end do
 
-       !-----------------------------------------
-       ! Append new ID if needed
-       !-----------------------------------------
-       if (.not. found_id) then
-          allocate(tmp_ids(size(groups(g)%id) + 1))
-          if (size(groups(g)%id) > 0) tmp_ids(1:size(groups(g)%id)) = groups(g)%id
+          new_idx = n_groups + 1
+          tmp_grouped_log_entries(new_idx)%level   = entry_to_group%level
+          tmp_grouped_log_entries(new_idx)%scope   = entry_to_group%scope
+          tmp_grouped_log_entries(new_idx)%context = entry_to_group%context
+          tmp_grouped_log_entries(new_idx)%info    = entry_to_group%info
 
-          p = size(tmp_ids)
-          tmp_ids(p)%rank  = e%rank
-          tmp_ids(p)%i     = e%i
-          tmp_ids(p)%j     = e%j
-          tmp_ids(p)%k     = e%k
-          tmp_ids(p)%count = 1
+          allocate(tmp_grouped_log_entries(new_idx)%id(0))
 
-          call move_alloc(tmp_ids, groups(g)%id)
+          call move_alloc(tmp_grouped_log_entries, grouped_log_entries)
+          found_group_idx = new_idx
+          n_groups = n_groups+1
        end if
 
-       e => e%next
+       associate (found_group => grouped_log_entries(found_group_idx))
+       !#########################################
+       ! Find matching ID within group
+       !#########################################
+         id_found=.false.
+         do i = 1, size(found_group%id)
+            if ( found_group%id(i)%rank == entry_to_group%rank .and. &
+                 found_group%id(i)%i    == entry_to_group%i    .and. &
+                 found_group%id(i)%j    == entry_to_group%j    .and. &
+                 found_group%id(i)%k    == entry_to_group%k ) then
+
+               id_found=.true.
+               found_group%id(i)%count = found_group%id(i)%count + 1
+               exit
+
+            end if
+         end do
+
+         !#########################################
+         ! Append new ID if needed
+         !#########################################
+
+         if (.not. id_found) then
+            allocate(tmp_id(size(found_group%id) + 1))
+
+            if (size(found_group%id) > 0) tmp_id(1:size(found_group%id)) = found_group%id
+
+            new_idx = size(tmp_id)
+            tmp_id(new_idx)%rank  = entry_to_group%rank
+            tmp_id(new_idx)%i     = entry_to_group%i
+            tmp_id(new_idx)%j     = entry_to_group%j
+            tmp_id(new_idx)%k     = entry_to_group%k
+            tmp_id(new_idx)%count = 1
+
+            call move_alloc(tmp_id, found_group%id)
+
+         end if
+       end associate
+       entry_to_group => entry_to_group%next
+
     end do
+
   end subroutine group_error_log_entries
 
   subroutine print_error_log_entry_groups(groups)
