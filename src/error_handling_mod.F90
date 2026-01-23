@@ -1,4 +1,63 @@
 module error_handling_mod
+
+  !-----------------------------------------------------------------------
+  !     MODULE: error_handling_mod
+  !
+  !     DESCRIPTION:
+  !     This module defines, instantiates, and manages a global error log.
+  !
+  !     The log can be appended to elsewhere in ROMS via
+  !     `use error_handling_mod, only: error_log`
+  !     and, e.g.,
+  !     `error_log%raise_X` where X is the scope of the error being raised.
+  !     A raise does not immediately terminate the program, as it may be
+  !     desirable to accumulate and report on several related errors before
+  !     termination, or raise a non-terminating warning.
+  !
+  !     Termination is controlled using `error_log%abort_check` which
+  !     queries the log to see if there is a terminating error, printing
+  !     a human-readable version of the log then ending the program
+  !     appropriately via MPI_Abort as needed.
+  !
+  !     PUBLIC METHODS (on `error_log`):
+  !     - raise_global(context=<module name/subroutine name>,
+  !                    info=<message>,
+  !                    level[optional, default=LOG_LEVEL_ERROR]=<log level>)
+  !           used for universal error conditions that will exist on all
+  !           ranks. Examples include invalid global parameter values, e.g.
+  !           a negative time step.
+  !     - raise_from_rank(info=<message>,
+  !                    context=<module name/subroutine name>,
+  !                    level[optional, default=LOG_LEVEL_ERROR]=<log level>))
+  !           used for rank-level error conditions that may not exist on all
+  !           ranks. Examples include a missing netCDF input for a subdomain.
+  !     - raise_from_point(info=<message>,
+  !                    context=<module name/subroutine name>,
+  !                    i=<i location>, j=<j_location>,
+  !                    k[optional]=<depth_index>
+  !                    level[optional, default=LOG_LEVEL_ERROR]=<log level>)
+  !           used for gridpoint-level error conditions such as a BGC blowup.
+  !     - check_netcdf_status(netcdf_status=<nf90_status_code>,
+  !                           context=<module name/subroutine name>,
+  !                           info=<message>)
+  !           used specifically to handle netcdf-fortran status codes. Wraps
+  !           raise_from_rank, but passes the status code to the log to
+  !           determine abort behaviour and look up netcdf-fortran message
+  !           to print.
+  !     - abort_check()
+  !           used to determine whether any log entries have signalled that
+  !           ROMS should terminate, then begin the termination process,
+  !           including printing a human-readable copy of the log
+  !
+  !     NOTES:
+  !     - abort_check() MUST be reached by all ranks, or ROMS will hang.
+  !           do not place an abort_check() call inside a condition that
+  !           will not be met by all ranks.
+  !
+  !     AUTHOR: Dafydd Stephenson
+  !     DATE: 2026-01-23
+  !-----------------------------------------------------------------------
+
 #include "cppdefs.opt"
 
   use timers, only: stop_timers
@@ -101,6 +160,20 @@ contains
   !=========================================================
 
   subroutine raise_global(this, context, info, level)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE: raise_global
+    !     DESCRIPTION:
+    !     Append an entry of global scope to `this` error_log_type instance.
+    !
+    !     METHOD:
+    !     wraps private `raise_internal` method with call args specific to
+    !     this level/scope
+    !
+    !     INPUTS/OUTPUTS:
+    !     context (char) : information about where the raise originates from
+    !     info (char)    : information about why the raise was made
+    !     level (int, default LOG_LEVEL_ERROR) : the level of this raise
+    !-----------------------------------------------------------------------
     class(error_log_type), intent(inout) :: this
     character(len=*), intent(in)         :: context, info
     integer, intent(in), optional        :: level
@@ -121,6 +194,20 @@ contains
 
 
   subroutine raise_from_rank(this, context, info, level)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE: raise_from_rank
+    !     DESCRIPTION:
+    !     Append an entry of rank-level scope to `this` error_log_type instance.
+    !
+    !     METHOD:
+    !     wraps private `raise_internal` method with call args specific to
+    !     this level/scope
+    !
+    !     INPUTS/OUTPUTS:
+    !     context (char) : information about where the raise originates from
+    !     info (char)    : information about why the raise was made
+    !     level (int, default LOG_LEVEL_ERROR) : the level of this raise
+    !-----------------------------------------------------------------------
     use param, only: mynode
     class(error_log_type), intent(inout) :: this
     character(len=*), intent(in)         :: context, info
@@ -143,6 +230,22 @@ contains
 
 
   subroutine raise_from_point(this, i, j, k, context, info, level)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE: raise_from_point
+    !     DESCRIPTION:
+    !     Append an entry of gridpoint-level scope to `this` error_log_type instance.
+    !
+    !     METHOD:
+    !     wraps private `raise_internal` method with call args specific to
+    !     this level/scope
+    !
+    !     INPUTS/OUTPUTS:
+    !     context (char) : information about where the raise originates from
+    !     info (char)    : information about why the raise was made
+    !     i,j (int)      : gridpoint indices on the current rank
+    !     k (int, default = -1) : depth-coordinate index
+    !     level (int, default LOG_LEVEL_ERROR) : the level of this raise
+    !-----------------------------------------------------------------------
     use param, only: mynode
     class(error_log_type), intent(inout) :: this
     integer, intent(in)                  :: i, j
@@ -175,6 +278,20 @@ contains
   end subroutine raise_from_point
 
   subroutine check_netcdf_status(this, netcdf_status, context, info)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE: check_netcdf_status
+    !     DESCRIPTION:
+    !     Look up a netcdf-fortran return status and raise if appropriate
+    !
+    !     METHOD:
+    !     Wraps raise_from_rank, appending NF90 status code message to 'info'
+    !     in the event that the netcdf status code is nonzero.
+    !
+    !     INPUTS/OUTPUTS:
+    !     netcdf_status (int) : the return code of a netcdf-fortran call
+    !     context (char) : information about where the call originates from
+    !     info (char)    : further context-specificdiagnostic information
+    !-----------------------------------------------------------------------
     use netcdf, only: nf90_noerr, nf90_strerror
 
     class(error_log_type), intent(inout) :: this
@@ -240,6 +357,26 @@ contains
   !=========================================================
 
   subroutine raise_internal(this, scope, level, context, info, rank, i, j, k)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): raise_internal
+    !     DESCRIPTION:
+    !     Populates a log_error_entry_type instance and appends it to `this` log
+    !
+    !     METHOD:
+    !     Intended to be called by a public method with a subset of the
+    !     fields to be populated depending on the scope.
+    !     Populates the entry with these values, appends it to `this` log,
+    !     and advances the `tail` of the log (or `head`, if the first entry).
+    !
+    !     INPUTS/OUTPUTS:
+    !     scope (int) : the scope of this raise (e.g. SCOPE_GLOBAL)
+    !     level (int) : the level of this raise (e.g. LOG_LEVEL_ERROR)
+    !     context (char) : information about where the raise originates from
+    !     info (char)    : information about why the raise was made
+    !     rank (int, optional) : the rank from which this raise was made
+    !     i,j  (int, optional) : the gridpoint from which this raise was made
+    !     k    (int, optional) : the depth level from which this raise was made
+    !-----------------------------------------------------------------------
     class(error_log_type), intent(inout) :: this
     integer, intent(in)                  :: scope, level
     character(len=*), intent(in)         :: context, info
@@ -272,6 +409,18 @@ contains
   end subroutine raise_internal
 
   subroutine append_entry_to_log(this, entry_to_append)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): append_entry_to_log
+    !     DESCRIPTION:
+    !     Appends an already populated log entry to the log
+    !
+    !     METHOD:
+    !     Copies the entry into a newly allocated entry and re-sets the tail
+    !     position of the log
+    !
+    !     INPUTS/OUTPUTS:
+    !     entry_to_append (error_log_entry_type) : entry to append to `this` log
+    !-----------------------------------------------------------------------
     class(error_log_type), intent(inout) :: this
     type(error_log_entry_type), intent(in) :: entry_to_append
     type(error_log_entry_type), pointer :: appended_entry
@@ -299,6 +448,37 @@ contains
   !--------------------------------------------------------------------------------
 
   subroutine group_error_log_entries(log, grouped_log_entries)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): group_error_log_entries
+    !     DESCRIPTION:
+    !     Takes an `error_log_type` instance and groups its entries by rank/i/j/k.
+    !
+    !     Cycles through log entries, grouping any which have the same 'info' message,
+    !     'context' and 'scope' descriptors, and log level,
+    !     but different origin ranks or gridpoints.
+    !     This allows more readable summaries of the log to be printed, where
+    !     each log message is printed once, along with a list of ranks/points that
+    !     raised it.
+    !
+    !     METHOD:
+    !     For each entry, a loop over existing groups is executed to find one that
+    !     matches (same level/scope/context/info). If none are found, a new group
+    !     is created.
+    !
+    !     Once a group has been decided, a second loop over the group's existing
+    !     `id` entries is performed, to see if the same raise has previously
+    !     occurred at this location. If a matching 'id' is found, `id%count` is
+    !     incremented, signalling that the same error at the same location was
+    !     raised more than once. If no matching `id` is found in the group, a
+    !     new one is created, signalling a unique raise from this i/j/k/rank.
+    !
+    !     INPUTS:
+    !     log (error_log_type) : the log whose entries are to be grouped
+    !
+    !     OUTPUTS:
+    !     grouped_log_entries (error_log_entry_group_type) : log entries, grouped.
+    !-----------------------------------------------------------------------
+
     type(error_log_type), intent(in) :: log
     type(error_log_entry_group_type), allocatable, intent(out) :: grouped_log_entries(:)
     type(error_log_entry_type), pointer :: entry_to_group
@@ -396,49 +576,74 @@ contains
 
   end subroutine group_error_log_entries
 
-  subroutine print_error_log_entry_groups(groups)
+  subroutine print_error_log_entry_groups(grouped_log_entries)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): print_error_log_entry_groups
+    !     DESCRIPTION:
+    !     Prints grouped error log entries in a human-readable format.
+    !
+    !     METHOD:
+    !     loops over groups, printing a specific message based on scope and
+    !     number of occurences of this entry in the group/log.
+    !
+    !     INPUTS:
+    !     grouped_log_entries (log_entry_group_type): grouped log entries to print
+    !-----------------------------------------------------------------------
+
     use iso_fortran_env, only: error_unit
-    type(error_log_entry_group_type), intent(in) :: groups(:)
+    type(error_log_entry_group_type), intent(in) :: grouped_log_entries(:)
 
-    integer :: g, i, n_locs, total_raises
+    integer :: i, j, n_locs, total_raises
 
-    do g = 1, size(groups)
+    ! Loop over groups
+    do i = 1, size(grouped_log_entries)
 
-       n_locs = size(groups(g)%id)
-       total_raises = sum(groups(g)%id(:)%count)
+       ! Number of entries in group%id is number of unique locations raising
+       n_locs = size(grouped_log_entries(i)%id)
+       ! Total number of raises combines number of locations with count per location
+       total_raises = sum(grouped_log_entries(i)%id(:)%count)
 
-       select case (groups(g)%scope)
+       ! Each scope gets a different level of specificity in printed message:
+       ! #########################################
+       ! Write message header (scope, counts)
+       ! #########################################
+       select case (grouped_log_entries(i)%scope)
        case (SCOPE_GLOBAL)
           write(error_unit,*) &
-               'ERROR [global] [', trim(groups(g)%context), ']:'
+               'ERROR [global] [', trim(grouped_log_entries(i)%context), ']:'
        case (SCOPE_RANK)
           write(error_unit,'(A,I0,A,I0,A,A,A)') &
                'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' rank(s)] [', &
-               trim(groups(g)%context), ']:'
+               trim(grouped_log_entries(i)%context), ']:'
        case (SCOPE_POINT)
           write(error_unit,'(A,I0,A,I0,A,A,A)') &
                'ERROR [raised ',total_raises,' time(s) across ', n_locs, ' point(s)] [', &
-               trim(groups(g)%context), ']:'
+               trim(grouped_log_entries(i)%context), ']:'
        end select
+       ! #########################################
+       ! Write message body
+       ! #########################################
+       write(error_unit,*) trim(grouped_log_entries(i)%info)
 
-       write(error_unit,*) trim(groups(g)%info)
-
-       select case (groups(g)%scope)
+       ! #########################################
+       ! Write message footer (list of locations that raised)
+       ! #########################################
+       select case (grouped_log_entries(i)%scope)
        case (SCOPE_RANK)
           write(error_unit,'(A)', advance='no') 'RANKS: '
-          do i = 1, n_locs
-             write(error_unit,'(I0)', advance='no') groups(g)%id(i)%rank
-             if (i < n_locs) write(error_unit,'(A)', advance='no') ', '
+          do j = 1, n_locs
+             write(error_unit,'(I0)', advance='no') grouped_log_entries(i)%id(j)%rank
+             if (j < n_locs) write(error_unit,'(A)', advance='no') ', '
           end do
           write(error_unit,*)
 
        case (SCOPE_POINT)
-          do i = 1, n_locs
+          do j = 1, n_locs
              write(error_unit,*) &
-                  '  rank ', groups(g)%id(i)%rank, &
-                  ' (i,j,k)=(', groups(g)%id(i)%i, ',', &
-                  groups(g)%id(i)%j, ',', &
-                  groups(g)%id(i)%k, ')'
+                  '  rank ', grouped_log_entries(i)%id(j)%rank, &
+                  ' (i,j,k)=(', grouped_log_entries(i)%id(j)%i, ',', &
+                  grouped_log_entries(i)%id(j)%j, ',', &
+                  grouped_log_entries(i)%id(j)%k, ')'
           end do
        end select
 
@@ -453,6 +658,31 @@ contains
 
   subroutine gather_serialized_error_logs_on_primary_rank( &
        local_serialized_log, global_serialized_log)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): gather_serialized_error_logs_on_primary_rank
+    !     DESCRIPTION:
+    !     Takes serialized version of error log from each rank and gathers it
+    !     on the primary rank for single-rank printing.
+    !
+    !     METHOD:
+    !     Creates a new (global) serialized log on the primary rank to accommodate
+    !     contributions from every other rank. Allocates this by first gathering
+    !     the length of each contribution on the primary rank and calculating
+    !     the total.
+    !     With the serialized log allocated, it is populated by inserting
+    !     each rank's serialized log at the correct position (determined based
+    !     on the gathered lengths in the previous step).
+    !
+    !     INPUTS:
+    !     local_serialized_log (char): this rank's error log, serialized to a single string
+    !
+    !     OUTPUTS:
+    !     global_serialized_log (char): all ranks' error logs, serialized to a single string
+    !
+    !     SEE ALSO:
+    !     - error_log_type%serialize
+    !-----------------------------------------------------------------------
+
     character(len=*), intent(in) :: local_serialized_log
     character(len=:), allocatable, intent(out) :: global_serialized_log
 
@@ -523,6 +753,23 @@ contains
   end subroutine gather_serialized_error_logs_on_primary_rank
 
   subroutine serialize_log(this, serialized_log)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): serialize_log
+    !     DESCRIPTION:
+    !     Take `this` instance of `error_log_type` and return it as a single
+    !     long string with prescribed format, such that it can be shared
+    !     between ranks with OpenMPI
+    !
+    !     METHOD:
+    !     Loop over each entry in the log, call `error_log_entry_type%serialize`
+    !     and append the result to the final serialized log.
+    !
+    !     OUTPUTS:
+    !     serialized_log (char): all error log entries, serialized to a single string
+    !
+    !     SEE ALSO:
+    !     - error_log_entry_type%serialize
+    !-----------------------------------------------------------------------
     class(error_log_type), intent(in) :: this
     character(len=:), allocatable, intent(out) :: serialized_log
 
@@ -540,6 +787,24 @@ contains
   end subroutine serialize_log
 
   subroutine deserialize_log(serialized_log, deserialized_log)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): deserialize_log
+    !     DESCRIPTION:
+    !     Take a log, serialized as a single string and return it as a proper
+    !     error_log_type instance.
+    !
+    !     METHOD:
+    !     Loop over line in the serialized log string, call
+    !     deserialize_log_entry on that line
+    !     and append the result to the final deserialized log.
+    !
+    !     OUTPUTS:
+    !     deserialized_log (error_log_type): the log, transformed to the proper type
+    !
+    !     SEE ALSO:
+    !     - error_log_entry_type%serialize
+    !-----------------------------------------------------------------------
+
     character(len=*), intent(in) :: serialized_log
     type(error_log_type), intent(out) :: deserialized_log
 
@@ -567,6 +832,26 @@ contains
   end subroutine deserialize_log
 
   subroutine serialize_log_entry(this, serialized_log_entry)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): serialize_log_entry
+    !     DESCRIPTION:
+    !     Take `this` instance of `error_log_entry_type` and return it as a
+    !     single long string with prescribed format.
+    !
+    !     METHOD:
+    !      First replaces newlines in the `entry%info` field with placeholder
+    !      identifier, then
+    !     `write`s to a temporary fixed-length character each field of the
+    !      entry as a key=value pair separated by a `|`, where the key is
+    !      the first letter of the field name.
+    !
+    !     OUTPUTS:
+    !     serialized_log_entry (char): this entry, serialized to a single string
+    !
+    !     SEE ALSO:
+    !     - deserialize_log_entry
+    !-----------------------------------------------------------------------
+
     class(error_log_entry_type), intent(in) :: this
     character(len=:), allocatable, intent(out) :: serialized_log_entry
     character(len=:), allocatable :: info_no_newlines
@@ -591,6 +876,24 @@ contains
   end subroutine serialize_log_entry
 
   subroutine deserialize_log_entry(serialized_entry, deserialized_entry)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): deserialize_log_entry
+    !     DESCRIPTION:
+    !     Take a log entry serialized as a string and return it as a proper
+    !     `error_log_entry_type` instance.
+    !
+    !     METHOD:
+    !     Uses helper subroutines `extract_int` and `extract_str` to retrieve
+    !     values for each field from the serialized entry string, then
+    !     populates an `error_log_entry_type` instance with these values.
+    !
+    !     OUTPUTS:
+    !     deserialized_entry (error_log_entry_type): the deserialized log entry
+    !
+    !     SEE ALSO:
+    !     - `error_log_entry_type%serialize`
+    !-----------------------------------------------------------------------
+
     character(len=*), intent(in) :: serialized_entry
     character(len=:), allocatable :: entry_info
     type(error_log_entry_type), intent(out) :: deserialized_entry
@@ -611,7 +914,12 @@ contains
 
   contains
 
-  subroutine extract_int(serialized_entry, key, val)
+    subroutine extract_int(serialized_entry, key, val)
+      !-----------------------------------------------------------------------
+      !     SUBROUTINE (private): extract_int
+      !     DESCRIPTION: For a serialized log entry, retrieve an integer value
+      !     corresponding to `key`, e.g. 5, where key=`K` and `|K=5|` is in the serialized entry
+      !-----------------------------------------------------------------------
     character(len=*), intent(in) :: serialized_entry, key
     integer, intent(out) :: val
     integer :: p1, p2
@@ -629,6 +937,12 @@ contains
   end subroutine extract_int
 
   subroutine extract_str(line, key, val)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): extract_str
+    !     DESCRIPTION: For a serialized log entry, retrieve a character value
+    !     corresponding to `key`, e.g. 'mystr', where key=`K` and `|K=mystr|`
+    !     is in the serialized entry.
+    !-----------------------------------------------------------------------
     character(len=*), intent(in) :: line, key
     character(len=:), allocatable, intent(out) :: val
     integer :: p1, p2
