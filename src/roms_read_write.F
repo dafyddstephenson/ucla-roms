@@ -43,7 +43,7 @@
       character(len=7),public,parameter :: dn_tm = 'time'
 
       ! ---- user input ends
-      character(len=200) :: error_info = ''
+      character(len=1024) :: error_info = ''
       character(len=21) :: refdatestr
       integer :: offset = 0
 
@@ -779,7 +779,7 @@
       if (.not. found_rec) then
          write(error_info, *)
      &        'Ran out of time records for ',
-     &        vname, ' mynode=', mynode
+     &        vname
         call error_log%raise_from_rank(
      &       context=module_name//"/"//sr_name,
      &       info=error_info)
@@ -799,7 +799,7 @@
       if (irec==0) then
          write(error_info, *)
      &  'First available forcing record is past current time for var: ',
-     &        vname, ' mynode=', mynode
+     &        vname
          call error_log%raise_from_rank(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
