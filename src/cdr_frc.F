@@ -372,10 +372,12 @@
 
         ! Check for releases on land
         if ((frac(lmi(1),lmi(2),icdr) ==1 ) .and.
-     &  (rmask(lmi(1),lmi(2))==0)) then
+     &       (rmask(lmi(1),lmi(2))==0)) then
+           write(error_info,'(A,I0,A))') "CDR release ",
+     &          icdr," is on land."
          call error_log%raise_global(
      &     context=module_name//"/"//sr_name,
-     &     info="CDR release "//icdr//" is on land.")
+     &     info=error_info)
         end if
 
         cidx_start = cidx
