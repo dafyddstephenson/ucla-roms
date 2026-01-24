@@ -192,7 +192,7 @@
 !     Open input file to read keywords
       open(input, file=fname, status='old', form='formatted', iostat=ios)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode)
+         call report_opening_error(fname(1:lstr))
          return
       end if
 
@@ -237,7 +237,7 @@
 
       open(newunit=unit, file=fname, status='old', action='read', iostat=ios)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode)
+         call report_opening_error(fname(1:lstr))
          return
       end if
 
@@ -262,7 +262,7 @@
       call report_keyword_mismatch()
       end subroutine check_input_file_keywords
 
-      subroutine report_opening_error(fname, mynode)
+      subroutine report_opening_error(fname)
 !-----------------------------------------------------------------------
 !     SUBROUTINE: report_opening_error
 !     DESCRIPTION:
@@ -271,10 +271,9 @@
 
       implicit none
       character(len=*), intent(in) :: fname
-      integer,          intent(in) :: mynode
 
       error_info = "Cannot find input file '" // trim(fname) // "'"
-      call error_log%raise_global(
+      call error_log%raise_from_rank(
      &     info=error_info,
      &     context=module_name)
 
@@ -897,7 +896,7 @@
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode)
+         call report_opening_error(fname(1:lstr))
          return
       end if
       close(testunit)
@@ -943,7 +942,7 @@
          open(newunit=testunit, file=fname(1:lstr), status='old',
      &        iostat=ios)
          if (ios /= 0) then
-            call report_opening_error(fname(1:lstr), mynode)
+            call report_opening_error(fname(1:lstr))
             return
          end if
          close(testunit)
@@ -999,7 +998,7 @@
             open(newunit=testunit, file=fname(1:lstr), status='old',
      &           iostat=ios)
             if (ios /= 0) then
-               call report_opening_error(fname(1:lstr), mynode)
+               call report_opening_error(fname(1:lstr))
                return
             end if
             close(testunit)
@@ -1082,7 +1081,7 @@ c$$$                  end if TODO
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
       if (ios /= 0) then
-         call report_opening_error(fname(1:lstr), mynode)
+         call report_opening_error(fname(1:lstr))
          return
       end if
       close(testunit)
