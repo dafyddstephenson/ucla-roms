@@ -7,10 +7,10 @@
      &     init_registry, registry, register_keyword,
      &     report_keyword_mismatch, lookup_keyword
       use error_handling_mod, only: error_log
-
       implicit none
       character(len=12) :: module_name = "read_inp_mod"
       character(len=1024) :: error_info = ""
+      integer :: testunit = 40
       contains
 
 #include "cppdefs.opt"
@@ -149,8 +149,7 @@
 
       implicit none
       integer  ios, idx, ierr
-
-      integer, parameter :: input=15, testunit=40,
+      integer, parameter :: input=15,
      &                  max_fname=256, max_kwsize=256
       character(len=max_fname)  :: fname, force_string
       character(len=max_kwsize) :: keyword
@@ -190,8 +189,7 @@
       call register_keywords()
       call check_input_file_keywords(fname)
 
-
-! Open input file to read keywords
+!     Open input file to read keywords
       open(input, file=fname, status='old', form='formatted', iostat=ios)
       if (ios /= 0) then
          call report_opening_error(fname(1:lstr), mynode)
@@ -217,10 +215,8 @@
             return
          end if
       end do
-
       close (input)
       call error_log%abort_check()
-
 !     call check_srcs
       end subroutine read_inp
 
@@ -884,7 +880,7 @@
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, testunit, lstr, lenstr
+      integer :: ios, lstr, lenstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname
@@ -900,11 +896,11 @@
 # endif
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
-      close(testunit)
       if (ios /= 0) then
          call report_opening_error(fname(1:lstr), mynode)
          return
       end if
+      close(testunit)
 
       grdname = fname(1:lstr)
       mpi_master_only write(*,'(1x,2A)')
@@ -921,7 +917,7 @@
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, testunit, lenstr
+      integer :: ios, lstr, lenstr
       character(len=256) :: fname
 
       read(unit,*,iostat=ios) nrrec
@@ -946,11 +942,11 @@
 # endif
          open(newunit=testunit, file=fname(1:lstr), status='old',
      &        iostat=ios)
-         close(testunit)
          if (ios /= 0) then
             call report_opening_error(fname(1:lstr), mynode)
             return
          end if
+         close(testunit)
          ininame = fname(1:lstr)
          mpi_master_only write(*,'(1x,A,I3,2x,3A)')
      &        'initial condition :: rec =', nrrec,
@@ -970,7 +966,7 @@
 
       integer, intent(in)    :: unit
 
-      integer :: ios, lstr, testunit, lenstr
+      integer :: ios, lstr, lenstr
       character(len=256) :: fname
       character(len=15) :: sr_name = "kwread_forcing"
 
@@ -1002,11 +998,11 @@
 
             open(newunit=testunit, file=fname(1:lstr), status='old',
      &           iostat=ios)
-            close(testunit)
             if (ios /= 0) then
                call report_opening_error(fname(1:lstr), mynode)
                return
             end if
+            close(testunit)
 
 ! Store file if within limit of allowed no. of forcing files
 
@@ -1068,7 +1064,7 @@ c$$$                  end if TODO
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, testunit, lenstr
+      integer :: ios, lstr, lenstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname
@@ -1085,11 +1081,11 @@ c$$$                  end if TODO
 
       open(newunit=testunit, file=fname(1:lstr), status='old',
      &     iostat=ios)
-      close(testunit)
       if (ios /= 0) then
          call report_opening_error(fname(1:lstr), mynode)
          return
       end if
+      close(testunit)
       clm_file = fname(1:lstr)
           mpi_master_only write(*,'(1x,4A)')   'climatology data :: ',
      &                           'file = ''', clm_file(1:lstr), ''''
