@@ -94,7 +94,8 @@ c--# define CONST_TRACERS
 #endif
 #ifdef DIAGNOSTICS
       use diagnostics, only: diag_trc, calc_diag, tdiag, tmixx, tadvx, tadvy,
-     &  tmixy, tadvy, tadvz, td, vflxd, zflx, tmixz
+     &  tmixy, tadvy, tadvz, td, vflxd, zflx, tmixz, diag_t_adv_hc4,
+     &     diag_t_adv_vc4
 #endif
       implicit none
       integer icdr, cidx, istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k!, td
