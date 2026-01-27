@@ -387,25 +387,25 @@
 
       zeta__avg(:,:) = zeta__avg(:,:)*(1-coef) + zeta(:,:,knew)*coef
 
-      temp_avg(:,:,:) = temp_avg(:,:,:)*(1-coef) + t(:,:,:,knew,itemp)*coef
+      temp_avg(:,:,:) = temp_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,itemp)*coef
 
-      salt_avg(:,:,:) = salt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,isalt)*coef
+      salt_avg(:,:,:) = salt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,isalt)*coef
 
-      ALK_avg(:,:,:) = ALK_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK)*coef
+      ALK_avg(:,:,:) = ALK_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK)*coef
 
-      hALK_avg(:,:,:) = hALK_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK)*Hz(:,:,:)*coef
+      hALK_avg(:,:,:) = hALK_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK)*Hz(:,:,:)*coef
 
-      DIC_avg(:,:,:) = DIC_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC)*coef
+      DIC_avg(:,:,:) = DIC_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC)*coef
 
-      hDIC_avg(:,:,:) = hDIC_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC)*Hz(:,:,:)*coef
+      hDIC_avg(:,:,:) = hDIC_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC)*Hz(:,:,:)*coef
 
-      ALK_alt_avg(:,:,:) = ALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK_alt)*coef
+      ALK_alt_avg(:,:,:) = ALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK_alt)*coef
 
-      hALK_alt_avg(:,:,:) = hALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK_alt)*Hz(:,:,:)*coef
+      hALK_alt_avg(:,:,:) = hALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK_alt)*Hz(:,:,:)*coef
 
-      DIC_alt_avg(:,:,:) = DIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC_alt)*coef
+      DIC_alt_avg(:,:,:) = DIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC_alt)*coef
 
-      hDIC_alt_avg(:,:,:) = hDIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC_alt)*Hz(:,:,:)*coef
+      hDIC_alt_avg(:,:,:) = hDIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC_alt)*Hz(:,:,:)*coef
 
       pH_avg(:,:,:) = pH_avg(:,:,:)*(1-coef) + marbl_saved_state_3d(:,:,:,iPH)*coef
 
