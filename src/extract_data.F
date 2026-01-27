@@ -656,18 +656,20 @@
 
 ! rho variables --------------------------------------------------------
 
-            ! Get thickness and depth at interpolated location
-            call interpolate(Hz(:,:,:),obj(i)%Hz_par,coef,ip,jp)
-            obj(i)%h_par(:) = 0
-            do j=1,obj(i)%np
-              do k=1,nz
-                obj(i)%h_par(j) = obj(i)%h_par(j) + obj(i)%Hz_par(j,k)
+            if (parent_child_grid_mismatch) then
+              ! Get thickness and depth at interpolated location
+              call interpolate(Hz(:,:,:),obj(i)%Hz_par,coef,ip,jp)
+              obj(i)%h_par(:) = 0
+              do j=1,obj(i)%np
+                do k=1,nz
+                  obj(i)%h_par(j) = obj(i)%h_par(j) + obj(i)%Hz_par(j,k)
+                enddo
               enddo
-            enddo
 
-            do j=1,obj(i)%np
-              call get_child_thickness(obj(i)%h_par(j), obj(i)%Hz_chd(j,:))
-            enddo
+              do j=1,obj(i)%np
+                call get_child_thickness(obj(i)%h_par(j), obj(i)%Hz_chd(j,:))
+              enddo
+            endif
 
             if (obj(i)%zeta) then
               oname = trim(obj(i)%set)//'_zeta'//trim(obj(i)%bnd)
@@ -735,19 +737,21 @@
 
 ! u variables --------------------------------------------------------
 
-            if ((obj(i)%u) .or. (obj(i)%up)) then
-            ! Get thickness and depth at interpolated location
-            call interpolate(Hz_u(:,:,:),obj(i)%Hz_par_u,cfu,ipu,jpu)
-            obj(i)%h_par_u(:) = 0
-            do j=1,obj(i)%np
-              do k=1,nz
-                obj(i)%h_par_u(j) = obj(i)%h_par_u(j) + obj(i)%Hz_par_u(j,k)
-              enddo
-            enddo
+            if (parent_child_grid_mismatch) then
+              if ((obj(i)%u) .or. (obj(i)%up)) then
+                ! Get thickness and depth at interpolated location
+                call interpolate(Hz_u(:,:,:),obj(i)%Hz_par_u,cfu,ipu,jpu)
+                obj(i)%h_par_u(:) = 0
+                do j=1,obj(i)%np
+                  do k=1,nz
+                    obj(i)%h_par_u(j) = obj(i)%h_par_u(j) + obj(i)%Hz_par_u(j,k)
+                  enddo
+                enddo
 
-            do j=1,obj(i)%np
-              call get_child_thickness(obj(i)%h_par_u(j), obj(i)%Hz_chd_u(j,:))
-            enddo
+                do j=1,obj(i)%np
+                  call get_child_thickness(obj(i)%h_par_u(j), obj(i)%Hz_chd_u(j,:))
+                enddo
+              endif
             endif
 
             if (obj(i)%ubar) then
@@ -784,19 +788,21 @@
 
 ! v variables --------------------------------------------------------
 
-            if ((obj(i)%v) .or. (obj(i)%vp)) then
-            ! Get thickness and depth at interpolated location
-            call interpolate(Hz_v(:,:,:),obj(i)%Hz_par_v,cfv,ipv,jpv)
-            obj(i)%h_par_v(:) = 0
-            do j=1,obj(i)%np
-              do k=1,nz
-                obj(i)%h_par_v(j) = obj(i)%h_par_v(j) + obj(i)%Hz_par_v(j,k)
+            if (parent_child_grid_mismatch) then
+              if ((obj(i)%v) .or. (obj(i)%vp)) then
+              ! Get thickness and depth at interpolated location
+              call interpolate(Hz_v(:,:,:),obj(i)%Hz_par_v,cfv,ipv,jpv)
+              obj(i)%h_par_v(:) = 0
+              do j=1,obj(i)%np
+                do k=1,nz
+                  obj(i)%h_par_v(j) = obj(i)%h_par_v(j) + obj(i)%Hz_par_v(j,k)
+                enddo
               enddo
-            enddo
 
-            do j=1,obj(i)%np
-              call get_child_thickness(obj(i)%h_par_v(j), obj(i)%Hz_chd_v(j,:))
-            enddo
+              do j=1,obj(i)%np
+                call get_child_thickness(obj(i)%h_par_v(j), obj(i)%Hz_chd_v(j,:))
+              enddo
+              endif
             endif
 
             if (obj(i)%vbar) then
