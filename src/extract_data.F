@@ -309,6 +309,7 @@
         write(*,'(7x,2A)')
      &    'extract_data :: read objects: ',extract_file
       endif
+
       ierr = nf90_open(extract_file,nf90_nowrite,ncid)
       call error_log%check_netcdf_status(netcdf_status=ierr,
      &     info="error reading objects file "//extract_file,
@@ -318,6 +319,8 @@
       call error_log%check_netcdf_status(netcdf_status=ierr,
      &     context=module_name//"/"//sr_name,
      &     info="read extr")
+
+      call error_log%abort_check()
 
       allocate(obj(nobj))
 
@@ -338,7 +341,7 @@
      &       context=module_name//"/"//sr_name,
      &       info="error during inquire")
 
-
+        call error_log%abort_check()
         lstr = len(trim(dname))
         allocate(character(len=lstr) :: obj(iobj)%dname)
         obj(iobj)%dname = trim(dname)
@@ -373,7 +376,7 @@
         call error_log%check_netcdf_status(netcdf_status=ierr,
      &       info="error when getting `output_period` attribute",
      &       context=module_name//"/"//sr_name)
-
+        call error_log%abort_check()
         obj(iobj)%period   = period
 
         if (obj(iobj)%np>0) then
