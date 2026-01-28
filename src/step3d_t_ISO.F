@@ -1163,7 +1163,7 @@ c??         enddo
 # endif
       end subroutine step3d_t_iso_tile
 
-      subroutine check_step_t_switches(ierr)
+      subroutine check_step_t_switches
 
 ! The following routine keeps track of the status of CPP settings in
 ! "compute_horiz_tracer_fluxes.h" and "compute_horiz_vert_fluxes.h".
@@ -1174,22 +1174,29 @@ c??         enddo
 
       use param, only: mynode
       use strings, only: cpps, max_opt_size
+      use error_handling_mod, only: error_log
 
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
+      character(len=22) :: sr_name = "check_step_t_switches"
+      character(len=1024) :: error_info =""
+
+      write(error_info,*)
+     &  'Insufficient length of string "cpps" in file "strings".',
+     &        'Increase parameter "max_opt_size" and recompile.'
 
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+15
-      if (ie > max_opt_size) goto 99
+      if (ie>max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+      call error_log%abort_check()
       cpps(is:ie)='<step3d_t_ISO.F>'
 
 # include "track_advec_switches.h"
 
-      return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
-      ierr=ierr+1
       end subroutine check_step_t_switches
 #else
       subroutine step3d_t_empty
