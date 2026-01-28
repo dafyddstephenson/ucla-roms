@@ -41,7 +41,8 @@
       use wec_frc, only: compute_wec_rhs_uv_terms
 # endif
       use diagnostics, only: diag_uv, u_prev, v_prev, calc_diag, udiag,
-     &  vdiag, icori, dxdyi_u, dxdyi_v, idiss, ipgr, iadv, ivmix
+     &  vdiag, icori, dxdyi_u, dxdyi_v, idiss, ipgr, iadv, ivmix,
+     &     set_diags_u_4th_adv, set_diags_v_4th_adv
       use surf_flux, only: sustr, svstr
       use coupling, only: r_d, rufrc, rvfrc
       use grid, only:
