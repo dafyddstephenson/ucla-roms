@@ -49,7 +49,7 @@
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow
 #endif
-      use sponge_tune, only: ub_tune
+      use sponge_tune, only: ub_tune, get_init_ub
       implicit none
       character(len=8) :: sr_name = "get_init"
       character(len=200) :: error_info
