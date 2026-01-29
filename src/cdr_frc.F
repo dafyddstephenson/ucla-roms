@@ -33,7 +33,7 @@
       implicit none
       private
       character(len=7) :: module_name="cdr_frc"
-      character(len=200) :: error_info=""
+      character(len=1024) :: error_info=""
 #include "cdr_frc.opt"
 
       !!! (1) Parameterized releases
