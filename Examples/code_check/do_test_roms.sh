@@ -24,7 +24,7 @@ cp -p ../cppdefs.opt .
 cp -p ../param.opt .
 cp -p $ROMS_ROOT/Examples/code_check/diag.opt .
 #cp -p $ROMS_ROOT/Examples/code_check/Makedefs.inc .
-cp -p $ROMS_ROOT/Examples/Makefile .
+cp -p $ROMS_ROOT/Work/Makefile .
 make compile_clean &> /dev/null
 make BUILD_MODE=test > compile.log
 
