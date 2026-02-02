@@ -8,7 +8,7 @@
 
 
       logical,parameter :: wrt_file_his      = .true.      ! t/f to write module history file
-      real,parameter    :: output_period_his = 100         ! output period in seconds
+      real,parameter    :: output_period_his = 20*20       ! output period in seconds
       integer,parameter :: nrpf_his          = 10          ! total recs per file
       logical,parameter :: wrt_Z =.true.,
      &                     wrt_Ub=.true.,
@@ -24,7 +24,7 @@
      &                     wrt_Hbls=.true.,
      &                     wrt_Hbbl=.true.
 
-      logical,parameter :: wrt_file_avg      = .false.     ! t/f to write module averages file
+      logical,parameter :: wrt_file_avg      = .false.      ! t/f to write module averages file
       real,parameter    :: output_period_avg = 100         ! output averaging period in seconds
       integer,parameter :: nrpf_avg          = 10          ! total recs per file
       logical,parameter :: wrt_avg_Z =.true.,
@@ -41,6 +41,6 @@
      &                     wrt_avg_Hbls=.true.,
      &                     wrt_avg_Hbbl=.true.
 
-      logical :: code_check = .false.                       ! keep as false unless for code_check
+      logical :: code_check = .true.                       ! keep as false unless for code_check
       ! end user inputs
       ! ****************************************************************
