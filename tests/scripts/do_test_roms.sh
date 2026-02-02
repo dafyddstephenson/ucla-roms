@@ -19,7 +19,6 @@ echo "##############################"
 echo "  test compiling..."
 echo "##############################"
 
-cp -p $ROMS_ROOT/Work/Makefile .
 make compile_clean &> /dev/null
 make BUILD_MODE=test > compile.log
 
