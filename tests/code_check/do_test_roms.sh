@@ -22,8 +22,7 @@ echo "##############################"
 cp -p ../*.h . &> /dev/null
 cp -p ../cppdefs.opt .
 cp -p ../param.opt .
-cp -p $ROMS_ROOT/Examples/code_check/diag.opt .
-#cp -p $ROMS_ROOT/Examples/code_check/Makedefs.inc .
+cp -p $ROMS_ROOT/tests/code_check/diag.opt .
 cp -p $ROMS_ROOT/Work/Makefile .
 make compile_clean &> /dev/null
 make BUILD_MODE=test > compile.log
@@ -51,7 +50,7 @@ rm cppdefs.opt# &> /dev/null
 rm roms      &> /dev/null
 
 # 2) Python - confirm values:
-cp $ROMS_ROOT/Examples/code_check/test_roms.py .
+cp $ROMS_ROOT/tests/code_check/test_roms.py .
 python3 test_roms.py $bm_file
 retval=$?
 

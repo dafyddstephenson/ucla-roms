@@ -36,10 +36,10 @@ cp -p ../param.opt .
 if [ ${BGC_MODEL} == "MARBL" ];then
     cp -p ../marbl_in .
 fi
-cp -p $ROMS_ROOT/Examples/code_check/diag.opt .
-#cp -p $ROMS_ROOT/Examples/code_check/Makedefs.inc .
+cp -p $ROMS_ROOT/tests/code_check/diag.opt .
+#cp -p $ROMS_ROOT/tests/code_check/Makedefs.inc .
 cp -p $ROMS_ROOT/Work/Makefile .
-cp -p $ROMS_ROOT/Examples/code_check/test_roms.py .
+cp -p $ROMS_ROOT/tests/code_check/test_roms.py .
 make compile_clean &> /dev/null
 make BUILD_MODE=test > compile_${BGC_MODEL}.log # 2>&1 | tee -a compile_${BGC_MODEL}.log
 

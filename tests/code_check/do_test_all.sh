@@ -2,7 +2,7 @@
 
 # ******** USER INPUT START ************
 # declare an array of Example folders and .in names to use:
-declare -a Examples=( "Flux_frc" "Pipes_ana" "Pipes_real" "Rivers_ana" "Rivers_real" "Filament" "bgc_real" )
+declare -a tests=( "Flux_frc" "Pipes_ana" "Pipes_real" "Rivers_ana" "Rivers_real" "Filament" "bgc_real" )
 # ******** USER INPUT END   ************
 
 arg=$1
@@ -18,15 +18,15 @@ case "$arg" in
 esac
 
 error_cnt=0                                      # count of exit codes from each test
-total=${#Examples[*]}                            # total number of examples
+total=${#tests[*]}                            # total number of examples
 for (( i=0; i<=$(( $total -1 )); i++ ))          # run test cases:
 do
-    cd ../${Examples[i]}/code_check/
+    cd ../${tests[i]}/code_check/
     echo "##############################"
-    echo "${Examples[i]}:"
+    echo "${tests[i]}:"
     echo "##############################"
 
-    case ${Examples[i]} in
+    case ${tests[i]} in
 	bgc_real)
 	    ./do_test_roms.sh $arg BEC
 	    retval=$?
