@@ -68,16 +68,16 @@ jobs:
       - name: Update COMPILER arg in make commands and allow OpenMPI oversubscription
         shell: bash
         run: |
-          sed -i -e "s/make /make COMPILER=intel /g" $ROMS_ROOT/tests/code_check/do_test_roms.sh
-          sed -i -e "s/make /make COMPILER=intel /g" $ROMS_ROOT/tests/bgc_real/code_check/do_test_roms.sh
-          sed -i -e "s/mpirun/mpirun --oversubscribe/g" $ROMS_ROOT/tests/code_check/do_test_roms.sh
-          sed -i -e "s/mpirun/mpirun --oversubscribe/g" $ROMS_ROOT/tests/bgc_real/code_check/do_test_roms.sh
+          sed -i -e "s/make /make COMPILER=intel /g" $ROMS_ROOT/tests/scripts/do_test_roms.sh
+          sed -i -e "s/make /make COMPILER=intel /g" $ROMS_ROOT/tests/bgc_real/do_test_roms.sh
+          sed -i -e "s/mpirun/mpirun --oversubscribe/g" $ROMS_ROOT/tests/scripts/do_test_roms.sh
+          sed -i -e "s/mpirun/mpirun --oversubscribe/g" $ROMS_ROOT/tests/bgc_real/do_test_roms.sh
 
       - name: Run test for ${{ matrix.example }}
         shell: bash
         run: |
           source $GITHUB_ENV
-          cd $ROMS_ROOT/tests/${{ matrix.example }}/code_check/
+          cd $ROMS_ROOT/tests/${{ matrix.example }}
           if [[ "${{ matrix.example }}" == "bgc_real" ]]; then
           ./do_test_roms.sh github_ifx ${{ matrix.bgc_mode }}
           else
@@ -96,8 +96,7 @@ jobs:
         shell: bash
         run: |
           echo "--------------------------------------------------------------------------------"
-          echo "This step will print the test_old.log files from each case run by"
-          echo "tests/code_check/do_test_all.sh"
+          echo "This step will print the test_old.log files from each case."
           echo "If the tests failed but you are confident in your changes,"
           echo "overwrite the benchmark.result_github_ifx files for each case with"
           echo "the contents of these log files"
