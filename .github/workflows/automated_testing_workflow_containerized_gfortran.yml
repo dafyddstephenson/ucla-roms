@@ -52,7 +52,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: tests/input_data
-        key: roms-input-${{ hashFiles('tests/tests/get_input_files.sh') }}
+        key: roms-input-${{ hashFiles('tests/input_data/get_input_files.sh') }}
 
     - name: Get input data (if not cached)
       if: steps.cache-input.outputs.cache-hit != 'true'
