@@ -9,8 +9,8 @@
 
 #if defined RIVERS
 
-c--# define DIAGNOSTICS
-c--# define TIDES
+!# define DIAGNOSTICS
+!# define TIDES
 # define BULK_FRC
 # define SPONGE_TUNE
 # define RIVER_SOURCE

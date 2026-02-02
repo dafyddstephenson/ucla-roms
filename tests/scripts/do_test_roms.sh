@@ -19,10 +19,6 @@ echo "##############################"
 echo "  test compiling..."
 echo "##############################"
 
-cp -p ../*.h . &> /dev/null
-cp -p ../cppdefs.opt .
-cp -p ../param.opt .
-cp -p $ROMS_ROOT/tests/code_check/diag.opt .
 cp -p $ROMS_ROOT/Work/Makefile .
 make compile_clean &> /dev/null
 make BUILD_MODE=test > compile.log
@@ -40,17 +36,8 @@ else
     mpirun -n 6 ./roms benchmark.in > test.log #2>&1 | tee -a test.log
 fi
 
-
-rm *.h       &> /dev/null
-rm *.nc      &> /dev/null
-rm diag.opt  &> /dev/null
-rm Make*     &> /dev/null
-rm param.opt &> /dev/null
-rm cppdefs.opt# &> /dev/null
-rm roms      &> /dev/null
-
 # 2) Python - confirm values:
-cp $ROMS_ROOT/tests/code_check/test_roms.py .
+cp $ROMS_ROOT/tests/scripts/test_roms.py .
 python3 test_roms.py $bm_file
 retval=$?
 
