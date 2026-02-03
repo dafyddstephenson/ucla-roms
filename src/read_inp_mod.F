@@ -456,7 +456,7 @@
       implicit none
 
       integer, intent(in) :: unit
-      integer :: ios
+      integer :: ios, lstr, lenstr
 
 ! ---------------------------------------------------------
 ! Read MARBL namelist file
@@ -466,9 +466,9 @@
          call report_read_error("MARBL_biogeochemistry")
          return
       end if
-
+      lstr = lenstr(marbl_namelist_fname)
       mpi_master_only write(*,'(1x,A,15x,A)')
-     &     'MARBL namelist file',trim(marbl_namelist_fname)
+     &     'MARBL namelist file',marbl_namelist_fname(1:lstr)
 
 ! ---------------------------------------------------------
 ! Read tracer list file
@@ -478,9 +478,9 @@
          call report_read_error("MARBL_biogeochemistry")
          return
       end if
-
+      lstr = lenstr(marbl_tracer_list_fname)
       mpi_master_only write(*,'(1x,A,5x,A)')
-     &     'MARBL tracer output list file',trim(marbl_tracer_list_fname)
+     &     'MARBL tracer output list file',marbl_tracer_list_fname(1:lstr)
 
 #ifdef MARBL_DIAGS
 ! ---------------------------------------------------------
@@ -491,9 +491,9 @@
          call report_read_error("MARBL_biogeochemistry")
          return
       end if
-
+      lstr = lenstr(marbl_diag_list_fname)
       mpi_master_only write(*,'(1x,A,1x,A)')
-     &     'MARBL diagnostic output list file',trim(marbl_diag_list_fname)
+     &     'MARBL diagnostic output list file',marbl_diag_list_fname(1:lstr)
 #endif
 
       end subroutine kwread_marbl_bgc
