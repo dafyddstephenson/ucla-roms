@@ -668,7 +668,7 @@
               write(stdout_str,'(2(A,2x),F6.1)')
      &             trim(stdout_str), 'output_period =', output_period
            end if
-           write(*, '(7x,A)'), trim(stdout_str)
+           write(*, '(7x,A)') trim(stdout_str)
            if (.not. do_avg) then
               write(*, '(/7x,A)') 'his fields to be saved: (T/F)'
            else
