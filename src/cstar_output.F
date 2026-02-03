@@ -17,7 +17,7 @@
       use dimensions, only: i0, i1, j0, j1, nx, ny, nz
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
-     &     xi_rho, create_file
+     &     xi_rho, create_file, sec2date
       use nc_read_write, only: nccreate, ncwrite
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_double, nf90_open,
@@ -227,7 +227,7 @@
 
       end subroutine define_cstar_output_variables
 
-      subroutine init_cstar ![
+      subroutine init_cstar     ![
 !     Allocate and initialize arrays.
       implicit none
       character(len=9) :: sr_name = "init_cstar"
@@ -668,7 +668,7 @@
               write(stdout_str,'(2(A,2x),F6.1)')
      &             trim(stdout_str), 'output_period =', output_period
            end if
-           write(*, '(7x,A)'), trim(stdout_str)
+           write(*, '(7x,A)') trim(stdout_str)
            if (.not. do_avg) then
               write(*, '(/7x,A)') 'his fields to be saved: (T/F)'
            else
