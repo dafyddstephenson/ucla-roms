@@ -32,7 +32,7 @@ done
 
 # Make CDR forcing
 echo "#######################################################"
-echo "CREATING CDR INPUTS"
+echo "CREATING CDR INPUTS:"
 echo "#######################################################"
 python3 make_CDR_data.py
 partit 3 2 cdr_forcing_3d.nc

@@ -7,3 +7,4 @@ dependencies:
   - compilers
   - netcdf-fortran
   - mpich
+  - netcdf4
