@@ -83,24 +83,4 @@ jobs:
           else
           ./do_test_roms.sh github_ifx
           fi
-      - name: Print compilation logs (in case of failure)
-        if: failure()
-        shell: bash
-        run: |
-          source $GITHUB_ENV
-          cd ci
-          ./print_compilation_logs.sh
-
-      - name: Print logs (in case of failure)
-        if: failure()
-        shell: bash
-        run: |
-          echo "--------------------------------------------------------------------------------"
-          echo "This step will print the test_old.log files from each case."
-          echo "If the tests failed but you are confident in your changes,"
-          echo "overwrite the benchmark.result_github_ifx files for each case with"
-          echo "the contents of these log files"
-          echo "--------------------------------------------------------------------------------"
-          cd ci
-          ./print_output_logs.sh
 

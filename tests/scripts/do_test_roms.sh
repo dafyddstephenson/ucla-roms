@@ -20,7 +20,7 @@ echo "  test compiling..."
 echo "##############################"
 
 make compile_clean &> /dev/null
-make BUILD_MODE=test > compile.log
+make BUILD_MODE=test
 
 
 # 2) Run test case:
@@ -30,9 +30,9 @@ echo "##############################"
 
 if [ "$1" = "expanse" ]
 then
-    srun --mpi=pmi2 -n 6 ./roms benchmark.in > test.log
+    srun --mpi=pmi2 -n 6 ./roms benchmark.in
 else
-    mpirun -n 6 ./roms benchmark.in > test.log #2>&1 | tee -a test.log
+    mpirun -n 6 ./roms benchmark.in
 fi
 
 # 2) Python - confirm values:
