@@ -31,5 +31,6 @@ for fname in "${files[@]}";do
 done
 
 # Make CDR forcing
+echo "CREATING CDR INPUTS"
 python3 make_CDR_data.py
 partit 3 2 cdr_forcing_3d.nc
