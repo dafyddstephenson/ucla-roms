@@ -4,7 +4,7 @@
 
       logical,parameter,public :: cdr_source  = .true.  ! Should be false if not using CDR forcing
 
-      character(len=60) :: cdr_file = 'cdr_forcing_dp.nc'   ! NetCDF forcing file and variable names
+      character(len=60) :: cdr_file = 'input_data/cdr_forcing_dp.nc'   ! NetCDF forcing file and variable names
 
       integer,parameter,public :: ncdr_parm=1   !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 

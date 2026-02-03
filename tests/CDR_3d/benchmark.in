@@ -16,7 +16,7 @@ forcing: filename
      input_data/example_input_boundary_forcing.nc
      input_data/example_input_surface_forcing.nc
      input_data/example_input_tides.nc
-     cdr_forcing_3d.nc
+     input_data/cdr_forcing_3d.nc
 
 initial: NRREC  filename
           1

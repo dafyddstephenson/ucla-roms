@@ -29,3 +29,7 @@ for fname in "${files[@]}";do
     partit 3 2 "${fname}"
     #echo "${URL_PREFIX}/${fname}"
 done
+
+# Make CDR forcing
+python3 make_CDR_data.py
+partit 3 2 cdr_forcing_3d.nc
