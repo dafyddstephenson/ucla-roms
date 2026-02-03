@@ -17,7 +17,7 @@
       use dimensions, only: i0, i1, j0, j1, nx, ny, nz
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
-     &     xi_rho, create_file
+     &     xi_rho, create_file, sec2date
       use nc_read_write, only: nccreate, ncwrite
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_double, nf90_open,
@@ -228,7 +228,6 @@
       end subroutine define_cstar_output_variables
 
       subroutine init_cstar     ![
-      use roms_read_write, only: sec2date
 !     Allocate and initialize arrays.
       implicit none
       character(len=9) :: sr_name = "init_cstar"
