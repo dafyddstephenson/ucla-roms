@@ -227,7 +227,8 @@
 
       end subroutine define_cstar_output_variables
 
-      subroutine init_cstar ![
+      subroutine init_cstar     ![
+      use roms_read_write, only: sec2date
 !     Allocate and initialize arrays.
       implicit none
       character(len=9) :: sr_name = "init_cstar"
