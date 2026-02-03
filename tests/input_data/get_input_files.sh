@@ -19,6 +19,7 @@ files=(
     "example_input_surface_flux_forcing.nc"
     "example_input_grid.nc"
     "example_input_bgc_initial_conditions.nc"
+    "cdr_forcing_3d.nc"
 )
 
 for fname in "${files[@]}";do
@@ -30,9 +31,6 @@ for fname in "${files[@]}";do
     #echo "${URL_PREFIX}/${fname}"
 done
 
-# Make CDR forcing
-echo "#######################################################"
-echo "CREATING CDR INPUTS:"
-echo "#######################################################"
-python3 make_CDR_data.py
-partit 3 2 cdr_forcing_3d.nc
+# Unpartitioned CDR forcing:
+${DOWNLOAD_COMMAND} "${URL_PREFIX}/cdr_forcing_dp.nc"
+${DOWNLOAD_COMMAND} "${URL_PREFIX}/cdr_forcing_parm.nc"
