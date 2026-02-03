@@ -61,8 +61,10 @@ jobs:
       if: steps.cache-input.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        micromamba run -n roms-ci bash -c '
         cd ${ROMS_ROOT}/tests/input_data/
         ./get_input_files.sh
+        '
     - name: Update COMPILER arg in make commands
       shell: bash
       run: |
