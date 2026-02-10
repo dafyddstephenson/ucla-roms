@@ -60,6 +60,7 @@
 
 #if defined ANTITRACER
       real,public,allocatable,dimension(:,:) :: ddic_dco2  ! time interpolated carbonate sensitivity
+      real,public,allocatable,dimension(:,:) :: ddic_dalk  ! time interpolated carbonate sensitivity
       real,public,allocatable,dimension(:,:) :: k_gas      ! time interpolated gas transfer velocity
 #endif
 
@@ -99,6 +100,8 @@
 #if defined ANTITRACER
       allocate( nc_ddic_dco2%vdata( GLOBAL_2D_ARRAY,2) )
       allocate( ddic_dco2(GLOBAL_2D_ARRAY)  )
+      allocate( nc_ddic_dalk%vdata( GLOBAL_2D_ARRAY,2) )
+      allocate( ddic_dalk(GLOBAL_2D_ARRAY)  )
       allocate( k_gas(GLOBAL_2D_ARRAY)      ); k_gas=0.
 #endif
 
@@ -134,6 +137,7 @@
 
 #ifdef ANTITRACER
       call set_frc_data(nc_ddic_dco2, ddic_dco2, 'r')
+      call set_frc_data(nc_ddic_dalk, ddic_dalk, 'r')
 #endif
 
       end subroutine set_carbonate_sensitivity  !]
