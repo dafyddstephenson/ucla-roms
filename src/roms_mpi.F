@@ -29,6 +29,11 @@
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_nowrite, nf90_open, nf90_global, nf90_noerr,
      &   nf90_close, nf90_get_att
+#ifdef PIO
+      use pio_roms, only: pio_xi_rho, pio_xi_u, pio_eta_rho, pio_eta_v,
+     &  pio_xi_rho_start, pio_xi_u_start, pio_eta_rho_start, pio_eta_v_start,
+     &  pio_s_start, pio_west_exchng, pio_east_exchng, pio_north_exchng, pio_south_exchng
+#endif
 
       implicit none
 
@@ -241,6 +246,35 @@
           eta_rho = ny+1
           eta_v   = ny+1
         endif
+
+#ifdef PIO
+        pio_xi_rho = xi_rho
+        pio_xi_u = xi_u
+        pio_eta_rho = eta_rho
+        pio_eta_v = eta_v
+
+        if (inode == 0) then
+          pio_xi_rho_start = iSW_corn+iwest
+          pio_xi_u_start   = iSW_corn+iwest
+        else
+          pio_xi_rho_start= iSW_corn+iwest+1
+          pio_xi_u_start   = iSW_corn+iwest
+        endif
+
+        if (jnode == 0) then
+          pio_eta_rho_start= jSW_corn+jsouth
+          pio_eta_v_start  = jSW_corn+jsouth
+        else
+          pio_eta_rho_start= jSW_corn+jsouth+1
+          pio_eta_v_start  = jSW_corn+jsouth
+        endif
+        pio_s_start = 1
+
+        pio_west_exchng = (inode .ne. 0)
+        pio_east_exchng = (inode .ne. npx-1)
+        pio_north_exchng = (jnode .ne. 0)
+        pio_south_exchng = (jnode .ne. npy-1)
+#endif
 
       end subroutine mpi_setup !]
 !--------------------------------------------------------

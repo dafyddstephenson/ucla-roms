@@ -12,6 +12,9 @@
       use timers, only: tstart, tend
       use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
+#ifdef PIO
+      use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
+#endif
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.
@@ -34,6 +37,14 @@ C$    ierr=0
       call read_inp
 
       call mpi_setup
+
+#ifdef PIO
+      pio_myRank = mynode
+      pio_ntasks = nsize
+
+      call pio_initialize
+#endif
+
       tstart=MPI_Wtime()
 
 # endif
