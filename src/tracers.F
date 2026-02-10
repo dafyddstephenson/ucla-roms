@@ -23,7 +23,7 @@
       use dimensions
       use surf_flux,  only: stflx                          ! surface tracer flux should possibly live in this module rather?
 #ifdef ANTITRACER      
-      use surf_flux,  only: ddic_dco2, k_gas, uwnd, vwnd
+      use surf_flux,  only: ddic_dco2, ddic_dalk, k_gas, uwnd, vwnd
       use ocean_vars, only: Hz
 #endif      
       use scalars                                          ! for 'FIRST_TIME_STEP' and nstp
@@ -48,9 +48,11 @@
       logical, dimension(nt), public      :: wrt_t_avg               ! t/f output avg tracer.
       logical, dimension(nt), public      :: wrt_t_dia = .false.     ! t/f diagnostics tracer.
 
-      integer, dimension(nt)              :: t_ana_frc               ! whether surface flux is read in (0), or analytical (1), 
-                                                                     ! or (2) read in, but assuming that surface flux units are 1/m2/s,
-                                                                     ! or (3) read in (with assumptions of (2)) + with online computed air-sea gas exchange
+      integer, dimension(nt)              :: t_ana_frc               ! 0 = Read in forcing data
+                                                                     ! 1 = Analytical forcing (set_ana_surf_tracer_flx)
+                                                                     ! 2 = Read in forcing + online computed air-sea gas exchange (Antitracer)
+
+      integer, dimension(nt), public      :: itrc_alk_pair = 0       ! Pairing logic
 
       !-- Tracer netcdf variables as arrays/matrices of 'NT' length:
       ! Final tracer concentrations live in 't' in ocean3d
@@ -216,13 +218,24 @@
 #ifdef ANTITRACER
 
       ! local
-      integer i,j
-      real beta
+      integer i, j, iALK
+      real beta, eta, cALK
  
+      iALK = itrc_alk_pair(itrc) ! Identify if this tracer has a pair
+
       do j=jstr,jend
         do i=istr,iend+1
-          beta=max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
-          stflx(i,j,itrc) = stflx(i,j,itrc) - (k_gas(i,j) / beta) * t(i,j,nz,nrhs,itrc)
+          beta = max(ddic_dco2(i,j), 1.0e-5) ! avoid division by zero
+          eta = ddic_dalk(i,j)
+          if (iALK > 0) then
+             cALK = t(i,j,nz,nrhs,iALK)
+          else
+             cALK = 0.0
+          endif
+
+          ! Implementation: Flux = Flux - (k / beta) * (C_dic + ddic_dalk * C_alk)
+          stflx(i,j,itrc) = stflx(i,j,itrc) - &
+                            (k_gas(i,j) / beta) * (t(i,j,nz,nrhs,itrc) + eta * cALK)
           ! Here, stflx is stored as (stflx * Hz) to maintain consistency
           ! with t, which is also in (t * Hz) form. This ensures the units match
           ! when stflx is added to t in step3d_t_ISO.
