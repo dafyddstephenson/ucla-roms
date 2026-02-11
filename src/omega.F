@@ -35,7 +35,7 @@
 ! maximum CN which the explicit component "We" is allowed to reach.
 
       use param, only: ieast, iwest, jnorth, jsouth, np_eta, np_xi
-      use dimensions, only: nx, ny, nz
+      use dimensions, only: nx, ny, nz, inode, jnode
       use grid, only: pn, pm, dn_r, dm_r
       use pipe_frc, only:
      &     pidx, pipe_source, pipe_idx, pipe_prf,

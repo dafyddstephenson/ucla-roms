@@ -7,6 +7,10 @@
      &     nf90_inq_dimid, nf90_def_dim, nf90_def_var, nf90_inq_varid,
      &     nf90_put_var, nf90_get_var
       use error_handling_mod, only: error_log
+#ifdef PIO
+      use pio_roms, only: pio_ncread1, pio_ncread2, pio_ncread3
+#endif
+
       implicit none
       private
 
@@ -67,7 +71,7 @@
 
       end subroutine ncread_1D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_2D(ncid,vname,dat,start)  ![
+      subroutine ncread_2D(ncid,vname,dat,start,fname,array_type,use_pio)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_2D"
       ! input
@@ -76,12 +80,20 @@
       real,dimension(:,:) :: dat
 
       integer,dimension(:),optional :: start
+      character(len=*),optional     :: fname
+      character(len=4),optional     :: array_type
+      logical,optional :: use_pio
 
       ! local
       integer              :: varid,ierr
       integer,dimension(2) :: dims
       integer,dimension(3) :: count
 
+#ifdef PIO
+      if (use_pio) then
+        call pio_ncread2(fname, vname, dat, array_type)
+      else
+#else
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
@@ -101,6 +113,10 @@
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
+#endif
+#ifdef PIO
+      endif
+#endif
 
       end subroutine ncread_2D  !]
 !----------------------------------------------------------------------

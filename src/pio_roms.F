@@ -16,7 +16,6 @@
       use mpi
 
       use param
-      use hidden_mpi_vars
       implicit none
 
       private
@@ -185,8 +184,8 @@
       public  :: pio_ncread2
       public  :: pio_ncread3
 
-      public  :: pio_createFile
-      public  :: pio_createVar
+!      public  :: pio_createFile
+!      public  :: pio_createVar
 
       character(len=99), public     :: pio_root_name
       character(len=21), public     :: pio_refdatestr
@@ -1139,68 +1138,68 @@
       end subroutine pio_ncread3
 
 ! ----------------------------------------------------------------------
-      subroutine pio_create_file(ftype, fname, nodate)
-
-        implicit none
-
-        ! input/output
-        character(len=*), intent(in) :: ftype     ! desired netcdf file extension
-        character(len=*), intent(out) :: fname      ! desired netcdf file name
-        logical,optional, intent(in) :: nodate    ! optional argument to skip date label and time variable
-
-        type(file_desc_t)     :: fileId
-        type(var_desc_t) :: varId
-        integer :: ierr
-
-        fname=trim(adjustl(pio_root_name)) / / trim(ftype)
-        if (present(nodate)) then
-          call append_date_node(fname,nodate)
-        else
-          call append_date_node(fname)
-        endif
-
-        ierr = PIO_createfile(pio_IoSystem, fileId, pio_type, fname, PIO_clobber)
-
-        if (.not.present(nodate)) then
-          call pio_createVar(fileId, varId, 'ocean_time',(/'time'/),(/0/))
-          ierr = put_att_desc_text(fileId, varId,'long_name',pio_refdatestr)
-          ierr = put_att_desc_text(fileId, varId,'units','second')
-        endif
-
-        ! Possibly make a special PIO version of this function?
-        !call put_global_atts(ncid, ierr)                     ! put global attributes in file
-
-      end subroutine pio_create_file !]
-
+!      subroutine pio_create_file(ftype, fname, nodate)
+!
+!        implicit none
+!
+!        ! input/output
+!        character(len=*), intent(in) :: ftype     ! desired netcdf file extension
+!        character(len=*), intent(out) :: fname      ! desired netcdf file name
+!        logical,optional, intent(in) :: nodate    ! optional argument to skip date label and time variable
+!
+!        type(file_desc_t)     :: fileId
+!        type(var_desc_t) :: varId
+!        integer :: ierr
+!
+!        fname=trim(adjustl(pio_root_name)) / / trim(ftype)
+!        if (present(nodate)) then
+!          call append_date_node(fname,nodate)
+!        else
+!          call append_date_node(fname)
+!        endif
+!
+!        ierr = PIO_createfile(pio_IoSystem, fileId, pio_type, fname, PIO_clobber)
+!
+!        if (.not.present(nodate)) then
+!          call pio_createVar(fileId, varId, 'ocean_time',(/'time'/),(/0/))
+!          ierr = put_att_desc_text(fileId, varId,'long_name',pio_refdatestr)
+!          ierr = put_att_desc_text(fileId, varId,'units','second')
+!        endif
+!
+!        ! Possibly make a special PIO version of this function?
+!        !call put_global_atts(ncid, ierr)                     ! put global attributes in file
+!
+!      end subroutine pio_create_file !]
+!
 ! ----------------------------------------------------------------------
-      subroutine pio_createVar(fileId,varId,varname,dimname,dimsize)
-
-        implicit none
-
-        ! import/export
-        type(file_desc_t), intent(in)            :: fileId
-        type(var_desc_t), intent(out) :: varId
-        character(len=*),             intent(in) :: varname
-        character(len=*),dimension(:),intent(in) :: dimname
-        integer,dimension(:),optional,intent(in) :: dimsize
-        ! local
-        integer :: i,ndim,ierr,did
-        integer,allocatable,dimension(:) :: dimId
-
-        ndim = size(dimname)
-        allocate(dimId(ndim))
-
-        do i = 1,ndim                                        ! get dimension ids. Create if needed.
-          ierr = pio_inq_dimid(fileId, dimname(i), did)
-          if (ierr==PIO_NOERR) then
-            ierr=pio_def_dim(fileId,dimname(i),dimsize(i),did)
-          endif
-          dimId(i) = did
-        enddo
-
-        ierr=pio_def_var(fileId,varname,PIO_double,dimId,varId)
-
-      end subroutine pio_createVar
+!      subroutine pio_createVar(fileId,varId,varname,dimname,dimsize)
+!
+!        implicit none
+!
+!        ! import/export
+!        type(file_desc_t), intent(in)            :: fileId
+!        type(var_desc_t), intent(out) :: varId
+!        character(len=*),             intent(in) :: varname
+!        character(len=*),dimension(:),intent(in) :: dimname
+!        integer,dimension(:),optional,intent(in) :: dimsize
+!        ! local
+!        integer :: i,ndim,ierr,did
+!        integer,allocatable,dimension(:) :: dimId
+!
+!        ndim = size(dimname)
+!        allocate(dimId(ndim))
+!
+!        do i = 1,ndim                                        ! get dimension ids. Create if needed.
+!          ierr = pio_inq_dimid(fileId, dimname(i), did)
+!          if (ierr==PIO_NOERR) then
+!            ierr=pio_def_dim(fileId,dimname(i),dimsize(i),did)
+!          endif
+!          dimId(i) = did
+!        enddo
+!
+!        ierr=pio_def_var(fileId,varname,PIO_double,dimId,varId)
+!
+!      end subroutine pio_createVar
 ! ----------------------------------------------------------------------
 !      subroutine writeVar(this)
 !
