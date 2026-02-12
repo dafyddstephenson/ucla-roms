@@ -870,7 +870,7 @@
 
 #ifndef ANA_GRID
       subroutine kwread_grid(unit)
-      use dimensions, only: grdname
+      use dimensions, only: grdname, grdname_full
       implicit none
 
       integer, intent(in)    :: unit
@@ -883,6 +883,7 @@
          return
       end if
 
+      grdname_full = trim(fname)
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES

@@ -37,6 +37,7 @@
 
       public :: init_dimensions
       character(len=256), public :: grdname
+      character(len=:), allocatable, public :: grdname_full
       contains
 
 ! ----------------------------------------------------------------------

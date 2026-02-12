@@ -1,6 +1,7 @@
 
       module roms_mpi
 
+#include "cppdefs.opt"
       ! This module provides mpi based parrallelization to roms
 
 !------------------------------------

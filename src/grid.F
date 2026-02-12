@@ -16,9 +16,9 @@
      &     nf90_noerr, nf90_nowrite, nf90_write,
      &     nf90_open, nf90_strerror, nf90_inq_varid, nf90_get_var,
      &     nf90_close
-      use nc_read_write, only: ncread
+      use nc_read_write, only: ncread, ncread_bounds
       use dimensions, only:
-     &     i0, i1, j0, j1, gnx, gny, nx, ny, nz, eta_rho, xi_rho, grdname
+     &     i0, i1, j0, j1, gnx, gny, nx, ny, nz, eta_rho, xi_rho, grdname, grdname_full
       use roms_read_write, only:
      &     dn_xr, dn_yr, dn_tm, particle_opt, nrrec, create_file, store_string_att
       use scalars, only: init
@@ -459,14 +459,19 @@
 !===== == ==== =======
 
       start=1; start(3)=0      ! starting indices in netcdf file. Might not be needed here
+      ncread_bounds(1) = i0
+      ncread_bounds(2) = i1
+      ncread_bounds(3) = j0
+      ncread_bounds(4) = j1
 
       ! The i0,i1,j0,j1 indices are needed because the netcdf files do
       ! include 1 more row/column for subdomains at the physical boundary
 
-      call ncread(ncid,'h',h(i0:i1,j0:j1),start,grdname,array_type)         ! Bathymetry
+      !call ncread(ncid,'h',h(i0:i1,j0:j1),start,grdname_full,array_type,.true.)         ! Bathymetry
+      call ncread(ncid,'h',h,start,grdname_full,array_type,.true.)         ! Bathymetry
       call exchange_xxx(h)                         ! (2,.true.)
 
-
+!      write(*,*) "SUCCESS"
 ! Coordinate transformation metrics (m,n) associated with
 ! differential distances in XI- and ETA-directions.
 

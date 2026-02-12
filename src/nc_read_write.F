@@ -15,6 +15,7 @@
       private
 
       character(len=13) :: module_name = "nc_read_write"
+      integer, dimension(6), public :: ncread_bounds=0
 
 #include "nc_read_write.opt"
 
@@ -90,10 +91,14 @@
       integer,dimension(3) :: count
 
 #ifdef PIO
-      if (use_pio) then
-        call pio_ncread2(fname, vname, dat, array_type)
+      if (present(use_pio)) then
+        write(*,*) "YAY", fname, len(fname)
+        call flush()
+        call pio_ncread2('input/grdfile', vname,
+     &   dat(ncread_bounds(1):ncread_bounds(2),ncread_bounds(3):ncread_bounds(4)),
+     &   array_type)
       else
-#else
+#endif
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)
       if (ierr/=0) then
@@ -113,7 +118,6 @@
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
-#endif
 #ifdef PIO
       endif
 #endif

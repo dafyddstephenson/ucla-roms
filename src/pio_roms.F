@@ -1,6 +1,7 @@
       module pio_roms
 #include "pio_config.h"
 #include "cppdefs.opt"
+!#include "compute_extended_bounds.h"
 
 #ifdef PIO
       use pio, only : PIO_init, PIO_rearr_subset, iosystem_desc_t, file_desc_t
@@ -37,6 +38,7 @@
       !> @brief Contains data identifying the file.
       type(file_desc_t)     :: pio_FileDesc
       !> @brief An io descriptor handle that is generated in @ref PIO_initdecomp.
+      type(io_desc_t)       :: pio_desc_grid
       type(io_desc_t)       :: pio_desc_2D_r
       type(io_desc_t)       :: pio_desc_2D_u
       type(io_desc_t)       :: pio_desc_2D_v
@@ -71,6 +73,7 @@
       !> @brief Specifies the flavor of netCDF output.
       integer               :: pio_type
       !> @brief The length of the dimension of the netCDF variable.
+      integer, dimension(2) :: pio_dimLen_grid
       integer, dimension(2) :: pio_dimLen_2D_r
       integer, dimension(2) :: pio_dimLen_2D_u
       integer, dimension(2) :: pio_dimLen_2D_v
@@ -103,6 +106,7 @@
 
 
       !> @brief Array describing the decomposition of the data.
+      integer :: pio_memsize_grid
       integer :: pio_memsize_2D_r
       integer :: pio_memsize_2D_u
       integer :: pio_memsize_2D_v
@@ -125,6 +129,7 @@
       integer :: pio_memsize_ew1u
       integer :: pio_memsize_ew1v
 
+      integer, allocatable  :: pio_fcompdof_grid(:)
       integer, allocatable  :: pio_fcompdof_2D_r(:)
       integer, allocatable  :: pio_fcompdof_2D_u(:)
       integer, allocatable  :: pio_fcompdof_2D_v(:)
@@ -248,6 +253,9 @@
         !pio_type        = PIO_iotype_netcdf
         pio_type          = PIO_iotype_pnetcdf  ! works better when NOT HDF5 / NetCDF4
 
+        pio_dimLen_grid(1)     = LLm+2
+        pio_dimLen_grid(2)     = MMm+2
+
         pio_dimLen_2D_r(1)     = LLm+2
         pio_dimLen_2D_r(2)     = MMm+2
 
@@ -333,6 +341,7 @@
      &       base=pio_optBase)          ! base (optional argument)
 
 
+        !pio_memsize_grid = (pio_xi_rho * pio_eta_rho
         pio_memsize_2D_r = pio_xi_rho * pio_eta_rho
         pio_memsize_2D_u = pio_xi_u * pio_eta_rho
         pio_memsize_2D_v = pio_xi_rho * pio_eta_v
@@ -352,6 +361,7 @@
         pio_memsize_ew1u = pio_eta_rho
         pio_memsize_ew1v = pio_eta_v
 
+        allocate(pio_fcompdof_grid( pio_memsize_grid ))
         allocate(pio_fcompdof_2D_r( pio_memsize_2D_r ))
         allocate(pio_fcompdof_2D_u( pio_memsize_2D_u ))
         allocate(pio_fcompdof_2D_v( pio_memsize_2D_v ))
@@ -398,6 +408,8 @@
 
         ! 2D rho points
         if (gtype=='2D_r') then
+!        write(*,*) "yay-1", pio_eta_rho, pio_xi_rho, pio_eta_rho_start, pio_xi_rho_start, pio_dimLen_2D_r
+!        call flush()
           if (.not.present(irec)) then
             do j=1,pio_eta_rho
               do i=1,pio_xi_rho
@@ -1040,9 +1052,15 @@
           call pio_createDecomp(gtype)
         endif
 
+!        write(*,*) "yay0", fname, varName, trim(fname)
+!        call flush()
+
         ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
 
         ierr = PIO_inq_varid(pio_FileDesc, trim(varName), varId)
+
+!        write(*,*) "yay1", varId
+!        call flush()
 
         if (gtype=='2D_r') then
           if (.not.present(irec)) then
