@@ -15,7 +15,6 @@
       private
 
       character(len=13) :: module_name = "nc_read_write"
-      integer, dimension(6), public :: ncread_bounds=0
 
 #include "nc_read_write.opt"
 
@@ -92,11 +91,11 @@
 
 #ifdef PIO
       if (present(use_pio)) then
-        write(*,*) "YAY", fname, len(fname)
-        call flush()
-        call pio_ncread2('input/grdfile', vname,
-     &   dat(ncread_bounds(1):ncread_bounds(2),ncread_bounds(3):ncread_bounds(4)),
-     &   array_type)
+!        write(*,*) "YAY", ncread_bounds(1),ncread_bounds(2),ncread_bounds(3),ncread_bounds(4)
+!        call flush()
+        call pio_ncread2('input/grdfile', vname, dat, array_type)
+!     &   dat(ncread_bounds(1):ncread_bounds(2),ncread_bounds(3):ncread_bounds(4)),
+!     &   array_type)
       else
 #endif
       dims = shape(dat)

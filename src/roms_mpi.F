@@ -33,7 +33,8 @@
 #ifdef PIO
       use pio_roms, only: pio_xi_rho, pio_xi_u, pio_eta_rho, pio_eta_v,
      &  pio_xi_rho_start, pio_xi_u_start, pio_eta_rho_start, pio_eta_v_start,
-     &  pio_s_start, pio_west_exchng, pio_east_exchng, pio_north_exchng, pio_south_exchng
+     &  pio_s_start, pio_west_exchng, pio_east_exchng, pio_north_exchng, pio_south_exchng,
+     &  pio_i0, pio_i1, pio_j0, pio_j1
 #endif
 
       implicit none
@@ -249,28 +250,72 @@
         endif
 
 #ifdef PIO
+        ! Set basic tile sizes
         pio_xi_rho = xi_rho
         pio_xi_u = xi_u
         pio_eta_rho = eta_rho
         pio_eta_v = eta_v
 
+        ! Set variables to account for the halos
         if (inode == 0) then
-          pio_xi_rho_start = iSW_corn+iwest
-          pio_xi_u_start   = iSW_corn+iwest
+          pio_i0 = 0
         else
-          pio_xi_rho_start= iSW_corn+iwest+1
-          pio_xi_u_start   = iSW_corn+iwest
+          pio_i0 = 2
+        endif
+
+        if (inode == NP_XI-1) then
+          pio_i1 = 0
+        else
+          pio_i1 = 2
         endif
 
         if (jnode == 0) then
-          pio_eta_rho_start= jSW_corn+jsouth
-          pio_eta_v_start  = jSW_corn+jsouth
+          pio_j0 = 0
         else
-          pio_eta_rho_start= jSW_corn+jsouth+1
-          pio_eta_v_start  = jSW_corn+jsouth
+          pio_j0 = 2
+        endif
+
+        if (jnode == NP_ETA-1) then
+          pio_j1 = 0
+        else
+          pio_j1 = 2
+        endif
+
+        ! Set tile starting locations
+!        if (inode == 0) then
+!          pio_xi_rho_start = iSW_corn+iwest
+!          pio_xi_u_start   = iSW_corn+iwest
+!        else
+!          pio_xi_rho_start= iSW_corn+iwest+1
+!          pio_xi_u_start   = iSW_corn+iwest
+!        endif
+!
+!        if (jnode == 0) then
+!          pio_eta_rho_start= jSW_corn+jsouth
+!          pio_eta_v_start  = jSW_corn+jsouth
+!        else
+!          pio_eta_rho_start= jSW_corn+jsouth+1
+!          pio_eta_v_start  = jSW_corn+jsouth
+!        endif
+
+        if (inode == 0) then
+          pio_xi_rho_start = iSW_corn+iwest-pio_i0
+          pio_xi_u_start   = iSW_corn+iwest-pio_i0 !?
+        else
+          pio_xi_rho_start= iSW_corn+iwest+1-pio_i0
+          pio_xi_u_start   = iSW_corn+iwest-pio_i0
+        endif
+
+        if (jnode == 0) then
+          pio_eta_rho_start= jSW_corn+jsouth-pio_j0
+          pio_eta_v_start  = jSW_corn+jsouth-pio_j0
+        else
+          pio_eta_rho_start= jSW_corn+jsouth+1-pio_j0
+          pio_eta_v_start  = jSW_corn+jsouth-pio_j0
         endif
         pio_s_start = 1
 
+        ! Identify domain edges
         pio_west_exchng = (inode .ne. 0)
         pio_east_exchng = (inode .ne. npx-1)
         pio_north_exchng = (jnode .ne. 0)
@@ -322,7 +367,7 @@
       endif
       end  function ijnode2rank !]
 !--------------------------------------------------------
-      subroutine exchange_2(A,exch_bf,array_bf,do_corn) ![
+      subroutine exchange_2(A,exch_bf,array_bf,do_corn,skip_pio) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -332,6 +377,9 @@
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       integer,        optional :: array_bf ! non-default allocated buffer for array
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -359,7 +407,7 @@
 
       end subroutine exchange_2 !]
 !--------------------------------------------------------
-      subroutine exchange_22(A,B,exch_bf,do_corn) ![
+      subroutine exchange_22(A,B,exch_bf,do_corn,skip_pio) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -369,6 +417,9 @@
       real,intent(inout),dimension(:,:) :: B
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -391,7 +442,7 @@
 
       end subroutine exchange_22 !]
 !--------------------------------------------------------
-      subroutine exchange_222(A,B,C,exch_bf,do_corn) ![
+      subroutine exchange_222(A,B,C,exch_bf,do_corn,skip_pio) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -402,6 +453,9 @@
       real,intent(inout),dimension(:,:) :: C
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -426,7 +480,7 @@
 
       end subroutine exchange_222 !]
 !--------------------------------------------------------
-      subroutine exchange_2222(A,B,C,D,exch_bf,do_corn) ![
+      subroutine exchange_2222(A,B,C,D,exch_bf,do_corn,skip_pio) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -438,6 +492,9 @@
       real,intent(inout),dimension(:,:) :: D
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -464,7 +521,7 @@
 
       end subroutine exchange_2222 !]
 !--------------------------------------------------------
-      subroutine exchange_3(A,exch_bf,do_corn) ![
+      subroutine exchange_3(A,exch_bf,do_corn,skip_pio) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -473,6 +530,9 @@
       real,intent(inout),dimension(:,:,:) :: A
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -493,7 +553,7 @@
 
       end subroutine exchange_3 !]
 !--------------------------------------------------------
-      subroutine exchange_33(A,B,exch_bf,do_corn) ![
+      subroutine exchange_33(A,B,exch_bf,do_corn,skip_pio) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -503,6 +563,9 @@
       real,intent(inout),dimension(:,:,:) :: B
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -525,7 +588,7 @@
 
       end subroutine exchange_33 !]
 !--------------------------------------------------------
-      subroutine exchange_333(A,B,C,exch_bf,do_corn) ![
+      subroutine exchange_333(A,B,C,exch_bf,do_corn,skip_pio) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -536,6 +599,9 @@
       real,intent(inout),dimension(:,:,:) :: C
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -560,7 +626,7 @@
 
       end subroutine exchange_333 !]
 !--------------------------------------------------------
-      subroutine exchange_3333(A,B,C,D,exch_bf,do_corn) ![
+      subroutine exchange_3333(A,B,C,D,exch_bf,do_corn,skip_pio) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -572,6 +638,9 @@
       real,intent(inout),dimension(:,:,:) :: D
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -598,7 +667,7 @@
 
       end subroutine exchange_3333 !]
 !--------------------------------------------------------
-      subroutine exchange_32(A,B,exch_bf,do_corn) ![
+      subroutine exchange_32(A,B,exch_bf,do_corn,skip_pio) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -608,6 +677,9 @@
       real,intent(inout),dimension(:,:)   :: B
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -630,7 +702,7 @@
 
       end subroutine exchange_32 !]
 !--------------------------------------------------------
-      subroutine exchange_332(A,B,C,exch_bf,do_corn) ![
+      subroutine exchange_332(A,B,C,exch_bf,do_corn,skip_pio) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -641,6 +713,9 @@
       real,intent(inout),dimension(:,:)   :: C
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
+      logical,optional :: skip_pio
+
+      if (present(skip_pio)) return
 
       if (.not.init_buffer_done) call init_mpi_buffers
 

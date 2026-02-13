@@ -38,7 +38,7 @@
       !> @brief Contains data identifying the file.
       type(file_desc_t)     :: pio_FileDesc
       !> @brief An io descriptor handle that is generated in @ref PIO_initdecomp.
-      type(io_desc_t)       :: pio_desc_grid
+!      type(io_desc_t)       :: pio_desc_grid
       type(io_desc_t)       :: pio_desc_2D_r
       type(io_desc_t)       :: pio_desc_2D_u
       type(io_desc_t)       :: pio_desc_2D_v
@@ -73,7 +73,7 @@
       !> @brief Specifies the flavor of netCDF output.
       integer               :: pio_type
       !> @brief The length of the dimension of the netCDF variable.
-      integer, dimension(2) :: pio_dimLen_grid
+!      integer, dimension(2) :: pio_dimLen_grid
       integer, dimension(2) :: pio_dimLen_2D_r
       integer, dimension(2) :: pio_dimLen_2D_u
       integer, dimension(2) :: pio_dimLen_2D_v
@@ -106,7 +106,7 @@
 
 
       !> @brief Array describing the decomposition of the data.
-      integer :: pio_memsize_grid
+!      integer :: pio_memsize_grid
       integer :: pio_memsize_2D_r
       integer :: pio_memsize_2D_u
       integer :: pio_memsize_2D_v
@@ -129,7 +129,7 @@
       integer :: pio_memsize_ew1u
       integer :: pio_memsize_ew1v
 
-      integer, allocatable  :: pio_fcompdof_grid(:)
+!      integer, allocatable  :: pio_fcompdof_grid(:)
       integer, allocatable  :: pio_fcompdof_2D_r(:)
       integer, allocatable  :: pio_fcompdof_2D_u(:)
       integer, allocatable  :: pio_fcompdof_2D_v(:)
@@ -164,6 +164,7 @@
 
       integer, public :: pio_xi_rho, pio_eta_rho
       integer, public :: pio_xi_u, pio_eta_v
+      integer, public :: pio_i0, pio_i1, pio_j0, pio_j1
 
       integer, public :: pio_xi_rho_start, pio_eta_rho_start
       integer, public :: pio_xi_u_start, pio_eta_v_start
@@ -253,8 +254,8 @@
         !pio_type        = PIO_iotype_netcdf
         pio_type          = PIO_iotype_pnetcdf  ! works better when NOT HDF5 / NetCDF4
 
-        pio_dimLen_grid(1)     = LLm+2
-        pio_dimLen_grid(2)     = MMm+2
+!        pio_dimLen_grid(1)     = LLm+2
+!        pio_dimLen_grid(2)     = MMm+2
 
         pio_dimLen_2D_r(1)     = LLm+2
         pio_dimLen_2D_r(2)     = MMm+2
@@ -342,7 +343,8 @@
 
 
         !pio_memsize_grid = (pio_xi_rho * pio_eta_rho
-        pio_memsize_2D_r = pio_xi_rho * pio_eta_rho
+!        pio_memsize_2D_r = pio_xi_rho * pio_eta_rho
+        pio_memsize_2D_r = (pio_xi_rho+pio_i0+pio_i1) * (pio_eta_rho+pio_j0+pio_j1)
         pio_memsize_2D_u = pio_xi_u * pio_eta_rho
         pio_memsize_2D_v = pio_xi_rho * pio_eta_v
         pio_memsize_3D_r = pio_xi_rho * pio_eta_rho * N
@@ -361,7 +363,7 @@
         pio_memsize_ew1u = pio_eta_rho
         pio_memsize_ew1v = pio_eta_v
 
-        allocate(pio_fcompdof_grid( pio_memsize_grid ))
+!        allocate(pio_fcompdof_grid( pio_memsize_grid ))
         allocate(pio_fcompdof_2D_r( pio_memsize_2D_r ))
         allocate(pio_fcompdof_2D_u( pio_memsize_2D_u ))
         allocate(pio_fcompdof_2D_v( pio_memsize_2D_v ))
@@ -407,23 +409,42 @@
         integer :: wbuf, tmp_idx
 
         ! 2D rho points
+!        if (gtype=='2D_r') then
+!          if (.not.present(irec)) then
+!            do j=1,pio_eta_rho
+!              do i=1,pio_xi_rho
+!                wbuf = (pio_eta_rho_start - 1 + j - 1) * pio_dimLen_2D_r(1) + (pio_xi_rho_start - 1 + i)
+!                tmp_idx = (j - 1) * pio_xi_rho + i
+!                pio_fcompdof_2D_r(tmp_idx) = wbuf
+!              end do
+!            end do
+!          else
+!            do j=1,pio_eta_rho
+!              do i=1,pio_xi_rho
+!                wbuf = (pio_dimLen_2D_rt(1)*pio_dimLen_2D_rt(2))*(irec-1) +
+!     &           (pio_eta_rho_start - 1 + j - 1) * pio_dimLen_2D_rt(1) + (pio_xi_rho_start - 1 + i)
+!                tmp_idx = (j - 1) * pio_xi_rho + i
+!                pio_fcompdof_2D_rt(tmp_idx) = wbuf
+!              enddo
+!            enddo
+!          endif
+
+        ! 2D rho points
         if (gtype=='2D_r') then
-!        write(*,*) "yay-1", pio_eta_rho, pio_xi_rho, pio_eta_rho_start, pio_xi_rho_start, pio_dimLen_2D_r
-!        call flush()
           if (.not.present(irec)) then
-            do j=1,pio_eta_rho
-              do i=1,pio_xi_rho
+            do j=1,pio_eta_rho+pio_j0+pio_j1
+              do i=1,pio_xi_rho+pio_i0+pio_i1
                 wbuf = (pio_eta_rho_start - 1 + j - 1) * pio_dimLen_2D_r(1) + (pio_xi_rho_start - 1 + i)
-                tmp_idx = (j - 1) * pio_xi_rho + i
+                tmp_idx = (j - 1) * (pio_xi_rho+pio_i0+pio_i1) + i
                 pio_fcompdof_2D_r(tmp_idx) = wbuf
               end do
             end do
           else
-            do j=1,pio_eta_rho
-              do i=1,pio_xi_rho
+            do j=1,pio_eta_rho+pio_j0+pio_j1
+              do i=1,pio_xi_rho+pio_i0+pio_i1
                 wbuf = (pio_dimLen_2D_rt(1)*pio_dimLen_2D_rt(2))*(irec-1) +
      &           (pio_eta_rho_start - 1 + j - 1) * pio_dimLen_2D_rt(1) + (pio_xi_rho_start - 1 + i)
-                tmp_idx = (j - 1) * pio_xi_rho + i
+                tmp_idx = (j - 1) * (pio_xi_rho+pio_i0+pio_i1) + i
                 pio_fcompdof_2D_rt(tmp_idx) = wbuf
               enddo
             enddo
