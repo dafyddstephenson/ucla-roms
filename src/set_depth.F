@@ -22,7 +22,7 @@
       use grid, only: h, hinv, dn_u, dm_v, pn, pm
       use param, only: ieast, jnorth, lm, mm, np_eta, np_xi
       use roms_mpi, only: exchange_xxx
-      use dimensions, only: inode, jnode
+      use dimensions, only: inode, jnode, npx,npy
       use ocean_vars, only:
      &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0
 # if defined NHMG || defined NONTRAD_COR
@@ -33,13 +33,22 @@
 #ifdef WEC
       use wec_frc, only: ust2d, vst2d
 #endif
+      use instant_output, only: wrt_instant
+      use pio_roms, only: use_pio
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
       real cff_r,cff1_r, cff_w,cff1_w, ds
 
+! If we are using Parallel IO we are going to read in both the computational
+! domain and the halos, so we can go ahead and set the fluxes and cell thicknesses
+! using the extended bounds.
+#ifdef PARALLEL_IO
+# include "compute_extended_bounds.h"
+#else
 # include "compute_auxiliary_bounds.h"
-                                       ! During initialization or
+#endif
+                                  ! During initialization or
       if (iic == 0) then               ! restart compute barotropic
         do j=jstrR,jendR               ! fluxes and place them into
           do i=istrR,iendR             ! arrays for fast-time-averaged
@@ -132,11 +141,13 @@
 
 # ifdef EXCHANGE
       if (iic == 0) then
-        call exchange_xxx(hinv)
-              call exchange_xxx(z_w0,z_r0,Hz0)
+        call exchange_xxx(hinv, skip=use_pio)
+              call exchange_xxx(z_w0,z_r0,Hz0, skip=use_pio)
       endif
-      call exchange_xxx(z_w,z_r,Hz)
+      call exchange_xxx(z_w,z_r,Hz, skip=use_pio)
 # endif
+
+      call wrt_instant(Hz, 'Hz2', .true.)
 
 #if defined NHMG || defined NONTRAD_COR
 !     Compute slopes
@@ -221,6 +232,7 @@
 #ifdef WEC
       use wec_frc, only: ust, vst
 #endif
+      use instant_output, only: wrt_instant
       implicit none
       integer istr,iend,jstr,jend, i,j,k
 
@@ -260,12 +272,19 @@
           enddo
         enddo
       enddo
+
+      call wrt_instant(Hz, 'Hz')
+      call wrt_instant(u(:,:,:,nrhs), 'u')
+
+      call wrt_instant(FlxU, 'FlxU')
+      call wrt_instant(FlxV, 'FlxV')
+
 # ifdef EXCHANGE
       call exchange_xxx(FlxU,FlxV)
 # endif
+
+
       end
-
-
 
 
       subroutine set_HUV1(tile)

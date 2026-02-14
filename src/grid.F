@@ -24,9 +24,10 @@
      &     dn_xr, dn_yr, dn_tm, particle_opt, nrrec, create_file, store_string_att
       use scalars, only: init
       use roms_mpi, only: exchange_xxx
-#ifdef PIO
+#ifdef PARALLEL_IO
       use pio_roms, only: use_pio
 #endif
+      use instant_output, only: wrt_instant
 
       implicit none
 !
@@ -451,7 +452,7 @@
       call wrt_ana_grid
 #else
 
-#ifndef PIO
+#ifndef PARALLEL_IO
       call precheck
 #endif
 
@@ -465,37 +466,39 @@
       ! include 1 more row/column for subdomains at the physical boundary
 
       !call ncread(ncid,'h',h(i0:i1,j0:j1),start,grdname_full,array_type,.true.)         ! Bathymetry
-      call ncread(ncid,'h',h(x0:x1,y0:y1),start,grdname_full,array_type,.true.)         ! Bathymetry
-      call exchange_xxx(h,skip_pio=.true.)                         ! (2,.true.)
+      call ncread(ncid,'h',h(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)         ! Bathymetry
+      call exchange_xxx(h,skip=use_pio)                         ! (2,.true.)
+
+!      call wrt_instant(h,'h')
 
 ! Coordinate transformation metrics (m,n) associated with
 ! differential distances in XI- and ETA-directions.
 
 !      call ncread(ncid,'pm',pm(i0:i1,j0:j1),start,grdname,array_type,.true.)
 !      call ncread(ncid,'pn',pn(i0:i1,j0:j1),start,grdname,array_type,.true.)
-      call ncread(ncid,'pm',pm(x0:x1,y0:y1),start,grdname_full,array_type,.true.)
-      call ncread(ncid,'pn',pn(x0:x1,y0:y1),start,grdname_full,array_type,.true.)
-      call exchange_xxx(pm,pn,skip_pio=.true.)
+      call ncread(ncid,'pm',pm(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)
+      call ncread(ncid,'pn',pn(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)
+      call exchange_xxx(pm,pn,skip=use_pio)
 !      call exchange_xxx(pm)
 !      call exchange_xxx(pn)
 
 # ifdef SPHERICAL
 !      call ncread(ncid,'lon_rho',lonr(i0:i1,j0:j1),start,grdname,array_type,.true.)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
 !      call ncread(ncid,'lat_rho',latr(i0:i1,j0:j1),start,grdname,array_type,.true.)
-      call ncread(ncid,'lon_rho',lonr(x0:x1,y0:y1),start,grdname_full,array_type,.true.)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
-      call ncread(ncid,'lat_rho',latr(x0:x1,y0:y1),start,grdname_full,array_type,.true.)
-      call exchange_xxx(lonr,latr,skip_pio=.true.)
+      call ncread(ncid,'lon_rho',lonr(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
+      call ncread(ncid,'lat_rho',latr(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)
+      call exchange_xxx(lonr,latr,skip=use_pio)
 # else
       ! check this with analytical filament example
 !      call ncread(ncid,'x_rho',xr(i0:i1,j0:j1),start,grdname,array_type,.true.)
 !      call ncread(ncid,'y_rho',yr(i0:i1,j0:j1),start,grdname,array_type,.true.)
-      call ncread(ncid,'x_rho',xr(x0:x1,y0:y1),start,grdname_full,array_type,.true.)
-      call ncread(ncid,'y_rho',yr(x0:x1,y0:y1),start,grdname_full,array_type,.true.)
+      call ncread(ncid,'x_rho',xr(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)
+      call ncread(ncid,'y_rho',yr(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)
 
       ! Only use if non-spherical grid, otherwise computed in setup_grid1
 !      call ncread(ncid,'f',f(i0:i1,j0:j1),start,grdname,array_type,.true.)         ! Coriolis parameter.
-      call ncread(ncid,'f',f(x0:x1,y0:y1),start,grdname_full,array_type,.true.)         ! Coriolis parameter.
-      call exchange_xxx(xr,yr,f,skip_pio=.true.)
+      call ncread(ncid,'f',f(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)         ! Coriolis parameter.
+      call exchange_xxx(xr,yr,f,skip=use_pio)
 
 # endif
 # ifdef CURVGRID
@@ -503,13 +506,13 @@
       ! and for in-place rotation for data extraction
       ! Also used in wec for the moment
 !      call ncread(ncid,'angle',angler(i0:i1,j0:j1),start,grdname,array_type,.true.)  ! Angle (radians) between XI-axis and EAST at RHO-points.
-      call ncread(ncid,'angle',angler(x0:x1,y0:y1),start,grdname_full,array_type,.true.)  ! Angle (radians) between XI-axis and EAST at RHO-points.
-      call exchange_xxx(angler,skip_pio=.true.)
+      call ncread(ncid,'angle',angler(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)  ! Angle (radians) between XI-axis and EAST at RHO-points.
+      call exchange_xxx(angler,skip=use_pio)
 # endif
 # ifdef MASKING
 !      call ncread(ncid,'mask_rho',rmask(i0:i1,j0:j1),start,grdname,array_type,.true.)! Mask at RHO-points.
-      call ncread(ncid,'mask_rho',rmask(x0:x1,y0:y1),start,grdname_full,array_type,.true.)! Mask at RHO-points.
-      call exchange_xxx(rmask,skip_pio=.true.)
+      call ncread(ncid,'mask_rho',rmask(x0:x1,y0:y1),start,grdname_full,array_type,use_pio)! Mask at RHO-points.
+      call exchange_xxx(rmask,skip=use_pio)
 # endif
       ierr=nf90_close(ncid)
       if (ierr==nf90_noerr) then

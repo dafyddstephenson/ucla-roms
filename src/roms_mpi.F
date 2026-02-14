@@ -30,7 +30,7 @@
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_nowrite, nf90_open, nf90_global, nf90_noerr,
      &   nf90_close, nf90_get_att
-#ifdef PIO
+#ifdef PARALLEL_IO
       use pio_roms, only: pio_xi_rho, pio_xi_u, pio_eta_rho, pio_eta_v,
      &  pio_xi_rho_start, pio_xi_u_start, pio_eta_rho_start, pio_eta_v_start,
      &  pio_s_start, pio_west_exchng, pio_east_exchng, pio_north_exchng, pio_south_exchng,
@@ -249,7 +249,7 @@
           eta_v   = ny+1
         endif
 
-#ifdef PIO
+#ifdef PARALLEL_IO
         ! Set basic tile sizes
         pio_xi_rho = xi_rho
         pio_xi_u = xi_u
@@ -367,7 +367,7 @@
       endif
       end  function ijnode2rank !]
 !--------------------------------------------------------
-      subroutine exchange_2(A,exch_bf,array_bf,do_corn,skip_pio) ![
+      subroutine exchange_2(A,exch_bf,array_bf,do_corn,skip) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -377,9 +377,11 @@
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       integer,        optional :: array_bf ! non-default allocated buffer for array
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -407,7 +409,7 @@
 
       end subroutine exchange_2 !]
 !--------------------------------------------------------
-      subroutine exchange_22(A,B,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_22(A,B,exch_bf,do_corn,skip) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -417,9 +419,11 @@
       real,intent(inout),dimension(:,:) :: B
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if (present(skip)) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -442,7 +446,7 @@
 
       end subroutine exchange_22 !]
 !--------------------------------------------------------
-      subroutine exchange_222(A,B,C,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_222(A,B,C,exch_bf,do_corn,skip) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -453,9 +457,11 @@
       real,intent(inout),dimension(:,:) :: C
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -480,7 +486,7 @@
 
       end subroutine exchange_222 !]
 !--------------------------------------------------------
-      subroutine exchange_2222(A,B,C,D,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_2222(A,B,C,D,exch_bf,do_corn,skip) ![
       ! 2D variable, 2 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -492,9 +498,11 @@
       real,intent(inout),dimension(:,:) :: D
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -521,7 +529,7 @@
 
       end subroutine exchange_2222 !]
 !--------------------------------------------------------
-      subroutine exchange_3(A,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_3(A,exch_bf,do_corn,skip) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -530,9 +538,11 @@
       real,intent(inout),dimension(:,:,:) :: A
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -553,7 +563,7 @@
 
       end subroutine exchange_3 !]
 !--------------------------------------------------------
-      subroutine exchange_33(A,B,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_33(A,B,exch_bf,do_corn,skip) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -563,9 +573,11 @@
       real,intent(inout),dimension(:,:,:) :: B
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -588,7 +600,7 @@
 
       end subroutine exchange_33 !]
 !--------------------------------------------------------
-      subroutine exchange_333(A,B,C,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_333(A,B,C,exch_bf,do_corn,skip) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -599,9 +611,11 @@
       real,intent(inout),dimension(:,:,:) :: C
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -626,7 +640,7 @@
 
       end subroutine exchange_333 !]
 !--------------------------------------------------------
-      subroutine exchange_3333(A,B,C,D,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_3333(A,B,C,D,exch_bf,do_corn,skip) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -638,9 +652,11 @@
       real,intent(inout),dimension(:,:,:) :: D
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -667,7 +683,7 @@
 
       end subroutine exchange_3333 !]
 !--------------------------------------------------------
-      subroutine exchange_32(A,B,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_32(A,B,exch_bf,do_corn,skip) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -677,9 +693,11 @@
       real,intent(inout),dimension(:,:)   :: B
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 
@@ -702,7 +720,7 @@
 
       end subroutine exchange_32 !]
 !--------------------------------------------------------
-      subroutine exchange_332(A,B,C,exch_bf,do_corn,skip_pio) ![
+      subroutine exchange_332(A,B,C,exch_bf,do_corn,skip) ![
       ! 3D variable, 1 at the time
       ! Can exchange less data than the allocated buffer space
       implicit none
@@ -713,9 +731,11 @@
       real,intent(inout),dimension(:,:)   :: C
       integer(kind=4),optional :: exch_bf  ! amount of data to exchange: exch_bf <= bf
       logical,optional :: do_corn
-      logical,optional :: skip_pio
+      logical,optional :: skip
 
-      if (present(skip_pio)) return
+#ifdef PARALLEL_IO
+      if ((present(skip)) .and. skip) return
+#endif
 
       if (.not.init_buffer_done) call init_mpi_buffers
 

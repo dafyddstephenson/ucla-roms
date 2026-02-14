@@ -59,7 +59,7 @@ c$$$      ny = Mm
       if (jnode==0)        j0=0
       if (jnode==NP_ETA-1) j1=ny+1
 
-#ifdef PIO
+#ifdef PARALLEL_IO
       x0 = i0-pio_i0
       x1 = i1+pio_i1
       y0 = j0-pio_j0

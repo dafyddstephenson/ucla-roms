@@ -12,7 +12,7 @@
       use timers, only: tstart, tend
       use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
-#ifdef PIO
+#ifdef PARALLEL_IO
       use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
 #endif
 
@@ -38,7 +38,7 @@ C$    ierr=0
 
       call mpi_setup
 
-#ifdef PIO
+#ifdef PARALLEL_IO
       pio_myRank = mynode
       pio_ntasks = nsize
 

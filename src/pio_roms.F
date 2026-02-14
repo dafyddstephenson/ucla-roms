@@ -3,7 +3,7 @@
 #include "cppdefs.opt"
 !#include "compute_extended_bounds.h"
 
-#ifdef PIO
+#ifdef PARALLEL_IO
       use pio, only : PIO_init, PIO_rearr_subset, iosystem_desc_t, file_desc_t
       use pio, only : PIO_finalize, PIO_noerr, PIO_iotype_netcdf, PIO_createfile
       use pio, only : PIO_int, PIO_real, PIO_double, var_desc_t, PIO_redef, PIO_def_dim, PIO_def_var, PIO_enddef
