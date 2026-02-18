@@ -1,5 +1,5 @@
 param.o : param.F param.opt set_global_definitions.h cppdefs.opt
-dimensions.o : dimensions.F set_global_definitions.h cppdefs.opt hidden_mpi_vars.o param.o
+dimensions.o : dimensions.F set_global_definitions.h cppdefs.opt hidden_mpi_vars.o param.o pio_roms.o
 ocean_vars.o : ocean_vars.F set_global_definitions.h cppdefs.opt scalars.o param.o
 tracers.o : tracers.F tracers.opt bgc_tracers_indx.opt set_global_definitions.h cppdefs.opt roms_mpi.o roms_read_write.o nc_read_write.o scalars.o surf_flux.o dimensions.o param.o
 boundary.o : boundary.F set_global_definitions.h cppdefs.opt scalars.o tracers.o dimensions.o roms_read_write.o param.o

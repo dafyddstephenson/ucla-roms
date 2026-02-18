@@ -139,15 +139,19 @@
         enddo
       endif
 
+!!! SKIP = USE_PIO ??
 # ifdef EXCHANGE
+!      if (iic == 0) then
+!        call exchange_xxx(hinv, skip=use_pio)
+!              call exchange_xxx(z_w0,z_r0,Hz0, skip=use_pio)
+!      endif
+!      call exchange_xxx(z_w,z_r,Hz, skip=use_pio)
       if (iic == 0) then
-        call exchange_xxx(hinv, skip=use_pio)
-              call exchange_xxx(z_w0,z_r0,Hz0, skip=use_pio)
+        call exchange_xxx(hinv)
+              call exchange_xxx(z_w0,z_r0,Hz0)
       endif
-      call exchange_xxx(z_w,z_r,Hz, skip=use_pio)
+      call exchange_xxx(z_w,z_r,Hz)
 # endif
-
-      call wrt_instant(Hz, 'Hz2', .true.)
 
 #if defined NHMG || defined NONTRAD_COR
 !     Compute slopes
@@ -273,11 +277,11 @@
         enddo
       enddo
 
-      call wrt_instant(Hz, 'Hz')
-      call wrt_instant(u(:,:,:,nrhs), 'u')
-
-      call wrt_instant(FlxU, 'FlxU')
-      call wrt_instant(FlxV, 'FlxV')
+!      call wrt_instant(Hz, 'Hz')
+!      call wrt_instant(u(:,:,:,nrhs), 'u')
+!
+!      call wrt_instant(FlxU, 'FlxU')
+!      call wrt_instant(FlxV, 'FlxV')
 
 # ifdef EXCHANGE
       call exchange_xxx(FlxU,FlxV)

@@ -1,17 +1,20 @@
       module dimensions
 
+#include "cppdefs.opt"
       ! ========================================
       ! Contains global and subdomain dimensions
       ! ========================================
 
       ! coded by Jeroen Molemaker
       use param, only: llm, mmm, n, lm, mm, np_eta, np_xi
+#ifdef PARALLEL_IO
       use pio_roms, only: pio_i0, pio_i1, pio_j0, pio_j1
+#endif
 
       implicit none
       private
 
-#include "cppdefs.opt"
+!#include "cppdefs.opt"
 
       integer,parameter, public :: gnx = LLm
       integer,parameter, public :: gny = MMm
@@ -39,7 +42,6 @@
 
       public :: init_dimensions
       character(len=256), public :: grdname
-      character(len=:), allocatable, public :: grdname_full
       contains
 
 ! ----------------------------------------------------------------------

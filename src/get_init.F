@@ -51,6 +51,8 @@
       use diagnostics, only : diag_pflx, get_init_slow
 #endif
       use sponge_tune, only: ub_tune, get_init_ub
+      use instant_output, only: wrt_instant
+
       implicit none
       character(len=8) :: sr_name = "get_init"
       character(len=1024) :: error_info
@@ -431,6 +433,10 @@ c--#define VERBOSE
       vbar(i0:i1,1:j1,1) = vbar(i0:i1,1:j1,1)*
      &  (vmask(i0:i1,1:j1)+riv_vmask(i0:i1,1:j1))
       call exchange_xxx(vbar(:,:,1))
+
+      call wrt_instant(zeta, 'zeta')
+      call wrt_instant(ubar, 'ubar')
+      call wrt_instant(vbar, 'vbar')
 
 ! Two sets of fast-time-averaged barotropic fluxes needed for exact
 ! restart in the case when using Adams-Bashforth-like extrapolation of

@@ -8,7 +8,7 @@
      &     nf90_put_var, nf90_get_var
       use error_handling_mod, only: error_log
 #ifdef PARALLEL_IO
-      use pio_roms, only: pio_ncread1, pio_ncread2, pio_ncread3
+      use pio_roms, only: pio_ncread2
 #endif
 
       implicit none
@@ -71,7 +71,7 @@
 
       end subroutine ncread_1D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_2D(ncid,vname,dat,start,fname,array_type,pio_read)  ![
+      subroutine ncread_2D(ncid,vname,dat,start,fname,array_type,pio_read,irec)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_2D"
       ! input
@@ -83,6 +83,7 @@
       character(len=*),optional     :: fname
       character(len=4),optional     :: array_type
       logical,optional :: pio_read
+      integer,optional :: irec
 
       ! local
       integer              :: varid,ierr
@@ -93,7 +94,12 @@
       if ((present(pio_read)) .and. (pio_read)) then
 !        write(*,*) "YAY", ncread_bounds(1),ncread_bounds(2),ncread_bounds(3),ncread_bounds(4)
 !        call flush()
-        call pio_ncread2('input/grdfile', vname, dat, array_type)
+        if (present(irec)) then
+          call pio_ncread2(fname, vname, dat, array_type, irec)
+        else
+          call pio_ncread2(fname, vname, dat, array_type)
+        endif
+!        call pio_ncread2('input/grdfile', vname, dat, array_type)
 !     &   dat(ncread_bounds(1):ncread_bounds(2),ncread_bounds(3):ncread_bounds(4)),
 !     &   array_type)
       else

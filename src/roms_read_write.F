@@ -15,10 +15,13 @@
       use nc_read_write, only: nccreate, ncread
       use dimensions, only:
      &     bf, nx, ny, gnx, gny, i0, i1, j0, j1,
-     &     eta_rho, xi_rho, xi_u, eta_v
+     &     eta_rho, xi_rho, xi_u, eta_v,
+     &     x0,x1,y0,y1
       use param, only: mynode, nnodes
       use dimensions, only: inode, jnode
       use roms_mpi, only: exchange_xxx, new_part
+      use pio_roms, only: use_pio
+      use filenames, only: frcname_full
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
 
       implicit none
@@ -1100,6 +1103,7 @@
           call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
         else    ! rho-grid
           call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
+!          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),(/1,1,irec/),frcname_full,'2D_r',use_pio,irec)
         endif
       endif
       ! add force file info to output nc
@@ -1117,6 +1121,7 @@
 !      endif
       ierr = nf90_close(ncid)
 
+!!! SKIP = USE_PIO ??
       call exchange_xxx(nc%vdata(:,:,it))
 
       if (mynode==0) then
