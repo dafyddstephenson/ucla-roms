@@ -303,12 +303,13 @@
           pio_xi_u_start   = iSW_corn+iwest-pio_i0 !?
         else
           pio_xi_rho_start= iSW_corn+iwest+1-pio_i0
+!          pio_xi_u_start   = iSW_corn+iwest-pio_i0
           pio_xi_u_start   = iSW_corn+iwest-pio_i0
         endif
 
         if (jnode == 0) then
           pio_eta_rho_start= jSW_corn+jsouth-pio_j0
-          pio_eta_v_start  = jSW_corn+jsouth-pio_j0
+          pio_eta_v_start  = jSW_corn+jsouth-pio_j0 !?
         else
           pio_eta_rho_start= jSW_corn+jsouth+1-pio_j0
           pio_eta_v_start  = jSW_corn+jsouth-pio_j0

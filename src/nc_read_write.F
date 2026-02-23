@@ -8,8 +8,9 @@
      &     nf90_put_var, nf90_get_var
       use error_handling_mod, only: error_log
 #ifdef PARALLEL_IO
-      use pio_roms, only: pio_ncread2
+      use pio_roms, only: pio_ncread2, pio_ncread3
 #endif
+      use param, only: mynode
 
       implicit none
       private
@@ -71,7 +72,7 @@
 
       end subroutine ncread_1D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_2D(ncid,vname,dat,start,fname,array_type,pio_read,irec)  ![
+      subroutine ncread_2D(ncid,vname,dat,start,fname,pio_read)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_2D"
       ! input
@@ -81,27 +82,22 @@
 
       integer,dimension(:),optional :: start
       character(len=*),optional     :: fname
-      character(len=4),optional     :: array_type
       logical,optional :: pio_read
-      integer,optional :: irec
 
       ! local
       integer              :: varid,ierr
+      integer              :: irec
       integer,dimension(2) :: dims
       integer,dimension(3) :: count
 
 #ifdef PARALLEL_IO
       if ((present(pio_read)) .and. (pio_read)) then
-!        write(*,*) "YAY", ncread_bounds(1),ncread_bounds(2),ncread_bounds(3),ncread_bounds(4)
-!        call flush()
-        if (present(irec)) then
-          call pio_ncread2(fname, vname, dat, array_type, irec)
+        if (present(start)) then
+          irec = start(3)
+           call pio_ncread2(fname, vname, dat, irec)
         else
-          call pio_ncread2(fname, vname, dat, array_type)
+           call pio_ncread2(fname, vname, dat)
         endif
-!        call pio_ncread2('input/grdfile', vname, dat, array_type)
-!     &   dat(ncread_bounds(1):ncread_bounds(2),ncread_bounds(3):ncread_bounds(4)),
-!     &   array_type)
       else
 #endif
       dims = shape(dat)
@@ -129,25 +125,40 @@
 
       end subroutine ncread_2D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_3D(ncid,vname,dat,start)  ![
+      subroutine ncread_3D(ncid,vname,dat,start,fname,pio_read)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_3D"
 
       ! input
       integer               :: ncid
       character(len=*)      :: vname
-      real,dimension(:,:,:),contiguous :: dat
+!      real,dimension(:,:,:),contiguous :: dat
+      real,dimension(:,:,:) :: dat
 
       integer,dimension(:),optional :: start
-
+      character(len=*),optional     :: fname
+      logical,optional :: pio_read
       ! local
       integer              :: varid,ierr
+      integer              :: irec
       integer,dimension(3) :: dims
       integer,dimension(4) :: count
-      real,dimension(:,:,:),allocatable :: tmp
+!      real,dimension(:,:,:),allocatable :: tmp
 
+#ifdef PARALLEL_IO
+      if ((present(pio_read)) .and. (pio_read)) then
+        if (present(start)) then
+          write(*,*) "HERE0"
+          call flush()
+          irec = start(4)
+           call pio_ncread3(fname, vname, dat, irec)
+        else
+           call pio_ncread3(fname, vname, dat)
+        endif
+      else
+#endif
       dims = shape(dat)
-      allocate(tmp(dims(1),dims(2),dims(3)))
+!      allocate(tmp(dims(1),dims(2),dims(3)))
       ierr = nf90_inq_varid(ncid,vname,varid)
 
       if (ierr/=0) then
@@ -158,11 +169,11 @@
 
       if (present(start)) then
         count = (/dims, 1/)
-!       ierr = nf90_get_var(ncid,varid,dat,start,count)
-        ierr = nf90_get_var(ncid,varid,tmp,start,count)
+       ierr = nf90_get_var(ncid,varid,dat,start,count)
+!        ierr = nf90_get_var(ncid,varid,tmp,start,count)
       else
-!       ierr = nf90_get_var(ncid,varid,dat)
-        ierr = nf90_get_var(ncid,varid,tmp)
+       ierr = nf90_get_var(ncid,varid,dat)
+!        ierr = nf90_get_var(ncid,varid,tmp)
       endif
 
       if (ierr/=0) then
@@ -170,9 +181,12 @@
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
+#ifdef PARALLEL_IO
+      endif
+#endif
 
-      dat = tmp
-      deallocate(tmp)
+!      dat = tmp
+!      deallocate(tmp)
 
       end subroutine ncread_3D  !]
 !----------------------------------------------------------------------

@@ -39,7 +39,7 @@
       use roms_read_write, only: ininame
       use grid, only:
      &     riv_umask, riv_vmask, rmask, umask, vmask
-      use dimensions, only: i0, i1, j0, j1, nz
+      use dimensions, only: i0, i1, j0, j1, nz, x_,x0,x1,y_,y0,y1
       use param, only:
      &     ieast, iwest, jnorth, jsouth, mynode,
      &     nsub_e, nsub_x, nnodes, n, nt,
@@ -51,7 +51,9 @@
       use diagnostics, only : diag_pflx, get_init_slow
 #endif
       use sponge_tune, only: ub_tune, get_init_ub
+      use pio_roms, only: use_pio
       use instant_output, only: wrt_instant
+      use filenames, only: ininame_full
 
       implicit none
       character(len=8) :: sr_name = "get_init"
@@ -401,7 +403,8 @@ c--#define VERBOSE
 
       ierr=nf90_inq_varid(ncid, 'riv_umask', varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid,'riv_umask',riv_umask(1:i1,j0:j1),start)
+!        call ncread(ncid,'riv_umask',riv_umask(1:i1,j0:j1),start)
+        call ncread(ncid,'riv_umask',riv_umask(x_:x1,y0:y1),start=start,fname=ininame_full,pio_read=use_pio)
       else
         if (mynode == 0) then
         write(*,*) 'riv_umask not found in initial file. Initializing ',
@@ -410,7 +413,8 @@ c--#define VERBOSE
       endif
       ierr=nf90_inq_varid(ncid, 'riv_vmask', varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid,'riv_vmask',riv_vmask(i0:i1,1:j1),start)
+        !call ncread(ncid,'riv_vmask',riv_vmask(i0:i1,1:j1),start)
+        call ncread(ncid,'riv_vmask',riv_vmask(x0:x1,y_:y1),start=start,fname=ininame_full,pio_read=use_pio)
       else
         if (mynode == 0) then
         write(*,*) 'riv_vmask not found in initial file. Initializing ',
@@ -420,23 +424,27 @@ c--#define VERBOSE
 
 ! Free-surface and barotropic 2D momentuma, XI- and ETA-components
 
-      call ncread(ncid,'zeta',zeta(i0:i1,j0:j1,1),start)
+!      call ncread(ncid,'zeta',zeta(i0:i1,j0:j1,1),start)
+      call ncread(ncid,'zeta',zeta(x0:x1,y0:y1,1),start=(/1,1,record/),fname=ininame_full,pio_read=use_pio)
       zeta(i0:i1,j0:j1,1)=zeta(i0:i1,j0:j1,1)*rmask(i0:i1,j0:j1)
       call exchange_xxx(zeta(:,:,1))
 
-      call ncread(ncid,'ubar',ubar( 1:i1,j0:j1,1),start)
+!      call ncread(ncid,'ubar',ubar( 1:i1,j0:j1,1),start)
+      call ncread(ncid,'ubar',ubar(x_:x1,y0:y1,1),start=(/1,1,record/),fname=ininame_full,pio_read=use_pio)
+!      call ncread(ncid,'ubar',ubar(x_:x1,y0:y1,1),(/1,1,record/),ininame_full,'2Du_',use_pio,record)
       ubar(1:i1,j0:j1,1) = ubar(1:i1,j0:j1,1)*
      &  (umask(1:i1,j0:j1)+riv_umask(1:i1,j0:j1))
       call exchange_xxx(ubar(:,:,1))
 
-      call ncread(ncid,'vbar',vbar(i0:i1, 1:j1,1),start)
+!      call ncread(ncid,'vbar',vbar(i0:i1, 1:j1,1),start)
+      call ncread(ncid,'vbar',vbar(x0:x1,y_:y1,1),start=(/1,1,record/),fname=ininame_full,pio_read=use_pio)
       vbar(i0:i1,1:j1,1) = vbar(i0:i1,1:j1,1)*
      &  (vmask(i0:i1,1:j1)+riv_vmask(i0:i1,1:j1))
       call exchange_xxx(vbar(:,:,1))
 
-      call wrt_instant(zeta, 'zeta')
-      call wrt_instant(ubar, 'ubar')
-      call wrt_instant(vbar, 'vbar')
+!      call wrt_instant(zeta, 'zeta')
+!      call wrt_instant(ubar, 'ubar')
+!      call wrt_instant(vbar, 'vbar')
 
 ! Two sets of fast-time-averaged barotropic fluxes needed for exact
 ! restart in the case when using Adams-Bashforth-like extrapolation of
@@ -463,12 +471,18 @@ c--#define VERBOSE
       if (ierr /= nf90_noerr) exact_succes = .false.
 
       if (exact_succes) then
-        call ncread(ncid,'DU_avg1',   DU_avg1( 1:i1,j0:j1),start)
-        call ncread(ncid,'DV_avg1',   DV_avg1(i0:i1, 1:j1),start)
-        call ncread(ncid,'DU_avg2',   DU_avg2( 1:i1,j0:j1),start)
-        call ncread(ncid,'DV_avg2',   DV_avg2(i0:i1, 1:j1),start)
-        call ncread(ncid,'DU_avg_bak',DU_avg_bak( 1:i1,j0:j1),start)
-        call ncread(ncid,'DV_avg_bak',DV_avg_bak(i0:i1, 1:j1),start)
+        !call ncread(ncid,'DU_avg1',   DU_avg1( 1:i1,j0:j1),start)
+        call ncread(ncid,'DU_avg1',DU_avg1(x_:x1,y0:y1),start=start,fname=ininame_full,pio_read=use_pio)
+        !call ncread(ncid,'DV_avg1',   DV_avg1(i0:i1, 1:j1),start)
+        call ncread(ncid,'DV_avg1',DV_avg1(x0:x1,y_:y1),start=start,fname=ininame_full,pio_read=use_pio)
+        !call ncread(ncid,'DU_avg2',   DU_avg2( 1:i1,j0:j1),start)
+        call ncread(ncid,'DU_avg2',DU_avg2(x_:x1,y0:y1),start=start,fname=ininame_full,pio_read=use_pio)
+        !call ncread(ncid,'DV_avg2',   DV_avg2(i0:i1, 1:j1),start)
+        call ncread(ncid,'DV_avg2',DV_avg2(x0:x1,y_:y1),start=start,fname=ininame_full,pio_read=use_pio)
+        !call ncread(ncid,'DU_avg_bak',DU_avg_bak( 1:i1,j0:j1),start)
+        call ncread(ncid,'DU_avg_bak',DU_avg_bak(x_:x1,y0:y1),start=start,fname=ininame_full,pio_read=use_pio)
+        !call ncread(ncid,'DV_avg_bak',DV_avg_bak(i0:i1, 1:j1),start)
+        call ncread(ncid,'DV_avg_bak',DV_avg_bak(x0:x1,y_:y1),start=start,fname=ininame_full,pio_read=use_pio)
       else
         forw_start=ntstart    !--> cancel exact restart
         iic = 0 ! set back to zero
@@ -480,8 +494,10 @@ c--#define VERBOSE
         ierr=nf90_inq_varid(ncid,  'rvfrc_bak', varid)
         if (ierr == nf90_noerr) then
 
-          call ncread(ncid,'rufrc_bak', rufrc_bak( 1:i1,j0:j1,tindx),start)    ! DevinD this update was untested
-          call ncread(ncid,'rvfrc_bak', rvfrc_bak(i0:i1, 1:j1,tindx),start)
+!          call ncread(ncid,'rufrc_bak', rufrc_bak( 1:i1,j0:j1,tindx),start)    ! DevinD this update was untested
+          call ncread(ncid,'rufrc_bak',rufrc_bak(x_:x1,y0:y1,tindx),start=start,fname=ininame_full,pio_read=use_pio)
+!          call ncread(ncid,'rvfrc_bak', rvfrc_bak(i0:i1, 1:j1,tindx),start)
+          call ncread(ncid,'rvfrc_bak',rvfrc_bak(x0:x1,y_:y1,tindx),start=start,fname=ininame_full,pio_read=use_pio)
           if (ierr/=nf90_noerr) then
              call error_log%check_netcdf_status(
      &        netcdf_status=ierr,
@@ -524,10 +540,15 @@ c--#define VERBOSE
 
         ierr=nf90_inq_varid(ncid, t_vname(itrc), varid)
         if (ierr == nf90_noerr) then
-          call ncread(ncid, t_vname(itrc), t(i0:i1,j0:j1,:,tindx,itrc), start)
+!          call ncread(ncid, t_vname(itrc), t(i0:i1,j0:j1,:,tindx,itrc), start)
+          call ncread(ncid,t_vname(itrc),t(x0:x1,y0:y1,:,tindx,itrc),start=start,fname=ininame_full,pio_read=use_pio)
+          write(*,*) "HERE7"
+          call flush()
           do k=1,N
             t(i0:i1,j0:j1,k,tindx,itrc)=t(i0:i1,j0:j1,k,tindx,itrc)*rmask(i0:i1,j0:j1)
           enddo
+          write(*,*) "HERE8"
+          call flush()
           call exchange_xxx(t(:,:,:,tindx,itrc) )
         else
 
@@ -560,7 +581,8 @@ c--#define VERBOSE
 # ifdef LMD_KPP
       ierr=nf90_inq_varid(ncid, vname(1,indxHbls), varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid,vname(1,indxHbls),hbls(i0:i1,j0:j1),start)      ! mask doesn't change answer but makes
+!        call ncread(ncid,vname(1,indxHbls),hbls(i0:i1,j0:j1),start)      ! mask doesn't change answer but makes
+        call ncread(ncid,vname(1,indxHbls),hbls(x0:x1,y0:y1),start=start,fname=ininame_full,pio_read=use_pio)
         hbls(i0:i1,j0:j1)=hbls(i0:i1,j0:j1)*rmask(i0:i1,j0:j1)     ! output mask 0, rather than random numbers
         call exchange_xxx(hbls(:,:) )
       else
@@ -573,7 +595,8 @@ c--#define VERBOSE
 # ifdef LMD_BKPP
       ierr=nf90_inq_varid(ncid, vname(1,indxHbbl), varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid,vname(1,indxHbbl),hbbl(i0:i1,j0:j1),start)      ! mask doesn't change answer but makes
+!        call ncread(ncid,vname(1,indxHbbl),hbbl(i0:i1,j0:j1),start)      ! mask doesn't change answer but makes
+        call ncread(ncid,vname(1,indxHbbl),hbbl(x0:x1,y0:y1),start=start,fname=ininame_full,pio_read=use_pio)
         hbbl(i0:i1,j0:j1)=hbbl(i0:i1,j0:j1)*rmask(i0:i1,j0:j1)     ! output mask 0, rather than random numbers
         call exchange_xxx(hbbl(:,:) )            ! confirmed needs an exchange, not sure why
       else

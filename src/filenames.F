@@ -4,5 +4,7 @@
 
       character(len=13),public  :: grdname_full='input/grdfile'
       character(len=13),public  :: frcname_full='input/frcfile'
+      character(len=13),public  :: ininame_full='input/inifile'
+      character(len=13),public  :: rivname_full='input/rivfile'
 
       end module filenames

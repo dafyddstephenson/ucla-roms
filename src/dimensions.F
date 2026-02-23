@@ -8,7 +8,7 @@
       ! coded by Jeroen Molemaker
       use param, only: llm, mmm, n, lm, mm, np_eta, np_xi
 #ifdef PARALLEL_IO
-      use pio_roms, only: pio_i0, pio_i1, pio_j0, pio_j1
+      use pio_roms, only: use_pio,pio_i0, pio_i1, pio_j0, pio_j1
 #endif
 
       implicit none
@@ -32,7 +32,7 @@
       integer,public :: i0,i1,j0,j1     ! accounts for physical boundary buffers
       integer, public ::  xi_rho, xi_u, eta_rho, eta_v
       integer,public :: inode,jnode     ! location of subdomain in the grid
-      integer,public :: x0,x1,y0,y1
+      integer,public :: x0,x1,y0,y1,x_,y_
 
 # ifdef ANA_GRID
       logical,parameter,public :: analytical_grid = .true.
@@ -62,15 +62,25 @@ c$$$      ny = Mm
       if (jnode==NP_ETA-1) j1=ny+1
 
 #ifdef PARALLEL_IO
-      x0 = i0-pio_i0
-      x1 = i1+pio_i1
-      y0 = j0-pio_j0
-      y1 = j1+pio_j1
+      if (use_pio) then
+        x_ = 1-pio_i0
+        x0 = i0-pio_i0
+        x1 = i1+pio_i1
+        y_ = 1-pio_j0
+        y0 = j0-pio_j0
+        y1 = j1+pio_j1
+      else
 #else
+      x_ = 1
       x0 = i0
       x1 = i1
+      y_ = 1
       y0 = j0
       y1 = j1
+#endif
+
+#ifdef PARALLEL_IO
+      endif
 #endif
 
       end subroutine init_dimensions  !]

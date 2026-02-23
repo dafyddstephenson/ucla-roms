@@ -16,7 +16,7 @@
       use dimensions, only:
      &     bf, nx, ny, gnx, gny, i0, i1, j0, j1,
      &     eta_rho, xi_rho, xi_u, eta_v,
-     &     x0,x1,y0,y1
+     &     x_,x0,x1,y_,y0,y1
       use param, only: mynode, nnodes
       use dimensions, only: inode, jnode
       use roms_mpi, only: exchange_xxx, new_part
@@ -1098,12 +1098,14 @@
         call coarse2fine(cdata,nc%vdata(:,:,it),gtype)
       else
         if (gtype=='u') then
-          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
+!          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
+          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
         elseif (gtype=='v') then
-          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
+!          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
+          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
         else    ! rho-grid
-          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
-!          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),(/1,1,irec/),frcname_full,'2D_r',use_pio,irec)
+!          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
+          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
         endif
       endif
       ! add force file info to output nc
