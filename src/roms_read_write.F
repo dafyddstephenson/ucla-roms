@@ -161,7 +161,7 @@
 
       character, public :: date_str*44, title*80
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
-      character(len=max_name_size), public :: ininame,frcfile(max_frc_files)
+      character(len=max_name_size), public :: ininame,frcfile(max_frc_files),frcfile_full(max_frc_files)
 
 
       public :: insert_nodes
@@ -1099,17 +1099,17 @@
         call coarse2fine(cdata,nc%vdata(:,:,it),gtype)
       else
         if (gtype=='u') then
-          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
+!          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Du'
-!          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
         elseif (gtype=='v') then
-          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
+!          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
           pio_gtype = '2Dv'
-!          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
         else    ! rho-grid
-          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
+!          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Dr'
-!          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
         endif
       endif
       ! add force file info to output nc

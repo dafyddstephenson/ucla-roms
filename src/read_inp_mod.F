@@ -955,13 +955,13 @@
       subroutine kwread_forcing(unit)
       use roms_read_write, only:
      &     force_files, force_info, max_frc_files,
-     &     store_string_att, frcfile, max_frc
+     &     store_string_att, frcfile, max_frc, frcfile_full
       implicit none
 
       integer, intent(in)    :: unit
 
       integer :: ios, lstr, lenstr
-      character(len=256) :: fname
+      character(len=256) :: fname, fname_full
       character(len=15) :: sr_name = "kwread_forcing"
 
 !  Reset forcing storage.
@@ -980,6 +980,7 @@
             return
          end if
 
+         fname_full = fname
          lstr = lenstr(fname)
 
          if (lstr > 0) then
@@ -1004,6 +1005,7 @@
 
                max_frc = max_frc + 1
                frcfile(max_frc) = trim(fname)
+               frcfile_full(max_frc) = trim(fname_full)
 
 ! Write file info to output stream
 # ifdef MPI_SILENT_MODE

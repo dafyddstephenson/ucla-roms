@@ -12,6 +12,7 @@
       use pio, only : PIO_iotype_netcdf4p
       use pio, only : PIO_iotype_pnetcdf
       use pio, only : PIO_offset_kind
+      use pio, only : PIO_setdebuglevel
       use pio_nf, only : PIO_inq_varid, PIO_inq_dimid
       use pionfatt_mod, only : put_att_desc_text
 !      use mpi
@@ -248,6 +249,7 @@
         !pio_type        = PIO_iotype_netcdf
         pio_type          = PIO_iotype_pnetcdf  ! works better when NOT HDF5 / NetCDF4
 
+        call PIO_setdebuglevel(6)
 
 !        allocate( pio_zero(0) )
 
@@ -494,6 +496,9 @@
      &       pio_desc)
           elseif (pio_gtype=='n1u') then
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n1u, pio_start_n1u, pio_count_n1u,
+     &       pio_desc)
+          elseif (pio_gtype=='n1v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n1v, pio_start_n1v, pio_count_n1v,
      &       pio_desc)
           endif
 !        else if (size(dims) == 2) then

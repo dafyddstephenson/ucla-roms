@@ -85,6 +85,7 @@
 
       ! local
       integer :: itrc
+
       if (obc_west.or.obc_east.or.obc_north.or.obc_south) then
         bc_options = ''
       endif
@@ -109,11 +110,11 @@
 
 # ifdef OBC_WEST
 #  ifdef Z_FRC_BRY
-      allocate( zeta_west(0:Mm+1) )
+      allocate( zeta_west(j0:j1) )
       allocate( nc_z_w%vdata(j0:j1,1,2) )
 #  endif
 #  ifdef M2_FRC_BRY
-      allocate( ubar_west(0:Mm+1), vbar_west(0:Mm+1) )
+      allocate( ubar_west(j0:j1), vbar_west(1:j1) )
       allocate( nc_ub_w%vdata(j0:j1,1,2) )
       allocate( nc_vb_w%vdata( 1:j1,1,2) )
 #  endif
@@ -236,12 +237,12 @@
 #  endif
       if (obc_west.and.(inode==0)) then
 #  ifdef Z_FRC_BRY
-        call set_frc_data( nc_z_w, zeta_west(j0:j1), obry=2 )
+        call set_frc_data( nc_z_w, zeta_west, obry=2 )
 !       call exch_bry_EW_tile(1, ny, zeta_west, 1)      ! DevinD - exchange did not make a difference
 #  endif
 #  ifdef M2_FRC_BRY
-        call set_frc_data( nc_ub_w, ubar_west(j0:j1), obry=1 )
-        call set_frc_data( nc_vb_w, vbar_west( 1:j1), obry=1 )
+        call set_frc_data( nc_ub_w, ubar_west, obry=1 )
+        call set_frc_data( nc_vb_w, vbar_west, obry=1 )
 #  endif
 #  ifdef SOLVE3D
 #   ifdef M3_FRC_BRY
