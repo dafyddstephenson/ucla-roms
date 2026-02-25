@@ -1,7 +1,7 @@
       module tides
 
 #include "cppdefs.opt"
-      use dimensions, only: inode, jnode
+      use dimensions, only: inode, jnode, x_,x0,x1,y_,y0,y1
       use param, only:
      &     mynode, ieast, iwest, jnorth, jsouth, lm, mm, np_xi, np_eta
       use scalars, only: g, pi, dt, time
@@ -262,6 +262,8 @@
       use error_handling_mod, only: error_log
       use roms_mpi, only: exchange_xxx
       use nc_read_write, only: ncread
+      use pio_roms, only: use_pio, pio_gtype
+      use filenames, only: tidname_full
       implicit none
       character(len=10) :: sr_name = "read_tides"
       ! local
@@ -315,22 +317,34 @@
         start(3) = itide
 
         if (bry_tides) then
-          call ncread(ncid,'ssh_Re',ztide_r(i0:i1,j0:j1,itide),start)   ! read tidal elevations
-          call ncread(ncid,'ssh_Im',ztide_i(i0:i1,j0:j1,itide),start)
+          pio_gtype = '2Dr'
+          call ncread(ncid,'ssh_Re',ztide_r(x0:x1,y0:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+          call ncread(ncid,'ssh_Im',ztide_i(x0:x1,y0:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+!          call ncread(ncid,'ssh_Re',ztide_r(i0:i1,j0:j1,itide),start)   ! read tidal elevations
+!          call ncread(ncid,'ssh_Im',ztide_i(i0:i1,j0:j1,itide),start)
 !         call exchange_xxx(ztide_r(:,:,itide),ztide_i(:,:,itide))
 
-          call ncread(ncid,'u_Re',utide_r(1:i1,j0:j1,itide),start)      ! read tidal barotropic velocities.
-          call ncread(ncid,'u_Im',utide_i(1:i1,j0:j1,itide),start)      ! these currents must be on u,v-points
+          pio_gtype = '2Du'
+          call ncread(ncid,'u_Re',utide_r(x_:x1,y0:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+          call ncread(ncid,'u_Im',utide_i(x_:x1,y0:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+!          call ncread(ncid,'u_Re',utide_r(1:i1,j0:j1,itide),start)      ! read tidal barotropic velocities.
+!          call ncread(ncid,'u_Im',utide_i(1:i1,j0:j1,itide),start)      ! these currents must be on u,v-points
 !         call exchange_xxx(utide_r(:,:,itide),utide_i(:,:,itide))      ! and rotated to align with the grid
 
-          call ncread(ncid,'v_Re',  vtide_r(i0:i1,1:j1,itide),start)
-          call ncread(ncid,'v_Im',  vtide_i(i0:i1,1:j1,itide),start)
+          pio_gtype = '2Dv'
+          call ncread(ncid,'v_Re',vtide_r(x0:x1,y_:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+          call ncread(ncid,'v_Im',vtide_i(x0:x1,y_:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+!          call ncread(ncid,'v_Re',  vtide_r(i0:i1,1:j1,itide),start)
+!          call ncread(ncid,'v_Im',  vtide_i(i0:i1,1:j1,itide),start)
 !         call exchange_xxx(vtide_r(:,:,itide),vtide_i(:,:,itide))
         endif
 
         if (pot_tides) then
-          call ncread(ncid,'pot_Re',ptide_r(i0:i1,j0:j1,itide),start)
-          call ncread(ncid,'pot_Im',ptide_i(i0:i1,j0:j1,itide),start)
+          pio_gtype = '2Dr'
+          call ncread(ncid,'pot_Re',ptide_r(x0:x1,y0:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+          call ncread(ncid,'pot_Im',ptide_i(x0:x1,y0:y1,itide),start=start,fname=tidname_full,pio_read=use_pio)
+!          call ncread(ncid,'pot_Re',ptide_r(i0:i1,j0:j1,itide),start)
+!          call ncread(ncid,'pot_Im',ptide_i(i0:i1,j0:j1,itide),start)
 !         call exchange_xxx(ptide_r(:,:,itide),ptide_i(:,:,itide))
         endif
       end do                    ! <-- itide=1,ntides
