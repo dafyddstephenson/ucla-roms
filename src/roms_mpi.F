@@ -33,7 +33,8 @@
 #ifdef PARALLEL_IO
       use pio_roms, only: pio_xi_rho, pio_xi_u, pio_eta_rho, pio_eta_v,
      &  pio_xi_rho_start, pio_xi_u_start, pio_eta_rho_start, pio_eta_v_start,
-     &  pio_s_start, pio_west_exchng, pio_east_exchng, pio_north_exchng, pio_south_exchng,
+     &  pio_xi_rho_start_bry, pio_xi_u_start_bry, pio_eta_rho_start_bry, pio_eta_v_start_bry,
+     &  pio_s_start, PIO_WESTERN_EDGE, PIO_EASTERN_EDGE, PIO_SOUTHERN_EDGE, PIO_NORTHERN_EDGE,
      &  pio_i0, pio_i1, pio_j0, pio_j1
 #endif
 
@@ -301,26 +302,34 @@
         if (inode == 0) then
           pio_xi_rho_start = iSW_corn+iwest-pio_i0
           pio_xi_u_start   = iSW_corn+iwest-pio_i0 !?
+          pio_xi_rho_start_bry = iSW_corn+iwest
+          pio_xi_u_start_bry = iSW_corn+iwest
         else
           pio_xi_rho_start= iSW_corn+iwest+1-pio_i0
 !          pio_xi_u_start   = iSW_corn+iwest-pio_i0
           pio_xi_u_start   = iSW_corn+iwest-pio_i0
+          pio_xi_rho_start_bry = iSW_corn+iwest+1
+          pio_xi_u_start_bry = iSW_corn+iwest
         endif
 
         if (jnode == 0) then
           pio_eta_rho_start= jSW_corn+jsouth-pio_j0
           pio_eta_v_start  = jSW_corn+jsouth-pio_j0 !?
+          pio_eta_rho_start_bry= jSW_corn+jsouth
+          pio_eta_v_start_bry  = jSW_corn+jsouth
         else
           pio_eta_rho_start= jSW_corn+jsouth+1-pio_j0
           pio_eta_v_start  = jSW_corn+jsouth-pio_j0
+          pio_eta_rho_start_bry= jSW_corn+jsouth+1
+          pio_eta_v_start_bry  = jSW_corn+jsouth
         endif
         pio_s_start = 1
 
         ! Identify domain edges
-        pio_west_exchng = (inode .ne. 0)
-        pio_east_exchng = (inode .ne. npx-1)
-        pio_north_exchng = (jnode .ne. 0)
-        pio_south_exchng = (jnode .ne. npy-1)
+        PIO_WESTERN_EDGE = (inode == 0)
+        PIO_EASTERN_EDGE = (inode == npx-1)
+        PIO_SOUTHERN_EDGE = (jnode == 0)
+        PIO_NORTHERN_EDGE = (jnode == npy-1)
 #endif
 
       end subroutine mpi_setup !]
@@ -423,7 +432,7 @@
       logical,optional :: skip
 
 #ifdef PARALLEL_IO
-      if (present(skip)) return
+      if ((present(skip)) .and. skip) return
 #endif
 
       if (.not.init_buffer_done) call init_mpi_buffers

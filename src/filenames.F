@@ -6,5 +6,6 @@
       character(len=13),public  :: frcname_full='input/frcfile'
       character(len=13),public  :: ininame_full='input/inifile'
       character(len=13),public  :: rivname_full='input/rivfile'
+      character(len=13),public  :: bryname_full='input/bryfile'
 
       end module filenames
