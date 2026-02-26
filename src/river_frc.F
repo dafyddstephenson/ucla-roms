@@ -18,7 +18,6 @@
       use dimensions, only: i0, i1, j0, j1, nx, ny, xi_rho, eta_rho,
      &   x0,x1,y0,y1
       use pio_roms, only: use_pio, pio_gtype
-      use filenames, only: rivname_full
       use param, only: lm, mm, mynode, ocean_grid_comm
       use error_handling_mod, only: error_log
 

@@ -21,7 +21,6 @@
       use dimensions, only: inode, jnode
       use roms_mpi, only: exchange_xxx, new_part
       use pio_roms, only: use_pio, pio_gtype
-      use filenames, only: frcname_full, bryname_full
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
 
       implicit none
@@ -927,10 +926,10 @@
       ! This is in contrast with the _surf version of fill_frc_slice
       write(*,*) "YAY", mynode, vname, frcfile(ifile), irec
       if (d1) then
-        call ncread(ncid,vname,nc%vdata(:,1,it),start=(/1,irec/),fname=bryname_full,pio_read=use_pio)
+        call ncread(ncid,vname,nc%vdata(:,1,it),start=(/1,irec/),fname=frcfile(ifile),pio_read=use_pio)
 !        call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
       else
-        call ncread(ncid,vname,nc%vdata(:,:,it),start=(/1,1,irec/),fname=bryname_full,pio_read=use_pio)
+        call ncread(ncid,vname,nc%vdata(:,:,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
 !        call ncread(ncid,vname,nc%vdata(:,:,it),(/1,1,irec/))
       endif
       ! add force file info to output nc
@@ -1100,22 +1099,20 @@
         call exchange_xxx(cdata,array_bf=cbf)
         call coarse2fine(cdata,nc%vdata(:,:,it),gtype)
       else
-!        write(*,*) "YAY", frcfile(ifile), irec, vname
         if (gtype=='u') then
 !          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Du'
-          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
         elseif (gtype=='v') then
 !          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
           pio_gtype = '2Dv'
-          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
         else    ! rho-grid
 !          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Dr'
-          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
         endif
       endif
-!      write(*,*) "READ!", vname
       ! add force file info to output nc
 !      if (mynode == 0) then
       ierr = nf90_get_att(ncid,nf90_global,'data_source',forcing_version)

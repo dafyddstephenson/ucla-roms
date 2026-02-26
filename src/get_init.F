@@ -53,7 +53,6 @@
       use sponge_tune, only: ub_tune, get_init_ub
       use pio_roms, only: use_pio, pio_gtype
       use instant_output, only: wrt_instant
-!      use filenames, only: ininame_full
 
       implicit none
       character(len=8) :: sr_name = "get_init"
