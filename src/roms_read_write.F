@@ -926,10 +926,11 @@
       ! file. Ensure this in the allocation of vdata
       ! This is in contrast with the _surf version of fill_frc_slice
       if (d1) then
-!        call ncread(ncid,vname,nc%vdata(:,1,it),start=(/1,irec/),fname=bryname_full,pio_read=use_pio)
-        call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
+        call ncread(ncid,vname,nc%vdata(:,1,it),start=(/1,irec/),fname=frcfile(ifile),pio_read=use_pio)
+!        call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
       else
-        call ncread(ncid,vname,nc%vdata(:,:,it),(/1,1,irec/))
+        call ncread(ncid,vname,nc%vdata(:,:,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
+!        call ncread(ncid,vname,nc%vdata(:,:,it),(/1,1,irec/))
       endif
       ! add force file info to output nc
       if (mynode == 0) then
@@ -1101,15 +1102,15 @@
         if (gtype=='u') then
 !          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Du'
-          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
         elseif (gtype=='v') then
 !          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
           pio_gtype = '2Dv'
-          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
         else    ! rho-grid
 !          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Dr'
-          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcname_full,pio_read=use_pio)
+          call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcfile(ifile),pio_read=use_pio)
         endif
       endif
       ! add force file info to output nc

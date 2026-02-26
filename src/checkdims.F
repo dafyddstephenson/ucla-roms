@@ -59,6 +59,7 @@
       recdim=0      ! netCDF ID of unlimited dimension (if exists);
       max_rec=0     ! current size unlimited dimension (if exists).
 
+#ifndef PARALLEL_IO
       ierr=nf90_inquire(ncid, ndimensions = ndims)
 
 
@@ -164,6 +165,16 @@
       endif
 #endif
 
+#else
+      ierr=nf90_inquire(ncid, ndimensions = ndims)
+
+      do id=1,ndims
+        ierr=nf90_inquire_dimension (ncid, id, dname, dsize)
+        if (id==recdim) then
+          max_rec=dsize
+        endif
+      enddo
+#endif
       checkdims=icount
 
       end  !]

@@ -886,7 +886,9 @@
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
       call insert_node(fname, lstr, mynode, nsize)
+#endif
 # endif
       open(newunit=testunit, file=trim(fname), status='old',
      &     iostat=ios)
@@ -932,7 +934,9 @@
          lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
          call insert_node(fname, lstr, mynode, nsize)
+#endif
 # endif
          open(newunit=testunit, file=trim(fname), status='old',
      &        iostat=ios)
@@ -986,7 +990,9 @@
          if (lstr > 0) then
 
 # if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
             call insert_node(fname, lstr, mynode, nsize)
+#endif
 # endif
 
 ! Test file availability
