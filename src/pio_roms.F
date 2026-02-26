@@ -18,7 +18,8 @@
 !      use mpi
       use mpi, only: mpi_comm_world
       use mpi_f08, only: mpi_character
-      use param, only: LLm, MMm, N, ocean_grid_comm
+      use param, only: LLm, MMm, N, ocean_grid_comm, nt
+!      use river_frc, only: nriv
       implicit none
 
       private
@@ -88,6 +89,8 @@
       integer, dimension(3) :: pio_dimLen_3Du
       integer, dimension(3) :: pio_dimLen_3Dv
 
+      integer, dimension(1) :: pio_dimLen_riv_vol
+      integer, dimension(2) :: pio_dimLen_riv_trc
 
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_n1r
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_n1r
@@ -183,11 +186,16 @@
       integer(kind=PIO_OFFSET_KIND), dimension(3) :: pio_start_3Dv
       integer(kind=PIO_OFFSET_KIND), dimension(3) :: pio_count_3Dv
 
+      integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_riv_vol
+      integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_riv_vol
 
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_riv_trc
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_riv_trc
 
       integer, public :: pio_xi_rho, pio_eta_rho
       integer, public :: pio_xi_u, pio_eta_v
       integer, public :: pio_i0, pio_i1, pio_j0, pio_j1
+      integer, public :: pio_nriv
 
       integer, public :: pio_xi_rho_start, pio_eta_rho_start
       integer, public :: pio_xi_u_start, pio_eta_v_start
@@ -203,6 +211,7 @@
       !! Initialize the ParallelIO library. Also allocate
       !! memory to read data from the netCDF file.
       public  :: pio_initialize
+      public  :: pio_initialize_rivers
 
 !      !! This subroutine creates the decomposition.
 !      public  :: pio_createDecomp2D
@@ -265,8 +274,6 @@
       subroutine pio_initialize
 
         implicit none
-
-        integer :: ierr,i,j,k
 
         ! Set up PIO for this object
 
@@ -626,6 +633,24 @@
 
       end subroutine pio_initialize
 ! ----------------------------------------------------------------------
+      subroutine pio_initialize_rivers
+
+        implicit none
+
+        pio_dimLen_riv_vol(1) = pio_nriv
+        pio_start_riv_vol(1) = 1
+        pio_count_riv_vol(1) = pio_nriv
+
+
+        pio_dimLen_riv_trc(1) = pio_nriv
+        pio_dimLen_riv_trc(2) = nt
+        pio_start_riv_trc(1) = 1
+        pio_start_riv_trc(2) = 1
+        pio_count_riv_trc(1) = pio_nriv
+        pio_count_riv_trc(2) = nt
+
+      end subroutine pio_initialize_rivers
+! ----------------------------------------------------------------------
       subroutine pio_createDecomp
 
         implicit none
@@ -741,7 +766,15 @@
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_3Dv, pio_start_3Dv, pio_count_3Dv,
      &       pio_desc)
           endif
-!        endif
+
+
+          if (pio_gtype=='rvv') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_riv_vol, pio_start_riv_vol, pio_count_riv_vol,
+     &       pio_desc)
+          elseif (pio_gtype=='rtr') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_riv_trc, pio_start_riv_trc, pio_count_riv_trc,
+     &       pio_desc)
+          endif
 
       end subroutine pio_createDecomp
 ! ----------------------------------------------------------------------
@@ -760,17 +793,14 @@
         ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
 
         ierr = PIO_inq_varid(pio_FileDesc, trim(varName), varId)
-        write(*,*) "HERE1", fname, varName, irec
         if (present(irec)) then
           frame = irec
           call PIO_setframe(pio_FileDesc, varId, frame)
         endif
         call pio_createDecomp !(dims)
-        write(*,*) "HERE3", varName
         call PIO_read_darray(pio_FileDesc, varId, pio_desc,
      &  arr, ierr)
 
-        write(*,*) "HERE4", varName
         call PIO_closefile(pio_FileDesc)
 
       end subroutine pio_ncread1

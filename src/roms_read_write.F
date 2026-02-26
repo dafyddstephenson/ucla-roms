@@ -924,7 +924,6 @@
       ! The size of vdata must match the size of the data in the
       ! file. Ensure this in the allocation of vdata
       ! This is in contrast with the _surf version of fill_frc_slice
-      write(*,*) "YAY", mynode, vname, frcfile(ifile), irec
       if (d1) then
         call ncread(ncid,vname,nc%vdata(:,1,it),start=(/1,irec/),fname=frcfile(ifile),pio_read=use_pio)
 !        call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
