@@ -4,6 +4,16 @@
 
 #include "cppdefs.opt"
 
+!      use param, only: nt
+!      use param, only:
+!     &     lm, mm, n, obc_east, obc_north, obc_south,
+!     &     obc_west
+!      use roms_read_write, only:
+!     &     ncforce, bc_options, set_frc_data,
+!     &     frctype, store_string_att
+!      use dimensions, only: i0, i1, j0, j1, nz
+!      use hidden_mpi_vars, only: inode
+!      use error_handling_mod, only: error_log
       use param, only: nt
       use param, only:
      &     lm, mm, n, obc_east, obc_north, obc_south,
@@ -14,6 +24,7 @@
       use dimensions, only: i0, i1, j0, j1, nz, npx, npy,
      &     inode, jnode
       use error_handling_mod, only: error_log
+      use pio_roms, only: pio_gtype
 
       implicit none
 
@@ -85,7 +96,6 @@
 
       ! local
       integer :: itrc
-
       if (obc_west.or.obc_east.or.obc_north.or.obc_south) then
         bc_options = ''
       endif
@@ -110,11 +120,11 @@
 
 # ifdef OBC_WEST
 #  ifdef Z_FRC_BRY
-      allocate( zeta_west(j0:j1) )
+      allocate( zeta_west(0:Mm+1) )
       allocate( nc_z_w%vdata(j0:j1,1,2) )
 #  endif
 #  ifdef M2_FRC_BRY
-      allocate( ubar_west(j0:j1), vbar_west(1:j1) )
+      allocate( ubar_west(0:Mm+1), vbar_west(0:Mm+1) )
       allocate( nc_ub_w%vdata(j0:j1,1,2) )
       allocate( nc_vb_w%vdata( 1:j1,1,2) )
 #  endif
@@ -227,6 +237,7 @@
       end subroutine init_arrays_boundary !]
 !----------------------------------------------------------------------
       subroutine set_bry_all  ![
+!      use param, only: east_exchng, north_exchng, south_exchng
       implicit none
 
       integer :: itrc
@@ -235,18 +246,26 @@
 #  ifdef ANA_BRY
       return
 #  endif
-      if (obc_west.and.(inode==0)) then
+      if (obc_west) then
+!#ifndef PARALLEL_IO
+!      if (inode==0) then
+!#endif
 #  ifdef Z_FRC_BRY
-        call set_frc_data( nc_z_w, zeta_west, obry=2 )
+        pio_gtype='w1r'
+        call set_frc_data( nc_z_w, zeta_west(j0:j1), obry=2 )
 !       call exch_bry_EW_tile(1, ny, zeta_west, 1)      ! DevinD - exchange did not make a difference
 #  endif
 #  ifdef M2_FRC_BRY
-        call set_frc_data( nc_ub_w, ubar_west, obry=1 )
-        call set_frc_data( nc_vb_w, vbar_west, obry=1 )
+        pio_gtype='w1u'
+        call set_frc_data( nc_ub_w, ubar_west(j0:j1), obry=1 )
+        pio_gtype='w1v'
+        call set_frc_data( nc_vb_w, vbar_west( 1:j1), obry=1 )
 #  endif
 #  ifdef SOLVE3D
 #   ifdef M3_FRC_BRY
+        pio_gtype='w2u'
         call set_frc_data( nc_u_w, var2d=u_west(j0:j1,:), obry=1 )
+        pio_gtype='w2v'
         call set_frc_data( nc_v_w, var2d=v_west( 1:j1,:), obry=1 )
 #     ifdef NHMG
 !       call set_frc_data( nc_w_w, var2d=w_west(j0:j1,:), obry=1 )
@@ -254,24 +273,36 @@
 #     endif
 #   endif
 #   ifdef T_FRC_BRY
+        pio_gtype='w2r'
         do itrc=1,nt
           call set_frc_data( nc_t_w(itrc), var2d=t_west(j0:j1,:,itrc), obry=1 )
         enddo
 #   endif
 #  endif
       endif
+!#ifndef PARALLEL_IO
+!   endif
+!#endif
 
-      if (obc_east.and.inode.eq.npx-1) then
+      if (obc_east) then
+!#ifndef PARALLEL_IO
+!      if (inode==npx-1) then
+!#endif
 #  ifdef Z_FRC_BRY
+        pio_gtype='e1r'
         call set_frc_data( nc_z_e, zeta_east(j0:j1), obry=2 )
 #  endif
 #  ifdef M2_FRC_BRY
+        pio_gtype='e1u'
         call set_frc_data( nc_ub_e, ubar_east(j0:j1), obry=1 )
+        pio_gtype='e1v'
         call set_frc_data( nc_vb_e, vbar_east( 1:j1), obry=1 )
 #  endif
 #  ifdef SOLVE3D
 #   ifdef M3_FRC_BRY
+        pio_gtype='e2u'
         call set_frc_data( nc_u_e, var2d=u_east(j0:j1,:), obry=1 )
+        pio_gtype='e2v'
         call set_frc_data( nc_v_e, var2d=v_east( 1:j1,:), obry=1 )
 #     ifdef NHMG
 !       call set_frc_data( nc_w_e, var2d=w_east(j0:j1,:), obry=1 )
@@ -279,24 +310,36 @@
 #     endif
 #   endif
 #   ifdef T_FRC_BRY
+        pio_gtype='e2r'
         do itrc=1,NT
           call set_frc_data( nc_t_e(itrc), var2d=t_east(j0:j1,:,itrc), obry=1 )
         enddo
 #   endif
 #  endif
       endif
+!#ifndef PARALLEL_IO
+!   endif
+!#endif
 
-      if (obc_south.and.jnode.eq.0) then
+      if (obc_south) then
+!#ifndef PARALLEL_IO
+!      if (jnode==0) then
+!#endif
 #  ifdef Z_FRC_BRY
+        pio_gtype='s1r'
         call set_frc_data( nc_z_s, zeta_south(i0:i1), obry=2 )
 #  endif
 #  ifdef M2_FRC_BRY
+        pio_gtype='s1u'
         call set_frc_data( nc_ub_s, ubar_south( 1:i1), obry=1 )
+        pio_gtype='s1v'
         call set_frc_data( nc_vb_s, vbar_south(i0:i1), obry=1 )
 #  endif
 #  ifdef SOLVE3D
 #   ifdef M3_FRC_BRY
+        pio_gtype='s2u'
         call set_frc_data( nc_u_s, var2d=u_south( 1:i1,:), obry=1 )
+        pio_gtype='s2v'
         call set_frc_data( nc_v_s, var2d=v_south(i0:i1,:), obry=1 )
 #     ifdef NHMG
 !       call set_frc_data( nc_w_s, var2d=w_south(i0:i1,:), obry=1 )
@@ -304,24 +347,36 @@
 #     endif
 #   endif
 #   ifdef T_FRC_BRY
+        pio_gtype='s2r'
         do itrc=1,nt
           call set_frc_data( nc_t_s(itrc), var2d=t_south(i0:i1,:,itrc), obry=1 )
         enddo
 #   endif
 #  endif
       endif
+!#ifndef PARALLEL_IO
+!   endif
+!#endif
 
-      if (obc_north.and.jnode.eq.npy-1) then
+      if (obc_north) then
+!#ifndef PARALLEL_IO
+!      if (jnode==npy-1) then
+!#endif
 #  ifdef Z_FRC_BRY
+        pio_gtype='n1r'
         call set_frc_data( nc_z_n, zeta_north(i0:i1), obry=2 )
 #  endif
 #  ifdef M2_FRC_BRY
+        pio_gtype='n1u'
         call set_frc_data( nc_ub_n, ubar_north( 1:i1), obry=1 )
+        pio_gtype='n1v'
         call set_frc_data( nc_vb_n, vbar_north(i0:i1), obry=1 )
 #  endif
 #  ifdef SOLVE3D
 #   ifdef M3_FRC_BRY
+        pio_gtype='n2u'
         call set_frc_data( nc_u_n, var2d=u_north( 1:i1,:), obry=1 )
+        pio_gtype='n2v'
         call set_frc_data( nc_v_n, var2d=v_north(i0:i1,:), obry=1 )
 #     ifdef NHMG
 !       call set_frc_data( nc_w_n, var2d=w_north(i0:i1,:), obry=1 )
@@ -329,12 +384,17 @@
 #     endif
 #   endif
 #   ifdef T_FRC_BRY
+        pio_gtype='n2r'
         do itrc=1,NT
           call set_frc_data( nc_t_n(itrc), var2d=t_north(i0:i1,:,itrc), obry=1 )
         enddo
 #   endif
 #  endif
       endif
+!#ifndef PARALLEL_IO
+!   endif
+!#endif
+
       call error_log%abort_check()
       end subroutine set_bry_all  !]
 

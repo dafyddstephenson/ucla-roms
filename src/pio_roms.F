@@ -55,18 +55,30 @@
       integer, dimension(1) :: pio_dimLen_n1r
       integer, dimension(1) :: pio_dimLen_n1u
       integer, dimension(1) :: pio_dimLen_n1v
+      integer, dimension(2) :: pio_dimLen_n2r
+      integer, dimension(2) :: pio_dimLen_n2u
+      integer, dimension(2) :: pio_dimLen_n2v
 
       integer, dimension(1) :: pio_dimLen_s1r
       integer, dimension(1) :: pio_dimLen_s1u
       integer, dimension(1) :: pio_dimLen_s1v
+      integer, dimension(2) :: pio_dimLen_s2r
+      integer, dimension(2) :: pio_dimLen_s2u
+      integer, dimension(2) :: pio_dimLen_s2v
 
       integer, dimension(1) :: pio_dimLen_e1r
       integer, dimension(1) :: pio_dimLen_e1u
       integer, dimension(1) :: pio_dimLen_e1v
+      integer, dimension(2) :: pio_dimLen_e2r
+      integer, dimension(2) :: pio_dimLen_e2u
+      integer, dimension(2) :: pio_dimLen_e2v
 
       integer, dimension(1) :: pio_dimLen_w1r
       integer, dimension(1) :: pio_dimLen_w1u
       integer, dimension(1) :: pio_dimLen_w1v
+      integer, dimension(2) :: pio_dimLen_w2r
+      integer, dimension(2) :: pio_dimLen_w2u
+      integer, dimension(2) :: pio_dimLen_w2v
 
       integer, dimension(2) :: pio_dimLen_2Dr
       integer, dimension(2) :: pio_dimLen_2Du
@@ -75,32 +87,7 @@
       integer, dimension(3) :: pio_dimLen_3Dr
       integer, dimension(3) :: pio_dimLen_3Du
       integer, dimension(3) :: pio_dimLen_3Dv
-!
-!      integer, dimension(3) :: pio_dimLen_3D_r
-!      integer, dimension(3) :: pio_dimLen_3D_u
-!      integer, dimension(3) :: pio_dimLen_3D_v
-!
-!      integer, dimension(3) :: pio_dimLen_2Drt
-!      integer, dimension(3) :: pio_dimLen_2Dut
-!      integer, dimension(3) :: pio_dimLen_2Dvt
-!
-!      integer, dimension(4) :: pio_dimLen_3D_rt
-!      integer, dimension(4) :: pio_dimLen_3D_ut
-!      integer, dimension(4) :: pio_dimLen_3D_vt
-!
-!      integer, dimension(3) :: pio_dimLen_ns2r
-!      integer, dimension(3) :: pio_dimLen_ns2u
-!      integer, dimension(3) :: pio_dimLen_ns2v
-!      integer, dimension(2) :: pio_dimLen_ns1r
-!      integer, dimension(2) :: pio_dimLen_ns1u
-!      integer, dimension(2) :: pio_dimLen_ns1v
-!
-!      integer, dimension(3) :: pio_dimLen_ew2r
-!      integer, dimension(3) :: pio_dimLen_ew2u
-!      integer, dimension(3) :: pio_dimLen_ew2v
-!      integer, dimension(2) :: pio_dimLen_ew1r
-!      integer, dimension(2) :: pio_dimLen_ew1u
-!      integer, dimension(2) :: pio_dimLen_ew1v
+
 
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_n1r
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_n1r
@@ -111,6 +98,16 @@
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_n1v
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_n1v
 
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_n2r
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_n2r
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_n2u
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_n2u
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_n2v
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_n2v
+
+
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_s1r
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_s1r
 
@@ -119,6 +116,16 @@
 
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_s1v
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_s1v
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_s2r
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_s2r
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_s2u
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_s2u
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_s2v
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_s2v
+
 
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_e1r
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_e1r
@@ -129,6 +136,16 @@
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_e1v
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_e1v
 
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_e2r
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_e2r
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_e2u
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_e2u
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_e2v
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_e2v
+
+
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_w1r
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_w1r
 
@@ -137,6 +154,16 @@
 
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_w1v
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_w1v
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_w2r
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_w2r
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_w2u
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_w2u
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_w2v
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_w2v
+
 
       integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_2Dr
       integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_2Dr
@@ -251,8 +278,7 @@
 
         call PIO_setdebuglevel(6)
 
-!        allocate( pio_zero(0) )
-
+        ! NORTH
         pio_dimLen_n1r(1) = LLm+2
         pio_start_n1r(1) = pio_xi_rho_start_bry
         if (PIO_NORTHERN_EDGE) then
@@ -280,6 +306,46 @@
         endif
 
 
+        pio_dimLen_n2r(1) = LLm+2
+        pio_dimLen_n2r(2) = N
+        pio_start_n2r(1) = pio_xi_rho_start_bry
+        pio_start_n2r(2) = 1
+        if (PIO_NORTHERN_EDGE) then
+          pio_count_n2r(1) = pio_xi_rho
+          pio_count_n2r(2) = N
+        else
+          pio_count_n2r(1) = 0
+          pio_count_n2r(2) = 0
+        endif
+
+
+        pio_dimLen_n2u(1) = LLm+1
+        pio_dimLen_n2u(2) = N
+        pio_start_n2u(1) = pio_xi_u_start_bry
+        pio_start_n2u(2) = 1
+        if (PIO_NORTHERN_EDGE) then
+          pio_count_n2u(1) = pio_xi_u
+          pio_count_n2u(2) = N
+        else
+          pio_count_n2u(1) = 0
+          pio_count_n2u(2) = 0
+        endif
+
+
+        pio_dimLen_n2v(1) = LLm+2
+        pio_dimLen_n2v(2) = N
+        pio_start_n2v(1) = pio_xi_rho_start_bry
+        pio_start_n2v(2) = 1
+        if (PIO_NORTHERN_EDGE) then
+          pio_count_n2v(1) = pio_xi_rho
+          pio_count_n2v(2) = N
+        else
+          pio_count_n2v(1) = 0
+          pio_count_n2v(2) = 0
+        endif
+
+
+        ! SOUTH
         pio_dimLen_s1r(1) = LLm+2
         pio_start_s1r(1) = pio_xi_rho_start_bry
         if (PIO_SOUTHERN_EDGE) then
@@ -306,7 +372,46 @@
           pio_count_s1v(1) = 0
         endif
 
+        pio_dimLen_s2r(1) = LLm+2
+        pio_dimLen_s2r(2) = N
+        pio_start_s2r(1) = pio_xi_rho_start_bry
+        pio_start_s2r(2) = 1
+        if (PIO_SOUTHERN_EDGE) then
+          pio_count_s2r(1) = pio_xi_rho
+          pio_count_s2r(2) = N
+        else
+          pio_count_s2r(1) = 0
+          pio_count_s2r(2) = 0
+        endif
 
+
+        pio_dimLen_s2u(1) = LLm+1
+        pio_dimLen_s2u(2) = N
+        pio_start_s2u(1) = pio_xi_u_start_bry
+        pio_start_s2u(2) = 1
+        if (PIO_SOUTHERN_EDGE) then
+          pio_count_s2u(1) = pio_xi_u
+          pio_count_s2u(2) = N
+        else
+          pio_count_s2u(1) = 0
+          pio_count_s2u(2) = 0
+        endif
+
+
+        pio_dimLen_s2v(1) = LLm+2
+        pio_dimLen_s2v(2) = N
+        pio_start_s2v(1) = pio_xi_rho_start_bry
+        pio_start_s2v(2) = 1
+        if (PIO_SOUTHERN_EDGE) then
+          pio_count_s2v(1) = pio_xi_rho
+          pio_count_s2v(2) = N
+        else
+          pio_count_s2v(1) = 0
+          pio_count_s2v(2) = 0
+        endif
+
+
+        ! WEST
         pio_dimLen_w1r(1) = MMm+2
         pio_start_w1r(1) = pio_eta_rho_start_bry
         if (PIO_WESTERN_EDGE) then
@@ -334,6 +439,45 @@
         endif
 
 
+        pio_dimLen_w2r(1) = MMm+2
+        pio_dimLen_w2r(2) = N
+        pio_start_w2r(1) = pio_eta_rho_start_bry
+        pio_start_w2r(2) = 1
+        if (PIO_WESTERN_EDGE) then
+          pio_count_w2r(1) = pio_eta_rho
+          pio_count_w2r(2) = N
+        else
+          pio_count_w2r(1) = 0
+          pio_count_w2r(2) = 0
+        endif
+
+
+        pio_dimLen_w2u(1) = MMm+2
+        pio_dimLen_w2u(2) = N
+        pio_start_w2u(1) = pio_eta_rho_start_bry
+        pio_start_w2u(2) = 1
+        if (PIO_WESTERN_EDGE) then
+          pio_count_w2u(1) = pio_eta_rho
+          pio_count_w2u(2) = N
+        else
+          pio_count_w2u(1) = 0
+          pio_count_w2u(2) = 0
+        endif
+
+
+        pio_dimLen_w2v(1) = MMm+1
+        pio_dimLen_w2v(2) = N
+        pio_start_w2v(1) = pio_eta_v_start_bry
+        pio_start_w2v(2) = 1
+        if (PIO_WESTERN_EDGE) then
+          pio_count_w2v(1) = pio_eta_v
+          pio_count_w2v(2) = N
+        else
+          pio_count_w2v(1) = 0
+          pio_count_w2v(2) = 0
+        endif
+
+        ! EAST
         pio_dimLen_e1r(1) = MMm+2
         pio_start_e1r(1) = pio_eta_rho_start_bry
         if (PIO_EASTERN_EDGE) then
@@ -359,17 +503,45 @@
         else
           pio_count_e1v(1) = 0
         endif
-!
-!        pio_start_n1u(1) = pio_xi_u_start
-!
-!        pio_count_n1u(1) = pio_xi_u+pio_i0+pio_i1
-!
-!
-!        pio_dimLen_n1v(1) = LLm+2
-!
-!        pio_start_n1v(1) = pio_xi_rho_start
-!
-!        pio_count_n1v(1) = pio_xi_rho+pio_i0+pio_i1
+
+
+        pio_dimLen_e2r(1) = MMm+2
+        pio_dimLen_e2r(2) = N
+        pio_start_e2r(1) = pio_eta_rho_start_bry
+        pio_start_e2r(2) = 1
+        if (PIO_EASTERN_EDGE) then
+          pio_count_e2r(1) = pio_eta_rho
+          pio_count_e2r(2) = N
+        else
+          pio_count_e2r(1) = 0
+          pio_count_e2r(2) = 0
+        endif
+
+
+        pio_dimLen_e2u(1) = MMm+2
+        pio_dimLen_e2u(2) = N
+        pio_start_e2u(1) = pio_eta_rho_start_bry
+        pio_start_e2u(2) = 1
+        if (PIO_EASTERN_EDGE) then
+          pio_count_e2u(1) = pio_eta_rho
+          pio_count_e2u(2) = N
+        else
+          pio_count_e2u(1) = 0
+          pio_count_e2u(2) = 0
+        endif
+
+
+        pio_dimLen_e2v(1) = MMm+1
+        pio_dimLen_e2v(2) = N
+        pio_start_e2v(1) = pio_eta_v_start_bry
+        pio_start_e2v(2) = 1
+        if (PIO_EASTERN_EDGE) then
+          pio_count_e2v(1) = pio_eta_v
+          pio_count_e2v(2) = N
+        else
+          pio_count_e2v(1) = 0
+          pio_count_e2v(2) = 0
+        endif
 
 
         pio_dimLen_2Dr(1) = LLm+2
@@ -439,36 +611,6 @@
         pio_count_3Dv(1) = pio_xi_rho+pio_i0+pio_i1
         pio_count_3Dv(2) = pio_eta_v+pio_j0+pio_j1
         pio_count_3Dv(3) = N
-!
-!        pio_dimLen_ns2r(1)     = LLm+2
-!        pio_dimLen_ns2r(2)     = N
-!
-!        pio_dimLen_ns2u(1)     = LLm+1
-!        pio_dimLen_ns2u(2)     = N
-!
-!        pio_dimLen_ns2v(1)     = LLm+2
-!        pio_dimLen_ns2v(2)     = N
-!
-!        pio_dimLen_ns1r(1)     = LLm+2
-!
-!        pio_dimLen_ns1u(1)     = LLm+1
-!
-!        pio_dimLen_ns1v(1)     = LLm+2
-!
-!        pio_dimLen_ew2r(1)     = MMm+2
-!        pio_dimLen_ew2r(2)     = N
-!
-!        pio_dimLen_ew2u(1)     = MMm+2
-!        pio_dimLen_ew2u(2)     = N
-!
-!        pio_dimLen_ew2v(1)     = MMm+1
-!        pio_dimLen_ew2v(2)     = N
-!
-!        pio_dimLen_ew1r(1)     = MMm+2
-!
-!        pio_dimLen_ew1u(1)     = MMm+2
-!
-!        pio_dimLen_ew1v(1)     = MMm+2
 
 
         pio_niotasks = MAX(1, int(pio_ntasks / pio_stride))
@@ -484,13 +626,10 @@
 
       end subroutine pio_initialize
 ! ----------------------------------------------------------------------
-      subroutine pio_createDecomp !(dims)
+      subroutine pio_createDecomp
 
         implicit none
 
-!        integer, dimension(:)         :: dims
-
-!        if (size(dims) == 1) then
           if (pio_gtype=='n1r') then
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n1r, pio_start_n1r, pio_count_n1r,
      &       pio_desc)
@@ -501,7 +640,85 @@
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n1v, pio_start_n1v, pio_count_n1v,
      &       pio_desc)
           endif
-!        else if (size(dims) == 2) then
+
+          if (pio_gtype=='n2r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n2r, pio_start_n2r, pio_count_n2r,
+     &       pio_desc)
+          elseif (pio_gtype=='n2u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n2u, pio_start_n2u, pio_count_n2u,
+     &       pio_desc)
+          elseif (pio_gtype=='n2v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_n2v, pio_start_n2v, pio_count_n2v,
+     &       pio_desc)
+          endif
+
+          if (pio_gtype=='s1r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_s1r, pio_start_s1r, pio_count_s1r,
+     &       pio_desc)
+          elseif (pio_gtype=='s1u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_s1u, pio_start_s1u, pio_count_s1u,
+     &       pio_desc)
+          elseif (pio_gtype=='s1v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_s1v, pio_start_s1v, pio_count_s1v,
+     &       pio_desc)
+          endif
+
+          if (pio_gtype=='s2r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_s2r, pio_start_s2r, pio_count_s2r,
+     &       pio_desc)
+          elseif (pio_gtype=='s2u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_s2u, pio_start_s2u, pio_count_s2u,
+     &       pio_desc)
+          elseif (pio_gtype=='s2v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_s2v, pio_start_s2v, pio_count_s2v,
+     &       pio_desc)
+          endif
+
+          if (pio_gtype=='e1r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_e1r, pio_start_e1r, pio_count_e1r,
+     &       pio_desc)
+          elseif (pio_gtype=='e1u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_e1u, pio_start_e1u, pio_count_e1u,
+     &       pio_desc)
+          elseif (pio_gtype=='e1v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_e1v, pio_start_e1v, pio_count_e1v,
+     &       pio_desc)
+          endif
+
+          if (pio_gtype=='e2r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_e2r, pio_start_e2r, pio_count_e2r,
+     &       pio_desc)
+          elseif (pio_gtype=='e2u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_e2u, pio_start_e2u, pio_count_e2u,
+     &       pio_desc)
+          elseif (pio_gtype=='e2v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_e2v, pio_start_e2v, pio_count_e2v,
+     &       pio_desc)
+          endif
+
+          if (pio_gtype=='w1r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_w1r, pio_start_w1r, pio_count_w1r,
+     &       pio_desc)
+          elseif (pio_gtype=='w1u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_w1u, pio_start_w1u, pio_count_w1u,
+     &       pio_desc)
+          elseif (pio_gtype=='w1v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_w1v, pio_start_w1v, pio_count_w1v,
+     &       pio_desc)
+          endif
+
+          if (pio_gtype=='w2r') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_w2r, pio_start_w2r, pio_count_w2r,
+     &       pio_desc)
+          elseif (pio_gtype=='w2u') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_w2u, pio_start_w2u, pio_count_w2u,
+     &       pio_desc)
+          elseif (pio_gtype=='w2v') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_w2v, pio_start_w2v, pio_count_w2v,
+     &       pio_desc)
+          endif
+
+
           if (pio_gtype=='2Dr') then
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_2Dr, pio_start_2Dr, pio_count_2Dr,
      &       pio_desc)
@@ -512,7 +729,8 @@
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_2Dv, pio_start_2Dv, pio_count_2Dv,
      &       pio_desc)
           endif
-!        else if (size(dims) == 3) then
+
+
           if (pio_gtype=='3Dr') then
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_3Dr, pio_start_3Dr, pio_count_3Dr,
      &       pio_desc)
@@ -538,24 +756,21 @@
 
         type(var_desc_t) :: varId
         integer :: ierr
-!        integer,dimension(1) :: dims
-
-!        dims = shape(arr)
-!        call pio_get_gridtype(dims)
 
         ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
 
         ierr = PIO_inq_varid(pio_FileDesc, trim(varName), varId)
-
+        write(*,*) "HERE1", fname, varName, irec
         if (present(irec)) then
           frame = irec
           call PIO_setframe(pio_FileDesc, varId, frame)
         endif
         call pio_createDecomp !(dims)
-
+        write(*,*) "HERE3", varName
         call PIO_read_darray(pio_FileDesc, varId, pio_desc,
      &  arr, ierr)
 
+        write(*,*) "HERE4", varName
         call PIO_closefile(pio_FileDesc)
 
       end subroutine pio_ncread1
@@ -571,10 +786,6 @@
 
         type(var_desc_t) :: varId
         integer :: ierr
-!        integer,dimension(2) :: dims
-
-!        dims = shape(arr)
-!        call pio_get_gridtype(dims)
 
         ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
 
@@ -603,10 +814,6 @@
 
         type(var_desc_t) :: varId
         integer :: ierr
-!        integer,dimension(3) :: dims
-
-!        dims = shape(arr)
-!        call pio_get_gridtype(dims)
 
         ierr = PIO_openfile(pio_IoSystem, pio_FileDesc, pio_type, trim(fname))
 
@@ -624,42 +831,6 @@
         call PIO_closefile(pio_FileDesc)
 
       end subroutine pio_ncread3
-! ----------------------------------------------------------------------
-!      subroutine pio_get_gridtype(dims)
-!
-!        implicit none
-!
-!        integer,dimension(:) :: dims
-!        integer :: ierr
-!
-!        if (size(dims) == 1) then
-!          if (PIO_WESTERN_EDGE .and. PIO_NORTHERN_EDGE) then
-!            if (dims(1)==pio_count_n1r(1)) then
-!              gtype = 'nr'
-!            else if (dims(1)==pio_count_n1u(1)) then
-!              gtype = 'nu'
-!            endif
-!          else if (PIO_WESTERN_EDGE .and. PIO_NORTHERN_EDGE) then
-!          endif
-!        else
-!          if (PIO_WESTERN_EDGE .and. PIO_SOUTHERN_EDGE) then
-!            if (dims(1)==pio_count_2Dr(1)) then
-!              gtype(1:1) = 'r'
-!            else if (dims(1)==pio_count_2Du(1)) then
-!              gtype(1:1) = 'u'
-!            endif
-!
-!            if (dims(2)==pio_count_2Dr(2)) then
-!              gtype(2:2) = 'r'
-!            else if (dims(2)==pio_count_2Dv(2)) then
-!              gtype(2:2) = 'v'
-!            endif
-!          endif
-!        endif
-!
-!        call MPI_Bcast(gtype,2,mpi_character,0,ocean_grid_comm,ierr)
-!
-!      end subroutine pio_get_gridtype
 ! ----------------------------------------------------------------------
 !      subroutine pio_create_file(ftype, fname, nodate)
 !
