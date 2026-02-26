@@ -26,6 +26,8 @@
 
 #include "pio_roms.opt"
 
+      logical, parameter, public  :: use_pio = .true.
+
       !> @brief Rank of processor running the code.
       integer, public :: pio_myRank
       !> @brief Number of processors participating in MPI communicator.

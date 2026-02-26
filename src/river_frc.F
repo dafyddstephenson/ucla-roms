@@ -164,9 +164,9 @@
          if (ierr == nf90_noerr) then ! Found the variables in the forcing file
 !            call ncread(ncid, "river_index", ridx_real(i0:i1,j0:j1))
             pio_gtype = '2Dr'
-            call ncread(ncid,"river_index",ridx_real(x0:x1,y0:y1),fname=frcfile(nc_rvol%ifile),pio_read=use_pio)
+            call ncread(ncid,"river_index",ridx_real(x0:x1,y0:y1),fname=frcfile(nc_rvol%ifile))
 !            call ncread(ncid, "river_fraction", rfrc(i0:i1,j0:j1))
-            call ncread(ncid,"river_fraction",rfrc(x0:x1,y0:y1),fname=frcfile(nc_rvol%ifile),pio_read=use_pio)
+            call ncread(ncid,"river_fraction",rfrc(x0:x1,y0:y1),fname=frcfile(nc_rvol%ifile))
             ierr = nf90_close(ncid)
 
             ! Check if any river indices are greater than the chosen
@@ -216,7 +216,7 @@
             else
 !               call ncread(ncid, riv_flx_name, rflx(i0:i1,j0:j1))
                pio_gtype='2Dr'
-               call ncread(ncid,riv_flx_name,rflx(x0:x1,y0:y1),fname=grdname,pio_read=use_pio)
+               call ncread(ncid,riv_flx_name,rflx(x0:x1,y0:y1),fname=grdname)
                ierr = nf90_close(ncid)
                where (rflx(i0:i1, j0:j1) > 0)
                   ridx(i0:i1, j0:j1) = floor(rflx(i0:i1, j0:j1) - 1e-5)

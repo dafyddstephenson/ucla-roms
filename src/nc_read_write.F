@@ -34,7 +34,7 @@
       contains
 
 !----------------------------------------------------------------------
-      subroutine ncread_1D(ncid,vname,dat,start,fname,pio_read)  ![
+      subroutine ncread_1D(ncid,vname,dat,start,fname)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_1D"
       ! input
@@ -44,7 +44,6 @@
 
       integer,dimension(:),optional :: start
       character(len=*),optional     :: fname
-      logical,optional :: pio_read
 
       ! local
       integer              :: varid,ierr
@@ -53,14 +52,13 @@
       integer,dimension(2) :: count
 
 #ifdef PARALLEL_IO
-      if ((present(pio_read)) .and. (pio_read)) then
-        if (present(start)) then
-          irec = start(2)
-           call pio_ncread1(fname, vname, dat, irec)
-        else
-           call pio_ncread1(fname, vname, dat)
-        endif
+      if (present(start)) then
+        irec = start(2)
+        call pio_ncread1(fname, vname, dat, irec)
       else
+        call pio_ncread1(fname, vname, dat)
+      endif
+      return
 #endif
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)
@@ -81,51 +79,10 @@
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
-#ifdef PARALLEL_IO
-      endif
-#endif
 
       end subroutine ncread_1D  !]
-
-!      subroutine ncread_1D(ncid,vname,dat,start)  ![
-!      implicit none
-!
-!      character(len=9) :: sr_name = "ncread_1D"
-!      ! input
-!      integer           :: ncid
-!      character(len=*)  :: vname
-!      real,dimension(:) :: dat
-!
-!      integer,dimension(:),optional :: start
-!
-!      ! local
-!      integer              :: varid,ierr
-!      integer,dimension(1) :: dims
-!      integer,dimension(2) :: count
-!
-!      dims = shape(dat)
-!      ierr = nf90_inq_varid(ncid,vname,varid)
-!      if (ierr/=0) then
-!         call error_log%check_netcdf_status(netcdf_status=ierr,
-!     &        context=module_name//'/'//sr_name,
-!     &        info="ncread inq_varid var="//trim(vname))
-!      end if
-!
-!      if (present(start)) then
-!        count = (/dims, 1/)
-!        ierr = nf90_get_var(ncid,varid,dat,start,count)
-!      else
-!        ierr = nf90_get_var(ncid,varid,dat)
-!      endif
-!      if (ierr/=0) then
-!         call error_log%check_netcdf_status(netcdf_status=ierr,
-!     &        context=module_name//'/'//sr_name,
-!     &        info="ncread read var="//trim(vname))
-!      end if
-!
-!      end subroutine ncread_1D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_2D(ncid,vname,dat,start,fname,pio_read)  ![
+      subroutine ncread_2D(ncid,vname,dat,start,fname)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_2D"
       ! input
@@ -135,7 +92,6 @@
 
       integer,dimension(:),optional :: start
       character(len=*),optional     :: fname
-      logical,optional :: pio_read
 
       ! local
       integer              :: varid,ierr
@@ -144,14 +100,13 @@
       integer,dimension(3) :: count
 
 #ifdef PARALLEL_IO
-      if ((present(pio_read)) .and. (pio_read)) then
-        if (present(start)) then
-          irec = start(3)
-           call pio_ncread2(fname, vname, dat, irec)
-        else
-           call pio_ncread2(fname, vname, dat)
-        endif
+      if (present(start)) then
+        irec = start(3)
+        call pio_ncread2(fname, vname, dat, irec)
       else
+        call pio_ncread2(fname, vname, dat)
+      endif
+      return
 #endif
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)
@@ -172,13 +127,10 @@
      &        context=module_name//'/'//sr_name,
      &        info="ncread read var="//trim(vname))
       end if
-#ifdef PARALLEL_IO
-      endif
-#endif
 
       end subroutine ncread_2D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_3D(ncid,vname,dat,start,fname,pio_read)  ![
+      subroutine ncread_3D(ncid,vname,dat,start,fname)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_3D"
 
@@ -190,7 +142,6 @@
 
       integer,dimension(:),optional :: start
       character(len=*),optional     :: fname
-      logical,optional :: pio_read
       ! local
       integer              :: varid,ierr
       integer              :: irec
@@ -199,14 +150,13 @@
       real,dimension(:,:,:),allocatable :: tmp
 
 #ifdef PARALLEL_IO
-      if ((present(pio_read)) .and. (pio_read)) then
-        if (present(start)) then
-          irec = start(4)
-           call pio_ncread3(fname, vname, dat, irec)
-        else
-           call pio_ncread3(fname, vname, dat)
-        endif
+      if (present(start)) then
+        irec = start(4)
+        call pio_ncread3(fname, vname, dat, irec)
       else
+        call pio_ncread3(fname, vname, dat)
+      endif
+      return
 #endif
       dims = shape(dat)
       allocate(tmp(dims(1),dims(2),dims(3)))
@@ -235,10 +185,6 @@
 
       dat = tmp
       deallocate(tmp)
-
-#ifdef PARALLEL_IO
-      endif
-#endif
 
       end subroutine ncread_3D  !]
 !----------------------------------------------------------------------
