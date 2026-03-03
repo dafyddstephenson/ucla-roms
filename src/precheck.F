@@ -31,25 +31,31 @@
 !---------------------------------------------------
       subroutine extract_data_precheck
 
+!#include "ocean_vars.opt"
+!      use extract_data, only: do_extract, extract_period, nrpf_extract
+
       implicit none
+
+!#include "ocean_vars.opt"
+!#include "extract_data.opt"
 
       character(len=21) :: sr_name = "extract_data_precheck"
       character(len=1024) :: error_info
       real :: extract_newfile_freq
 
       if (wrt_file_rst .and. do_extract) then !1
-      extract_newfile_freq = extract_nrpf * extract_period
+        extract_newfile_freq = nrpf_extract * extract_period
 
-      if (mod(output_period_rst,extract_newfile_freq) /= 0) then
-       write(error_info,*) "Extract data frequency = ", extract_newfile_freq,
-     & ". Restart freuency = ", output_period_rst, ". The frequency of ",
-     & "writing the extract_data file must evenly divide the restart ",
+        if (mod(output_period_rst,extract_newfile_freq) /= 0) then
+          write(error_info,*) "Extract data frequency = ", extract_newfile_freq,
+     & ". Restart freuency = ", output_period_rst, ". The frequency of",
+     & " writing the extract_data file must evenly divide the restart ",
      & "frequency (this prevents writing partial extract_data files)."
-        call error_log%raise_from_rank(
-     &   context=module_name//"/"//sr_name,
-     &   info=error_info)
-        call error_log%abort_check()
-      endif
+          call error_log%raise_from_rank(
+     &      context=module_name//"/"//sr_name,
+     &      info=error_info)
+          call error_log%abort_check()
+        endif
 
       endif !1
 
