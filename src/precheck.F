@@ -4,8 +4,6 @@
 
 #include "cppdefs.opt"
 
-!      use ocean_vars, only: wrt_file_rst, output_period_rst
-!      use extract_data, only: do_extract, extract_period, extract_nrpf
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_double
 
@@ -31,19 +29,13 @@
 !---------------------------------------------------
       subroutine extract_data_precheck
 
-!#include "ocean_vars.opt"
-!      use extract_data, only: do_extract, extract_period, nrpf_extract
-
       implicit none
-
-!#include "ocean_vars.opt"
-!#include "extract_data.opt"
 
       character(len=21) :: sr_name = "extract_data_precheck"
       character(len=1024) :: error_info
       real :: extract_newfile_freq
 
-      if (wrt_file_rst .and. do_extract) then !1
+      if (wrt_file_rst .and. do_extract) then
         extract_newfile_freq = nrpf_extract * extract_period
 
         if (mod(output_period_rst,extract_newfile_freq) /= 0) then
@@ -57,7 +49,7 @@
           call error_log%abort_check()
         endif
 
-      endif !1
+      endif
 
       end subroutine extract_data_precheck
 !---------------------------------------------------
