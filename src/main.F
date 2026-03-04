@@ -289,6 +289,7 @@ C$OMP BARRIER
 CR      write(*,*)  ' -3' MYID
 
       call omega
+
       call rho_eos(nrhs)
 
 CR      write(*,*)  ' -2' MYID
@@ -383,7 +384,9 @@ CR      write(*,*)  ' -2' MYID
       ! use time at n for surface forcing values
 
       tdays = (time-0.5*dt)*sec2day
+
       call set_forces
+
       ! use time at n+1/2 for boundary values
       ! we use these values at the end of pre_step, and during step2d
 
@@ -410,6 +413,7 @@ CR      write(*,*)  ' -2' MYID
 
       ! nrhs points to u/v at time level n
       call prsgrd
+
       call pre_step3d(0)  ! u is m/s here
 
       !! nnew ==n+1/2
@@ -426,6 +430,7 @@ CR      write(*,*)  ' -2' MYID
       !! nnew = n+1
       !! nrhs = n+1/2
       call omega
+
       call rho_eos(nrhs)  !!! use the right time index
 
       tdays = (time-0.0*dt)*sec2day
@@ -441,6 +446,7 @@ CR      write(*,*)  ' -2' MYID
       ! All of this seems to happen with Hz's from time n
       ! Corrector step
       call prsgrd
+
       call step3d_uv1(0)  ! update u/v(nnew) with dt*ru/rv
 
 #  ifdef UV_VIS2
@@ -465,7 +471,9 @@ CR      write(*,*)  ' -2' MYID
       call step3d_uv2(0)
 
       call omega
+
       call step3d_t(0)
+!GOOD
 # if defined TS_DIF2 || defined TS_DIF4
       call t3dmix
 # endif

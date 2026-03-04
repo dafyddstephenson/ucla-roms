@@ -1128,7 +1128,7 @@
       ierr = nf90_close(ncid)
 
 !!! SKIP = USE_PIO ??
-      call exchange_xxx(nc%vdata(:,:,it))
+      call exchange_xxx(nc%vdata(:,:,it),skip=use_pio)
 
       if (mynode==0) then
         call display_read_time_to_log(vname,nc%times(it),irec )

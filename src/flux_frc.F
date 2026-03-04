@@ -18,7 +18,7 @@
       use param, only: lm, mm, isalt, itemp
       use grid, only: nz
       use error_handling_mod, only: error_log
-
+      use instant_output, only: wrt_instant
       implicit none
 
       private ! All variables private to module unless public specified

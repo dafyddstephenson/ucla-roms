@@ -480,6 +480,8 @@
 !      call exchange_xxx(pm)
 !      call exchange_xxx(pn)
 
+!      call wrt_instant(h,'h')
+!      call wrt_instant(pm,'pm')
 # ifdef SPHERICAL
       !call ncread(ncid,'lon_rho',lonr(i0:i1,j0:j1),start)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
       !call ncread(ncid,'lat_rho',latr(i0:i1,j0:j1),start)

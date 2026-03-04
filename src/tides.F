@@ -41,18 +41,18 @@
       allocate(ftide(ntides))
 
       if (bry_tides) then
-        allocate(ztide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(ztide_i(GLOBAL_2D_ARRAY,ntides))
-        allocate(utide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(utide_i(GLOBAL_2D_ARRAY,ntides))
-        allocate(vtide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(vtide_i(GLOBAL_2D_ARRAY,ntides))
+        allocate(ztide_r(GLOBAL_2D_ARRAY,ntides)); ztide_r = 0
+        allocate(ztide_i(GLOBAL_2D_ARRAY,ntides)); ztide_i = 0
+        allocate(utide_r(GLOBAL_2D_ARRAY,ntides)); utide_r = 0
+        allocate(utide_i(GLOBAL_2D_ARRAY,ntides)); utide_i = 0
+        allocate(vtide_r(GLOBAL_2D_ARRAY,ntides)); vtide_r = 0
+        allocate(vtide_i(GLOBAL_2D_ARRAY,ntides)); vtide_i = 0
       endif
 
       if (pot_tides) then
-        allocate(ptide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(ptide_i(GLOBAL_2D_ARRAY,ntides))
-        allocate(ptide(GLOBAL_2D_ARRAY))
+        allocate(ptide_r(GLOBAL_2D_ARRAY,ntides)); ptide_r = 0
+        allocate(ptide_i(GLOBAL_2D_ARRAY,ntides)); ptide_i = 0
+        allocate(ptide(GLOBAL_2D_ARRAY)); ptide = 0
       endif
 
       if (pot_tides.or.bry_tides) then
@@ -362,12 +362,12 @@
       endif
 
       if (bry_tides) then
-        call exchange_xxx(ztide_r,ztide_i)
-        call exchange_xxx(utide_r,utide_i)
-        call exchange_xxx(vtide_r,vtide_i)
+        call exchange_xxx(ztide_r,ztide_i,skip=use_pio)
+        call exchange_xxx(utide_r,utide_i,skip=use_pio)
+        call exchange_xxx(vtide_r,vtide_i,skip=use_pio)
       endif
       if (pot_tides) then
-        call exchange_xxx(ptide_r,ptide_i)
+        call exchange_xxx(ptide_r,ptide_i,skip=use_pio)
       endif
 
       if(mynode==0) write(*,'(7x,A)')'tides :: read all tides'

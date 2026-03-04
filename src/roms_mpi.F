@@ -89,29 +89,37 @@
       character(len=128) :: fname
       integer :: offx,offy
       character(len=9) :: sr_name = "mpi_setup"
+      character(len=256) :: grdname_tile
+      integer :: lstr, lenstr
+
+      grdname_tile = trim(grdname)
+#ifdef PARALLEL_IO
+      lstr = lenstr(grdname_tile)
+      call insert_node(grdname_tile, lstr, mynode, nsize)
+#endif
 
       if (analytical_grid) then
         nnodes = np_xi*np_eta
         new_part = .false.
       else
         ! Check in gridfile to check if mpi masking is present
-        ierr=nf90_open(grdname,nf90_nowrite,ncid)
+        ierr=nf90_open(grdname_tile,nf90_nowrite,ncid)
 !        if (ierr/=nf90_noerr) call handle_ierr(ierr)
         call error_log%check_netcdf_status(
      &         netcdf_status=ierr,
      &         context=module_name//"/"//sr_name,
-     &         info=("error opening "//grdname))
+     &         info=("error opening "//grdname_tile))
         ierr=nf90_get_att(ncid,nf90_global,"neighbors",neighbors)
         ! new style partitioning has the neighbors global attribute
         if (ierr.eq.nf90_noerr) then
-          if (mynode.eq.0) print * ,'neighbors att found',grdname
+          if (mynode.eq.0) print * ,'neighbors att found',grdname_tile
           new_part = .true.
           ierr=nf90_get_att(ncid,nf90_global,"partition",partition)
           nnodes=partition(2)
           ierr=nf90_get_att(ncid,nf90_global,"neighbors",neighbors)
           ierr=nf90_get_att(ncid,nf90_global,"subdompos",subdompos)
         else
-          if (mynode.eq.0) print * ,'neighbors att not found',grdname
+          if (mynode.eq.0) print * ,'neighbors att not found',grdname_tile
           new_part = .false.
           nnodes = np_xi*np_eta
         endif
@@ -988,57 +996,72 @@
       if (p_w>=0) then
         A(1-hl:0,jl0:jl1,:) = reshape(recvW(szW+1:szW+szEW),shEW)
         szW = szW+szEW
+#ifndef PARALLEL_IO
       elseif (inode>0) then
         A(1-hl:0,jl0:jl1,:) = A(1:hl,jl0:jl1,:)
+#endif
       endif
-
       if (p_e>=0) then
         A(nxl+1:nxl+hl,jl0:jl1,:) = reshape(recvE(szE+1:szE+szEW),shEW)
         szE = szE+szEW
+#ifndef PARALLEL_IO
       elseif (inode<npx-1) then
         A(nxl+1:nxl+hl,jl0:jl1,:) =  A(nxl+1-hl:nxl,jl0:jl1,:)
+#endif
       endif
 
       if (p_s>=0) then
         A(il0:il1,1-hl:0,:) = reshape(recvS(szS+1:szS+szNS),shNS)
         szS = szS+szNS
+#ifndef PARALLEL_IO
       elseif (jnode>0) then
         A(il0:il1,1-hl:0,:) = A(il0:il1,1:hl,:)
+#endif
       endif
 
       if (p_n>=0) then
         A(il0:il1,nyl+1:nyl+hl,:) = reshape(recvN(szN+1:szN+szNS),shNS)
         szN = szN+szNS
+#ifndef PARALLEL_IO
       elseif (jnode<npy-1) then
         A(il0:il1,nyl+1:nyl+hl,:) = A(il0:il1,nyl+1-hl:nyl,:)
+#endif
       endif
 
       if (p_sw>=0.and.do_corners) then
         A(1-hl:0,1-hl:0,:) = reshape(recvSW(szSW+1:szSW+szCr),shCr)
         szSW = szSW+szCr
+#ifndef PARALLEL_IO
       elseif (inode>0.and.jnode>0) then
         A(1-hl:0,1-hl:0,:) = A(1:hl,1:hl,:)
+#endif
       endif
 
       if (p_se>=0.and.do_corners) then
         A(nxl+1:nxl+hl,1-hl:0,:) = reshape(recvSE(szSE+1:szSE+szCr),shCr)
         szSE = szSE+szCr
+#ifndef PARALLEL_IO
       elseif (inode<npx-1.and.jnode>0) then
         A(nxl+1:nxl+hl,1-hl:0,:) = A(nxl+1-hl:nxl,1:hl,:)
+#endif
       endif
 
       if (p_nw>=0.and.do_corners) then
         A(1-hl:0,nyl+1:nyl+hl,:) = reshape(recvNW(szNW+1:szNW+szCr),shCr)
         szNW = szNW+szCr
+#ifndef PARALLEL_IO
       elseif (inode>0.and.jnode<npy-1) then
         A(1-hl:0,nyl+1:nyl+hl,:) = A(1:hl,nyl+1-hl:nyl,:)
+#endif
       endif
 
       if (p_ne>=0.and.do_corners) then
         A(nxl+1:nxl+hl,nyl+1:nyl+hl,:) = reshape(recvNE(szNE+1:szNE+szCr),shCr)
         szNE = szNE+szCr
+#ifndef PARALLEL_IO
       elseif (inode<npx-1.and.jnode<npy-1) then
         A(nxl+1:nxl+hl,nyl+1:nyl+hl,:) = A(nxl+1-hl:nxl,nyl+1-hl:nyl,:)
+#endif
       endif
 
       end subroutine unpack_buffers !]

@@ -153,6 +153,8 @@
       call exchange_xxx(z_w,z_r,Hz)
 # endif
 
+!            call wrt_instant(z_r, 'zr')
+
 #if defined NHMG || defined NONTRAD_COR
 !     Compute slopes
       do k = 1, N
@@ -278,16 +280,17 @@
       enddo
 
 !      call wrt_instant(Hz, 'Hz')
-!      call wrt_instant(u(:,:,:,nrhs), 'u')
-!
+
 !      call wrt_instant(FlxU, 'FlxU')
 !      call wrt_instant(FlxV, 'FlxV')
 
 # ifdef EXCHANGE
       call exchange_xxx(FlxU,FlxV)
 # endif
+!      call wrt_instant(Hz, 'Hz')
 
-
+!      call wrt_instant(FlxU, 'FlxU')
+!      call wrt_instant(FlxV, 'FlxV')
       end
 
 
@@ -318,7 +321,7 @@
 #ifdef WEC
       use wec_frc, only: ust2d, vst2d, ust, vst
 #endif
-
+      use instant_output, only: wrt_instant
       implicit none
       integer istr,iend,jstr,jend, i,j,k
       real, dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N) :: DC,FC
@@ -507,8 +510,12 @@
       call exchange_xxx(FlxU,FlxV,u(:,:,:,nnew),v(:,:,:,nnew))
 #  endif
 # endif
-      end
+!      call wrt_instant(FlxU, 'FlxU')
+!      call wrt_instant(FlxV, 'FlxV')
+!      call wrt_instant(u(:,:,:,nnew), 'u')
+!      call wrt_instant(v(:,:,:,nnew), 'v')
 
+      end
 
       subroutine check_set_HUV1_switches
 
