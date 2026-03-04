@@ -43,7 +43,7 @@
      & ". Restart freuency = ", output_period_rst, ". The frequency of",
      & " writing the extract_data file must evenly divide the restart ",
      & "frequency (this prevents writing partial extract_data files)."
-          call error_log%raise_from_rank(
+          call error_log%raise_global(
      &      context=module_name//"/"//sr_name,
      &      info=error_info)
           call error_log%abort_check()
