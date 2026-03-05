@@ -86,7 +86,7 @@
       real    :: t_avg_ovars=0
       integer :: navg_ovars = 0                             ! number of samples in average
       character(len=max_name_size),public :: fname_rst                 ! restart filename needed by diagnostics
-      integer,public           :: rec_rst=nrpf_rst          ! current file output record needed by diags
+      integer,public         :: rec_rst=2          ! current file output record needed by diags
       integer                :: month_at_prev_timestep
       logical                :: write_another_step = .false.
 
