@@ -9,13 +9,15 @@
 
       ! Modules needed:
       use tracers, only: t
-      use surf_flux, only: sustr, svstr, stflx, srflx, sss, sst, apply_surf_field_corr
-      use scalars, only: cp, rho0, day2sec, n, nrhs
+      use surf_flux, only: sustr, svstr, stflx, srflx, sss, sst,
+     &       apply_surf_field_corr, swflx
+      use scalars, only: cp, rho0, day2sec, n, nrhs, cmday2ms
       use roms_read_write, only: ncforce, flux_frc_opt, set_frc_data,
      &     store_string_att
       use dimensions, only: i0, i1, j0, j1
       use param, only: lm, mm, isalt, itemp
       use grid, only: nz
+      use error_handling_mod, only: error_log
 
       implicit none
 
@@ -72,11 +74,14 @@
       ! 1) set surface momentum flux
       call set_frc_data(nc_sustr,sustr,'u')
       call set_frc_data(nc_svstr,svstr,'v')
+      call error_log%abort_check()
       sustr = sustr/rho0
       svstr = svstr/rho0
 
       ! 2) set surface heat flux: stflx(itemp)
       call set_frc_data(nc_shflx,stflx(:,:,itemp),'r')
+      call error_log%abort_check()
+
       stflx(:,:,itemp) = stflx(:,:,itemp) /(rho0*Cp)
 #ifdef SEA_ICE_NOFLUX
       do j=j0,j1
@@ -91,42 +96,47 @@
       enddo
 #endif
 
+      ! Surface salinity flux
+      call set_frc_data(nc_swflux,stflx(:,:,isalt),'r')
+!     stflx(:,:,isalt) = stflx(:,:,isalt)*t(:,:,nz,nrhs,isalt)*cmday2ms
+      swflx = -stflx(:,:,isalt)*cmday2ms
+      stflx(:,:,isalt) = 0
+
       ! 2a) set bottom heat flux: stflx(itemp)
 !     call set_frc_data(nc_bhflx,btflx(i0:i1,j0:j1,itemp),'r')
 
       ! 3) set short-wave radiation flux
       call set_srflux
 
-#ifdef SALINITY
-      ! 4) set water flux: stflx(isalt)
-      call set_swflux
-#endif
+!#ifdef SALINITY
+!      ! 4) set water flux: stflx(isalt)
+!      call set_swflux
+!#endif
 
       ! 5) Apply sst and sss corrections, if desired
       call apply_surf_field_corr
 
       end subroutine set_flux_frc  !]
 ! ----------------------------------------------------------------------
-      subroutine set_swflux  ![
-      ! set surface freshwater flux: stflx(isalt)
-
-      implicit none
-
-      ! local
-      integer i,j
-      real cmday2ms
-
-      call set_frc_data(nc_swflux,stflx(:,:,isalt),'r')
-
-      cmday2ms=0.01/day2sec ! Set coefficient outside of loop for efficiency
-      do j=j0,j1
-        do i=i0,i1
-          ! cm/day -> m/s
-          stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N,nrhs,isalt)*cmday2ms
-        enddo
-      enddo
-
-      end subroutine set_swflux  !]
+!      subroutine set_swflux  ![
+!      ! set surface freshwater flux: stflx(isalt)
+!
+!      implicit none
+!
+!      ! local
+!      integer i,j
+!
+!      call set_frc_data(nc_swflux,stflx(:,:,isalt),'r')
+!
+!      do j=j0,j1
+!        do i=i0,i1
+           ! cm/day -> m/s
+!          stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N,nrhs,isalt)*cmday2ms
+!           stflx(:,:,isalt) = 0
+!        enddo
+!      enddo
+!
+!      end subroutine set_swflux  !]
 ! ----------------------------------------------------------------------
       subroutine set_srflux  ![
       ! set short-wave radiation flux
@@ -142,6 +152,7 @@
 # endif
 
       call set_frc_data(nc_swrad,srflx,'r')
+      call error_log%abort_check()
       srflx = srflx/(rho0*Cp)
 
 # ifdef DIURNAL_SRFLUX

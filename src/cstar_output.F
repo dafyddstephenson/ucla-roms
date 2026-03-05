@@ -13,17 +13,17 @@
      &     vname_marbl_ss_3d
       use bgc_shared_vars, only:
      &     t, bgc_diag_2d, mynode, lm, mm,
-     &     nr_bgc_diag_2d, vname_bgc_diag_2d, t_lname
+     &     nr_bgc_diag_2d, vname_bgc_diag_2d, t_lname, idx_bgc_diag_2d
       use dimensions, only: i0, i1, j0, j1, nx, ny, nz, eta_rho, xi_rho
       use roms_read_write, only:
-     &     dn_tm, dn_xr, dn_yr, dn_zr, create_file
+     &     dn_tm, dn_xr, dn_yr, dn_zr, create_file, sec2date
       use nc_read_write, only: nccreate, ncwrite
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_double, nf90_open,
      &     nf90_put_att, nf90_close
       use scalars, only: iic, knew, nnew, tdays, time, dt, n
       use ocean_vars, only: zeta, hz
-      use error_handling, only : handle_configuration_error, handle_netcdf_error
+      use error_handling_mod, only: error_log
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
      &                   cdr_jloc, cdr_source, forcing_3d
@@ -42,7 +42,7 @@
       real :: avg_begin_time, avg_end_time
 
       integer :: navg = 0
-      integer :: iPH, iPH_alt, iFG, iFG_alt
+      integer :: iPH, iPH_alt, iFG, iFG_alt, iFG_idiag, iFG_alt_idiag
       real,allocatable,dimension(:,:,:) :: hALK_tmp
       real,allocatable,dimension(:,:,:) :: hDIC_tmp
       real,allocatable,dimension(:,:,:) :: hALK_alt_tmp
@@ -226,7 +226,7 @@
 
       end subroutine define_cstar_output_variables
 
-      subroutine init_cstar ![
+      subroutine init_cstar     ![
 !     Allocate and initialize arrays.
       implicit none
       character(len=9) :: sr_name = "init_cstar"
@@ -243,7 +243,7 @@
       endif
 
       if (monthly_averages .and. .not. do_avg) then
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info="`monthly_avg` is .true., but `do_avg` is .false.")
       endif
@@ -264,9 +264,11 @@
          itot=itot+1
          if (vname_bgc_diag_2d(1,idx)=='FG_CO2') then
            iFG = itot
+           iFG_idiag = idx_bgc_diag_2d(iFG)
          endif
          if (vname_bgc_diag_2d(1,idx)=='FG_ALT_CO2') then
            iFG_alt = itot
+           iFG_alt_idiag = idx_bgc_diag_2d(iFG_alt)
          endif
       enddo
 
@@ -386,33 +388,33 @@
 
       zeta__avg(:,:) = zeta__avg(:,:)*(1-coef) + zeta(:,:,knew)*coef
 
-      temp_avg(:,:,:) = temp_avg(:,:,:)*(1-coef) + t(:,:,:,knew,itemp)*coef
+      temp_avg(:,:,:) = temp_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,itemp)*coef
 
-      salt_avg(:,:,:) = salt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,isalt)*coef
+      salt_avg(:,:,:) = salt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,isalt)*coef
 
-      ALK_avg(:,:,:) = ALK_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK)*coef
+      ALK_avg(:,:,:) = ALK_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK)*coef
 
-      hALK_avg(:,:,:) = hALK_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK)*Hz(:,:,:)*coef
+      hALK_avg(:,:,:) = hALK_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK)*Hz(:,:,:)*coef
 
-      DIC_avg(:,:,:) = DIC_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC)*coef
+      DIC_avg(:,:,:) = DIC_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC)*coef
 
-      hDIC_avg(:,:,:) = hDIC_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC)*Hz(:,:,:)*coef
+      hDIC_avg(:,:,:) = hDIC_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC)*Hz(:,:,:)*coef
 
-      ALK_alt_avg(:,:,:) = ALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK_alt)*coef
+      ALK_alt_avg(:,:,:) = ALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK_alt)*coef
 
-      hALK_alt_avg(:,:,:) = hALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iALK_alt)*Hz(:,:,:)*coef
+      hALK_alt_avg(:,:,:) = hALK_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iALK_alt)*Hz(:,:,:)*coef
 
-      DIC_alt_avg(:,:,:) = DIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC_alt)*coef
+      DIC_alt_avg(:,:,:) = DIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC_alt)*coef
 
-      hDIC_alt_avg(:,:,:) = hDIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,knew,iDIC_alt)*Hz(:,:,:)*coef
+      hDIC_alt_avg(:,:,:) = hDIC_alt_avg(:,:,:)*(1-coef) + t(:,:,:,nnew,iDIC_alt)*Hz(:,:,:)*coef
 
       pH_avg(:,:,:) = pH_avg(:,:,:)*(1-coef) + marbl_saved_state_3d(:,:,:,iPH)*coef
 
       pH_alt_avg(:,:,:) = pH_alt_avg(:,:,:)*(1-coef) + marbl_saved_state_3d(:,:,:,iPH_alt)*coef
 
-      FG_CO2_avg(:,:) = FG_CO2_avg(:,:)*(1-coef) + bgc_diag_2d(:,:,iFG)*coef
+      FG_CO2_avg(:,:) = FG_CO2_avg(:,:)*(1-coef) + bgc_diag_2d(:,:,iFG_idiag)*coef
 
-      FG_ALT_CO2_avg(:,:) = FG_ALT_CO2_avg(:,:)*(1-coef) + bgc_diag_2d(:,:,iFG_alt)*coef
+      FG_ALT_CO2_avg(:,:) = FG_ALT_CO2_avg(:,:)*(1-coef) + bgc_diag_2d(:,:,iFG_alt_idiag)*coef
 
       if (cdr_source) then
         ALK_source_avg(:,:,:) = ALK_source_avg(:,:,:)*(1-coef) + ALK_source(:,:,:)*coef
@@ -553,11 +555,11 @@
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
-        if (ierr/=nf90_noerr) then
-           call handle_netcdf_error(netcdf_status=ierr,
-     &          info="error opening "//fname,
-     &          context=module_name//"/"//sr_name)
-        end if
+        call error_log%check_netcdf_status(netcdf_status=ierr,
+     &       info="error opening "//fname,
+     &       context=module_name//"/"//sr_name)
+        call error_log%abort_check()
+
         call multiply_by_thickness
         ! always add time
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
@@ -667,7 +669,7 @@
               write(stdout_str,'(2(A,2x),F6.1)')
      &             trim(stdout_str), 'output_period =', output_period
            end if
-           write(*, '(7x,A)'), trim(stdout_str)
+           write(*, '(7x,A)') trim(stdout_str)
            if (.not. do_avg) then
               write(*, '(/7x,A)') 'his fields to be saved: (T/F)'
            else
@@ -693,7 +695,7 @@
 
 #else /* MARBL && MARBL_DIAGS && CDR_FORCING */
 !----------------------------------------------------------------------
-      use error_handling, only : handle_configuration_error
+      use error_handling_mod, only : error_log
 
       implicit none
       character(len=12) :: module_name = "cstar_output"
@@ -712,21 +714,23 @@
       character(len=9) :: sr_name = "init_cstar"
 
 #ifndef MARBL
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info="cstar_output must have MARBL enabled.")
 #endif
 
 #ifndef MARBL_DIAGS
-         call handle_configuration_error(
+         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info="cstar_output must have MARBL_DIAGS enabled.")
 #endif
 
 #ifndef CDR_FORCING
-        error stop 'ERROR: cstar_output must have CDR_FORCING enabled.'
+        call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info='cstar_output must have CDR_FORCING enabled.')
 #endif
-
+        call error_log%abort_check()
       end subroutine init_cstar !]
 
       subroutine wrt_cstar ![
