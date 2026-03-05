@@ -26,7 +26,7 @@
      &     inode, jnode, eta_rho, eta_v, xi_rho, xi_u, grdname, nx, ny,
      &     gnx, gny, analytical_grid
       use mpi_f08, only: mpi_double_precision, mpi_status_size
-      use error_handling, only: handle_netcdf_error
+      use error_handling_mod, only: error_log
       use netcdf, only: nf90_nowrite, nf90_open, nf90_global, nf90_noerr,
      &   nf90_close, nf90_get_att
 
@@ -35,6 +35,7 @@
       private
 
       character(len=8) :: module_name = "roms_mpi"
+      character(len=1024) :: error_info = ''
       integer,public :: p_W, p_SW, p_S, p_SE, p_E, p_NE, p_N,p_NW
 
       real,dimension(:),allocatable :: sendW,sendE
@@ -71,7 +72,7 @@
       contains
 
 !--------------------------------------------------------
-      subroutine mpi_setup(ierr)  ![
+      subroutine mpi_setup()  ![
       implicit none
       integer :: ierr,ncid
       integer,dimension(8) :: neighbors
@@ -87,8 +88,7 @@
       else
         ! Check in gridfile to check if mpi masking is present
         ierr=nf90_open(grdname,nf90_nowrite,ncid)
-!        if (ierr/=nf90_noerr) call handle_ierr(ierr)
-        if (ierr/=nf90_noerr) call handle_netcdf_error(
+        call error_log%check_netcdf_status(
      &         netcdf_status=ierr,
      &         context=module_name//"/"//sr_name,
      &         info=("error opening "//grdname))
@@ -113,12 +113,15 @@
       ! matches the mpirun or mpiexec argument
 
       ! Also check npx,npy somewhere
-
-      if (nsize/=nnodes) then
-        if (mynode.eq.0) write(*,'(/1x,A,I4,1x,A,I3,A/)')
+      write(error_info,*)
      &   '### ERROR: mpi_setup: number of MPI-nodes should be',
      &               nnodes, 'instead of ', nsize, '.'
-        ierr=99
+
+      if (nsize/=nnodes) then
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
+
         return
       endif
 

@@ -32,9 +32,9 @@ C$    ierr=0
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
 
       ierr=0
-      call read_inp (ierr)
+      call read_inp
 
-      if (ierr==0) call mpi_setup(ierr)
+      call mpi_setup()
 
       tstart=MPI_Wtime()
 

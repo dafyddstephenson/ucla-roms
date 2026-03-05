@@ -51,7 +51,7 @@
      &     nf90_write, nf90_open, nf90_close,
      &     nf90_put_att, nf90_enddef
       use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
-      use dimensions, only: i0, i1, j0, j1
+      use dimensions, only: i0, i1, j0, j1, xi_rho, eta_rho
       use error_handling_mod, only: error_log
       implicit none
 
