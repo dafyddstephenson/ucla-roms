@@ -13,6 +13,7 @@
      &     frctype, store_string_att
       use dimensions, only: i0, i1, j0, j1, nz, inode, jnode, npx, npy
       use error_handling_mod, only: error_log
+
       implicit none
 
       ! Set module to private and make vars explicitly public

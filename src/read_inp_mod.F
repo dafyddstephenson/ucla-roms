@@ -114,7 +114,7 @@
 
          implicit none
 
-         call check_tiling()
+!         call check_tiling()
          call check_switches1()
 #ifdef SOLVE3D
          call check_pre_step_switches()
@@ -888,7 +888,6 @@
 
 # if defined MPI && defined PARALLEL_FILES
       call insert_node(fname, lstr, mynode, nsize)
-
 # endif
       open(newunit=testunit, file=trim(fname), status='old',
      &     iostat=ios)

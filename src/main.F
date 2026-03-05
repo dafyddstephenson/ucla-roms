@@ -31,11 +31,9 @@ C$    ierr=0
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
 
-      ierr=0
       call read_inp
 
-      call mpi_setup()
-
+      call mpi_setup
       tstart=MPI_Wtime()
 
 # endif

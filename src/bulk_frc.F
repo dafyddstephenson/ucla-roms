@@ -6,8 +6,9 @@
       use roms_read_write, only:
      &     ncforce, bulk_frc_opt, frcfile,
      &     nc_check_units, set_frc_data, store_string_att
+      use dimensions, only: inode, jnode, npx, npy
       use error_handling_mod, only: error_log
-      use dimensions, only: npx, npy, inode, jnode
+
       implicit none
 
       private  ! make all variable private to this module unless public specified

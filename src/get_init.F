@@ -45,7 +45,8 @@
      &     nsub_e, nsub_x, nnodes, n, nt,
      &     np_xi, np_eta
       use roms_mpi, only: exchange_xxx
-      use error_handling_mod, only : error_log
+      use error_handling_mod, only: error_log
+
 #ifdef DIAGNOSTICS
       use diagnostics, only : diag_pflx, get_init_slow
 #endif

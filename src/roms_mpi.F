@@ -72,7 +72,7 @@
       contains
 
 !--------------------------------------------------------
-      subroutine mpi_setup()  ![
+      subroutine mpi_setup  ![
       implicit none
       integer :: ierr,ncid
       integer,dimension(8) :: neighbors
@@ -113,17 +113,16 @@
       ! matches the mpirun or mpiexec argument
 
       ! Also check npx,npy somewhere
-      write(error_info,*)
-     &   '### ERROR: mpi_setup: number of MPI-nodes should be',
-     &               nnodes, 'instead of ', nsize, '.'
 
       if (nsize/=nnodes) then
+         write(error_info,*)
+     &   'Number of MPI-nodes should be',
+     &        NNODES, 'instead of ', nsize, '.'
          call error_log%raise_global(
-     &        context=module_name//"/"//sr_name,
-     &        info=error_info)
-
-        return
+     &        info=error_info,
+     &        context=sr_name)
       endif
+      call error_log%abort_check()
 
 !     Determine position of subdomain in logical grid. inodes, jnodes
 !     will be needed to determine whether the subdomain is at a physical
@@ -167,10 +166,16 @@
       ny = ceiling(1.0*gny/npy)
 
         ! Check against original weird integer devision
-        if (nx.ne.(gnx+npx-1)/npx )
-     &       stop 'integer devision error in mpi_setup'
-        if (ny.ne.(gny+npy-1)/npy )
-     &       stop 'integer devision error in mpi_setup'
+      if (nx.ne.(gnx+npx-1)/npx ) then
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info='integer division error in mpi_setup')
+      end if
+      if (ny.ne.(gny+npy-1)/npy ) then
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info='integer division error in mpi_setup')
+      end if
 
 
         offx = npx*nx-gnx

@@ -20,10 +20,10 @@
       use dimensions, only:
      &     i0, i1, j0, j1, gnx, gny, nx, ny, nz, eta_rho, xi_rho, grdname
       use roms_read_write, only:
-     &     dn_xr, dn_yr,
-     &     dn_tm, particle_opt, particle_opt, nrrec, create_file, store_string_att
-      use scalars, only:  init
+     &     dn_xr, dn_yr, dn_tm, particle_opt, nrrec, create_file, store_string_att
+      use scalars, only: init
       use roms_mpi, only: exchange_xxx
+
       implicit none
 !
 ! h         Model bottom topography (depth [m] at RHO-points.)

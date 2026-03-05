@@ -53,6 +53,7 @@
       use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
       use dimensions, only: i0, i1, j0, j1, xi_rho, eta_rho
       use error_handling_mod, only: error_log
+
       implicit none
 
       private ! Make all variable private to this module unless public specified

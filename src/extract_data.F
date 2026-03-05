@@ -65,8 +65,8 @@
      &     , indxs
 #endif
       use vertical_remapping, only: remap_src_to_grid
-      use error_handling_mod, only: error_log
       use roms_mpi, only: exchange_xxx
+      use error_handling_mod, only: error_log
 
       ! TODO: add averaging
 
