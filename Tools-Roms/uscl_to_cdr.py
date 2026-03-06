@@ -1,11 +1,46 @@
+#!/usr/bin/env python3
+"""
+Script to convert ROMS `uscl` files to CDR forcing profiles.
+Call with `-h` or `--help` for help.
+"""
+
 import argparse
 import numpy as np
 import xarray as xr
 from pathlib import Path
 
 class CDRUpscaler:
-    def __init__(self,files):
+    """
+    Class for transforming CDR-relevant boundary tracers to CDR forcing profiles.
+
+    Use
+    ---
+    1. Initialize with a list of _joined_ `_uscl` files, e.g.
+      `cu = CDRUpscaler(["roms_uscl.19920211170000.nc","roms_uscl.19920211180000.nc"])`
+    This will open an xarray multi-file dataset with these files.
+
+    2. A CDR forcing dataset based on the properties of these files can be initialized with
+    `cu.create_cdr_dataset()`
+
+    3. The CDR forcing dataset can then be populated based on the `uscl` data using
+    `cu.populate_cdr_dataset()`
+
+    4. The CDR forcing dataset can then be saved with
+    `cu.save()`
+    """
+
+    def __init__(self,files: list):
+        """
+        Generate a CDRUpscaler instance from a list of joined, time-evolving `_uscl` files.
+
+        Sets simulation- and domain-related attributes eta_rho, xi_rho, s_rho and time.
+        Determines how many boundary columns are present to be transformed into CDR profiles.
+        """
+
         self.files = files
+
+        self.validate()
+
         print(f"Opening {len(self.files)} `_uscl` files...")
         self.uscl_dataset = xr.open_mfdataset(
             self.files,
@@ -14,14 +49,14 @@ class CDRUpscaler:
             data_vars="minimal",
             coords="minimal"
         )
-        self.eta_rho = self.uscl_dataset.eta_rho
-        self.xi_rho = self.uscl_dataset.xi_rho
-        self.s_rho = self.uscl_dataset.s_rho
-        self.time = self.uscl_dataset.time
+        self.eta_rho: xr.DataArray = self.uscl_dataset.eta_rho
+        self.xi_rho: xr.DataArray = self.uscl_dataset.xi_rho
+        self.s_rho: xr.DataArray = self.uscl_dataset.s_rho
+        self.time: xr.DataArray = self.uscl_dataset.time
 
         # Determine active boundaries and add up all columns to get no. profiles
-        self.child_boundaries = {}
-        self.n_profiles = 0
+        self.child_boundaries: dict = {}
+        self.n_profiles: int = 0
         for bry in ["north","south","east","west"]:
             v = f"ALK_add_{bry}"
             if v in self.uscl_dataset.variables:
@@ -31,26 +66,61 @@ class CDRUpscaler:
         print(f"Found {self.n_profiles} boundary tracer profiles to convert to CDR forcing profiles")
 
         # Initialize CDR dataset
-        self.cdr_dataset = xr.Dataset()
+        self.cdr_dataset: xr.Dataset | None = None
+
+    def validate(self) -> None:
+        """
+        Run validation checks on input files
+        """
+
+        for i,f in enumerate(self.files):
+            ds = xr.open_dataset(f)
+            if i==0:
+                reference_sizes = {k:v for k,v in ds.sizes.items() if k!="time"}
+                continue
+            ds_sizes = {k:v for k,v in ds.sizes.items() if k!="time"}
+            if ds_sizes != reference_sizes:
+                raise ValueError("Dimensions of input files do not match. "+
+                                 "HINT: use ncjoin to join files before calling uscl_to_cdr")
+
 
     @property
     def filename_prefix(self) -> str:
+        """
+        Determine the common prefix of input `_uscl` files.
+
+        Used to create default output filename for CDRUpscaler.save()
+
+        Returns
+        -------
+        str: the common filename prefix of the CDRUpscaler inputs
+
+        Examples
+        --------
+        CDRUpscaler(["output/roms_run_uscl.20250102130000.nc",
+                     "output/roms_run_uscl.20250103130000.nc"
+                    ]).filename_prefix()
+        >> "output/roms_run"
+        """
+
         prefixes = [f.split("_uscl")[0] for f in self.files]
         if not all([prefix == prefixes[0] for prefix in prefixes]):
             raise ValueError("Filenames do not share a common prefix")
         return prefixes[0]
 
-    def create_cdr_dataset(self):
-        ds = self.cdr_dataset
+    def create_cdr_dataset(self) -> None:
+        """
+        Initialize the CDR forcing dataset based on boundary geometry.
 
-        ds["depth_profiles"] = xr.DataArray(
-            np.array(["T"], dtype="S1"),
-            dims=("one",),
-            attrs={
-                "long_name": "depth profiles (T) or Gaussian (F)",
-                "units": "nondim",
-            },
-        )
+        Updates the CDRUpscaler.cdr_dataset attribute.
+
+        Creates the following variables:
+        - cdr_trcflx_profile: Series of time-evolving tracer flux profiles flux(time,depth,profile no.)
+        - cdr_lon, cdr_lat: 1D arrays specifying where each tracer flux profile is located
+        - cdr_layer_thickness: Series of time-evolving layer heights used to remap the profiles onto the parent grid
+        """
+
+        ds = xr.Dataset()
 
         ds["cdr_trcflx_profile"] = xr.DataArray(
             np.zeros((len(self.time), len(self.s_rho), 2, self.n_profiles)),
@@ -99,10 +169,22 @@ class CDRUpscaler:
         self.cdr_dataset = ds
 
     def populate_cdr_dataset(self):
+        """
+        Populates the CDRUpscaler.cdr_forcing() xarray Dataset created by CDRUpscaler.create_cdr_dataset().
 
-        def boundaries_to_profiles(var_prefix):
+        Remaps the time-evolving tracer flux columns of each boundary in the `_uscl` dataset to a depth
+        profile in the CDR forcing dataset with a corresponding lat and lon.
+        """
+
+
+        def boundaries_to_profiles(var_prefix) -> np.ndarray:
             """Convert boundary columns to a sequence of profiles.
 
+            Concatenates all boundary columns into a single list along
+            the final axis (local lateral dimension).
+
+            Note
+            ----
             This formulation uses `.values` which triggers compute.
             See boundaries_to_profiles_xr for lazy implementation.
             """
@@ -114,10 +196,10 @@ class CDRUpscaler:
                 axis=-1
             )
 
-        def boundaries_to_profiles_xr(var_prefix):
+        def boundaries_to_profiles_xr(var_prefix) -> xr.DataArray:
             """boundaries_to_profiles using xarray/lazy concatenation.
 
-            Should be faster, but isn't. Huge bottleneck when saving."""
+            Should be faster, but isn't. Huge bottleneck during save()."""
 
             data_arrays=[]
             for bry in ["north","east","south","west"]:
@@ -141,15 +223,40 @@ class CDRUpscaler:
         self.cdr_dataset["cdr_layer_thickness"][:] = boundaries_to_profiles("h")
 
 
-    def save(self,filename: str | None = None):
+    def save(self,filename: str | None = None) -> None:
+        """
+        Save the CDRForcing dataset to a netCDF file to be used in ROMS.
+
+        Parameters
+        ----------
+        filename (str, optional): the filename of the saved netCDF file.
+            Defaults to `CDR_forcing_from_<prefix>` where prefix is the
+            shared prefix of the input file list found by
+            `CDRUpscaler.filename_prefix()`
+        """
+
+        if not self.cdr_dataset:
+            raise ValueError("No CDR forcing dataset to save. "+
+                             "Call CDRUpscaler.create_cdr_dataset() and "+
+                             "CDRUpscaler.populate_cdr_dataset() first")
+
         if not filename:
-            filename = f"cdr_release_profiles_from_{self.filename_prefix}.nc"
-        print(f"Saving output to {filename}")
-        self.cdr_dataset.to_netcdf(filename)
+            basename = Path(self.filename_prefix).name
+            parent = Path(self.filename_prefix).parent
+            filepath = parent/f"cdr_release_profiles_from_{basename}.nc"
+        else:
+            filepath=Path(filename)
+
+        print(f"Saving output to {filepath}")
+        self.cdr_dataset.to_netcdf(filepath)
         print("Done.")
 
 
 def init_argparse() -> "ArgumentParser":
+    """
+    Initialize the ArgumentParser instance associated with this script.
+    """
+
     description = """
     Utility for converting ROMS `<prefix>_uscl.<time>.nc` files to CDR forcing files.
 
@@ -168,6 +275,7 @@ def init_argparse() -> "ArgumentParser":
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("files", nargs="+", help="Input files")
+    parser.add_argument("-o","--output",help="Output filename")
 
     return parser
 
@@ -178,7 +286,4 @@ if __name__ == "__main__":
     cdr_upscaler = CDRUpscaler(sorted(args.files))
     cdr_upscaler.create_cdr_dataset()
     cdr_upscaler.populate_cdr_dataset()
-    cdr_upscaler.save()
-
-
-
+    cdr_upscaler.save(args.output)
