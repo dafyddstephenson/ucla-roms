@@ -2053,7 +2053,11 @@ C
         ncinfo%xtype(ivar) = xtype
 
         ! r,u,v, or s (skip)
-        ncinfo%vartype(ivar) = 'r'
+        if (xtype == nf90_string) then
+          ncinfo%vartype(ivar) = 's'
+        else
+          ncinfo%vartype(ivar) = 'r'
+        endif
 
         ! dimensions
         ncinfo%ndims(ivar) = ndims
