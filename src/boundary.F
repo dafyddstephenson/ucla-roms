@@ -247,9 +247,9 @@
       return
 #  endif
       if (obc_west) then
-!#ifndef PARALLEL_IO
-!      if (inode==0) then
-!#endif
+#ifndef PARALLEL_IO
+      if (inode==0) then
+#endif
 #  ifdef Z_FRC_BRY
         pio_gtype='w1r'
         call set_frc_data( nc_z_w, zeta_west(j0:j1), obry=2 )
@@ -280,14 +280,14 @@
 #   endif
 #  endif
       endif
-!#ifndef PARALLEL_IO
-!   endif
-!#endif
+#ifndef PARALLEL_IO
+      endif
+#endif
 
       if (obc_east) then
-!#ifndef PARALLEL_IO
-!      if (inode==npx-1) then
-!#endif
+#ifndef PARALLEL_IO
+      if (inode==npx-1) then
+#endif
 #  ifdef Z_FRC_BRY
         pio_gtype='e1r'
         call set_frc_data( nc_z_e, zeta_east(j0:j1), obry=2 )
@@ -317,14 +317,14 @@
 #   endif
 #  endif
       endif
-!#ifndef PARALLEL_IO
-!   endif
-!#endif
+#ifndef PARALLEL_IO
+      endif
+#endif
 
       if (obc_south) then
-!#ifndef PARALLEL_IO
-!      if (jnode==0) then
-!#endif
+#ifndef PARALLEL_IO
+      if (jnode==0) then
+#endif
 #  ifdef Z_FRC_BRY
         pio_gtype='s1r'
         call set_frc_data( nc_z_s, zeta_south(i0:i1), obry=2 )
@@ -354,14 +354,14 @@
 #   endif
 #  endif
       endif
-!#ifndef PARALLEL_IO
-!   endif
-!#endif
+#ifndef PARALLEL_IO
+      endif
+#endif
 
       if (obc_north) then
-!#ifndef PARALLEL_IO
-!      if (jnode==npy-1) then
-!#endif
+#ifndef PARALLEL_IO
+      if (jnode==npy-1) then
+#endif
 #  ifdef Z_FRC_BRY
         pio_gtype='n1r'
         call set_frc_data( nc_z_n, zeta_north(i0:i1), obry=2 )
@@ -391,9 +391,9 @@
 #   endif
 #  endif
       endif
-!#ifndef PARALLEL_IO
-!   endif
-!#endif
+#ifndef PARALLEL_IO
+      endif
+#endif
 
       call error_log%abort_check()
       end subroutine set_bry_all  !]
