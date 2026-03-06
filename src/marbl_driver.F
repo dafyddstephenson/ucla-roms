@@ -1274,7 +1274,6 @@
 !     ----------------------------------------------------------------------
       do j=jstr,jend
          do i=istr,iend
-            call error_log%abort_check()
             if (rmask(i,j)==0.) cycle
 
             call marbldrv_set_marbl_surface_flux_forcing_values(
@@ -1326,7 +1325,7 @@
 
          end do                 !j=jstr,jend
       end do                    ! i=istr,iend
-
+      call error_log%abort_check()
       end subroutine marbldrv_column_physics
 
       subroutine marbldrv_set_marbl_surface_flux_forcing_values(
