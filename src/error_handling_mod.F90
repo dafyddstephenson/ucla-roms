@@ -184,7 +184,6 @@ contains
     else
        used_level = LOG_LEVEL_ERROR
     end if
-
     call this%raise_internal( &
       scope   = SCOPE_GLOBAL, &
       level   = used_level, &
@@ -395,10 +394,8 @@ contains
     if (present(rank)) error_entry%rank = rank
     if (present(i))    error_entry%i = i
     if (present(j))    error_entry%j = j
-    if (present(k)) then
-       if ( k>-1 ) then
-          error_entry%k = k
-       end if
+    if (present(k) .and. k>-1) then
+       error_entry%k = k
     end if
 
     if (associated(this%tail)) then
@@ -632,7 +629,7 @@ contains
        ! #########################################
        select case (grouped_log_entries(i)%scope)
        case (SCOPE_RANK)
-          write(error_unit,'(A)', advance='no') 'RANKS: '
+          write(error_unit,'(A)', advance='no') 'THE ABOVE ERROR WAS RAISED FROM THE FOLLOWING RANKS: '
           do j = 1, n_locs
              write(error_unit,'(I0)', advance='no') grouped_log_entries(i)%id(j)%rank
              if (j < n_locs) write(error_unit,'(A)', advance='no') ', '
@@ -641,6 +638,7 @@ contains
 
        case (SCOPE_POINT)
           do j = 1, n_locs
+             write(error_unit,'(A)') 'THE ABOVE ERROR WAS RAISED FROM THE FOLLOWING POINTS: '
              write(error_unit,*) &
                   '  rank ', grouped_log_entries(i)%id(j)%rank, &
                   ' (i,j,k)=(', grouped_log_entries(i)%id(j)%i, ',', &
@@ -858,7 +856,7 @@ contains
     character(len=:), allocatable, intent(out) :: serialized_log_entry
     character(len=:), allocatable :: info_no_newlines
     ! Fixed-length temporary to hold the serialized log entry
-    character(len=1024) :: tmp
+    character(len=4096) :: tmp
 
     info_no_newlines = this%info
     info_no_newlines = replace_string(info_no_newlines, new_line('A'), '\n')
@@ -911,8 +909,8 @@ contains
     call extract_str(serialized_entry, 'C=', deserialized_entry%context)
     call extract_str(serialized_entry, 'M=', entry_info)
     ! Replace placeholder character with true newline in 'info'
-    entry_info = replace_string(entry_info, '\n', new_line('A'))
-    deserialized_entry%info = entry_info
+    entry_info = replace_string(entry_info, '\n', new_line('A')//"   ")
+    deserialized_entry%info = "  "//entry_info
 
   contains
 
