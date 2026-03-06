@@ -799,18 +799,12 @@
       if (kbak < 1) kbak=4
 # endif
 
-      ! There's an issue with WEC stokes drift
-      ! It's added to flxU,flxV, but not to ubar
-
       if (diag_pflx) then
 
         !! JM: maybe a problem because p_fast is 0:nx,0:ny
 !       p_fast => wrk_xy(:,:,1)
 !       u_fast => wrk_xy(:,:,2)
 !       v_fast => wrk_xy(:,:,3)
-
-        ! WEC terms can modify the match between
-        ! integrated flux and ubar,vbar
 
         Uflx =  sum(Flxu(1:nx+1,1:ny,:),dim=3)
         Vflx =  sum(Flxv(1:nx,1:ny+1,:),dim=3)
