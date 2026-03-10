@@ -82,7 +82,7 @@
 
       end subroutine ncread_1D  !]
 !----------------------------------------------------------------------
-      subroutine ncread_2D(ncid,vname,dat,start,fname)  ![
+      subroutine ncread_2D(ncid,vname,dat,start,fname,dont_use_pio)  ![
       implicit none
       character(len=9) :: sr_name = "ncread_2D"
       ! input
@@ -92,6 +92,7 @@
 
       integer,dimension(:),optional :: start
       character(len=*),optional     :: fname
+      logical,optional :: dont_use_pio
 
       ! local
       integer              :: varid,ierr
@@ -100,6 +101,7 @@
       integer,dimension(3) :: count
 
 #ifdef PARALLEL_IO
+      if (.not. present(dont_use_pio)) then
       if (present(start)) then
         irec = start(3)
         call pio_ncread2(fname, vname, dat, irec)
@@ -107,6 +109,7 @@
         call pio_ncread2(fname, vname, dat)
       endif
       return
+      endif
 #endif
       dims = shape(dat)
       ierr = nf90_inq_varid(ncid,vname,varid)

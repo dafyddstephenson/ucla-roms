@@ -681,7 +681,7 @@
       end subroutine marbldrv_configure_saved_state
 !--------------------------------------------------------------------------------
       subroutine marbldrv_read_ss_vars_from_rst(
-     &     ncid,rec_rst)
+     &     ncid,rec_rst,fname)
 
 !-----------------------------------------------------------------------
 !     SUBROUTINE: marbldrv_read_saved_state_from_restart_file
@@ -704,12 +704,15 @@
 
       use nc_read_write, only: ncread
       use netcdf, only: nf90_noerr, nf90_inq_varid
-      use dimensions, only : i0,i1,j0,j1
+      use dimensions, only : i0,i1,j0,j1,x0,x1,y0,y1
       use roms_mpi, only : exchange_xxx
       use param, only : N
+      use pio_roms, only: use_pio, pio_gtype
+      use instant_output, only: wrt_instant
       implicit none
 
       integer, intent(in) :: ncid,rec_rst
+      character(len=*)   :: fname
       integer :: ierr,varid,start(4)
       integer :: itrc,k
 
@@ -717,15 +720,16 @@
 !     vname indices: 1=short name, 2=long name, 3=units
       start=1; start(3)=rec_rst ! Set "start" index to 1 for all dimensions except time (3) which starts at current record
 !     Read in 2D saved state variables (for surface_flux_saved_state)
+      pio_gtype='2Dr'
       do itrc=1,nr_marbl_ss_2d
          ierr=nf90_inq_varid (ncid, vname_marbl_ss_2d(1,itrc), varid)
          if (ierr .eq. nf90_noerr) then
             call ncread(ncid,vname_marbl_ss_2d(1,itrc),
-     &           marbl_saved_state_2d(i0:i1,j0:j1,itrc),start)
+     &           marbl_saved_state_2d(x0:x1,y0:y1,itrc),start=start,fname=fname)
 
-            marbl_saved_state_2d(i0:i1,j0:j1,itrc)=
-     &         marbl_saved_state_2d(i0:i1,j0:j1,itrc)*rmask(i0:i1,j0:j1)
-            call exchange_xxx(marbl_saved_state_2d(:,:,itrc))
+            marbl_saved_state_2d(x0:x1,y0:y1,itrc)=
+     &         marbl_saved_state_2d(x0:x1,y0:y1,itrc)*rmask(x0:x1,y0:y1)
+            call exchange_xxx(marbl_saved_state_2d(:,:,itrc))!,skip=use_pio)
          else
             marbl_saved_state_2d(GLOBAL_2D_ARRAY,itrc) = 0.0
             if(mynode==0) write(*,*) ' --- WARNING: '
@@ -734,18 +738,20 @@
             ierr=nf90_noerr
 
          endif
+         !call wrt_instant(marbl_saved_state_2d(:,:,itrc),vname_marbl_ss_2d(1,itrc))
       end do
       start=1; start(4)=rec_rst                                       ! 3D vars
 
 !     Read in 3d saved state variables (for interior_tendency_saved_state)
+      pio_gtype='3Dr'
       do itrc=1,nr_marbl_ss_3d
          ierr=nf90_inq_varid (ncid, vname_marbl_ss_3d(1,itrc), varid)
          if (ierr == nf90_noerr) then
             call ncread(ncid, vname_marbl_ss_3d(1,itrc),
-     &           marbl_saved_state_3d(i0:i1,j0:j1,:,itrc),start)
+     &           marbl_saved_state_3d(x0:x1,y0:y1,:,itrc),start=start,fname=fname)
            do k=1,N
-              marbl_saved_state_3d(i0:i1,j0:j1,k,itrc)=
-     &             marbl_saved_state_3d(i0:i1,j0:j1,k,itrc)*rmask(i0:i1,j0:j1)
+              marbl_saved_state_3d(x0:x1,y0:y1,k,itrc)=
+     &             marbl_saved_state_3d(x0:x1,y0:y1,k,itrc)*rmask(x0:x1,y0:y1)
            enddo
            call exchange_xxx(marbl_saved_state_3d(:,:,:,itrc) )
          else
@@ -755,6 +761,7 @@
      &         , ' not in initial file.  Initialized to 0.0'
             ierr=nf90_noerr
          endif
+         !call wrt_instant(marbl_saved_state_3d(:,:,:,itrc),vname_marbl_ss_3d(1,itrc))
       end do
 
 

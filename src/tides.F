@@ -319,32 +319,20 @@
           pio_gtype = '2Dr'
           call ncread(ncid,'ssh_Re',ztide_r(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
           call ncread(ncid,'ssh_Im',ztide_i(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
-!          call ncread(ncid,'ssh_Re',ztide_r(i0:i1,j0:j1,itide),start)   ! read tidal elevations
-!          call ncread(ncid,'ssh_Im',ztide_i(i0:i1,j0:j1,itide),start)
-!         call exchange_xxx(ztide_r(:,:,itide),ztide_i(:,:,itide))
 
           pio_gtype = '2Du'
           call ncread(ncid,'u_Re',utide_r(x_:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
           call ncread(ncid,'u_Im',utide_i(x_:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
-!          call ncread(ncid,'u_Re',utide_r(1:i1,j0:j1,itide),start)      ! read tidal barotropic velocities.
-!          call ncread(ncid,'u_Im',utide_i(1:i1,j0:j1,itide),start)      ! these currents must be on u,v-points
-!         call exchange_xxx(utide_r(:,:,itide),utide_i(:,:,itide))      ! and rotated to align with the grid
 
           pio_gtype = '2Dv'
           call ncread(ncid,'v_Re',vtide_r(x0:x1,y_:y1,itide),start=start,fname=frcfile(var_file_indx))
           call ncread(ncid,'v_Im',vtide_i(x0:x1,y_:y1,itide),start=start,fname=frcfile(var_file_indx))
-!          call ncread(ncid,'v_Re',  vtide_r(i0:i1,1:j1,itide),start)
-!          call ncread(ncid,'v_Im',  vtide_i(i0:i1,1:j1,itide),start)
-!         call exchange_xxx(vtide_r(:,:,itide),vtide_i(:,:,itide))
         endif
 
         if (pot_tides) then
           pio_gtype = '2Dr'
           call ncread(ncid,'pot_Re',ptide_r(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
           call ncread(ncid,'pot_Im',ptide_i(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
-!          call ncread(ncid,'pot_Re',ptide_r(i0:i1,j0:j1,itide),start)
-!          call ncread(ncid,'pot_Im',ptide_i(i0:i1,j0:j1,itide),start)
-!         call exchange_xxx(ptide_r(:,:,itide),ptide_i(:,:,itide))
         endif
       end do                    ! <-- itide=1,ntides
 
@@ -362,12 +350,12 @@
       endif
 
       if (bry_tides) then
-        call exchange_xxx(ztide_r,ztide_i,skip=use_pio)
-        call exchange_xxx(utide_r,utide_i,skip=use_pio)
-        call exchange_xxx(vtide_r,vtide_i,skip=use_pio)
+        call exchange_xxx(ztide_r,ztide_i)!,skip=use_pio)
+        call exchange_xxx(utide_r,utide_i)!,skip=use_pio)
+        call exchange_xxx(vtide_r,vtide_i)!,skip=use_pio)
       endif
       if (pot_tides) then
-        call exchange_xxx(ptide_r,ptide_i,skip=use_pio)
+        call exchange_xxx(ptide_r,ptide_i)!,skip=use_pio)
       endif
 
       if(mynode==0) write(*,'(7x,A)')'tides :: read all tides'

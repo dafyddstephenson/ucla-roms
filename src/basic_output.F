@@ -608,7 +608,7 @@
       integer                :: tile, ierr, i, j, k
 
 
-        if (rec_rst==nrpf_rst) then
+        if (rec_rst==2) then
 #ifdef EXACT_RESTART
           time = time + dt
 #endif
@@ -1275,7 +1275,7 @@
       if (mynode==0) then
          write(stdout_str,'(7x,A,2x,A,I4)')
      &        'ocean_vars :: restart file ', ! result variables are being stored
-     &        'recs/file = ', nrpf_rst
+     &        'recs/file = 2'
          if (monthly_restarts) then
             write(period_info,'(A,1L)')
      &           'monthly_restarts = ', monthly_restarts

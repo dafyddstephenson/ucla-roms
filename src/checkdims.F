@@ -167,7 +167,7 @@
 
 #else
       ierr=nf90_inquire(ncid, ndimensions = ndims)
-
+      ierr=nf90_inquire(ncid,unlimiteddimid = recdim)
       do id=1,ndims
         ierr=nf90_inquire_dimension (ncid, id, dname, dsize)
         if (id==recdim) then

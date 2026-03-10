@@ -462,57 +462,41 @@
       ! The i0,i1,j0,j1 indices are needed because the netcdf files do
       ! include 1 more row/column for subdomains at the physical boundary
 
-      !call ncread(ncid,'h',h(i0:i1,j0:j1))
       pio_gtype = '2Dr'
       call ncread(ncid,'h',h(x0:x1,y0:y1),fname=grdname)         ! Bathymetry
-      call exchange_xxx(h,skip=use_pio)                         ! (2,.true.)
-
-!      call wrt_instant(h,'h')
+      call exchange_xxx(h)!,skip=use_pio)                         ! (2,.true.)
 
 ! Coordinate transformation metrics (m,n) associated with
 ! differential distances in XI- and ETA-directions.
 
-      !call ncread(ncid,'pm',pm(i0:i1,j0:j1),start)
-      !call ncread(ncid,'pn',pn(i0:i1,j0:j1),start)
       call ncread(ncid,'pm',pm(x0:x1,y0:y1),fname=grdname)
       call ncread(ncid,'pn',pn(x0:x1,y0:y1),fname=grdname)
-      call exchange_xxx(pm,pn,skip=use_pio)
-!      call exchange_xxx(pm)
-!      call exchange_xxx(pn)
+      call exchange_xxx(pm,pn)!,skip=use_pio)
 
-!      call wrt_instant(h,'h')
-!      call wrt_instant(pm,'pm')
 # ifdef SPHERICAL
-      !call ncread(ncid,'lon_rho',lonr(i0:i1,j0:j1),start)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
-      !call ncread(ncid,'lat_rho',latr(i0:i1,j0:j1),start)
       call ncread(ncid,'lon_rho',lonr(x0:x1,y0:y1),fname=grdname)  ! Coordinates (lon,lat [degrees]) or (x,y [meters]) at RHO-points.
       call ncread(ncid,'lat_rho',latr(x0:x1,y0:y1),fname=grdname)
-      call exchange_xxx(lonr,latr,skip=use_pio)
+      call exchange_xxx(lonr,latr)!,skip=use_pio)
 # else
       ! check this with analytical filament example
-      !call ncread(ncid,'x_rho',xr(i0:i1,j0:j1),start)
-      !call ncread(ncid,'y_rho',yr(i0:i1,j0:j1),start)
       call ncread(ncid,'x_rho',xr(x0:x1,y0:y1),fname=grdname)
       call ncread(ncid,'y_rho',yr(x0:x1,y0:y1),fname=grdname)
 
       ! Only use if non-spherical grid, otherwise computed in setup_grid1
-      !call ncread(ncid,'f',f(i0:i1,j0:j1))
       call ncread(ncid,'f',f(x0:x1,y0:y1),fname=grdname)         ! Coriolis parameter.
-      call exchange_xxx(xr,yr,f,skip=use_pio)
+      call exchange_xxx(xr,yr,f)!,skip=use_pio)
 
 # endif
 # ifdef CURVGRID
       ! grid angle is used to compute non-traditional coriolis components
       ! and for in-place rotation for data extraction
       ! Also used in wec for the moment
-      !call ncread(ncid,'angle',angler(i0:i1,j0:j1),start)
       call ncread(ncid,'angle',angler(x0:x1,y0:y1),fname=grdname)  ! Angle (radians) between XI-axis and EAST at RHO-points.
-      call exchange_xxx(angler,skip=use_pio)
+      call exchange_xxx(angler)!,skip=use_pio)
 # endif
 # ifdef MASKING
-      !call ncread(ncid,'mask_rho',rmask(i0:i1,j0:j1),start)
       call ncread(ncid,'mask_rho',rmask(x0:x1,y0:y1),fname=grdname)! Mask at RHO-points.
-      call exchange_xxx(rmask,skip=use_pio)
+      call exchange_xxx(rmask)!,skip=use_pio)
 # endif
       ierr=nf90_close(ncid)
       if (ierr==nf90_noerr) then

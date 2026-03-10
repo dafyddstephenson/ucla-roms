@@ -4,6 +4,7 @@
       ! output_root_name is used as prefix of all output files
       ! Length is limited to 18 characters, because output_file_names
       ! are appended with frame and node number and are limited to 32
+#include "cppdefs.opt"
 
       use netcdf, only:
      &     nf90_noerr, nf90_nowrite, nf90_double,
@@ -21,11 +22,15 @@
       use dimensions, only: inode, jnode
       use roms_mpi, only: exchange_xxx, new_part
       use pio_roms, only: use_pio, pio_gtype
+#ifdef PARALLEL_IO
+     &   ,pio_xi_rho_coarse_start, pio_eta_rho_coarse_start,pio_xi_u_coarse_start, pio_eta_v_coarse_start,
+     &   pio_xi_rho_coarse, pio_eta_rho_coarse, pio_xi_u_coarse, pio_eta_v_coarse,
+     &   pio_i0c, pio_i1c, pio_j0c, pio_j1c
+#endif
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
 
       implicit none
       character(len=15) :: module_name="roms_read_write"
-#include "cppdefs.opt"
 
       private
 
@@ -105,6 +110,7 @@
 
       ! index ranges for coarse netcdf input
       integer :: ic0,ic1,jc0,jc1
+      integer :: xc_,xc0,xc1,yc_,yc0,yc1
       integer :: iSWc,jSWc
       integer :: nxc,nyc
       real,dimension(:,:),allocatable   :: cdata     ! Array to read in coarse surface forcing data
@@ -237,6 +243,7 @@
       integer :: nxc_left,nxc_righ,nx_righ,nx_left,dfx
       integer :: nyc_left,nyc_righ,ny_righ,ny_left,dfy
       integer :: off_x,off_y
+      integer :: iwestc, ieastc, jsouthc, jnorthc
 
       gnxc = gnx/2
       gnyc = gny/2
@@ -269,6 +276,7 @@
         nyc = nyc - (off_yc+1)/2
       endif
 
+      iwestc=1; ieastc=nxc; jsouthc=1; jnorthc=nyc
       ic0=1; ic1=nxc; jc0=1; jc1=nyc
 
       if (inode==0)        ic0=0
@@ -303,6 +311,49 @@
       endif
 
       allocate(cdata(1-cbf:nxc+cbf,1-cbf:nyc+cbf) );cdata = 0
+
+! Figure out how to set start, count, corners for PIO
+! Base it on cbf?
+! PIO CURRENTLY DISABLED IN FLUX TEST
+!      write(*,*) "YAY", mynode, cbf
+!#ifdef PARALLEL_IO
+!      xc_ = 1-pio_i0c
+!      xc0 = i0-pio_i0c
+!      xc1 = i1+pio_i1c
+!      yc_ = 1-pio_j0c
+!      yc0 = j0-pio_j0c
+!      yc1 = j1+pio_j1c
+!#else
+      xc_ = 1
+      xc0 = ic0
+      xc1 = ic1
+      yc_ = 1
+      yc0 = jc0
+      yc1 = jc1
+!#endif
+
+#ifdef PARALLEL_IO
+      pio_xi_rho_coarse = ic1-ic0+1
+      pio_eta_rho_coarse = jc1-jc0+1
+      pio_xi_u_coarse = ic1
+      pio_eta_v_coarse = jc1
+
+        if (inode == 0) then
+          pio_xi_rho_coarse_start = iSWc+iwestc-pio_i0c
+          pio_xi_u_coarse_start   = iSWc+iwestc-pio_i0c !?
+        else
+          pio_xi_rho_coarse_start = iSWc+iwestc+1-pio_i0c
+          pio_xi_u_coarse_start   = iSWc+iwestc-pio_i0c
+        endif
+
+        if (jnode == 0) then
+          pio_eta_rho_coarse_start= jSWc+jsouthc-pio_j0c
+          pio_eta_v_coarse_start  = jSWc+jsouthc-pio_j0c !?
+        else
+          pio_eta_rho_coarse_start= jSWc+jsouthc+1-pio_j0c
+          pio_eta_v_coarse_start  = jSWc+jsouthc-pio_j0c
+        endif
+#endif
 
       end subroutine init_coarse !]
 ! ----------------------------------------------------------------------
@@ -926,10 +977,8 @@
       ! This is in contrast with the _surf version of fill_frc_slice
       if (d1) then
         call ncread(ncid,vname,nc%vdata(:,1,it),start=(/1,irec/),fname=frcfile(ifile))
-!        call ncread(ncid,vname,nc%vdata(:,1,it),(/1,irec/))
       else
         call ncread(ncid,vname,nc%vdata(:,:,it),start=(/1,1,irec/),fname=frcfile(ifile))
-!        call ncread(ncid,vname,nc%vdata(:,:,it),(/1,1,irec/))
       endif
       ! add force file info to output nc
       if (mynode == 0) then
@@ -1080,6 +1129,8 @@
       vname = nc%vname
       tname = nc%tname
 
+      write(*,*) vname
+
       call find_new_record(vname,tname,modtime,ifile,irec,
      &                         nc%times(it) )
 
@@ -1089,25 +1140,23 @@
           call init_coarse
         endif
         if (gtype=='u') then
-          call ncread(ncid,vname,cdata(1:ic1,jc0:jc1),(/1,1,irec/))
+          call ncread(ncid,vname,cdata(xc_:xc1,yc0:yc1),start=(/1,1,irec/),fname=frcfile(ifile),dont_use_pio=.true.)
         elseif (gtype=='v') then
-          call ncread(ncid,vname,cdata(ic0:ic1,1:jc1),(/1,1,irec/))
+          call ncread(ncid,vname,cdata(xc0:xc1,yc_:yc1),start=(/1,1,irec/),fname=frcfile(ifile),dont_use_pio=.true.)
         else
-          call ncread(ncid,vname,cdata(ic0:ic1,jc0:jc1),(/1,1,irec/))
+          call ncread(ncid,vname,cdata(xc0:xc1,yc0:yc1),start=(/1,1,irec/),fname=frcfile(ifile),dont_use_pio=.true.)
         endif
+!!! SKIP = USE_PIO ??
         call exchange_xxx(cdata,array_bf=cbf)
         call coarse2fine(cdata,nc%vdata(:,:,it),gtype)
       else
         if (gtype=='u') then
-!          call ncread(ncid,vname,nc%vdata(1:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Du'
           call ncread(ncid,vname,nc%vdata(x_:x1,y0:y1,it),start=(/1,1,irec/),fname=frcfile(ifile))
         elseif (gtype=='v') then
-!          call ncread(ncid,vname,nc%vdata(i0:i1,1:j1,it),(/1,1,irec/))
           pio_gtype = '2Dv'
           call ncread(ncid,vname,nc%vdata(x0:x1,y_:y1,it),start=(/1,1,irec/),fname=frcfile(ifile))
         else    ! rho-grid
-!          call ncread(ncid,vname,nc%vdata(i0:i1,j0:j1,it),(/1,1,irec/))
           pio_gtype = '2Dr'
           call ncread(ncid,vname,nc%vdata(x0:x1,y0:y1,it),start=(/1,1,irec/),fname=frcfile(ifile))
         endif
@@ -1128,7 +1177,7 @@
       ierr = nf90_close(ncid)
 
 !!! SKIP = USE_PIO ??
-      call exchange_xxx(nc%vdata(:,:,it),skip=use_pio)
+      call exchange_xxx(nc%vdata(:,:,it))!,skip=use_pio)
 
       if (mynode==0) then
         call display_read_time_to_log(vname,nc%times(it),irec )

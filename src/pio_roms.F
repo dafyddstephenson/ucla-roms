@@ -91,6 +91,10 @@
       integer, dimension(3) :: pio_dimLen_3Du
       integer, dimension(3) :: pio_dimLen_3Dv
 
+      integer, dimension(2) :: pio_dimLen_2Cr
+      integer, dimension(2) :: pio_dimLen_2Cu
+      integer, dimension(2) :: pio_dimLen_2Cv
+
       integer, dimension(1) :: pio_dimLen_riv_vol
       integer, dimension(2) :: pio_dimLen_riv_trc
 
@@ -188,6 +192,16 @@
       integer(kind=PIO_OFFSET_KIND), dimension(3) :: pio_start_3Dv
       integer(kind=PIO_OFFSET_KIND), dimension(3) :: pio_count_3Dv
 
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_2Cr
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_2Cr
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_2Cu
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_2Cu
+
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_start_2Cv
+      integer(kind=PIO_OFFSET_KIND), dimension(2) :: pio_count_2Cv
+
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_start_riv_vol
       integer(kind=PIO_OFFSET_KIND), dimension(1) :: pio_count_riv_vol
 
@@ -196,13 +210,18 @@
 
       integer, public :: pio_xi_rho, pio_eta_rho
       integer, public :: pio_xi_u, pio_eta_v
+      integer, public :: pio_xi_rho_coarse, pio_eta_rho_coarse
+      integer, public :: pio_xi_u_coarse, pio_eta_v_coarse
       integer, public :: pio_i0, pio_i1, pio_j0, pio_j1
+      integer, public :: pio_i0c, pio_i1c, pio_j0c, pio_j1c
       integer, public :: pio_nriv
 
       integer, public :: pio_xi_rho_start, pio_eta_rho_start
       integer, public :: pio_xi_u_start, pio_eta_v_start
       integer, public :: pio_xi_rho_start_bry, pio_eta_rho_start_bry
       integer, public :: pio_xi_u_start_bry, pio_eta_v_start_bry
+      integer, public :: pio_xi_rho_coarse_start, pio_eta_rho_coarse_start
+      integer, public :: pio_xi_u_coarse_start, pio_eta_v_coarse_start
       integer, public :: pio_s_start
 
       logical, public :: PIO_WESTERN_EDGE
@@ -634,6 +653,41 @@
      &       base=pio_optBase)          ! base (optional argument)
 
       end subroutine pio_initialize
+! ----------------------------------------------------------------------
+      subroutine pio_initialize_coarse
+
+        implicit none
+
+        pio_dimLen_2Cr(1) = (LLm/2)+2
+        pio_dimLen_2Cr(2) = (MMm/2)+2
+
+        pio_start_2Cr(1) = pio_xi_rho_coarse_start
+        pio_start_2Cr(2) = pio_eta_rho_coarse_start
+
+        pio_count_2Cr(1) = pio_xi_rho_coarse+pio_i0c+pio_i1c
+        pio_count_2Cr(2) = pio_eta_rho_coarse+pio_i0c+pio_i1c
+
+
+        pio_dimLen_2Cu(1) = (LLm/2)+1
+        pio_dimLen_2Cu(2) = (MMm/2)+2
+
+        pio_start_2Cu(1) = pio_xi_rho_coarse_start
+        pio_start_2Cu(2) = pio_eta_rho_coarse_start
+
+        pio_count_2Cu(1) = pio_xi_u_coarse+pio_i0c+pio_i1c
+        pio_count_2Cu(2) = pio_eta_rho_coarse+pio_j0c+pio_j1c
+
+
+        pio_dimLen_2Cv(1) = (LLm/2)+2
+        pio_dimLen_2Cv(2) = (MMm/2)+1
+
+        pio_start_2Cv(1) = pio_xi_rho_coarse_start
+        pio_start_2Cv(2) = pio_eta_v_coarse_start
+
+        pio_count_2Cv(1) = pio_xi_rho_coarse+pio_i0c+pio_i1c
+        pio_count_2Cv(2) = pio_eta_v_coarse+pio_j0c+pio_j1c
+
+      end subroutine pio_initialize_coarse
 ! ----------------------------------------------------------------------
       subroutine pio_initialize_rivers
 

@@ -30,6 +30,7 @@
      &     umask
       use roms_mpi, only: exchange_xxx
       use grid, only: vmask, rmask
+      use pio_roms, only: use_pio, pio_gtype
 
       implicit none
       private
@@ -1247,12 +1248,13 @@
 
       end subroutine create_diagnostics_file !]
 ! ----------------------------------------------------------------------
-      subroutine get_init_slow(ncid,record,tindx )  ![
+      subroutine get_init_slow(ncid,record,tindx,fname )  ![
       ! get initial slow u,v and p
       implicit none
 
       ! input
       integer,intent(in) :: ncid, record,tindx
+      character(len=*)   :: fname
 
       ! local
       integer :: i,j
@@ -1278,7 +1280,8 @@
 
       ierr=nf90_inq_varid (ncid, 'u_slow', varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid,'u_slow', u_slow(1:i1,j0:j1,:),start)
+        pio_gtype = '3Du'
+        call ncread(ncid,'u_slow', u_slow(1:i1,j0:j1,:),start=start,fname=fname)
 #ifdef MASKING
         do j = j0,j1
           do i = 1,i1
@@ -1297,7 +1300,8 @@
 
       ierr=nf90_inq_varid (ncid, 'v_slow', varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid,'v_slow', v_slow(i0:i1,1:j1,:),start)
+        pio_gtype = '3Dv'
+        call ncread(ncid,'v_slow', v_slow(i0:i1,1:j1,:),start=start,fname=fname)
 #ifdef MASKING
         do j = 1,j1
           do i = i0,i1
@@ -1316,7 +1320,8 @@
 
       ierr=nf90_inq_varid (ncid, 'p_slow', varid)
       if (ierr == nf90_noerr) then
-        call ncread(ncid, 'p_slow', p_slow(i0:i1,j0:j1,:), start)
+        pio_gtype = '3Dr'
+        call ncread(ncid, 'p_slow', p_slow(i0:i1,j0:j1,:), start=start, fname=fname)
         call exchange_xxx(p_slow)  ! need exchange since r2u to get u'p'
 #ifdef MASKING
         do j = 0,ny
