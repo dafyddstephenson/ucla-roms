@@ -8,7 +8,7 @@
       !------------------------------
       logical,parameter,public :: do_extract = .true.
       character(len=60) :: extract_file = 'input_data/iceland_child_grid_nesting_info.nc'
-      integer,parameter :: nrpf = 48    ! number of records per output file
+      integer,parameter :: nrpf_extract = 48    ! number of records per output file
       integer,parameter :: edat_prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
 
       ! S-coordinate parameters for child grid
