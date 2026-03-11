@@ -18,7 +18,7 @@
 !      use mpi
       use mpi, only: mpi_comm_world
       use mpi_f08, only: mpi_character
-      use param, only: LLm, MMm, N, ocean_grid_comm, nt
+      use param, only: LLm, MMm, N, ocean_grid_comm, nt, mynode
 !      use river_frc, only: nriv
       implicit none
 
@@ -233,6 +233,7 @@
       !! memory to read data from the netCDF file.
       public  :: pio_initialize
       public  :: pio_initialize_rivers
+      public  :: pio_initialize_coarse
 
 !      !! This subroutine creates the decomposition.
 !      public  :: pio_createDecomp2D
@@ -665,13 +666,13 @@
         pio_start_2Cr(2) = pio_eta_rho_coarse_start
 
         pio_count_2Cr(1) = pio_xi_rho_coarse+pio_i0c+pio_i1c
-        pio_count_2Cr(2) = pio_eta_rho_coarse+pio_i0c+pio_i1c
+        pio_count_2Cr(2) = pio_eta_rho_coarse+pio_j0c+pio_j1c
 
 
         pio_dimLen_2Cu(1) = (LLm/2)+1
         pio_dimLen_2Cu(2) = (MMm/2)+2
 
-        pio_start_2Cu(1) = pio_xi_rho_coarse_start
+        pio_start_2Cu(1) = pio_xi_u_coarse_start
         pio_start_2Cu(2) = pio_eta_rho_coarse_start
 
         pio_count_2Cu(1) = pio_xi_u_coarse+pio_i0c+pio_i1c
@@ -811,6 +812,16 @@
      &       pio_desc)
           endif
 
+          if (pio_gtype=='2Cr') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_2Cr, pio_start_2Cr, pio_count_2Cr,
+     &       pio_desc)
+          elseif (pio_gtype=='2Cu') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_2Cu, pio_start_2Cu, pio_count_2Cu,
+     &       pio_desc)
+          elseif (pio_gtype=='2Cv') then
+            call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_2Cv, pio_start_2Cv, pio_count_2Cv,
+     &       pio_desc)
+          endif
 
           if (pio_gtype=='3Dr') then
             call PIO_initdecomp(pio_IoSystem, PIO_double, pio_dimLen_3Dr, pio_start_3Dr, pio_count_3Dr,
@@ -885,6 +896,7 @@
 
         call PIO_read_darray(pio_FileDesc, varId, pio_desc,
      &  arr, ierr)
+
         call PIO_closefile(pio_FileDesc)
 
       end subroutine pio_ncread2

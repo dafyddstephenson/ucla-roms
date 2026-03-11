@@ -25,10 +25,10 @@
 #ifdef PARALLEL_IO
      &   ,pio_xi_rho_coarse_start, pio_eta_rho_coarse_start,pio_xi_u_coarse_start, pio_eta_v_coarse_start,
      &   pio_xi_rho_coarse, pio_eta_rho_coarse, pio_xi_u_coarse, pio_eta_v_coarse,
-     &   pio_i0c, pio_i1c, pio_j0c, pio_j1c
+     &   pio_i0c, pio_i1c, pio_j0c, pio_j1c, pio_initialize_coarse
 #endif
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
-
+      use instant_output, only: wrt_instant
       implicit none
       character(len=15) :: module_name="roms_read_write"
 
@@ -306,53 +306,70 @@
       cbf = max(ceiling(0.5*dfx)+1,2)
       cbf = max(ceiling(0.5*dfy)+1,cbf)
       cbf = cbf + 1
-      if (mynode==0) then
-        print *,'buffer for coarse array: ',cbf
+
+      allocate(cdata(1-cbf:nxc+cbf,1-cbf:nyc+cbf) ); cdata(:,:) = 0
+
+#ifdef PARALLEL_IO
+      if (inode==0) then
+        pio_i0c=0
+      else
+        pio_i0c=cbf
       endif
 
-      allocate(cdata(1-cbf:nxc+cbf,1-cbf:nyc+cbf) );cdata = 0
+      if (inode==NP_XI-1) then
+        pio_i1c=0
+      else
+        pio_i1c=cbf
+      endif
 
-! Figure out how to set start, count, corners for PIO
-! Base it on cbf?
-! PIO CURRENTLY DISABLED IN FLUX TEST
-!      write(*,*) "YAY", mynode, cbf
-!#ifdef PARALLEL_IO
-!      xc_ = 1-pio_i0c
-!      xc0 = i0-pio_i0c
-!      xc1 = i1+pio_i1c
-!      yc_ = 1-pio_j0c
-!      yc0 = j0-pio_j0c
-!      yc1 = j1+pio_j1c
-!#else
+      if (jnode==0) then
+        pio_j0c=0
+      else
+        pio_j0c=cbf
+      endif
+
+      if (jnode==NP_ETA-1) then
+        pio_j1c=0
+      else
+        pio_j1c=cbf
+      endif
+
+      pio_xi_rho_coarse = ic1-ic0+1
+      pio_eta_rho_coarse = jc1-jc0+1
+      pio_xi_u_coarse = ic1
+      pio_eta_v_coarse = jc1
+
+      if (inode == 0) then
+        pio_xi_rho_coarse_start = iSWc+iwestc-pio_i0c
+        pio_xi_u_coarse_start   = iSWc+iwestc-pio_i0c !?
+      else
+        pio_xi_rho_coarse_start = iSWc+iwestc+1-pio_i0c
+        pio_xi_u_coarse_start   = iSWc+iwestc-pio_i0c
+      endif
+
+      if (jnode == 0) then
+        pio_eta_rho_coarse_start= jSWc+jsouthc-pio_j0c
+        pio_eta_v_coarse_start  = jSWc+jsouthc-pio_j0c !?
+      else
+        pio_eta_rho_coarse_start= jSWc+jsouthc+1-pio_j0c
+        pio_eta_v_coarse_start  = jSWc+jsouthc-pio_j0c
+      endif
+
+      xc_ = 1-pio_i0c
+      xc0 = ic0-pio_i0c
+      xc1 = ic1+pio_i1c
+      yc_ = 1-pio_j0c
+      yc0 = jc0-pio_j0c
+      yc1 = jc1+pio_j1c
+
+      call pio_initialize_coarse
+#else
       xc_ = 1
       xc0 = ic0
       xc1 = ic1
       yc_ = 1
       yc0 = jc0
       yc1 = jc1
-!#endif
-
-#ifdef PARALLEL_IO
-      pio_xi_rho_coarse = ic1-ic0+1
-      pio_eta_rho_coarse = jc1-jc0+1
-      pio_xi_u_coarse = ic1
-      pio_eta_v_coarse = jc1
-
-        if (inode == 0) then
-          pio_xi_rho_coarse_start = iSWc+iwestc-pio_i0c
-          pio_xi_u_coarse_start   = iSWc+iwestc-pio_i0c !?
-        else
-          pio_xi_rho_coarse_start = iSWc+iwestc+1-pio_i0c
-          pio_xi_u_coarse_start   = iSWc+iwestc-pio_i0c
-        endif
-
-        if (jnode == 0) then
-          pio_eta_rho_coarse_start= jSWc+jsouthc-pio_j0c
-          pio_eta_v_coarse_start  = jSWc+jsouthc-pio_j0c !?
-        else
-          pio_eta_rho_coarse_start= jSWc+jsouthc+1-pio_j0c
-          pio_eta_v_coarse_start  = jSWc+jsouthc-pio_j0c
-        endif
 #endif
 
       end subroutine init_coarse !]
@@ -1129,8 +1146,6 @@
       vname = nc%vname
       tname = nc%tname
 
-      write(*,*) vname
-
       call find_new_record(vname,tname,modtime,ifile,irec,
      &                         nc%times(it) )
 
@@ -1139,15 +1154,30 @@
         if (.not.allocated(cdata)) then
           call init_coarse
         endif
+
         if (gtype=='u') then
-          call ncread(ncid,vname,cdata(xc_:xc1,yc0:yc1),start=(/1,1,irec/),fname=frcfile(ifile),dont_use_pio=.true.)
+          pio_gtype='2Cu'
+          call ncread(ncid,vname,cdata(xc_:xc1,yc0:yc1),start=(/1,1,irec/),fname=frcfile(ifile))!,dont_use_pio=.true.)
+!        call exchange_xxx(cdata,array_bf=cbf)
+!        call wrt_instant(cdata, vname)
+!        stop
+!          call wrt_instant(cdata, vname)
         elseif (gtype=='v') then
-          call ncread(ncid,vname,cdata(xc0:xc1,yc_:yc1),start=(/1,1,irec/),fname=frcfile(ifile),dont_use_pio=.true.)
+          pio_gtype='2Cv'
+          call ncread(ncid,vname,cdata(xc0:xc1,yc_:yc1),start=(/1,1,irec/),fname=frcfile(ifile))!,dont_use_pio=.true.)
+!        call exchange_xxx(cdata,array_bf=cbf)
+!        call wrt_instant(cdata, vname)
+!        stop
+!          call wrt_instant(cdata, vname)
         else
-          call ncread(ncid,vname,cdata(xc0:xc1,yc0:yc1),start=(/1,1,irec/),fname=frcfile(ifile),dont_use_pio=.true.)
+          pio_gtype='2Cr'
+          call ncread(ncid,vname,cdata(xc0:xc1,yc0:yc1),start=(/1,1,irec/),fname=frcfile(ifile))!,dont_use_pio=.true.)
+!          call wrt_instant(cdata, vname)
         endif
 !!! SKIP = USE_PIO ??
         call exchange_xxx(cdata,array_bf=cbf)
+        !call wrt_instant(cdata, vname)
+        !stop
         call coarse2fine(cdata,nc%vdata(:,:,it),gtype)
       else
         if (gtype=='u') then

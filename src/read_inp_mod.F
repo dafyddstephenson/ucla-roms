@@ -1102,6 +1102,7 @@ c$$$                  end if TODO
       !output_root_name:
       !     rootname (<- insert desired rootname)
       use roms_read_write, only: output_root_name
+      use instant_output, only: instant_root_name
       implicit none
 
       integer, intent(in)    :: unit
@@ -1112,6 +1113,7 @@ c$$$                  end if TODO
          call report_read_error('output_root_name')
          return
       end if
+      instant_root_name = trim(output_root_name)
 
       end subroutine kwread_output_root_name
       end module read_inp_mod
