@@ -88,7 +88,9 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     start_time, synchro_flag, tdays, time, proc
       use sponge_tune, only: ub_tune
       use particles, only: floats, init_particles
-      use upscale_output, only: do_upscale, init_upscale
+#ifdef UPSCALING
+      use upscale_output, only: do_upscale, init_upscale, wrt_upscale
+#endif      
       use random_output, only: do_random, init_random
       use cstar_output, only: do_cstar, init_cstar
       use frc_output, only: do_frc, init_frc
@@ -298,7 +300,10 @@ CR      write(*,*)  ' -2' MYID
 #endif
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
-      if (do_upscale) call init_upscale
+      if (do_upscale) then
+        call init_upscale
+        call wrt_upscale
+      endif
       if (do_frc) call init_frc
 
 
