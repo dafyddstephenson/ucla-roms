@@ -10,7 +10,7 @@
       use ocean_vars, only: flxu, flxv, u, v, z_w, hz
       use nc_read_write, only: ncwrite, ncread
       use diagnostics, only: dxdyi
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
 
       implicit none
       private
@@ -101,13 +101,7 @@
       if (kbak < 1) kbak=4
 # endif
 
-      ! There's an issue with WEC stokes drift
-      ! It's added to flxU,flxV, but not to ubar
-
       if (calc_pflx) then
-        ! WEC terms can modify the match between
-        ! integrated flux and ubar,vbar
-
         Uflx =  sum(Flxu(1:nx+1,1:ny,:),dim=3)
         Vflx =  sum(Flxv(1:nx,1:ny+1,:),dim=3)
 

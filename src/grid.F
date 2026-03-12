@@ -489,7 +489,6 @@
 # ifdef CURVGRID
       ! grid angle is used to compute non-traditional coriolis components
       ! and for in-place rotation for data extraction
-      ! Also used in wec for the moment
       call ncread(ncid,'angle',angler(x0:x1,y0:y1),fname=grdname)  ! Angle (radians) between XI-axis and EAST at RHO-points.
       call exchange_xxx(angler)!,skip=use_pio)
 # endif
