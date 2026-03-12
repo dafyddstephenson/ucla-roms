@@ -15,7 +15,7 @@
      &     dn_yr, dn_yv, dn_zr, dn_zw,
      &     avg_output, create_file, sec2date
       use sponge_tune, only: ub_tune, wrt_rst_ub
-      use diagnostics, only: diag_pflx
+      use calc_pflx_mod, only: calc_pflx, wrt_rst_diag_slow
       use scalars, only:
      &     NT, iic, knew, nstp, time,
      &     N, dt, start_time, nnew, tdays
@@ -24,9 +24,7 @@
      &     w_avg, wvl_avg, zeta, ubar, vbar, u, v, z_r, We, Wi
       use param, only: Lm, Mm, isalt, itemp, mynode, nt_passive
       use error_handling_mod, only: error_log
-#ifdef DIAGNOSTICS
-      use diagnostics, only: wrt_rst_diag_slow
-#endif
+
       implicit none
       private
 
@@ -112,15 +110,6 @@
         call sec2date(start_time+dt,date)
         month_at_prev_timestep = date(2)
       endif
-
-#ifndef DIAGNOSTICS
-      if (diag_pflx) then
-           mpi_nonexit_warn write(*,*)
-     &           'WARNING: diag_pflx is set to .true.',
-     & ', but DIAGNOSTICS is not defined. Variables associated',
-     & ' with diag_pflx will not be saved to restart files.'
-      endif
-#endif
 
       end subroutine init_restarts !]
 !----------------------------------------------------------------------
@@ -598,6 +587,7 @@
 !     add MARBL saved state to restart to restart file
       use marbl_driver, only: marbldrv_write_ss_vars_to_rst
 #endif
+
       implicit none
 
       ! local
@@ -678,9 +668,7 @@
 #ifdef SPONGE_TUNE
         if (ub_tune)   call wrt_rst_ub(ncid,rec_rst)
 #endif
-#ifdef DIAGNOSTICS
-        if (diag_pflx) call wrt_rst_diag_slow(ncid,rec_rst)
-#endif
+        if (calc_pflx) call wrt_rst_diag_slow(ncid,rec_rst)
 
         call ncwrite(ncid,'riv_umask',    riv_umask( 1:i1,j0:j1),start)
         call ncwrite(ncid,'riv_vmask',    riv_vmask(i0:i1, 1:j1),start)
@@ -894,6 +882,7 @@
 !     add MARBL saved state to restart to restart file
       use marbl_driver, only: marbldrv_create_ss_vars_in_rst
 #endif
+
       implicit none
 
       ! local
@@ -990,9 +979,7 @@
       ierr = nf90_put_att(ncid,varid,'units',vname(3,indxHbbl))
 # endif
 
-
-#ifdef DIAGNOSTICS
-      if (diag_pflx) then
+      if (calc_pflx) then
         varid = nccreate(ncid,'u_slow',(/dn_xu,dn_yr,dn_zr,dn_tm/),
      &                               (/xi_u,eta_rho,N,0/),nf90_double)
         ierr = nf90_put_att(ncid,varid,'long_name','time filtered u')
@@ -1010,7 +997,7 @@
      &                               'time filtered pressure')
         ierr = nf90_put_att(ncid,varid,'units','Pa??')
       endif
-#endif
+
 #ifdef SPONGE_TUNE
        if (ub_tune) then
          varid = nccreate(ncid,'ub_west',

@@ -25,7 +25,6 @@
       use scalars, only: init
       use roms_mpi, only: exchange_xxx
       use pio_roms, only: use_pio, pio_gtype
-      use instant_output, only: wrt_instant
 
       implicit none
 !

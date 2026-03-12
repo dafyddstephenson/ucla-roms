@@ -46,10 +46,7 @@
      &     np_xi, np_eta
       use roms_mpi, only: exchange_xxx
       use error_handling_mod, only: error_log
-
-#ifdef DIAGNOSTICS
-      use diagnostics, only : diag_pflx, get_init_slow
-#endif
+      use calc_pflx_mod, only : calc_pflx, get_init_slow
       use sponge_tune, only: ub_tune, get_init_ub
       use pio_roms, only: use_pio, pio_gtype
       use instant_output, only: wrt_instant
@@ -615,11 +612,8 @@ c--#define VERBOSE
 
 #endif /* SOLVE3D */
 
-
-#ifdef DIAGNOSTICS
-      if (diag_pflx) call get_init_slow(ncid,record,tindx,ininame)
+      if (calc_pflx) call get_init_slow(ncid,record,tindx)
       if (ub_tune)   call get_init_ub(ncid,record)
-#endif
 
 ! Close input NetCDF file and  write greeting message depending
 ! on the the type of initial/restart procedure performed above.

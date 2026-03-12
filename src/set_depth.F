@@ -30,10 +30,6 @@
 #endif
       use scalars, only: iic, knew
       use scoord, only: hc, iwest, jsouth, n, cs_w, cs_r
-#ifdef WEC
-      use wec_frc, only: ust2d, vst2d
-#endif
-      use instant_output, only: wrt_instant
       use pio_roms, only: use_pio
 
       implicit none
@@ -59,22 +55,14 @@
         do j=jstrR,jendR               ! all subsequent steps.
           do i=istr,iendR
             DU_avg1(i,j)=0.5*( h(i-1,j)+h(i,j)+zeta(i,j,1)
-     &            +zeta(i-1,j,1) )*dn_u(i,j)*( ubar(i,j,1)
-# ifdef WEC
-     &                                        + ust2d(i,j)
-# endif
-     &                                                   )
+     &            +zeta(i-1,j,1) )*dn_u(i,j)*( ubar(i,j,1))
           enddo
         enddo
 
         do j=jstr,jendR
           do i=istrR,iendR
             DV_avg1(i,j)=0.5*( h(i,j)+h(i,j-1)+zeta(i,j,1)
-     &            +zeta(i,j-1,1) )*dm_v(i,j)*( vbar(i,j,1)
-# ifdef WEC
-     &                                        + vst2d(i,j)
-# endif
-     &                                                   )
+     &            +zeta(i,j-1,1) )*dm_v(i,j)*( vbar(i,j,1))
           enddo
         enddo
 
@@ -235,10 +223,7 @@
       use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
       use dimensions, only: inode, jnode
       use scalars, only: n, nrhs
-#ifdef WEC
-      use wec_frc, only: ust, vst
-#endif
-      use instant_output, only: wrt_instant
+
       implicit none
       integer istr,iend,jstr,jend, i,j,k
 
@@ -249,31 +234,14 @@
           do i=istr,iendR
             FlxU(i,j,k)=0.5*(Hz(i,j,k)+Hz(i-1,j,k))*dn_u(i,j)
 
-     &                                       *( u(i,j,k,nrhs)
-# ifdef WEC
-     &                                            +ust(i,j,k)
-# endif
-     &                                                      )
-! JM make sure that ust,vst are properly masked in wec_frc and remove
-# if defined WEC && defined MASKING
-            FlxU(i,j,k)=FlxU(i,j,k)*umask(i,j)
-# endif
+     &                                       *( u(i,j,k,nrhs))
             Hz_u(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i-1,j,k))
           enddo
         enddo
         do j=jstr,jendR
           do i=istrR,iendR
             FlxV(i,j,k)=0.5*(Hz(i,j,k)+Hz(i,j-1,k))*dm_v(i,j)
-! Daniel add/edit for WEC
-!     &                                         *v(i,j,k,nrhs)
-     &                                       *( v(i,j,k,nrhs)
-# ifdef WEC
-     &                                           + vst(i,j,k)
-# endif
-     &                                                      )
-# if defined WEC && defined MASKING
-            FlxV(i,j,k)=FlxV(i,j,k)*vmask(i,j)
-# endif
+     &                                       *( v(i,j,k,nrhs))
             Hz_v(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i,j-1,k))
           enddo
         enddo
@@ -318,10 +286,7 @@
       use ocean_vars, only: u, v, hz, flxu, flxv
       use scalars, only: n, forw_start, iic, nnew
       use dimensions, only: nz
-#ifdef WEC
-      use wec_frc, only: ust2d, vst2d, ust, vst
-#endif
-      use instant_output, only: wrt_instant
+
       implicit none
       integer istr,iend,jstr,jend, i,j,k
       real, dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N) :: DC,FC
@@ -360,9 +325,6 @@
 #  endif
           do i=istr,iendR
             FC(i,0)=(FC(i,0)-DU_avg1(i,j))/DC(i,0)
-#  ifdef WEC
-     &                                 +ust2d(i,j)
-#  endif
           enddo
           !! JM: Very first time step only
 
@@ -402,27 +364,16 @@
 # else
         do i=istr,iendR
           FC(i,0)=(FC(i,0)-DU_avg2(i,j))/DC(i,0) ! FC(i,0) is mismatch in [m/s]
-#  ifdef WEC
-     &                               +ust2d(i,j)
-#  endif
         enddo
 # endif
 
         do k=1,N
           do i=istr,iendR
-!!JM make sure that ust, vst are masked in wec_frc and fix this!!
             u(i,j,k,nnew)=(u(i,j,k,nnew)-FC(i,0)) !! removing ubar mismatch from u
 # ifdef MASKING
      &                                *umask(i,j)
-#  ifdef WEC
-     &               +ust(i,j,k)*(umask(i,j)-1.0)
-#  endif
 # endif
-            FlxU(i,j,k)=DC(i,k)*( u(i,j,k,nnew)
-# ifdef WEC
-     &                                +ust(i,j,k)
-# endif
-     &                                          )
+            FlxU(i,j,k)=DC(i,k)*( u(i,j,k,nnew))
           enddo
         enddo
 
@@ -445,9 +396,6 @@
 #  endif
             do i=istrR,iendR
               FC(i,0)=(FC(i,0)-DV_avg1(i,j))/DC(i,0)
-#  ifdef WEC
-     &                                   +vst2d(i,j)
-#  endif
             enddo
 
 #  ifdef EXTRAP_BAR_FLUXES
@@ -465,10 +413,6 @@
      &                          +MID*DV_avg2(i,j)
      &                       -BAK*DV_avg_bak(i,j)
      &                 )/DC(i,0)
-! Daniel add --> not sure if WEC should be in here. DevinD also not sure but suspect so.
-#ifdef WEC
-     &                   +vst2d(i,j)
-#endif
 #   endif
             enddo
           endif
@@ -476,27 +420,15 @@
 # else
           do i=istrR,iendR
             FC(i,0)=(FC(i,0)-DV_avg2(i,j))/DC(i,0)
-#  ifdef WEC
-     &                                 +vst2d(i,j)
-#  endif
           enddo
 # endif
           do k=1,nz
             do i=istrR,iendR
-!! JM same thing as above for ust. (masking in wec_frc)
               v(i,j,k,nnew)=(v(i,j,k,nnew)-FC(i,0))
 # ifdef MASKING
      &                                  *vmask(i,j)
-#  ifdef WEC
-     &                 +vst(i,j,k)*(vmask(i,j)-1.0)
-#  endif
 # endif
-              FlxV(i,j,k)=DC(i,k)*( v(i,j,k,nnew)
-# ifdef WEC
-     &                                +vst(i,j,k)
-# endif
-     &                                          )
-
+              FlxV(i,j,k)=DC(i,k)*( v(i,j,k,nnew))
             enddo
           enddo
         endif

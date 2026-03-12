@@ -6,9 +6,6 @@
 ! integrated) ETA-component velocity vbar(:,:,knew).
 
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
-#ifdef WEC
-      use wec_frc, only: vst2d
-#endif
       use dimensions, only: inode, jnode
       use boundary, only:
      &     zeta_south, vbar_south, zeta_north,
@@ -151,15 +148,7 @@
 # else
                                              ! Southern edge closed
         do i=istr,iend                       ! ======== ==== ======
-#  ifdef WEC
-          vbar(i,jstr,knew)=-vst2d(i,jstr)   ! no Lagrangian flux
-#   ifdef MASKING
-     &                      *vmask(i,jstr)
-#   endif
-#  else
           vbar(i,jstr,knew)=0.               ! (no-flux, default)
-#  endif
-
         enddo
 # endif          /* OBC_SOUTH */
       endif   !<-- SOUTHERN_EDGE
@@ -282,14 +271,7 @@
 #  endif
 # else
         do i=istr,iend                        ! Northern edge closed
-#  ifdef WEC
-          vbar(i,jend+1,knew)=-vst2d(i,jend+1)  ! no Lagrangian flux
-#   ifdef MASKING
-     &                        *vmask(i,jend+1)
-#   endif
-#  else
           vbar(i,jend+1,knew)=0.                ! (no-flux, default)
-#  endif
         enddo
 # endif /* OBC_NORTH */
       endif          !<--  NORTHERN_EDGE
@@ -578,19 +560,6 @@ c--#endif
         vbar(iend+1,jend+1,knew)=0.5*( vbar(iend+1,jend,knew)
      &                                +vbar(iend,jend+1,knew))
       endif
-#endif
-
-! Daniel add
-!====================================================================
-!       NO LAGRANGIAN FLUX CONDITION AT LAND-SEA INTERFACES
-!====================================================================
-#if defined WEC && defined MASKING
-      do i=istrR,iendR
-        do j=jstr,jendR
-          vbar(i,j,knew)=vbar(i,j,knew)*vmask(i,j)
-     &                  +vst2d(i,j)*(vmask(i,j)-1.0)
-        enddo
-      enddo
 #endif
 
       end
