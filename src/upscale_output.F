@@ -633,7 +633,7 @@
 #include "upscale_output.opt"
 
       ! Public functions
-      public init_upscale
+      public init_upscale, wrt_upscale
 
       contains
 
@@ -662,6 +662,12 @@
 #endif
       call error_log%abort_check()
       end subroutine init_upscale !]
+
+      subroutine wrt_upscale   ![
+
+      implicit none
+
+      end subroutine wrt_upscale
 !----------------------------------------------------------------------
 
 #endif /* MARBL && MARBL_DIAGS */
