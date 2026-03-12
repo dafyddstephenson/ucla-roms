@@ -194,7 +194,7 @@
       argcount = argcount + 1
       call get_command_argument(argcount,arg);
       read(arg,*) nparty
-      print *,nargs,npartx,nparty
+      !print *,nargs,npartx,nparty
       argcount = argcount + 1
       call get_command_argument(argcount,arg)
       grdfile = trim(adjustl(arg))
@@ -203,14 +203,14 @@
 !     print *,'gridfile: ',grdfile
 
       nfiles = nargs - argcount + 1
-      print *,nfiles
+      !print *,nfiles
       allocate(srcfiles(nfiles))
       do i = argcount,nargs
         call get_command_argument(i,arg)
         srcfiles(i-argcount + 1) = trim(adjustl(arg))
 !       read(arg,*) srcfiles(i-3)
       enddo
-      print *,grdfile,srcfiles(1)
+!      print *,grdfile,srcfiles(1)
 
       end subroutine cmd_args_partit !]
 ! ----------------------------------------------------------------------
@@ -476,10 +476,16 @@
       integer :: npi,npj
       integer :: count
 
+      integer :: ncid_grid
+      integer :: gnx_grid, gny_grid
+      integer :: nx_grid, ny_grid
+      integer :: surplus_x_grid, surplus_y_grid
+      integer,dimension(:,:),allocatable :: iloc_grid,jloc_grid
+      integer :: loc_x_grid, loc_y_grid
 
-      ierr = nf90_open(trim(adjustl(grdfile)), nf90_nowrite, ncid)
-       print *, grdfile
-       if (ierr/=0) call handle_ierr(ierr,'opening: ',trim(adjustl(grdfile)))
+      ! Read in source file
+      ierr = nf90_open(trim(adjustl(srcfiles(1))), nf90_nowrite, ncid)
+       if (ierr/=0) call handle_ierr(ierr,'opening: ',trim(adjustl(srcfiles(1))))
 
       ierr = nf90_inq_dimid(ncid,'xi_rho',dimid)
        if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','xi_rho')
@@ -493,11 +499,7 @@
 
       gnx = gnx-2
       gny = gny-2
-
-      allocate(mask(0:gnx+1,0:gny+1))
-      call ncread(ncid, 'mask_rho',mask)
       ierr = nf90_close(ncid)
-!      mask = 1
 
       ! Get interior subdomain size
       nx = ceiling(1.0*gnx/npx)
@@ -506,7 +508,7 @@
       surplus_x = nx*npx - gnx
       surplus_y = ny*npy - gny
 
-      ! Array's to store the location and size of each subdomain
+      ! Arrays to store the location and size of each subdomain
       allocate(iloc(npx,3)) ! lnx = iloc(:,1), is = iloc(:,2), ie = iloc(:,3)
       allocate(jloc(npy,3)) ! lny = jloc(:,1), js = jloc(:,2), je = jloc(:,3)
 
@@ -536,7 +538,6 @@
         jloc(npj,2) = loc_y
         jloc(npj,3) = loc_y + jloc(npj,1) -1
         loc_y = loc_y + jloc(npj,1)
-        print*,jloc(npj,2),jloc(npj,3)
       enddo
 
       allocate(node_map(0:npy+1,0:npx+1))
@@ -545,31 +546,6 @@
       allocate(npj_c(npx*npy))
       allocate(boundary_nodes(npx*npy))
       boundary_nodes = 0
-
-      count = 0
-      do npj = 1,npy
-        do npi = 1,npx
-          if (.not. classic) then
-            msk_mx = maxval(mask(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
-          else
-            msk_mx = 1
-          endif
-          if (msk_mx /= 0) then
-            count = count+1
-            node_map(npj,npi) = count
-            npi_c(count) = npi
-            npj_c(count) = npj
-          endif
-          ! record if at boundary
-          if (((npi==1).or.(npi==npx)).or.((npj==1).or.(npj==npy))) then
-            boundary_nodes(count)=1
-          endif
-        enddo
-      enddo
-      nparts = count
-      print *,'nparts: ',nparts
-
-      deallocate(mask)
 
       ! adjust iloc/jloc to reflect rho-vars in netcdf files
       ! first and last subdomains have buffers, so 1 point larger
@@ -598,6 +574,94 @@
       jlcv(:,3) = jlcv(:,3)-1
 
 
+      !! Determine tiles to be ignored by MPI masking
+
+      ! Read in grid file
+      ierr = nf90_open(trim(adjustl(grdfile)), nf90_nowrite, ncid_grid)
+       if (ierr/=0) call handle_ierr(ierr,'opening: ',trim(adjustl(grdfile)))
+
+      ierr = nf90_inq_dimid(ncid,'xi_rho',dimid)
+       if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','xi_rho')
+      ierr = nf90_inquire_dimension(ncid, dimid, len=gnx_grid)
+       if (ierr/=0) call handle_ierr(ierr,'getting dimension: ','xi_rho')
+
+      ierr = nf90_inq_dimid(ncid,'eta_rho',dimid)
+       if (ierr/=0) call handle_ierr(ierr,'getting dimid: ','eta_rho')
+      ierr = nf90_inquire_dimension(ncid, dimid, len=gny_grid)
+       if (ierr/=0) call handle_ierr(ierr,'getting dimension: ','eta_rho')
+
+      gnx_grid = gnx_grid-2
+      gny_grid = gny_grid-2
+
+      ! Get interior subdomain size
+      nx_grid = ceiling(1.0*gnx_grid/npx)
+      ny_grid = ceiling(1.0*gny_grid/npy)
+
+      surplus_x_grid = nx_grid*npx - gnx_grid
+      surplus_y_grid = ny_grid*npy - gny_grid
+
+      ! Array's to store the location and size of each subdomain
+      allocate(iloc_grid(npx,3)) ! lnx = iloc(:,1), is = iloc(:,2), ie = iloc(:,3)
+      allocate(jloc_grid(npy,3)) ! lny = jloc(:,1), js = jloc(:,2), je = jloc(:,3)
+
+      loc_x_grid = 1
+      do npi = 1,npx
+        if (npi==1) then ! left-most subdomain
+          iloc_grid(npi,1) = nx_grid - surplus_x_grid/2
+        elseif (npi==npx) then ! East-most subdomain
+          iloc_grid(npi,1) = nx_grid - (surplus_x_grid+1)/2
+        else
+          iloc_grid(npi,1) = nx_grid
+        endif
+        iloc_grid(npi,2) = loc_x_grid
+        iloc_grid(npi,3) = loc_x_grid + iloc_grid(npi,1) -1
+        loc_x_grid = loc_x_grid + iloc_grid(npi,1)
+      enddo
+
+      loc_y_grid = 1
+      do npj = 1,npy
+        if (npj==1) then ! left-most subdomain
+          jloc_grid(npj,1) = ny_grid - surplus_y_grid/2
+        elseif (npj==npy) then ! North-most subdomain
+          jloc_grid(npj,1) = ny_grid - (surplus_y_grid+1)/2
+        else
+          jloc_grid(npj,1) = ny_grid
+        endif
+        jloc_grid(npj,2) = loc_y_grid
+        jloc_grid(npj,3) = loc_y_grid + jloc_grid(npj,1) -1
+        loc_y_grid = loc_y_grid + jloc_grid(npj,1)
+      enddo
+
+
+      allocate(mask(0:gnx_grid+1,0:gny_grid+1))
+      call ncread(ncid_grid, 'mask_rho',mask)
+      ierr = nf90_close(ncid_grid)
+
+      count = 0
+      do npj = 1,npy
+        do npi = 1,npx
+          if (.not. classic) then
+            msk_mx = maxval(mask(iloc_grid(npi,2):iloc_grid(npi,3),jloc_grid(npj,2):jloc_grid(npj,3)))
+          else
+            msk_mx = 1
+          endif
+          if (msk_mx /= 0) then
+            count = count+1
+            node_map(npj,npi) = count
+            npi_c(count) = npi
+            npj_c(count) = npj
+          endif
+          ! record if at boundary
+          if (((npi==1).or.(npi==npx)).or.((npj==1).or.(npj==npy))) then
+            boundary_nodes(count)=1
+          endif
+        enddo
+      enddo
+      nparts = count
+      print *,'nparts: ',nparts
+
+      deallocate(mask)
+
       end subroutine partition_mask  !]
 ! ----------------------------------------------------------------------
       subroutine make_partial_files  ![
@@ -621,6 +685,8 @@
       real,dimension(10)              ::attparam
       integer :: ierr, ncid,npid
       integer :: natts,idm,vid,did
+      real*4 :: nanf
+      real*8 :: nand
       integer,dimension(2) :: subdompos
 
       ! open up reference netcdf for global attributes
@@ -730,7 +796,13 @@
             do iatt=1,natts
               ! input attribute based on type
               if (attvalue(iatt)=='n/a') then  ! parameter (type(real))
-                ierr = nf90_put_att(npid,vid,attname(iatt),attparam(iatt))
+                nanf = 0.0/0.0
+                nand = 0.0/0.0
+                if (xtype==5) then
+                  ierr = nf90_put_att(npid,vid,attname(iatt),nanf)
+                elseif (xtype==6) then
+                  ierr = nf90_put_att(npid,vid,attname(iatt),nand)
+                endif
               elseif (attparam(iatt)==0) then  ! string    (type(char))
                 ierr = nf90_put_att(npid,vid,attname(iatt),attvalue(iatt))
               endif
