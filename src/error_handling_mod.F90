@@ -639,8 +639,8 @@ contains
           write(error_unit,*)
 
        case (SCOPE_POINT)
+          write(error_unit,'(A)') 'THE ABOVE ERROR WAS RAISED FROM THE FOLLOWING POINTS: '
           do j = 1, n_locs
-             write(error_unit,'(A)') 'THE ABOVE ERROR WAS RAISED FROM THE FOLLOWING POINTS: '
              write(error_unit,*) &
                   '  rank ', grouped_log_entries(i)%id(j)%rank, &
                   ' (i,j,k)=(', grouped_log_entries(i)%id(j)%i, ',', &
@@ -858,7 +858,7 @@ contains
     character(len=:), allocatable, intent(out) :: serialized_log_entry
     character(len=:), allocatable :: info_no_newlines
     ! Fixed-length temporary to hold the serialized log entry
-    character(len=4096) :: tmp
+    character(len=16384) :: tmp
 
     info_no_newlines = this%info
     info_no_newlines = replace_string(info_no_newlines, new_line('A'), '\n')

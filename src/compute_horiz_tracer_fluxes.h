@@ -113,7 +113,7 @@
             enddo           !--> discard curv,grad, keep FX
           enddo
 !!!
-#ifdef UPSCALING
+#if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
           if (.not.west_exchng) then
             do j=jstr,jend
               FX(istr,j) = FX(istr,j) + 0.5*(t(istr-1,j,k,nrhs,itrc)-t(istr,j,k,nrhs,itrc))
@@ -199,7 +199,7 @@
             enddo
           enddo             !--> discard curv,grad, keep FE
 !!!
-#ifdef UPSCALING
+#if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
           if (.not.south_exchng) then
             do i=istr,iend
               FE(i,jstr) = FE(i,jstr) + 0.5*(t(i,jstr-1,k,nrhs,itrc)-t(i,jstr,k,nrhs,itrc))

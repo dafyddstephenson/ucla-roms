@@ -88,13 +88,13 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     start_time, synchro_flag, tdays, time, proc
       use sponge_tune, only: ub_tune
       use particles, only: floats, init_particles
-      use upscale_output, only: do_upscale, init_upscale
+      use upscale_output, only: do_upscale, init_upscale, wrt_upscale
       use random_output, only: do_random, init_random
       use cstar_output, only: do_cstar, init_cstar
       use frc_output, only: do_frc, init_frc
       use analytical, only: ana_vmix
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,diag_pflx, init_diagnostics
+      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
 #endif
 #ifdef ANA_INITIAL
      &     , ana_init
@@ -115,6 +115,8 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
       use precheck, only: do_precheck
       use error_handling_mod, only: error_log
+      use calc_pflx_mod, only: init_pflx
+
       implicit none
 
       integer trd, tile, my_first, my_last, range
@@ -182,6 +184,7 @@ C$OMP BARRIER
 #ifdef SPONGE_TUNE
       if (ub_tune) call init_orlanski_tune
 #endif
+      call init_pflx
 
 c--#define CR
 CR      write(*,*) '-11' MYID
@@ -295,7 +298,10 @@ CR      write(*,*)  ' -2' MYID
 #endif
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
-      if (do_upscale) call init_upscale
+      if (do_upscale) then
+        call init_upscale
+!        call wrt_upscale
+      endif
       if (do_frc) call init_frc
 
 
@@ -339,7 +345,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       use tides, only: bry_tides, pot_tides
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,diag_pflx, do_diagnostics
+      use diagnostics, only: diag_uv,diag_trc,do_diagnostics
 #endif
       implicit none
 
@@ -485,7 +491,7 @@ CR      write(*,*)  ' -2' MYID
       if (wrt_smflx.or.wrt_stflx) call wrt_sflux
 
 #ifdef DIAGNOSTICS
-      if (diag_uv.or.diag_trc.or.diag_pflx) call do_diagnostics
+      if (diag_uv.or.diag_trc) call do_diagnostics
 #endif
 
       if (do_random) call wrt_random

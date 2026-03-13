@@ -85,7 +85,7 @@ c--# define CONST_TRACERS
 
       use ocean_vars, only: flxu, flxv, z_w, hz, we, wi, z_r
       use scalars, only: n, dt, nnew, nrhs, nt, nstp
-#ifdef UPSCALING
+#if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
       use upscale_output, only:
      &     do_upscale, calc_forcing_rates, wrt_upscale
 #endif
@@ -212,7 +212,7 @@ c--#  define ntdf nrhs
               enddo
             enddo                 !-->  discard FX,FE
 
-#if defined MARBL && defined UPSCALING
+#if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
         if (do_upscale) then
           call calc_forcing_rates(itrc,k,FX,FE,istr,iend,jstr,jend)
         endif
