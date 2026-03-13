@@ -15,7 +15,7 @@
       implicit none
       private
 
-#include "calc_pflx_mod.opt"
+#include "calc_pflx.opt"
 
             ! Pressure flux terms
       ! --------------
