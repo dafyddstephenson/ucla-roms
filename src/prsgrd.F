@@ -51,7 +51,7 @@
       use dimensions, only:  nx, ny, nz
       use scalars, only: n, g, rho0, nrhs
 #ifdef DIAGNOSTICS
-      use diagnostics, only: rho_d, p_int, calc_diag, diag_uv, udiag,
+      use diagnostics, only: calc_diag, diag_uv, udiag,
      &  vdiag, ipgr, dxdyi_u, dxdyi_v
 #endif
       use calc_pflx_mod, only: calc_pflx, calc_pressure_flux
@@ -225,19 +225,6 @@ c**         dpth=z_w(i,j,N)-z_r(i,j,k)
         enddo
       enddo   !<-- j
 
-#ifdef DIAGNOSTICS
-      if (CORR_STAGE) then
-        if (allocated(rho_d)) then
-          rho_d = rho(1:nx,1:ny,:)
-        endif
-        if (allocated(p_int)) then
-          p_int = 0
-          do k=1,nz
-           p_int = p_int + p(1:nx,1:ny,k)*Hz(1:nx,1:ny,k)
-          enddo
-        endif
-      endif
-#endif
 
 ! Compute XI-component of pressure gradient term:
 !-------- ------------ -- -------- -------- -----
