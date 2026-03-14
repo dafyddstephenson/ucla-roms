@@ -328,7 +328,7 @@
       endif
 
       if (frc_time == 'current') then
-        modtime = tdays * sec2day
+        modtime = tdays
       elseif (frc_time == '1/2 fwd') then
         modtime = tdays + 0.5*dt*sec2day
       elseif (frc_time == 'forward') then
@@ -418,7 +418,7 @@
       endif
 
       if (frc_time == 'current') then
-        modtime = tdays * sec2day
+        modtime = tdays
       elseif (frc_time == '1/2 fwd') then
         modtime = tdays + 0.5*dt*sec2day
       elseif (frc_time == 'forward') then
@@ -504,7 +504,7 @@
       endif
 
       if (frc_time == 'current') then
-        modtime = tdays * sec2day
+        modtime = tdays
       elseif (frc_time == '1/2 fwd') then
         modtime = tdays + 0.5*dt*sec2day
       elseif (frc_time == 'forward') then
@@ -588,7 +588,7 @@
       d1 = .false.
 
       if (frc_time == 'current') then
-        modtime = tdays * sec2day
+        modtime = tdays
       elseif (frc_time == '1/2 fwd') then
         modtime = tdays + 0.5*dt*sec2day
       elseif (frc_time == 'forward') then

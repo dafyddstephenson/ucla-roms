@@ -255,8 +255,8 @@ CR      write(*,*) ' -6' MYID
                                   ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
       frc_time='current'
-      call set_forces
       tdays = time*sec2day
+      call set_forces
 
       call set_depth(0)
 
