@@ -27,6 +27,7 @@
       character(len=7),dimension(2) :: dname
       integer,dimension(2)          :: dsize
       integer                       :: varid
+      integer                       :: nxc, nyc
 
       call show_use_optimal
 
@@ -81,12 +82,12 @@
       npx0 = 1 !min_part_size
       npy0 = 1 !min_part_size
 
-      allocate(active(1:(npx1*npy1),1:7)); active(:,:) = 0
+      allocate(active(1:(npx1*npy1),1:9)); active(:,:) = 0
       i = 0
       do npy = npy0,npy1
         do npx = npx0,npx1
           if ((npx*npy>=cores).and.(npx*npy<=cores/ocean).and.(npx<gnx).and.(npy<gny)) then
-            call check_mask(npx,npy,gnx,gny,msk,nx,ny)
+            call check_mask(npx,npy,gnx,gny,msk,nx,ny,nxc,nyc)
             if ((nparts<=cores).and.(nparts>=(cores*prct))) then
               i=i+1
               active(i,1) = nparts
@@ -96,6 +97,8 @@
               active(i,5) = nx*ny
               active(i,6) = nx
               active(i,7) = ny
+              active(i,8) = nxc
+              active(i,9) = nyc
             endif
           endif
         enddo
@@ -108,6 +111,7 @@
       write(*,*) ""
       nt = 0
       do k=i,i-min(10,i)+1,-1
+
         nt = nt + 1
         write(*,'(a8,i0,a1)') 'Tiling #', nt, ":"
         write(*,'(a9,i0)') 'NP_XI  = ' ,int(active(k,2))
@@ -115,6 +119,16 @@
         write(*,'(i0,a36,i0,a15)') int(active(k,1)),' cores used for ocean points out of ',int(active(k,2)*active(k,3)),' tiles overall.'
         write(*,'(a28,i0)') "Horizontal points per tile: ", int(active(k,5))
         write(*,'(a27,i0,a1)') "Please run with 'mpirun -n ", int(active(k,1)), "'"
+
+        ! Advise whether this decomposition will work with a coarse grid
+
+        if ((active(k,8)==1e5) .or. (active(k,9)==1e5)) then
+          write(*,'(a69)') "WARNING: This decomposition will "//
+     &      "not work with coarse grid variables."
+        else if ((active(k,8) <= 2) .or. (active(k,9) <= 2)) then
+          write(*,'(a59)') "WARNING: Coarse grid inputs will "//
+     &      "not work with Parallel IO."
+        endif
         write(*,*)
       enddo
 

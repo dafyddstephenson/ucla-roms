@@ -39,6 +39,8 @@
       ! Only used by mynode=0
       integer,dimension(:,:),allocatable :: iloc,jloc
       integer,dimension(:,:),allocatable :: ilcu,jlcv
+      integer,dimension(:,:),allocatable :: ilocc,jlocc
+      integer,dimension(:,:),allocatable :: ilcuc,jlcvc
       integer,dimension(:,:),allocatable :: node_map
       integer,dimension(:)  ,allocatable :: npi_c,npj_c
       integer,dimension(:)  ,allocatable :: boundary_nodes
@@ -374,23 +376,26 @@
 
       end subroutine show_use_optimal !]
 ! ----------------------------------------------------------------------
-      subroutine check_mask(npx,npy,gnx,gny,mask,nx,ny)   ![
+      subroutine check_mask(npx,npy,gnx,gny,mask,nx,ny,nxc,nyc)   ![
       implicit none
 
       ! input/outputs
       integer, intent(in)                        :: npx,npy,gnx,gny
       real,dimension(0:gnx+1,0:gny+1),intent(in) :: mask
       integer, intent(out)                       :: nx,ny
+      integer, intent(out)                       :: nxc,nyc
 
       ! local
-      real,dimension(:,:),allocatable :: rflx
-      real    :: msk_mx,rfx_mx
-!      integer :: nx,ny
+      real    :: msk_mx
       integer :: surplus_x,surplus_y
       integer :: loc_x,loc_y
+      integer :: gnxc, gnyc
+      integer :: surplus_xc,surplus_yc
+      integer :: loc_xc,loc_yc
       integer :: npi,npj
       integer :: count
       integer :: tot_x, tot_y
+
 
       ! Get interior subdomain size
       nx = ceiling(1.0*gnx/npx)
@@ -398,6 +403,17 @@
 
       surplus_x = nx*npx - gnx
       surplus_y = ny*npy - gny
+
+      gnxc = gnx/2
+      gnyc = gny/2
+
+      nxc = (gnxc+npx-1)/npx
+      nyc = (gnyc+npy-1)/npy
+
+      surplus_xc = nxc*npx - gnxc
+      surplus_yc = nyc*npy - gnyc
+
+      !!! ANALYZE THE FULL GRID
 
       ! Array's to store the location and size of each subdomain
       allocate(iloc(npx,3)) ! lnx = iloc(:,1), is = iloc(:,2), ie = iloc(:,3)
@@ -435,6 +451,80 @@
         tot_y = tot_y + jloc(npj,1)
       enddo
 
+      ! u-, and v- variables differ only for the first subdomain
+      allocate(ilcu(npx,3))
+      allocate(jlcv(npy,3))
+      ilcu = iloc
+      jlcv = jloc
+      ilcu(1,1) = iloc(1,1)-1
+      jlcv(1,1) = jloc(1,1)-1
+      ilcu(2:npx,2) = ilcu(2:npx,2)-1
+      ilcu(:,3) = ilcu(:,3)-1
+      jlcv(2:npy,2) = jlcv(2:npy,2)-1
+      jlcv(:,3) = jlcv(:,3)-1
+
+      ! If there would be problems creating the files, exit and disqualify this partitioning
+      if ((any(iloc(:,2) < 1)) .or. (any(jloc(:,2) < 1)) .or. (any(ilcu(:,2) < 1)) .or. (any(jlcv(:,2) < 1))) then
+        deallocate(iloc,jloc,ilcu,jlcv)
+        nx=1e5; ny=1e5
+        return
+      endif
+
+
+      !!! ANALYZE THE COARSE GRID
+
+      ! Array's to store the location and size of each subdomain
+      allocate(ilocc(npx,3)) ! lnx = iloc(:,1), is = iloc(:,2), ie = iloc(:,3)
+      allocate(jlocc(npy,3)) ! lny = jloc(:,1), js = jloc(:,2), je = jloc(:,3)
+
+      loc_xc = 1
+      do npi = 1,npx
+        if (npi==1) then ! left-most subdomain
+          ilocc(npi,1) = nxc - surplus_xc/2
+        elseif (npi==npx) then ! East-most subdomain
+          ilocc(npi,1) = nxc - (surplus_xc+1)/2
+        else
+          ilocc(npi,1) = nxc
+        endif
+        ilocc(npi,2) = loc_xc
+        ilocc(npi,3) = loc_xc + ilocc(npi,1) -1
+        loc_xc = loc_xc + ilocc(npi,1)
+      enddo
+
+      loc_yc = 1
+      do npj = 1,npy
+        if (npj==1) then ! left-most subdomain
+          jlocc(npj,1) = nyc - surplus_yc/2
+        elseif (npj==npy) then ! North-most subdomain
+          jlocc(npj,1) = nyc - (surplus_yc+1)/2
+        else
+          jlocc(npj,1) = nyc
+        endif
+        jlocc(npj,2) = loc_yc
+        jlocc(npj,3) = loc_yc + jlocc(npj,1) -1
+        loc_yc = loc_yc + jlocc(npj,1)
+      enddo
+
+      ! u-, and v- variables differ only for the first subdomain
+      allocate(ilcuc(npx,3))
+      allocate(jlcvc(npy,3))
+      ilcuc = ilocc
+      jlcvc = jlocc
+      ilcuc(1,1) = ilocc(1,1)-1
+      jlcvc(1,1) = jlocc(1,1)-1
+      ilcuc(2:npx,2) = ilcuc(2:npx,2)-1
+      ilcuc(:,3) = ilcuc(:,3)-1
+      jlcvc(2:npy,2) = jlcvc(2:npy,2)-1
+      jlcvc(:,3) = jlcvc(:,3)-1
+
+      ! If there would be problems creating the files, exit and disqualify this partitioning
+      if ((any(ilocc(:,2) < 1)) .or. (any(jlocc(:,2) < 1)) .or. (any(ilcuc(:,2) < 1)) .or. (any(jlcvc(:,2) < 1))) then
+        nxc=1e5; nyc=1e5
+      endif
+
+
+      ! Determine which tiles to ignore during the partitioning
+
       allocate(node_map(0:npy+1,0:npx+1))
       node_map = -98
       allocate(npi_c(npx*npy))
@@ -444,9 +534,9 @@
       do npj = 1,npy
         do npi = 1,npx
           msk_mx = maxval(mask(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
-          rfx_mx = 0
-!         rfx_mx = maxval(rflx(iloc(npi,2):iloc(npi,3),jloc(npj,2):jloc(npj,3)))
-          if (msk_mx > 0.or.rfx_mx>0) then
+!            write(*,*) "Tile ", npi, npj, msk_mx
+          if (msk_mx > 0) then !.or.rfx_mx>0) then
+!            write(*,*) "CHECK Tile ", count, npi, npj
             count = count+1
             node_map(npj,npi) = count
             npi_c(count) = npi
@@ -456,7 +546,7 @@
       enddo
       nparts = count
 
-      deallocate(iloc,jloc,node_map,npi_c,npj_c)
+      deallocate(iloc,jloc,ilcu,jlcv,node_map,npi_c,npj_c, ilocc, jlocc, ilcuc, jlcvc)
 
       end subroutine check_mask !]
 ! ----------------------------------------------------------------------
@@ -573,7 +663,6 @@
       jlcv(2:npy,2) = jlcv(2:npy,2)-1
       jlcv(:,3) = jlcv(:,3)-1
 
-
       !! Determine tiles to be ignored by MPI masking
 
       ! Read in grid file
@@ -597,8 +686,11 @@
       nx_grid = ceiling(1.0*gnx_grid/npx)
       ny_grid = ceiling(1.0*gny_grid/npy)
 
+!      write(*,*) '(NX,NY) = ', nx_grid, ny_grid
       surplus_x_grid = nx_grid*npx - gnx_grid
       surplus_y_grid = ny_grid*npy - gny_grid
+
+!      write(*,*) 'Surplus (X,Y)=', surplus_x_grid, surplus_y_grid
 
       ! Array's to store the location and size of each subdomain
       allocate(iloc_grid(npx,3)) ! lnx = iloc(:,1), is = iloc(:,2), ie = iloc(:,3)
@@ -616,6 +708,7 @@
         iloc_grid(npi,2) = loc_x_grid
         iloc_grid(npi,3) = loc_x_grid + iloc_grid(npi,1) -1
         loc_x_grid = loc_x_grid + iloc_grid(npi,1)
+!        write(*,*) "X tile", npi, ":", iloc_grid(npi,2), iloc_grid(npi,3)
       enddo
 
       loc_y_grid = 1
@@ -630,6 +723,7 @@
         jloc_grid(npj,2) = loc_y_grid
         jloc_grid(npj,3) = loc_y_grid + jloc_grid(npj,1) -1
         loc_y_grid = loc_y_grid + jloc_grid(npj,1)
+!        write(*,*) "Y tile", npj, ":", jloc_grid(npj,2), jloc_grid(npj,3)
       enddo
 
 
@@ -642,11 +736,14 @@
         do npi = 1,npx
           if (.not. classic) then
             msk_mx = maxval(mask(iloc_grid(npi,2):iloc_grid(npi,3),jloc_grid(npj,2):jloc_grid(npj,3)))
+!            write(*,*) iloc_grid(npi,2),iloc_grid(npi,3),jloc_grid(npj,2),jloc_grid(npj,3)
+!            write(*,*) size(mask(iloc_grid(npi,2):iloc_grid(npi,3),jloc_grid(npj,2):jloc_grid(npj,3)))
           else
             msk_mx = 1
           endif
-          if (msk_mx /= 0) then
+          if (msk_mx > 0) then
             count = count+1
+!            write(*,*) "Tile ", count, npi, npj
             node_map(npj,npi) = count
             npi_c(count) = npi
             npj_c(count) = npj
@@ -659,8 +756,6 @@
       enddo
       nparts = count
       print *,'nparts: ',nparts
-
-      deallocate(mask)
 
       end subroutine partition_mask  !]
 ! ----------------------------------------------------------------------
@@ -974,6 +1069,7 @@
             ! ----- BOUNDARIES ONLY ----- ![
              if (ncinfo%dims(ivar)%t_dimid == 2) then
 c$$$            if (index(ncinfo%dims(ivar)%dimnames(2),'tim')>0) then
+
               if ((bry=='w').or.(bry=='e')) then
                 select case(ncinfo%vartype(ivar))
                 case('r')
@@ -1192,7 +1288,6 @@ c$$$            if (index(ncinfo%dims(ivar)%dimnames(3),'time')>0) then
             endif
           end select
         endif
-
 
         ! variables that need to be saved once
 !        if ((index(ncinfo%dims(ivar)%dimnames(1),'nriver')>0)
