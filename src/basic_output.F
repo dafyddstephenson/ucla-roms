@@ -104,9 +104,7 @@
       integer,dimension(6)   :: date
 
       if (wrt_file_rst .and. monthly_restarts) then
-        ! Look one timestep ahead to initialize the "previous month", so that
-        ! when we restart we don't immediately write out a file.
-        call sec2date(start_time+dt,date)
+        call sec2date(start_time,date)
         month_at_prev_timestep = date(2)
       endif
 
@@ -530,15 +528,16 @@
       if (wrt_file_rst) then
 
       if (monthly_restarts) then
-          ! We need to save the last two timesteps of the month, so that when the new simulation
-          ! loads the restart file the first timestep it takes will be the first timestep of the
-          ! new month.
-          ! time + 2*dt here so that it looks two timesteps ahead to see if we're changing months.
-          call sec2date(time+2*dt,date)
+
+          ! We will save the last timestep of a month and the first
+          ! timestep of the next month
+          ! Look one timestep ahead to see if we're changing months
+          call sec2date(time+dt,date)
 
           if (write_another_step) then
             call wrt_restart_file
             write_another_step = .false.
+            month_at_prev_timestep = date(2)
           endif
 
           if ((date(2) - month_at_prev_timestep) /= 0) then
@@ -546,10 +545,7 @@
             write_another_step = .true.
           endif
 
-          month_at_prev_timestep = date(2)
       else
-!     if (.not. first_step) output_time_rst = output_time_rst + dt   ! only start count after first timestep
-!     first_step=.false.                                             ! as first step the ocean_vars values are for t=0
           output_time_rst = output_time_rst + dt
 
           if (output_time_rst    >=output_period_rst
