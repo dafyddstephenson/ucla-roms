@@ -18,9 +18,9 @@
       use dimensions, only: i0, i1, j0, j1, nx, ny, xi_rho, eta_rho,
      &   x0,x1,y0,y1
       use pio_roms, only: use_pio, pio_gtype
-#ifdef PARALLEL_IO
-     &     , pio_nriv, pio_initialize_rivers
-#endif
+!#ifdef PARALLEL_IO
+!     &     , pio_nriv, pio_initialize_rivers
+!#endif
       use param, only: lm, mm, mynode, ocean_grid_comm
       use error_handling_mod, only: error_log
 
@@ -77,22 +77,19 @@
          allocate(nc_rtrc%vdata(nriv,nt,2))
       end if
 
-      if(.not. init_riv_done) call init_river_frc ! initialize once river flux locations & arrays
-
       ! set river flux volumes and tracer data:
       if(analytical) then
 
         call set_ana_river_frc ! cppflags needed else won't link without the analytical.F
 
       else
-        pio_gtype='rvv'
+        pio_gtype='---'
         call set_frc_data(nc_rvol,riv_vol) ! set river volume flux for all rivers at current time
-        pio_gtype='rtr'
         call set_frc_data(nc_rtrc,var2d=riv_trc)           ! set river tracers flux for all rivers at current time
 
       endif
 
-!      if(.not. init_riv_done) call init_river_frc ! initialize once river flux locations & arrays
+      if(.not. init_riv_done) call init_river_frc ! initialize once river flux locations & arrays
 
       end subroutine set_river_frc  !]
 ! ----------------------------------------------------------------------
@@ -122,11 +119,6 @@
       allocate( ridx(GLOBAL_2D_ARRAY) )    ; ridx = 0
       allocate( ridx_real(GLOBAL_2D_ARRAY) )    ; ridx_real = 0.
       allocate( rfrc(GLOBAL_2D_ARRAY) )    ; rfrc = 0.
-
-#ifdef PARALLEL_IO
-      pio_nriv = nriv
-      call pio_initialize_rivers
-#endif
 
       if (analytical) then
         riv_west=xl*0.4 ! River west bank at 40% from west

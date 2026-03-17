@@ -15,11 +15,9 @@
       use pio, only : PIO_setdebuglevel
       use pio_nf, only : PIO_inq_varid, PIO_inq_dimid
       use pionfatt_mod, only : put_att_desc_text
-!      use mpi
       use mpi, only: mpi_comm_world
       use mpi_f08, only: mpi_character
       use param, only: LLm, MMm, N, ocean_grid_comm, nt, mynode
-!      use river_frc, only: nriv
       implicit none
 
       private
@@ -48,8 +46,6 @@
       character(len=3),public      :: pio_gtype
       !> Frame number
       integer(kind=PIO_OFFSET_KIND) :: frame
-!      !> An array of zero size
-!      real, dimension(:), allocatable :: pio_zero
 
 
       !> @brief Specifies the flavor of netCDF output.
@@ -214,7 +210,6 @@
       integer, public :: pio_xi_u_coarse, pio_eta_v_coarse
       integer, public :: pio_i0, pio_i1, pio_j0, pio_j1
       integer, public :: pio_i0c, pio_i1c, pio_j0c, pio_j1c
-      integer, public :: pio_nriv
 
       integer, public :: pio_xi_rho_start, pio_eta_rho_start
       integer, public :: pio_xi_u_start, pio_eta_v_start
@@ -232,11 +227,7 @@
       !! Initialize the ParallelIO library. Also allocate
       !! memory to read data from the netCDF file.
       public  :: pio_initialize
-      public  :: pio_initialize_rivers
       public  :: pio_initialize_coarse
-
-!      !! This subroutine creates the decomposition.
-!      public  :: pio_createDecomp2D
 
       !! This subroutine reads the data array from the netCDF input file.
       public  :: pio_ncread1
@@ -689,25 +680,7 @@
         pio_count_2Cv(2) = pio_eta_v_coarse+pio_j0c+pio_j1c
 
       end subroutine pio_initialize_coarse
-! ----------------------------------------------------------------------
-      subroutine pio_initialize_rivers
-
-        implicit none
-
-        pio_dimLen_riv_vol(1) = pio_nriv
-        pio_start_riv_vol(1) = 1
-        pio_count_riv_vol(1) = pio_nriv
-
-
-        pio_dimLen_riv_trc(1) = pio_nriv
-        pio_dimLen_riv_trc(2) = nt
-        pio_start_riv_trc(1) = 1
-        pio_start_riv_trc(2) = 1
-        pio_count_riv_trc(1) = pio_nriv
-        pio_count_riv_trc(2) = nt
-
-      end subroutine pio_initialize_rivers
-! ----------------------------------------------------------------------
+!! ----------------------------------------------------------------------
       subroutine pio_createDecomp
 
         implicit none
