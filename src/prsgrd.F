@@ -225,7 +225,6 @@ c**         dpth=z_w(i,j,N)-z_r(i,j,k)
         enddo
       enddo   !<-- j
 
-
 ! Compute XI-component of pressure gradient term:
 !-------- ------------ -- -------- -------- -----
 
