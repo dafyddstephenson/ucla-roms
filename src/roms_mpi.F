@@ -126,6 +126,15 @@
         ierr=nf90_close(ncid)
       endif
 
+
+#ifndef PARALLEL_IO
+       if (new_part) then
+         call error_log%raise_global(
+     &        info="ERROR: MPI Masking initiated without Parallel IO",
+     &        context=sr_name)
+       endif
+#endif
+
       ! Check whether the number of expected nodes
       ! matches the mpirun or mpiexec argument
 
