@@ -277,6 +277,7 @@ CR      write(*,*) ' -6' MYID
       frc_time='current'
       tdays = time*sec2day
       call set_forces
+
       call set_depth(0)
 
 !----------------------------------------------------------------------
@@ -367,6 +368,8 @@ CR      write(*,*)  ' -2' MYID
 #ifdef DIAGNOSTICS
       use diagnostics, only: diag_uv,diag_trc,do_diagnostics
 #endif
+      use roms_read_write, only: frc_time
+
       implicit none
 
 

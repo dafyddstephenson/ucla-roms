@@ -453,7 +453,7 @@
 
         var1d = cff1*nc%vdata(:,1,it1) + cff2*nc%vdata(:,1,it2)
 
-        if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
+        if (vtimes(it1)>modtime+dt.or.vtimes(it2)<modtime-dt) then
            write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
      &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
      &          ". time interpolation_error"
@@ -541,7 +541,7 @@
 
         var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
-        if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
+        if (vtimes(it1)>modtime+dt.or.vtimes(it2)<modtime-dt) then
            write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
      &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
      &          ". time interpolation_error"
@@ -626,7 +626,7 @@
         cff2=( modtime-vtimes(it1) )/( vtimes(it2)-vtimes(it1) )
         var3d = cff1*nc%vdata(:,:,:,it1) + cff2*nc%vdata(:,:,:,it2)
 
-        if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
+        if (vtimes(it1)>modtime+dt.or.vtimes(it2)<modtime-dt) then
            write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
      &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
      &          ". time interpolation error"
@@ -712,7 +712,7 @@
 
         var2d = cff1*nc%vdata(:,:,it1) + cff2*nc%vdata(:,:,it2)
 
-        if (vtimes(it1)>modtime+eps.or.vtimes(it2)<modtime-eps) then
+        if (vtimes(it1)>modtime+dt.or.vtimes(it2)<modtime-dt) then
            write(error_info,*) 'set_frc_data :: ', nc%vname,frcfile(nc%ifile),
      &          'set_frc_data :: ', vtimes(it1), vtimes(it2), modtime,
      &          ". time interpolation error"
@@ -831,11 +831,6 @@
             irec=irec+1                                              ! why not use ncread????
             ierr=nf90_get_var(ncid,tid,ltime,(/irec/), (/1/))        ! Get vtime (nf90 needs array hence syntax)
             vtime = ltime(1)
-!!!
-!            if (mynode == 0) then
-!             print *, vname, vtime
-!             print *, "curr time", time
-!            endif
 
             if (vtime>time) then                                     ! correct time
               found_rec = .true.
