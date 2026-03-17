@@ -233,9 +233,9 @@
              cALK = 0.0
           endif
 
-          ! Implementation: Flux = Flux - (k / beta) * (C_dic + ddic_dalk * C_alk)
+          ! Implementation: Flux = Flux - (k / beta) * (C_dic - ddic_dalk * C_alk)
           stflx(i,j,itrc) = stflx(i,j,itrc) - 
-     &      ( k_gas(i,j) / beta ) * ( t(i,j,nz,nrhs,itrc) + eta * cALK )
+     &      ( k_gas(i,j) / beta ) * ( t(i,j,nz,nrhs,itrc) - eta * cALK )
 
           ! Here, stflx is stored as (stflx * Hz) to maintain consistency
           ! with t, which is also in (t * Hz) form. This ensures the units match
