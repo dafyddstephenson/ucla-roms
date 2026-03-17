@@ -15,7 +15,7 @@
       real,parameter    :: output_period_avg = 100                ! output averaging period in seconds
       integer,parameter :: nrpf_avg          = 10                 ! total recs per file
 
-      logical,parameter :: wrt_his_dia           = .true.         ! t/f to write module history file
+      logical,parameter :: wrt_his_dia           = .false.         ! t/f to write module history file
       real,parameter    :: output_period_his_dia = 86400            ! output period in seconds
       integer,parameter :: nrpf_his_dia          = 31             ! total recs per file
 
