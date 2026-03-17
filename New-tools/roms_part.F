@@ -6,6 +6,7 @@
       use mpi
       use nc_read_write
       use netcdf
+      use, intrinsic :: ieee_arithmetic, only : ieee_is_nan, ieee_support_nan, ieee_value, ieee_quiet_nan
 
       private
 
@@ -781,7 +782,6 @@
       integer :: ierr, ncid,npid
       integer :: natts,idm,vid,did
       real*4 :: nanf
-      real*8 :: nand
       integer,dimension(2) :: subdompos
 
       ! open up reference netcdf for global attributes
@@ -872,7 +872,7 @@
             if (index(dname(idm),'xi_u') > 0)    dsize(idm)=ilcu(i,1)
             if (index(dname(idm),'eta_rho') > 0) dsize(idm)=jloc(j,1)
             if (index(dname(idm),'eta_v') > 0)   dsize(idm)=jlcv(j,1)
-            if (index(dname(idm),'time') > 0)    dsize(idm)= 0
+            !if (index(dname(idm),'time') > 0)    dsize(idm)=0
           enddo
 
           if (ndims==0) then
@@ -892,13 +892,12 @@
               ! input attribute based on type
               if (attvalue(iatt)=='n/a') then  ! parameter (type(real))
                 nanf = 0.0/0.0
-                nand = 0.0/0.0
-                if (xtype==5) then
+                if (ieee_is_nan(attparam(iatt))) then
                   ierr = nf90_put_att(npid,vid,attname(iatt),nanf)
-                elseif (xtype==6) then
-                  ierr = nf90_put_att(npid,vid,attname(iatt),nand)
+                else
+                  ierr = nf90_put_att(npid,vid,attname(iatt),attparam(iatt))
                 endif
-              elseif (attparam(iatt)==0) then  ! string    (type(char))
+              else
                 ierr = nf90_put_att(npid,vid,attname(iatt),attvalue(iatt))
               endif
             enddo
