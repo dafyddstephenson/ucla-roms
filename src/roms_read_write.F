@@ -32,6 +32,7 @@
       integer,parameter,dimension(3) :: reference_date = (/2000,1,1/)  ! year, month, day
       integer,parameter :: dt_format = 0
       integer :: cbf = 5  ! buffer size for coarse data array
+      character(len=7),public :: frc_time
 
       ! Dimension names for in netcdf files
       character(len=7),public,parameter :: dn_xr = 'xi_rho'
@@ -326,7 +327,13 @@
         bry = 0
       endif
 
-      modtime = tdays + 0.5*dt*sec2day    ! input data times in days. Interpolated time is based on 1/2 step time
+      if (frc_time == 'current') then
+        modtime = tdays
+      elseif (frc_time == '1/2 fwd') then
+        modtime = tdays + 0.5*dt*sec2day
+      elseif (frc_time == 'forward') then
+        modtime = tdays + dt*sec2day
+      endif
 
       it1 = nc%it1
       it2 = nc%it2
@@ -410,7 +417,13 @@
         bry = 0
       endif
 
-      modtime = tdays + 0.5*dt*sec2day    ! input data times in days. Interpolated time is based on 1/2 step time
+      if (frc_time == 'current') then
+        modtime = tdays
+      elseif (frc_time == '1/2 fwd') then
+        modtime = tdays + 0.5*dt*sec2day
+      elseif (frc_time == 'forward') then
+        modtime = tdays + dt*sec2day
+      endif
 
       it1 = nc%it1
       it2 = nc%it2
@@ -490,7 +503,13 @@
         bry = 0
       endif
 
-      modtime = tdays + 0.5*dt*sec2day    ! input data times in days. Interpolated time is based on 1/2 step time
+      if (frc_time == 'current') then
+        modtime = tdays
+      elseif (frc_time == '1/2 fwd') then
+        modtime = tdays + 0.5*dt*sec2day
+      elseif (frc_time == 'forward') then
+        modtime = tdays + dt*sec2day
+      endif
 
       it1 = nc%it1
       it2 = nc%it2
@@ -568,7 +587,13 @@
 
       d1 = .false.
 
-      modtime = tdays + 0.5*dt*sec2day    ! input data times in days. Interpolated time is based on 1/2 step time
+      if (frc_time == 'current') then
+        modtime = tdays
+      elseif (frc_time == '1/2 fwd') then
+        modtime = tdays + 0.5*dt*sec2day
+      elseif (frc_time == 'forward') then
+        modtime = tdays + dt*sec2day
+      endif
 
       it1 = nc%it1
       it2 = nc%it2
