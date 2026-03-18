@@ -302,7 +302,6 @@ CR      write(*,*)  ' -2' MYID
       if (do_cstar)  call init_cstar
       if (do_upscale) then
         call init_upscale
-!        call wrt_upscale
       endif
       if (do_frc) call init_frc
 
