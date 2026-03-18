@@ -57,6 +57,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars, only: ntimes, iic, ntstart, diag_sync
       use timers, only: start_timers, stop_timers
       use error_handling_mod, only: error_log
+      use upscale_output, only: do_upscale, wrt_upscale
 
       implicit none
 
@@ -71,6 +72,12 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
            exit ! break out of loop and wind down
         end if
       enddo
+
+      ! This is where we might put a generic "final write" subroutine
+      if (do_upscale) then
+        call wrt_upscale
+      endif
+
       call stop_timers()
       return
       end subroutine roms_thread
@@ -88,7 +95,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     start_time, synchro_flag, tdays, time, proc
       use sponge_tune, only: ub_tune
       use particles, only: floats, init_particles
-      use upscale_output, only: do_upscale, init_upscale, wrt_upscale
+      use upscale_output, only: do_upscale, init_upscale
       use random_output, only: do_random, init_random
       use cstar_output, only: do_cstar, init_cstar
       use frc_output, only: do_frc, init_frc
