@@ -49,7 +49,6 @@
       use calc_pflx_mod, only : calc_pflx, get_init_slow
       use sponge_tune, only: ub_tune, get_init_ub
       use pio_roms, only: use_pio, pio_gtype
-      use instant_output, only: wrt_instant
 
       implicit none
       character(len=8) :: sr_name = "get_init"
@@ -422,24 +421,20 @@ c--#define VERBOSE
 
       pio_gtype = '2Dr'
       call ncread(ncid,'zeta',zeta(x0:x1,y0:y1,1),start=(/1,1,record/),fname=ininame)
-      zeta(i0:i1,j0:j1,1)=zeta(i0:i1,j0:j1,1)*rmask(i0:i1,j0:j1)
-      call exchange_xxx(zeta(:,:,1))!,skip=use_pio)
+      zeta(x0:x1,y0:y1,1)=zeta(x0:x1,y0:y1,1)*rmask(x0:x1,y0:y1)
+      call exchange_xxx(zeta(:,:,1))
 
       pio_gtype = '2Du'
       call ncread(ncid,'ubar',ubar(x_:x1,y0:y1,1),start=(/1,1,record/),fname=ininame)
-      ubar(1:i1,j0:j1,1) = ubar(1:i1,j0:j1,1)*
-     &  (umask(1:i1,j0:j1)+riv_umask(1:i1,j0:j1))
-      call exchange_xxx(ubar(:,:,1))!,skip=use_pio)
+      ubar(x_:x1,y0:y1,1) = ubar(x_:x1,y0:y1,1)*
+     &  (umask(x_:x1,y0:y1)+riv_umask(x_:x1,y0:y1))
+      call exchange_xxx(ubar(:,:,1))
 
       pio_gtype = '2Dv'
       call ncread(ncid,'vbar',vbar(x0:x1,y_:y1,1),start=(/1,1,record/),fname=ininame)
-      vbar(i0:i1,1:j1,1) = vbar(i0:i1,1:j1,1)*
-     &  (vmask(i0:i1,1:j1)+riv_vmask(i0:i1,1:j1))
-      call exchange_xxx(vbar(:,:,1))!,skip=use_pio)
-
-      !call wrt_instant(zeta, 'zeta')
-      !call wrt_instant(ubar, 'ubar')
-      !call wrt_instant(vbar, 'vbar')
+      vbar(x0:x1,y_:y1,1) = vbar(x0:x1,y_:y1,1)*
+     &  (vmask(x0:x1,y_:y1)+riv_vmask(x0:x1,y_:y1))
+      call exchange_xxx(vbar(:,:,1))
 
 ! Two sets of fast-time-averaged barotropic fluxes needed for exact
 ! restart in the case when using Adams-Bashforth-like extrapolation of
@@ -517,18 +512,18 @@ c--#define VERBOSE
       pio_gtype = '3Du'
       call ncread(ncid,vname(1,indxU),u(x_:x1,y0:y1,:,tindx),start=start,fname=ininame)
       do k=1,nz
-        u(1:i1,j0:j1,k,tindx) = u(1:i1,j0:j1,k,tindx)*
-     &  (umask(1:i1,j0:j1)+riv_umask(1:i1,j0:j1))
+        u(x_:x1,y0:y1,k,tindx) = u(x_:x1,y0:y1,k,tindx)*
+     &  (umask(x_:x1,y0:y1)+riv_umask(x_:x1,y0:y1))
       enddo
-      call exchange_xxx(u(:,:,:,tindx))! ,skip=use_pio)
+      call exchange_xxx(u(:,:,:,tindx))
 
       pio_gtype = '3Dv'
       call ncread(ncid,vname(1,indxV),v(x0:x1,y_:y1,:,tindx),start=start,fname=ininame)
       do k=1,nz
-        v(i0:i1,1:j1,k,tindx) = v(i0:i1,1:j1,k,tindx)*
-     &  (vmask(i0:i1,1:j1)+riv_vmask(i0:i1,1:j1))
+        v(x0:x1,y_:y1,k,tindx) = v(x0:x1,y_:y1,k,tindx)*
+     &  (vmask(x0:x1,y_:y1)+riv_vmask(x0:x1,y_:y1))
       enddo
-      call exchange_xxx(v(:,:,:,tindx))! ,skip=use_pio)
+      call exchange_xxx(v(:,:,:,tindx))
 
 
 ! Tracer variables.
@@ -540,10 +535,9 @@ c--#define VERBOSE
           pio_gtype = '3Dr'
           call ncread(ncid,t_vname(itrc),t(x0:x1,y0:y1,:,tindx,itrc),start=start,fname=ininame)
           do k=1,N
-            t(i0:i1,j0:j1,k,tindx,itrc)=t(i0:i1,j0:j1,k,tindx,itrc)*rmask(i0:i1,j0:j1)
+            t(x0:x1,y0:y1,k,tindx,itrc)=t(x0:x1,y0:y1,k,tindx,itrc)*rmask(x0:x1,y0:y1)
           enddo
-          call exchange_xxx(t(:,:,:,tindx,itrc))!,skip=use_pio)
-!          call wrt_instant(t(:,:,:,tindx,itrc),t_vname(itrc))
+          call exchange_xxx(t(:,:,:,tindx,itrc))
         else
 
            if (itrc <= iTandS) then ! temperature and salt(s) always require inital condition
@@ -571,9 +565,6 @@ c--#define VERBOSE
         endif
       enddo
 
-      !call wrt_instant(u(:,:,:,tindx),'u')
-      !call wrt_instant(v(:,:,:,tindx),'v')
-
       call error_log%abort_check()
       start=1; start(3)=record                                       ! 2D vars
 # ifdef LMD_KPP
@@ -582,7 +573,7 @@ c--#define VERBOSE
         pio_gtype = '2Dr'
         call ncread(ncid,vname(1,indxHbls),hbls(x0:x1,y0:y1),start=start,fname=ininame)
         hbls(i0:i1,j0:j1)=hbls(i0:i1,j0:j1)*rmask(i0:i1,j0:j1)     ! output mask 0, rather than random numbers
-        call exchange_xxx(hbls(:,:))!,skip=use_pio)
+        call exchange_xxx(hbls(:,:))
       else
         mpi_nonexit_warn write(*,'(1x,6A)')        'WARNING: netCDF ',
      & 'variable ''', trim(vname(1,indxHbls)), ''' not found in ''',
@@ -596,7 +587,7 @@ c--#define VERBOSE
         pio_gtype = '2Dr'
         call ncread(ncid,vname(1,indxHbbl),hbbl(x0:x1,y0:y1),start=start,fname=ininame)
         hbbl(i0:i1,j0:j1)=hbbl(i0:i1,j0:j1)*rmask(i0:i1,j0:j1)     ! output mask 0, rather than random numbers
-        call exchange_xxx(hbbl(:,:))!,skip=use_pio)            ! confirmed needs an exchange, not sure why
+        call exchange_xxx(hbbl(:,:))                               ! confirmed needs an exchange, not sure why
       else
         mpi_nonexit_warn write(*,'(1x,6A)')        'WARNING: netCDF ',
      & 'variable ''', trim(vname(1,indxHbbl)), ''' not found in ''',
