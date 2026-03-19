@@ -135,8 +135,8 @@ class CDRUpscaler:
             self.uscl_dataset.ocean_time.values/86400.,
             dims=("cdr_time",),
             attrs={
-                "long_name": "Time for CDR release",
-                "units": "days",
+                "long_name": "CDR forcing time",
+                "units": "days since 2000/01/01",
             },
         )
 
