@@ -8,9 +8,7 @@
 
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, jnorth, jsouth, ieast, iwest, nsub_e, nsub_x
+      use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x
       use tracers, only: t_units
       use dimensions, only: i0, i1, j0, j1
       use grid, only: latr, lonr
@@ -108,7 +106,7 @@
       ! Allocate and initialize arrays.
 
       use param, only: lm, mm, mynode
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
 
       implicit none
 
@@ -137,7 +135,7 @@
       if (mynode==0) print *,'init upscale'
 
 #ifdef OBC_NORTH
-      if (.not.north_exchng) then
+      if (jnode==npy-1) then ! .not. north_exchng
         allocate(ALK_add_north_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(DIC_add_north_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(ALK_rate_north(GLOBAL_1DX_ARRAY,1:N) )
@@ -160,7 +158,7 @@
 #endif
 
 #ifdef OBC_SOUTH
-      if (.not.south_exchng) then
+      if (jnode==0) then ! .not. south_exchange
         allocate(ALK_add_south_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(DIC_add_south_avg(GLOBAL_1DX_ARRAY,1:N) )
         allocate(ALK_rate_south(GLOBAL_1DX_ARRAY,1:N) )
@@ -183,7 +181,7 @@
 #endif
 
 #ifdef OBC_EAST
-      if (.not.east_exchng) then
+      if (inode==npx-1) then ! .not. east_exchng
         allocate(ALK_add_east_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(DIC_add_east_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(ALK_rate_east(GLOBAL_1DY_ARRAY,1:N) )
@@ -206,7 +204,7 @@
 #endif
 
 #ifdef OBC_WEST
-      if (.not.west_exchng) then
+      if (inode==0) then ! .not. west_exchng
         allocate(ALK_add_west_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(DIC_add_west_avg(GLOBAL_1DY_ARRAY,1:N) )
         allocate(ALK_rate_west(GLOBAL_1DY_ARRAY,1:N) )
@@ -317,7 +315,7 @@
       ! Update averages
       ! The average is always scaled properly throughout
       ! reset navg_rnd=0 after an output of the average
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: mynode
       implicit none
 
@@ -337,7 +335,7 @@
       endif
 
 #ifdef OBC_NORTH
-      if (.not.north_exchng) then
+      if (jnode==npy-1) then
         ALK_add_north_avg(:,:) = ALK_add_north_avg(:,:)*(1-coef) +
      &  (ALK_rate_north(:,:) - ALK_alt_rate_north(:,:))*coef
         DIC_add_north_avg(:,:) = DIC_add_north_avg(:,:)*(1-coef) +
@@ -347,7 +345,7 @@
 #endif
 
 #ifdef OBC_SOUTH
-      if (.not.south_exchng) then
+      if (jnode==0) then
         ALK_add_south_avg(:,:) = ALK_add_south_avg(:,:)*(1-coef) +
      &  (ALK_rate_south(:,:) - ALK_alt_rate_south(:,:))*coef
         DIC_add_south_avg(:,:) = DIC_add_south_avg(:,:)*(1-coef) +
@@ -357,7 +355,7 @@
 #endif
 
 #ifdef OBC_EAST
-      if (.not.east_exchng) then
+      if (inode==npx-1) then
         ALK_add_east_avg(:,:) = ALK_add_east_avg(:,:)*(1-coef) +
      &  (ALK_rate_east(:,:) - ALK_alt_rate_east(:,:))*coef
         DIC_add_east_avg(:,:) = DIC_add_east_avg(:,:)*(1-coef) +
@@ -367,7 +365,7 @@
 #endif
 
 #ifdef OBC_WEST
-      if (.not.west_exchng) then
+      if (inode==0) then
         ALK_add_west_avg(:,:) = ALK_add_west_avg(:,:)*(1-coef) +
      &  (ALK_rate_west(:,:) - ALK_alt_rate_west(:,:))*coef
         DIC_add_west_avg(:,:) = DIC_add_west_avg(:,:)*(1-coef) +
@@ -406,7 +404,7 @@
         call ncwrite(ncid,'ocean_time',(/time/),(/record_uscl/))
 
 #ifdef OBC_NORTH
-        if (.not.north_exchng) then
+        if (jnode==npy-1) then
           call ncwrite(ncid,'ALK_add_north',ALK_add_north_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_north',DIC_add_north_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_north',h_north_avg(i0:i1,:),(/1,1,record_uscl/))
@@ -417,7 +415,7 @@
 #endif
 
 #ifdef OBC_SOUTH
-        if (.not.south_exchng) then
+        if (jnode==0) then
           call ncwrite(ncid,'ALK_add_south',ALK_add_south_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_south',DIC_add_south_avg(i0:i1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_south',h_south_avg(i0:i1,:),(/1,1,record_uscl/))
@@ -428,7 +426,7 @@
 #endif
 
 #ifdef OBC_EAST
-        if (.not.east_exchng) then
+        if (inode==npx-1) then
           call ncwrite(ncid,'ALK_add_east',ALK_add_east_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_east',DIC_add_east_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_east',h_east_avg(j0:j1,:),(/1,1,record_uscl/))
@@ -439,7 +437,7 @@
 #endif
 
 #ifdef OBC_WEST
-        if (.not.west_exchng) then
+        if (inode==0) then
           call ncwrite(ncid,'ALK_add_west',ALK_add_west_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'DIC_add_west',DIC_add_west_avg(j0:j1,:),(/1,1,record_uscl/))
           call ncwrite(ncid,'h_west',h_west_avg(j0:j1,:),(/1,1,record_uscl/))
@@ -482,7 +480,7 @@
       subroutine create_upscale_vars(ncid)  ![
       ! Add edata variables to an opened netcdf file
 
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       implicit none
 
       !import/export
@@ -493,7 +491,7 @@
 #include "compute_tile_bounds.h"
 
 #ifdef OBC_NORTH
-      if (.not.north_exchng) then
+      if (jnode==npy-1) then
         varid = nccreate(ncid,'ALK_add_north',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on northern boundary')
@@ -524,7 +522,7 @@
 #endif
 
 #ifdef OBC_SOUTH
-      if (.not.south_exchng) then
+      if (jnode==0) then
         varid = nccreate(ncid,'ALK_add_south',(/dn_xr,dn_zr,dn_tm/),(/xi_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on southern boundary')
@@ -555,7 +553,7 @@
 #endif
 
 #ifdef OBC_EAST
-      if (.not.east_exchng) then
+      if (inode==npx-1) then
         varid = nccreate(ncid,'ALK_add_east',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on eastern boundary')
@@ -586,7 +584,7 @@
 #endif
 
 #ifdef OBC_WEST
-      if (.not.west_exchng) then
+      if (inode==0) then
         varid = nccreate(ncid,'ALK_add_west',(/dn_yr,dn_zr,dn_tm/),(/eta_rho,N,0/),uscl_prec)
         ierr = nf90_put_att(ncid,varid,'long_name',
      &  'ALK additionality on western boundary')

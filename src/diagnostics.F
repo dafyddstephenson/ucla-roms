@@ -14,22 +14,23 @@
       use scalars, only: nt
       use scalars, only:
      &     dt, iic, tdays, time, nrhs, n, nnew
-      use hidden_mpi_vars, only:
-     &     east_msg_exch, north_msg_exch,
-     &     south_msg_exch, west_msg_exch
       use nc_read_write, only: ncwrite, ncread
       use roms_read_write, only:
      &     diag_avg_output, diagnostic_opt, bfx,
-     &     bfy, dn_xu, dn_yv, dn_zr, eta_v, xi_u,
-     &     dn_tm, dn_xr, dn_yr, eta_rho, xi_rho,
+     &     bfy, dn_xu, dn_yv, dn_zr,
+     &     dn_tm, dn_xr, dn_yr,
      &     store_string_att, create_file
-      use dimensions, only: nz, nx, ny, i0, i1, j0, j1
-      use param, only: lm, mm, ieast, iwest, jnorth, jsouth, mynode
+      use dimensions, only:
+     &     nz, nx, ny, i0, i1, j0, j1, eta_v, xi_u, eta_rho, xi_rho,
+     &     inode, jnode, npx, npy
+      use param, only: lm, mm, ieast, iwest, jnorth, jsouth, mynode,
+     &    ew_periodic, ns_periodic
       use grid, only:
      &     pn, pm,
      &     umask
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use grid, only: vmask, rmask
+      use pio_roms, only: use_pio, pio_gtype
 
       implicit none
       private
@@ -268,32 +269,28 @@
         ! The first/last interior flux can only be 2nd order
         ! JM for now, the first and last domain may start/end
         ! JM at something different than 1 or nx/ny.
-        if (.not.west_msg_exch) then
-          i=iwest
+        if (inode.eq.0) then
           do j=1,ny
-            FX4(i,j) = 0.25*( FlxU(i,j,k) + FlxU(i+1,j,k) )
-     &                     *( u(i,j,k,nrhs) + u(i+1,j,k,nrhs) )
+            FX4( 1,j) = 0.25*( FlxU(1,j,k) + FlxU(2,j,k) )
+     &                     *( u(1,j,k,nrhs) + u(2,j,k,nrhs) )
           enddo
         endif
-        if(.not.east_msg_exch) then
-          i=ieast
+        if(inode.eq.npx-1) then
           do j=1,ny
-            FX4(i,j)= 0.25*( FlxU(i,j,k) + FlxU(i+1,j,k) )
-     &                    *( u(i,j,k,nrhs) + u(i+1,j,k,nrhs) )
+            FX4(nx,j)= 0.25*( FlxU(nx,j,k) + FlxU(nx+1,j,k) )
+     &                    *( u(nx,j,k,nrhs) + u(nx+1,j,k,nrhs) )
           enddo
         endif
-        if(.not.south_msg_exch) then
-          j=jsouth
+        if(jnode.eq.0) then
           do i=1,nx
-            FY4(i,j) = 0.25*( FlxV(i-1,j,k) + FlxV(i,j,k) )
-     &                     *( u(i,j,k,nrhs) + u(i,j-1,k,nrhs) )
+            FY4(i,1) = 0.25*( FlxV(i-1,1,k) + FlxV(i,1,k) )
+     &                     *( u(i,1,k,nrhs) + u(i,0,k,nrhs) )
           enddo
         endif
-        if(.not.north_msg_exch) then
-          j=jnorth+1
+        if(jnode.eq.npy-1) then
           do i=1,nx
-            FY4(i,j) = 0.25*( FlxV(i-1,j,k) + FlxV(i,j,k) )
-     &                     *( u(i,j,k,nrhs) + u(i,j-1,k,nrhs) )
+            FY4(i,ny+1) = 0.25*( FlxV(i-1,ny+1,k) + FlxV(i,ny+1,k) )
+     &                     *( u(i,ny+1,k,nrhs) + u(i,ny,k,nrhs) )
           enddo
         endif
 
@@ -367,33 +364,30 @@
         enddo
 
         ! The first/last interior flux can only be 2nd order
-        if (.not.west_msg_exch) then
+        if (inode.eq.0) then
           do j=1,ny
-            i=iwest
-            FX4(i,j) = 0.25*( FlxU(i,j-1,k)+FlxU(i,j,k) )
-     &                     *( v(i-1,j,k,nrhs)+v(i,j,k,nrhs) )
+            FX4(1,j) = 0.25*( FlxU(1,j-1,k)+FlxU(1,j,k) )
+     &                     *( v(0,j,k,nrhs)+v(1,j,k,nrhs) )
           enddo
         endif
-        if(.not.east_msg_exch) then
-          i=ieast+1
+        if(inode.eq.npx-1) then
+          i=nx+1
           do j=1,ny
-            FX4(i,j) = 0.25*( FlxU(i,j-1,k)+FlxU(i,j,k) )
-     &                     *( v(i-1,j,k,nrhs)+ v(i,j,k,nrhs) )
+            FX4(nx+1,j) = 0.25*( FlxU(nx+1,j-1,k)+FlxU(nx+1,j,k) )
+     &                     *( v(nx,j,k,nrhs)+ v(nx+1,j,k,nrhs) )
           enddo
         endif
 
-        if(.not.south_msg_exch) then
-          j=jsouth
+        if(jnode.eq.0) then
           do i=1,nx
-            FY4(i,j) = 0.25*( FlxV(i,j,k) + FlxV(i,j+1,k) )
-     &                     *( v(i,j,k,nrhs) + v(i,j+1,k,nrhs) )
+            FY4(i,1) = 0.25*( FlxV(i,1,k) + FlxV(i,2,k) )
+     &                     *( v(i,1,k,nrhs) + v(i,2,k,nrhs) )
           enddo
         endif
-        if(.not.north_msg_exch) then
-          j=jnorth
+        if(jnode.eq.npy-1) then
           do i=1,nx
-            FY4(i,j) = 0.25*( FlxV(i,j,k) + FlxV(i,j+1,k) )
-     &                     *( v(i,j,k,nrhs) + v(i,j+1,k,nrhs) )
+            FY4(i,ny) = 0.25*( FlxV(i,ny,k) + FlxV(i,ny+1,k) )
+     &                     *( v(i,ny,k,nrhs) + v(i,ny+1,k,nrhs) )
           enddo
         endif
 
@@ -624,8 +618,10 @@
       enddo
       ! For non-periodic domains, we extrapolate the gradients at the
       ! domain boundaries because the buffer is only 1 point wide.
-      if (.not.west_msg_exch) grd(0   ,1:ny) = grd(1   ,1:nx)
-      if (.not.east_msg_exch) grd(nx+2,1:ny) = grd(nx+1,1:nx)
+      if (.not.ew_periodic) then
+        if (inode.eq.0)     grd(0   ,1:ny) = grd(1   ,1:nx)
+        if (inode.eq.npx-1) grd(nx+2,1:ny) = grd(nx+1,1:nx)
+      endif
       do j= 1,ny
         do i= 0,nx+1
           grd(i,j) = grd(i+1,j)+grd(i,j)
@@ -642,8 +638,10 @@
           grd(i,j) = (t(i,j,k,nrhs,itrc)-t(i,j-1,k,nrhs,itrc))*vmask(i,j)
         enddo
       enddo
-      if (.not.north_msg_exch) grd(1:nx,0   ) = grd(1:nx,1   )
-      if (.not.south_msg_exch) grd(1:nx,ny+2) = grd(1:nx,ny+1)
+      if (.not.ns_periodic) then
+        if (jnode.eq.0)     grd(1:nx,0   ) = grd(1:nx,1   )
+        if (jnode.eq.npy-1) grd(1:nx,ny+2) = grd(1:nx,ny+1)
+      endif
       do j= 0,ny+1
         do i= 1,nx
           grd(i,j) = grd(i,j+1)+grd(i,j)
@@ -925,8 +923,7 @@
 ! ----------------------------------------------------------------------
       subroutine wrt_diag_uv(ncid,record,ud,vd)  ![
       ! Write uv diagnostic vars to file
-
-      use param, only: south_exchng, west_exchng
+      use dimensions, only: inode, jnode
       implicit none
 
       !import/export
@@ -937,7 +934,7 @@
       !local
       integer,   dimension(4) :: start    ! start vector for writing
 
-        if (.not.west_exchng) ud(1,:,:,:) = 0
+        if (inode.eq.0) ud(1,:,:,:) = 0
         start = (/1, bfy, 1, record/)
 
         call ncwrite(ncid,'u_pgr',ud(:,:,:,1),start)
@@ -948,7 +945,7 @@
         call ncwrite(ncid,'u_vmx',ud(:,:,:,6),start)
         call ncwrite(ncid,'u_cpl',ud(:,:,:,7),start)
 
-        if (.not.south_exchng) vd(:,1,:,:) = 0
+        if (jnode.eq.0) vd(:,1,:,:) = 0
         start = (/bfx, 1, 1, record/)
 
         call ncwrite(ncid,'v_pgr',vd(:,:,:,1),start)

@@ -78,7 +78,7 @@ c      write(*,*) 'kmp_stacksize =', size
 
       call read_inp()
 #ifdef SOLVE3D
-        call set_weights
+      call set_weights
 #endif
 
       end

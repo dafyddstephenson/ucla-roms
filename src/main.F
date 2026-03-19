@@ -3,13 +3,18 @@
 
 !!    program main               ! Open MP version of ROMS driver
 
-      use param, only: mynode, ocean_grid_comm
+      use param, only: mynode, ocean_grid_comm, nsize
 #ifdef NHMG
       use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
-      use mpi_f08, only: mpi_wtime
+      use mpi_f08, only: mpi_wtime, mpi_comm_world
       use timers, only: tstart, tend
+      use read_inp_mod, only: read_inp
+      use roms_mpi, only: mpi_setup
+#ifdef PARALLEL_IO
+      use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
+#endif
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.
@@ -25,7 +30,21 @@ C$ !!   write(*,*) 'MPI thread support levels =', req_lev,level
 C$    ierr=0
       call MPI_Init(ierr)
 
+      ocean_grid_comm=MPI_COMM_WORLD
+      call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
+      call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
+
+      call read_inp
+
       call mpi_setup
+
+#ifdef PARALLEL_IO
+      pio_myRank = mynode
+      pio_ntasks = nsize
+
+      call pio_initialize
+#endif
+
       tstart=MPI_Wtime()
 
 # endif
@@ -257,6 +276,7 @@ CR      write(*,*) ' -6' MYID
       call ana_vmix
 #endif
 
+      write(*,*) 'Finished inits'
                                   ! Set initial model clock: at this
       time=start_time             ! moment "start_time" (global scalar)
                                   ! is set by get_init or analytically
@@ -285,6 +305,7 @@ C$OMP BARRIER
 CR      write(*,*)  ' -3' MYID
 
       call omega
+
       call rho_eos(nrhs)
 
 CR      write(*,*)  ' -2' MYID
@@ -348,6 +369,7 @@ CR      write(*,*)  ' -2' MYID
      &     wrt_his_ocean_vars, wrt_rst_ocean_vars
       use boundary, only: set_bry_all
       use tides, only: set_tides
+      use roms_read_write, only: frc_time
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
 #endif
@@ -384,11 +406,12 @@ CR      write(*,*)  ' -2' MYID
 
       frc_time='current'
       call set_forces
+
       ! use time at n+1/2 for boundary values
       ! we use these values at the end of pre_step, and during step2d
 
-      tdays = time*sec2day
       frc_time = '1/2 fwd'
+      tdays = time*sec2day
       call set_bry_all
 
       if (bry_tides.or.pot_tides) call set_tides(0)
@@ -411,6 +434,7 @@ CR      write(*,*)  ' -2' MYID
 
       ! nrhs points to u/v at time level n
       call prsgrd
+
       call pre_step3d(0)  ! u is m/s here
 
       !! nnew ==n+1/2
@@ -427,9 +451,9 @@ CR      write(*,*)  ' -2' MYID
       !! nnew = n+1
       !! nrhs = n+1/2
       call omega
+
       call rho_eos(nrhs)  !!! use the right time index
 
-!      tdays = (time-0.0*dt)*sec2day
       call set_forces   ! get for time n+1/2
 # if defined LMD_MIXING
       call lmd_vmix(nrhs)
@@ -443,6 +467,7 @@ CR      write(*,*)  ' -2' MYID
       ! All of this seems to happen with Hz's from time n
       ! Corrector step
       call prsgrd
+
       call step3d_uv1(0)  ! update u/v(nnew) with dt*ru/rv
 
 #  ifdef UV_VIS2
@@ -467,7 +492,9 @@ CR      write(*,*)  ' -2' MYID
       call step3d_uv2(0)
 
       call omega
+
       call step3d_t(0)
+!GOOD
 # if defined TS_DIF2 || defined TS_DIF4
       call t3dmix
 # endif

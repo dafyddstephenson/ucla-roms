@@ -9,14 +9,18 @@
 
 #include "cppdefs.opt"
 
-      use roms_read_write, only: ncforce, frcfile, set_frc_data, xi_rho
-      use nc_read_write, only:
-     &     nccreate, ncread, ncwrite
+      use roms_read_write, only: ncforce, frcfile, set_frc_data
+      use nc_read_write, only: nccreate, ncread, ncwrite
       use scalars, only: nt
       use grid, only:
-     &     ana_grdname, dn_xr, dn_yr, eta_rho, xl,
+     &     ana_grdname, dn_xr, dn_yr, xl,
      &     grdname, pm, rmask, riv_umask, riv_vmask, xr
-      use dimensions, only: i0, i1, j0, j1, nx, ny
+      use dimensions, only: i0, i1, j0, j1, nx, ny, xi_rho, eta_rho,
+     &   x0,x1,y0,y1
+      use pio_roms, only: use_pio, pio_gtype
+!#ifdef PARALLEL_IO
+!     &     , pio_nriv, pio_initialize_rivers
+!#endif
       use param, only: lm, mm, mynode, ocean_grid_comm
       use error_handling_mod, only: error_log
 
@@ -79,7 +83,8 @@
         call set_ana_river_frc ! cppflags needed else won't link without the analytical.F
 
       else
-         call set_frc_data(nc_rvol,riv_vol) ! set river volume flux for all rivers at current time
+        pio_gtype='---'
+        call set_frc_data(nc_rvol,riv_vol) ! set river volume flux for all rivers at current time
         call set_frc_data(nc_rtrc,var2d=riv_trc)           ! set river tracers flux for all rivers at current time
 
       endif
@@ -114,8 +119,6 @@
       allocate( ridx(GLOBAL_2D_ARRAY) )    ; ridx = 0
       allocate( ridx_real(GLOBAL_2D_ARRAY) )    ; ridx_real = 0.
       allocate( rfrc(GLOBAL_2D_ARRAY) )    ; rfrc = 0.
-
-
 
       if (analytical) then
         riv_west=xl*0.4 ! River west bank at 40% from west
@@ -154,8 +157,9 @@
          ierr = ierr * nf90_inq_varid(ncid, "river_fraction", varid) ! ... and fraction variables
 
          if (ierr == nf90_noerr) then ! Found the variables in the forcing file
-            call ncread(ncid, "river_index", ridx_real(i0:i1,j0:j1))
-            call ncread(ncid, "river_fraction", rfrc(i0:i1,j0:j1))
+            pio_gtype = '2Dr'
+            call ncread(ncid,"river_index",ridx_real(x0:x1,y0:y1),fname=frcfile(nc_rvol%ifile))
+            call ncread(ncid,"river_fraction",rfrc(x0:x1,y0:y1),fname=frcfile(nc_rvol%ifile))
             ierr = nf90_close(ncid)
 
             ! Check if any river indices are greater than the chosen
@@ -203,7 +207,8 @@
      &              context=module_name//"/"//sr_name,
      &              info=error_info)
             else
-               call ncread(ncid, riv_flx_name, rflx(i0:i1,j0:j1))
+               pio_gtype='2Dr'
+               call ncread(ncid,riv_flx_name,rflx(x0:x1,y0:y1),fname=grdname)
                ierr = nf90_close(ncid)
                where (rflx(i0:i1, j0:j1) > 0)
                   ridx(i0:i1, j0:j1) = floor(rflx(i0:i1, j0:j1) - 1e-5)

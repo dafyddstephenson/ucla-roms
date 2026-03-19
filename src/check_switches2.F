@@ -16,7 +16,7 @@
 
       use param, only:
      &     ieast, iwest, jnorth, jsouth, lm, mm, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use error_handling_mod, only: error_log
 
       implicit none

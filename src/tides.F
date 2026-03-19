@@ -1,10 +1,9 @@
       module tides
 
 #include "cppdefs.opt"
-
+      use dimensions, only: inode, jnode, x_,x0,x1,y_,y0,y1
       use param, only:
-     &     east_exchng, north_exchng, south_exchng, west_exchng,
-     &     mynode, ieast, iwest, jnorth, jsouth, lm, mm
+     &     mynode, ieast, iwest, jnorth, jsouth, lm, mm, np_xi, np_eta
       use scalars, only: g, pi, dt, time
 ! For iic, ntstart, deg2rad, only:
       use roms_read_write, only:
@@ -42,18 +41,18 @@
       allocate(ftide(ntides))
 
       if (bry_tides) then
-        allocate(ztide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(ztide_i(GLOBAL_2D_ARRAY,ntides))
-        allocate(utide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(utide_i(GLOBAL_2D_ARRAY,ntides))
-        allocate(vtide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(vtide_i(GLOBAL_2D_ARRAY,ntides))
+        allocate(ztide_r(GLOBAL_2D_ARRAY,ntides)); ztide_r = 0
+        allocate(ztide_i(GLOBAL_2D_ARRAY,ntides)); ztide_i = 0
+        allocate(utide_r(GLOBAL_2D_ARRAY,ntides)); utide_r = 0
+        allocate(utide_i(GLOBAL_2D_ARRAY,ntides)); utide_i = 0
+        allocate(vtide_r(GLOBAL_2D_ARRAY,ntides)); vtide_r = 0
+        allocate(vtide_i(GLOBAL_2D_ARRAY,ntides)); vtide_i = 0
       endif
 
       if (pot_tides) then
-        allocate(ptide_r(GLOBAL_2D_ARRAY,ntides))
-        allocate(ptide_i(GLOBAL_2D_ARRAY,ntides))
-        allocate(ptide(GLOBAL_2D_ARRAY))
+        allocate(ptide_r(GLOBAL_2D_ARRAY,ntides)); ptide_r = 0
+        allocate(ptide_i(GLOBAL_2D_ARRAY,ntides)); ptide_i = 0
+        allocate(ptide(GLOBAL_2D_ARRAY)); ptide = 0
       endif
 
       if (pot_tides.or.bry_tides) then
@@ -91,7 +90,6 @@
       ! and compute_auxilliary_bounds in the same subroutine as they both
       ! declare and compute. Fortan doesn't allow.
 
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: nsub_e, nsub_x
       implicit none
 
@@ -262,8 +260,9 @@
      &     nf90_inq_varid, nf90_get_var, nf90_get_att
       use dimensions, only: i0, i1, j0, j1
       use error_handling_mod, only: error_log
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use nc_read_write, only: ncread
+      use pio_roms, only: use_pio, pio_gtype
       implicit none
       character(len=10) :: sr_name = "read_tides"
       ! local
@@ -317,23 +316,23 @@
         start(3) = itide
 
         if (bry_tides) then
-          call ncread(ncid,'ssh_Re',ztide_r(i0:i1,j0:j1,itide),start)   ! read tidal elevations
-          call ncread(ncid,'ssh_Im',ztide_i(i0:i1,j0:j1,itide),start)
-!         call exchange_xxx(ztide_r(:,:,itide),ztide_i(:,:,itide))
+          pio_gtype = '2Dr'
+          call ncread(ncid,'ssh_Re',ztide_r(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
+          call ncread(ncid,'ssh_Im',ztide_i(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
 
-          call ncread(ncid,'u_Re',utide_r(1:i1,j0:j1,itide),start)      ! read tidal barotropic velocities.
-          call ncread(ncid,'u_Im',utide_i(1:i1,j0:j1,itide),start)      ! these currents must be on u,v-points
-!         call exchange_xxx(utide_r(:,:,itide),utide_i(:,:,itide))      ! and rotated to align with the grid
+          pio_gtype = '2Du'
+          call ncread(ncid,'u_Re',utide_r(x_:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
+          call ncread(ncid,'u_Im',utide_i(x_:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
 
-          call ncread(ncid,'v_Re',  vtide_r(i0:i1,1:j1,itide),start)
-          call ncread(ncid,'v_Im',  vtide_i(i0:i1,1:j1,itide),start)
-!         call exchange_xxx(vtide_r(:,:,itide),vtide_i(:,:,itide))
+          pio_gtype = '2Dv'
+          call ncread(ncid,'v_Re',vtide_r(x0:x1,y_:y1,itide),start=start,fname=frcfile(var_file_indx))
+          call ncread(ncid,'v_Im',vtide_i(x0:x1,y_:y1,itide),start=start,fname=frcfile(var_file_indx))
         endif
 
         if (pot_tides) then
-          call ncread(ncid,'pot_Re',ptide_r(i0:i1,j0:j1,itide),start)
-          call ncread(ncid,'pot_Im',ptide_i(i0:i1,j0:j1,itide),start)
-!         call exchange_xxx(ptide_r(:,:,itide),ptide_i(:,:,itide))
+          pio_gtype = '2Dr'
+          call ncread(ncid,'pot_Re',ptide_r(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
+          call ncread(ncid,'pot_Im',ptide_i(x0:x1,y0:y1,itide),start=start,fname=frcfile(var_file_indx))
         endif
       end do                    ! <-- itide=1,ntides
 
@@ -351,12 +350,12 @@
       endif
 
       if (bry_tides) then
-        call exchange_xxx(ztide_r,ztide_i)
-        call exchange_xxx(utide_r,utide_i)
-        call exchange_xxx(vtide_r,vtide_i)
+        call exchange_xxx(ztide_r,ztide_i)!,skip=use_pio)
+        call exchange_xxx(utide_r,utide_i)!,skip=use_pio)
+        call exchange_xxx(vtide_r,vtide_i)!,skip=use_pio)
       endif
       if (pot_tides) then
-        call exchange_xxx(ptide_r,ptide_i)
+        call exchange_xxx(ptide_r,ptide_i)!,skip=use_pio)
       endif
 
       if(mynode==0) write(*,'(7x,A)')'tides :: read all tides'

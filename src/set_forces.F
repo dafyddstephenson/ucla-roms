@@ -42,7 +42,7 @@
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: set_bgc_surf_frc
 #endif
-      use hidden_mpi_vars, only: jnode, inode
+      use dimensions, only: jnode, inode
       use boundary, only: frctype
       use scalars, only: nt
 #if defined(CDR_FORCING)

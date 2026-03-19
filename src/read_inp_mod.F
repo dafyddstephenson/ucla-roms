@@ -1,6 +1,6 @@
       module read_inp_mod
 
-      use param, only: mynode, nnodes, ocean_grid_comm
+      use param, only: mynode, nnodes, ocean_grid_comm, nsize
       use mpi_f08, only: mpi_byte
       use roms_read_write, only: git_hash
       use keyword_registry, only:
@@ -114,7 +114,7 @@
 
          implicit none
 
-         call check_tiling()
+!         call check_tiling()
          call check_switches1()
 #ifdef SOLVE3D
          call check_pre_step_switches()
@@ -870,7 +870,7 @@
 
 #ifndef ANA_GRID
       subroutine kwread_grid(unit)
-      use roms_read_write, only: grdname
+      use dimensions, only: grdname
       implicit none
 
       integer, intent(in)    :: unit
@@ -886,7 +886,9 @@
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-      call insert_node(fname, lstr, mynode, NNODES)
+#ifndef PARALLEL_IO
+      call insert_node(fname, lstr, mynode, nsize)
+#endif
 # endif
       open(newunit=testunit, file=trim(fname), status='old',
      &     iostat=ios)
@@ -932,7 +934,9 @@
          lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-         call insert_node(fname, lstr, mynode, NNODES)
+#ifndef PARALLEL_IO
+         call insert_node(fname, lstr, mynode, nsize)
+#endif
 # endif
          open(newunit=testunit, file=trim(fname), status='old',
      &        iostat=ios)
@@ -955,7 +959,7 @@
       subroutine kwread_forcing(unit)
       use roms_read_write, only:
      &     force_files, force_info, max_frc_files,
-     &     store_string_att, frcfile, max_frc
+     &     store_string_att, frcfile, max_frc, frcfile_full
       implicit none
 
       integer, intent(in)    :: unit
@@ -985,7 +989,9 @@
          if (lstr > 0) then
 
 # if defined MPI && defined PARALLEL_FILES
-            call insert_node(fname, lstr, mynode, NNODES)
+#ifndef PARALLEL_IO
+            call insert_node(fname, lstr, mynode, nsize)
+#endif
 # endif
 
 ! Test file availability
@@ -1070,7 +1076,7 @@ c$$$                  end if TODO
       lstr = lenstr(fname)
 
 # if defined MPI && defined PARALLEL_FILES
-      call insert_node(fname, lstr, mynode, NNODES)
+      call insert_node(fname, lstr, mynode, nsize)
 # endif
 
       open(newunit=testunit, file=trim(fname), status='old',
@@ -1096,6 +1102,7 @@ c$$$                  end if TODO
       !output_root_name:
       !     rootname (<- insert desired rootname)
       use roms_read_write, only: output_root_name
+      use instant_output, only: instant_root_name
       implicit none
 
       integer, intent(in)    :: unit
@@ -1106,6 +1113,7 @@ c$$$                  end if TODO
          call report_read_error('output_root_name')
          return
       end if
+      instant_root_name = trim(output_root_name)
 
       end subroutine kwread_output_root_name
       end module read_inp_mod

@@ -11,9 +11,7 @@
 #if defined BIOLOGY_BEC2 || defined MARBL
 
       ! param needed for GLOBAL_2D_array to work. NT = number tracer from param
-      use param, only:
-     &     east_exchng, ieast, itemp, iwest, jnorth,
-     &     jsouth, north_exchng, south_exchng, west_exchng
+      use param, only: ieast, itemp, iwest, jnorth, jsouth
       use tracers, only: t_avg, wrt_t_avg, nt_2_t_avg, t_units
 #ifdef MARBL_DIAGS
       use marbl_driver, only: marbldrv_compute_init_diagnostics
@@ -46,16 +44,16 @@
      &     wrt_bgc_diag_3d, idx_bgc_diag_3d, vname_bgc_diag_3d
 #endif
       use nc_read_write, only: nccreate, ncwrite
-      use roms_read_write, only: max_name_size
       use roms_read_write, only:
-     &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
-     &     xi_rho, create_file, set_frc_data
+     &     dn_tm, dn_xr, dn_yr, dn_zr,
+     &     create_file, set_frc_data, max_name_size
       use netcdf, only:
      &     nf90_write, nf90_open, nf90_close,
      &     nf90_put_att, nf90_enddef
       use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
-      use dimensions, only: i0, i1, j0, j1
+      use dimensions, only: i0, i1, j0, j1, xi_rho, eta_rho
       use error_handling_mod, only: error_log
+
       implicit none
 
       private ! Make all variable private to this module unless public specified
@@ -99,6 +97,7 @@
       ! this routine is called by # if defined BIOLOGY_BEC2 in set_forces.F of ETH code
 
       use scalars, only: cp, nrhs, rho0
+      use dimensions, only: inode, jnode
       use bgc_forces, only: dust, iron, pco2air
 #ifdef MARBL
      &     , pco2air_alt
@@ -112,7 +111,7 @@
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
      &     , swrad_avg
 #endif
-
+      use dimensions, only: npx, npy
       implicit none
 
 ! Needed for iron and dust variables, not yet ported to this module. Should do.
@@ -651,7 +650,7 @@
 ! ----------------------------------------------------------------------
       subroutine wrt_bgc(init)  ![
 #ifdef MARBL_DIAGS
-      use hidden_mpi_vars, only: inode, jnode
+      use dimensions, only: inode, jnode
       use param, only: nsub_e, nsub_x
 #endif
       implicit none

@@ -11,14 +11,11 @@
      &     nf90_open, nf90_close
       use ocean_vars, only: z_w, u, v, hz, z_r, flxu, flxv
       use scalars, only: dt, nnew, iic, tdays, time
-      use hidden_mpi_vars, only:
-     &     east_msg_exch, north_msg_exch,
-     &     south_msg_exch, west_msg_exch
       use param, only:
      &     ocean_grid_comm, mynode, isw_corn, jsw_corn,
      &     obc_east, obc_west, obc_south, obc_north
       use grid, only: dn_u, dn_v, h, pm, pn, dm_v
-      use dimensions, only: nx, ny, nz
+      use dimensions, only: nx, ny, nz, inode, jnode, npx, npy
       use roms_read_write, only:
      &     dn_tm, create_file, store_string_att,
      &     particle_opt
@@ -284,7 +281,7 @@
 
       np_old = np
 
-      if (obc_west.and.(.not.west_msg_exch)) then
+      if (obc_west.and.inode.eq.0) then
         if (.not.allocated(nbp_west)) allocate(nbp_west(0:ny+1))
         nbp_west = 0
         do ip = 1,np
@@ -299,7 +296,7 @@
         enddo
       endif
 
-      if (obc_east.and.(.not.east_msg_exch)) then
+      if (obc_east.and.inode.eq.npx-1) then
         if (.not.allocated(nbp_east)) allocate(nbp_east(0:ny+1))
         nbp_east = 0
         do ip = 1,np
@@ -314,7 +311,7 @@
         enddo
       endif
 
-      if (obc_south.and.(.not.south_msg_exch)) then
+      if (obc_south.and.jnode.eq.0) then
         if (.not.allocated(nbp_south)) allocate(nbp_south(0:nx+1))
         nbp_south = 0
         do ip = 1,np
@@ -329,7 +326,7 @@
         enddo
       endif
 
-      if (obc_north.and.(.not.north_msg_exch)) then
+      if (obc_north.and.jnode.eq.npy-1) then
         if (.not.allocated(nbp_north)) allocate(nbp_north(0:nx+1))
         nbp_north = 0
         do ip = 1,np
@@ -683,13 +680,13 @@
 
        if (part(ip,ipz)<nz) then
         if (part(ip,ipx)>nx) then
-          if (east_msg_exch) then
-            if (part(ip,ipy)>ny.and.north_msg_exch) then
+          if (inode<npx-1) then
+            if (part(ip,ipy)>ny.and.jnode<npy-1) then
               part(ip,ipx) = part(ip,ipx) - nx
               part(ip,ipy) = part(ip,ipy) - ny
               sn_ne(is_ne+1:is_ne+npv) = part(ip,:)
               is_ne = is_ne+npv
-            elseif (part(ip,ipy)<0.and.south_msg_exch) then
+            elseif (part(ip,ipy)<0.and.jnode>0) then
               part(ip,ipx) = part(ip,ipx) - nx
               sn_se(is_se+1:is_se+npv) = part(ip,:)
               is_se = is_se+npv
@@ -701,7 +698,7 @@
           endif
           part(ip,ipz) = 10*nz                   ! indicate particle no longer in domain
         elseif (part(ip,ipx)< 0.0) then
-          if (west_msg_exch) then
+          if (inode>0) then
             if (part(ip,ipy)>ny) then
               part(ip,ipy) = part(ip,ipy) - ny
               sn_nw(is_nw+1:is_nw+npv) = part(ip,:)
@@ -716,14 +713,14 @@
           endif
           part(ip,ipz) = 10*nz
         elseif (part(ip,ipy)>ny) then              ! corners already accounted for so only if north
-          if (north_msg_exch) then
+          if (jnode<npy-1) then
             part(ip,ipy) = part(ip,ipy) - ny
             sn_n(is_n+1:is_n+npv) = part(ip,:)
             is_n = is_n+npv
           endif
           part(ip,ipz) = 10*nz
         elseif (part(ip,ipy)< 0.0) then
-          if (south_msg_exch) then
+          if (jnode>0) then
             sn_s(is_s+1:is_s+npv) = part(ip,:)
             is_s = is_s+npv
           endif
@@ -932,7 +929,7 @@
 ! ---------------------------------------------------------------------
       subroutine exchange_data  ![
       ! orginally to exchange particles
-      use hidden_mpi_vars, only:
+      use roms_mpi, only:
      &     p_e, p_n, p_ne, p_nw, p_s, p_se, p_sw,
      &     p_w
       use mpi_f08, only: mpi_double_precision, mpi_status_size
@@ -955,25 +952,25 @@
       ! must send and receive even if there are no particles to send,
       ! as the receiver does not know this.
 
-      if (west_msg_exch) then
+      if (p_w>=0) then
         call MPI_Irecv (rv_w, szy, MPI_DOUBLE_PRECISION,   ! rv_w is array to store incoming data and
      &          p_W, 8, ocean_grid_comm, req(1), ierr)     !  szy is its size
         comm(1)=1                                          ! p_W   is mpi_rank of sub-domain to the west
       endif
                                                            ! ocean_grid_comm = MPI_COMM_WORLD is the group of all mpi procs in ROMS run
-      if (east_msg_exch) then                              ! req() stores the mpi request handle to later use
+      if (p_e>=0) then                              ! req() stores the mpi request handle to later use
         call MPI_Irecv (rv_e, szy, MPI_DOUBLE_PRECISION,   ! mpi_test to see if it has been completed.
      &          p_E, 7, ocean_grid_comm, req(2), ierr)
         comm(2)=2
       endif
 
-      if (south_msg_exch) then
+      if (p_s>=0) then
         call MPI_Irecv (rv_s, szx, MPI_DOUBLE_PRECISION,
      &          p_S, 6, ocean_grid_comm, req(3), ierr)
         comm(3)=3
       endif
 
-      if (north_msg_exch) then
+      if (p_n>=0) then
         call MPI_Irecv (rv_n, szx, MPI_DOUBLE_PRECISION,
      &          p_N, 5, ocean_grid_comm, req(4), ierr)
         comm(4)=4
@@ -981,25 +978,25 @@
 
 ! corners ...
 
-      if (west_msg_exch .and. south_msg_exch) then
+      if (p_sw>=0) then
         call MPI_Irecv (rv_sw, szc, MPI_DOUBLE_PRECISION,
      &            p_SW, 2, ocean_grid_comm, req(5), ierr)
         comm(5)=5
       endif
 
-      if (east_msg_exch .and. north_msg_exch) then
+      if (p_ne>=0) then
         call MPI_Irecv (rv_ne, szc, MPI_DOUBLE_PRECISION,
      &            p_NE, 1, ocean_grid_comm, req(6), ierr)
         comm(6)=6
       endif
 
-      if (east_msg_exch .and. south_msg_exch) then
+      if (p_se>=0) then
         call MPI_Irecv (rv_se, szc, MPI_DOUBLE_PRECISION,
      &            p_SE, 4, ocean_grid_comm, req(7), ierr)
         comm(7)=7
       endif
 
-      if (west_msg_exch .and. north_msg_exch) then
+      if (p_nw>=0) then
         call MPI_Irecv (rv_nw, szc, MPI_DOUBLE_PRECISION,
      &            p_NW, 3, ocean_grid_comm, req(8), ierr)
         comm(8)=8
@@ -1012,13 +1009,13 @@
 
 !      do ipass=0,1
 !        if (mod(inode+ipass,2)==0) then
-          if (west_msg_exch) then
+          if (p_w>=0) then
             call MPI_Isend (sn_w(1:is_w), is_w, MPI_DOUBLE_PRECISION,
      &              p_W, 7, ocean_grid_comm, req(9), ierr)
             comm(9)=9
           endif
 !        else
-          if (east_msg_exch) then
+          if (p_e>=0) then
             call MPI_Isend (sn_e(1:is_e), is_e, MPI_DOUBLE_PRECISION,
      &             p_E, 8, ocean_grid_comm, req(10), ierr)
             comm(10)=10
@@ -1028,13 +1025,13 @@
 
 !      do ipass=0,1
 !        if (mod(jnode+ipass,2)==0) then
-          if (south_msg_exch) then
+          if (p_s>=0) then
             call MPI_Isend (sn_s(1:is_s), is_s, MPI_DOUBLE_PRECISION,
      &             p_S, 5, ocean_grid_comm, req(11), ierr)
             comm(11)=11
           endif
 !        else
-          if (north_msg_exch) then
+          if (p_n>=0) then
             call MPI_Isend (sn_n(1:is_n), is_n, MPI_DOUBLE_PRECISION,
      &             p_N, 6, ocean_grid_comm, req(12), ierr)
             comm(12)=12
@@ -1047,25 +1044,25 @@
 
 ! ...and corners:
 
-        if (west_msg_exch .and. south_msg_exch) then
+        if (p_sw>=0) then
           call MPI_Isend (sn_sw(1:is_sw), is_sw, MPI_DOUBLE_PRECISION,
      &             p_SW, 1, ocean_grid_comm, req(13), ierr)
           comm(13)=13
         endif
 
-        if (east_msg_exch .and. north_msg_exch) then
+        if (p_ne>=0) then
           call MPI_Isend (sn_ne(1:is_ne), is_ne, MPI_DOUBLE_PRECISION,
      &             p_NE, 2, ocean_grid_comm, req(14), ierr)
           comm(14)=14
         endif
 
-        if (east_msg_exch .and. south_msg_exch) then
+        if (p_se>=0) then
           call MPI_Isend (sn_se(1:is_se), is_se, MPI_DOUBLE_PRECISION,
      &             p_SE, 3, ocean_grid_comm, req(15), ierr)
           comm(15)=15
         endif
 
-        if (west_msg_exch .and. north_msg_exch) then
+        if (p_nw>=0) then
           call MPI_Isend (sn_nw(1:is_nw), is_nw, MPI_DOUBLE_PRECISION,
      &             p_NW, 4, ocean_grid_comm, req(16), ierr)
           comm(16)=16

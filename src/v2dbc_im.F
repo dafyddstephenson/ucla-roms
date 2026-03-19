@@ -5,9 +5,8 @@
 ! Set lateral boundary conditions for the barotropic (i.e. vertically
 ! integrated) ETA-component velocity vbar(:,:,knew).
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
+      use dimensions, only: inode, jnode
       use boundary, only:
      &     zeta_south, vbar_south, zeta_north,
      &     vbar_north, vbar_west, vbar_east

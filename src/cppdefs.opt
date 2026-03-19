@@ -30,7 +30,7 @@
 #define SOLVE3D
 #define UV_ADV
 #define UV_COR
-#define ADV_ISONEUTRAL
+c--#define ADV_ISONEUTRAL
 
 /* Equation of State */
 #define NONLIN_EOS

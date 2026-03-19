@@ -5,9 +5,8 @@
 ! Set lateral boundary conditions for the barotropic (i.e. vertically
 ! integrated) XI-component velocity ubar(:,:,knew).
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
+      use dimensions, only: inode, jnode
       use boundary, only:
      &     zeta_west, ubar_west, zeta_east, ubar_east,
      &     ubar_south, ubar_north

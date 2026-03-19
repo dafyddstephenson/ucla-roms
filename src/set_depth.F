@@ -4,7 +4,6 @@
       subroutine set_depth(tile)
 
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
 
       implicit none
       integer tile
@@ -19,12 +18,11 @@
 ! of vertical grid boxes "Hz" from fast-time-averaged free surface,
 ! topography h(i,j), and vertical coordinate transformation formula.
 
-      use coupling, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, du_avg1, dv_avg1
+      use coupling, only: du_avg1, dv_avg1
       use grid, only: h, hinv, dn_u, dm_v, pn, pm
-      use param, only: ieast, jnorth, lm, mm
-      use mpi_exchanges, only: exchange_xxx
+      use param, only: ieast, jnorth, lm, mm, np_eta, np_xi
+      use roms_mpi, only: exchange_xxx
+      use dimensions, only: inode, jnode, npx,npy
       use ocean_vars, only:
      &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0
 # if defined NHMG || defined NONTRAD_COR
@@ -32,13 +30,21 @@
 #endif
       use scalars, only: iic, knew
       use scoord, only: hc, iwest, jsouth, n, cs_w, cs_r
+      use pio_roms, only: use_pio
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
       real cff_r,cff1_r, cff_w,cff1_w, ds
 
+! If we are using Parallel IO we are going to read in both the computational
+! domain and the halos, so we can go ahead and set the fluxes and cell thicknesses
+! using the extended bounds.
+#ifdef PARALLEL_IO
+# include "compute_extended_bounds.h"
+#else
 # include "compute_auxiliary_bounds.h"
-                                       ! During initialization or
+#endif
+                                  ! During initialization or
       if (iic == 0) then               ! restart compute barotropic
         do j=jstrR,jendR               ! fluxes and place them into
           do i=istrR,iendR             ! arrays for fast-time-averaged
@@ -121,13 +127,21 @@
         enddo
       endif
 
+!!! SKIP = USE_PIO ??
 # ifdef EXCHANGE
+!      if (iic == 0) then
+!        call exchange_xxx(hinv, skip=use_pio)
+!              call exchange_xxx(z_w0,z_r0,Hz0, skip=use_pio)
+!      endif
+!      call exchange_xxx(z_w,z_r,Hz, skip=use_pio)
       if (iic == 0) then
         call exchange_xxx(hinv)
               call exchange_xxx(z_w0,z_r0,Hz0)
       endif
       call exchange_xxx(z_w,z_r,Hz)
 # endif
+
+!            call wrt_instant(z_r, 'zr')
 
 #if defined NHMG || defined NONTRAD_COR
 !     Compute slopes
@@ -195,7 +209,6 @@
       subroutine set_HUV
 
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
 
       implicit none
       integer,save:: tile=0
@@ -204,13 +217,13 @@
       end
 
       subroutine set_HUV_tile (istr,iend,jstr,jend)
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use grid, only: dn_u, dm_v
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
+      use dimensions, only: inode, jnode
       use scalars, only: n, nrhs
+
       implicit none
       integer istr,iend,jstr,jend, i,j,k
 
@@ -233,18 +246,25 @@
           enddo
         enddo
       enddo
+
+!      call wrt_instant(Hz, 'Hz')
+
+!      call wrt_instant(FlxU, 'FlxU')
+!      call wrt_instant(FlxV, 'FlxV')
+
 # ifdef EXCHANGE
       call exchange_xxx(FlxU,FlxV)
 # endif
+!      call wrt_instant(Hz, 'Hz')
+
+!      call wrt_instant(FlxU, 'FlxU')
+!      call wrt_instant(FlxV, 'FlxV')
       end
-
-
 
 
       subroutine set_HUV1(tile)
 
       use param, only: ieast, iwest, jnorth, jsouth,  nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: a2d
 
       implicit none
@@ -255,16 +275,14 @@
       end
 
       subroutine set_HUV1_tile (istr,iend,jstr,jend, DC,FC)
-      use param, only:
-     &  east_exchng, north_exchng, south_exchng, west_exchng,
-     & ieast, iwest, jnorth, jsouth
-     &     , east_exchng
+      use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
+      use dimensions, only: inode, jnode
       use coupling, only:
      &     du_avg1, du_avg_bak, du_avg2, dv_avg1, dv_avg_bak,
      &     dv_avg2
       use grid, only:  dn_u, umask, dm_v,
      &     vmask
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use ocean_vars, only: u, v, hz, flxu, flxv
       use scalars, only: n, forw_start, iic, nnew
       use dimensions, only: nz
@@ -424,8 +442,12 @@
       call exchange_xxx(FlxU,FlxV,u(:,:,:,nnew),v(:,:,:,nnew))
 #  endif
 # endif
-      end
+!      call wrt_instant(FlxU, 'FlxU')
+!      call wrt_instant(FlxV, 'FlxV')
+!      call wrt_instant(u(:,:,:,nnew), 'u')
+!      call wrt_instant(v(:,:,:,nnew), 'v')
 
+      end
 
       subroutine check_set_HUV1_switches
 

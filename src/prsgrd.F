@@ -3,7 +3,6 @@
 
       subroutine prsgrd
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: a3d, a2d
       implicit none
       integer,save:: tile=0
@@ -30,12 +29,9 @@
      &                                                       rw,
 # endif
      &                                      dR,dZ, FC,dZx,rx,dRx)
-
       use grid, only: f, pm, pn, umask, dn_u, vmask, dm_v
       use tides, only: pot_tides, ptide
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use ocean_vars, only: z_r, z_w, hz
 #ifdef NHMG
      &     , dzdeta, dzdxi
@@ -48,7 +44,7 @@
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx,drde
 #endif
-      use dimensions, only:  nx, ny, nz
+      use dimensions, only:  nx, ny, nz, inode, jnode
       use scalars, only: n, g, rho0, nrhs
 #ifdef DIAGNOSTICS
       use diagnostics, only: calc_diag, diag_uv, udiag,

@@ -3,7 +3,6 @@
                                     ! Note that arrays A2d(1,1:4) in
       subroutine pre_step3d (tile)  ! the call just below are repeated
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: a3d, a2d
       implicit none                 ! within the list of agruments to
       integer tile                  ! use the same memory for vertical
@@ -27,7 +26,7 @@
      &                                            ,rw
 # endif
      &                                                              )
-
+      use dimensions, only: inode, jnode
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
@@ -41,7 +40,7 @@
       use surf_flux, only: sustr, svstr
       use tracers, only: iTandS, t
       use coupling, only: r_d
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use grid, only: nx,ny,
      &     pn, pm, umask, vmask, fomn, dn_u, dm_v, pn_u, pm_v
 #if (defined CURVGRID && defined UV_ADV)
@@ -49,9 +48,8 @@
 #endif
       use mixing, only: akt, akv
       use param, only:
-     &     east_exchng, ieast, iwest, jnorth, jsouth,
-     &     north_exchng, south_exchng, west_exchng, lm, mm,
-     &     padd_e, padd_x
+     &     ieast, iwest, jnorth, jsouth, lm, mm, padd_e, padd_x,
+     &     np_eta, np_xi
 #ifdef NHMG
       use mg_namelist, only: surface_neumann
 #endif

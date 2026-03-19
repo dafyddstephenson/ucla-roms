@@ -4,7 +4,6 @@
       subroutine omega
 
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
-      use hidden_mpi_vars, only: inode, jnode
       use private_scratch, only: a2d
 
       implicit none
@@ -35,11 +34,9 @@
 ! below which vertical advection is fully explicit; "cu_max" is the
 ! maximum CN which the explicit component "We" is allowed to reach.
 
-      use param, only:
-     &     east_exchng, north_exchng, south_exchng,
-     &     west_exchng, ieast, iwest, jnorth, jsouth
-      use dimensions, only: nx, ny, nz
-      use grid, only: pn, pm, dn_r, dm_r
+      use param, only: ieast, iwest, jnorth, jsouth, np_eta, np_xi
+      use dimensions, only: nx, ny, nz, inode, jnode
+      use grid, only: pn, pm, dn_r, dm_r, rmask
       use pipe_frc, only:
      &     pidx, pipe_source, pipe_idx, pipe_prf,
      &     pipe_flx
@@ -48,11 +45,12 @@
      &     cdr_nprf, cdr_source, cdr_volume, cdr_icdr,
      &     cdr_iloc, cdr_prf, cdr_vol
 #endif
-      use mpi_exchanges, only: exchange_xxx
+      use roms_mpi, only: exchange_xxx
       use ocean_vars, only: wi, flxv, flxu, z_w, we, hz
       use scalars, only: n, dt, forw_start, iic, nrhs
       use surf_flux, only: swflx
-
+      use pio_roms, only: use_pio
+      use instant_output, only: wrt_instant
       implicit none
       integer istr,iend,jstr,jend, i,j,k, icdr, cidx
       real CX(PRIVATE_1D_SCRATCH_ARRAY,0:N),  dtau, c2d,dh, cw, cff,
@@ -154,10 +152,11 @@ c>          dh=0.5*(Hz(i,j,k)+Hz(i,j,k+1))   ! (2) average the two; or
                 cff=cw_max*cw
               endif
 
-              We(i,j,k)=cw_max2*Wi(i,j,k)/cff  !<-- NORMAL SPLITING
-              Wi(i,j,k)=Wi(i,j,k)-We(i,j,k)    !<-- CODE TO BE USED
+              We(i,j,k)= rmask(i,j) * cw_max2*Wi(i,j,k)/cff  !<-- NORMAL SPLITING
+              Wi(i,j,k)= rmask(i,j) * (Wi(i,j,k)-We(i,j,k))    !<-- CODE TO BE USED
             else
               We(i,j,k)=0.          !--> Wi(i,j,k) remains unchanged
+              Wi(i,j,k)= rmask(i,j) * Wi(i,j,k)
             endif
 
 c**         We(i,j,k)=0.            !<-- fully implicit(BE), test only
@@ -230,9 +229,17 @@ c**         Wi(i,j,k)=0.            !<-- back to fully explicit code
       endif
 #  endif
 # endif
+
+!      call wrt_instant(We, 'We')
+!      call wrt_instant(Wi, 'Wi')
+
 # ifdef EXCHANGE
       call exchange_xxx(We,Wi)
 # endif
+
+!      call wrt_instant(We, 'We')
+!      call wrt_instant(Wi, 'Wi')
+
       end
 #else
       subroutine omega_empty
