@@ -31,7 +31,9 @@
 #include "upscale_output.opt"
       character(len=15) :: module_name = "upscale_output"
       integer                        :: record_uscl=nrpf_uscl   ! record number in file
-      real                           :: otime=0   ! time since last output
+      real                           :: otime=output_period_uscl   ! time since last output; setting the initial
+                                              ! value to output_period should make it write a record upon startup (which
+                                              ! is desired)
       integer :: navg = 0
 
 #ifdef OBC_NORTH
@@ -387,18 +389,13 @@
       character(len=99),save :: fname
       integer,dimension(3) :: start2D
 
+      call calc_average
+      otime = otime + dt
 
-      if (record_uscl==nrpf_uscl) then
+      if ((record_uscl==nrpf_uscl) .and. (otime>=output_period_uscl)) then
           call create_upscale_file(fname)
           record_uscl = 0
       endif
-
-      !! We have to update the object records regardless of whether
-      !! there are points in the sub-domain to ensure correct file
-      !! names for all
-
-      call calc_average
-      otime = otime + dt
 
       if (otime>=output_period_uscl) then
         ierr=nf90_open(fname,nf90_write,ncid)
@@ -631,7 +628,7 @@
 #include "upscale_output.opt"
 
       ! Public functions
-      public init_upscale
+      public init_upscale, wrt_upscale
 
       contains
 
@@ -660,6 +657,12 @@
 #endif
       call error_log%abort_check()
       end subroutine init_upscale !]
+
+      subroutine wrt_upscale   ![
+
+      implicit none
+
+      end subroutine wrt_upscale
 !----------------------------------------------------------------------
 
 #endif /* MARBL && MARBL_DIAGS */

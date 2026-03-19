@@ -57,6 +57,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars, only: ntimes, iic, ntstart, diag_sync
       use timers, only: start_timers, stop_timers
       use error_handling_mod, only: error_log
+      use upscale_output, only: do_upscale, wrt_upscale
 
       implicit none
 
@@ -71,6 +72,12 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
            exit ! break out of loop and wind down
         end if
       enddo
+
+      ! This is where we might put a generic "final write" subroutine
+      if (do_upscale) then
+        call wrt_upscale
+      endif
+
       call stop_timers()
       return
       end subroutine roms_thread
@@ -300,7 +307,9 @@ CR      write(*,*)  ' -2' MYID
 #endif
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
-      if (do_upscale) call init_upscale
+      if (do_upscale) then
+        call init_upscale
+      endif
       if (do_frc) call init_frc
 
 
