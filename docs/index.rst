@@ -26,7 +26,7 @@ Key technical information:
    :maxdepth: 1
    :caption: Tutorials
 
-   Nested CDR tutorial <tutorials/nested_cdr_tutorial/index>
+   ROMS Tutorials <tutorials/index>
 
 .. toctree::
    :maxdepth: 1
