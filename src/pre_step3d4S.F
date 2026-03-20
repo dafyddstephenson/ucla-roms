@@ -26,7 +26,7 @@
      &                                            ,rw
 # endif
      &                                                              )
-      use dimensions, only: inode, jnode
+      use dimensions, only: inode, jnode, npx, npy
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
      &     river_source, riv_uflx, riv_vol, riv_trc, riv_vflx

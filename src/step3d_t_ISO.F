@@ -53,7 +53,7 @@ c--# define CONST_TRACERS
      &                                                             )
       use pipe_frc, only: pidx, pipe_source, pipe_idx, pipe_trc,
      &     pipe_prf, pipe_flx
-      use dimensions, only: inode, jnode
+      use dimensions, only: inode, jnode, npx, npy
 #if defined CDR_FORCING && defined MARBL
       use cdr_frc, only: cdr_nprf, cdr_icdr, cdr_source, cdr_iloc,
      &      cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d_ALK, cdr_flx_3d_DIC,
