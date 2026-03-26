@@ -587,14 +587,8 @@
       endif
 
       otime = otime + dt
-      if (mynode == 0) then
-        write(*,*) "YAY", otime, extract_period
-      endif
 
       if (otime>=extract_period) then
-      if (mynode == 0) then
-        write(*,*) "YAY2", otime
-      endif
 
       if (obj(1)%record==nrpf_extract) then
           call create_edata_file(fname)
