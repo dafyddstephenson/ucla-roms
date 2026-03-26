@@ -11,27 +11,59 @@
 #if defined BIOLOGY_BEC2 || defined MARBL
 
       ! param needed for GLOBAL_2D_array to work. NT = number tracer from param
-      use param
-      use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
-#ifdef MARBL
-      use marbl_driver
+      use param, only:
+     &     east_exchng, ieast, itemp, iwest, jnorth,
+     &     jsouth, north_exchng, south_exchng, west_exchng
+      use tracers, only: t_avg, wrt_t_avg, nt_2_t_avg, t_units
+#ifdef MARBL_DIAGS
+      use marbl_driver, only: marbldrv_compute_init_diagnostics
 #endif
-      use bgc_shared_vars
-      use nc_read_write
-      use roms_read_write
-      use netcdf
-      use scalars
-      use dimensions !
-      use ocean_vars
-      use dimensions
 
+      use bgc_shared_vars, only:
+     &     nrpf_avg, nrpf_his, nrpf_avg_dia,
+     &     nrpf_his_dia, t, nc_dust, nc_iron, nc_pco2air
+#ifdef MARBL
+     &     , nc_pco2air_alt
+#endif
+#ifdef NOX_FORCING
+     &     , nc_nox
+#endif
+#ifdef NHY_FORCING
+     &     , nc_nhy
+#endif
+#if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
+     &     , nc_swrad_avg
+#endif
+     &     , bgc_idx, t_idx, wrt_avg, wrt_his, interp_frc, lm, mm, itands,
+     &     mynode, nt_passive, output_period_avg, output_period_his,
+     &     t_vname, wrt_t, t_lname
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
+     &     , bgc_diag_2d_avg, bgc_diag_3d_avg,
+     &     bgc_diag_2d, bgc_diag_3d, nr_bgc_diag_2d, nr_bgc_diag_3d,
+     &     nr_bgc_wrdiag_2d, nr_bgc_wrdiag_3d, output_period_avg_dia,
+     &     output_period_his_dia, wrt_avg_dia, wrt_his_dia,
+     &     wrt_bgc_diag_2d, idx_bgc_diag_2d, vname_bgc_diag_2d,
+     &     wrt_bgc_diag_3d, idx_bgc_diag_3d, vname_bgc_diag_3d
+#endif
+      use nc_read_write, only: nccreate, ncwrite
+      use roms_read_write, only: max_name_size
+      use roms_read_write, only:
+     &     dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
+     &     xi_rho, create_file, set_frc_data
+      use netcdf, only:
+     &     nf90_write, nf90_open, nf90_close,
+     &     nf90_put_att, nf90_enddef
+      use scalars, only: nstp, nt, time, n, dt, iic, nnew, tdays
+      use dimensions, only: i0, i1, j0, j1
+      use error_handling_mod, only: error_log
       implicit none
 
       private ! Make all variable private to this module unless public specified
 
       ! Includes:
 
-      ! netcdf outputting:
+! netcdf outputting:
+      character(len=6) :: module_name = "bgc_io"
       integer :: ncid=-1, prev_fill_mode
       real    :: t_avg_bgc=0
       real    :: t_avg_dia_bgc=0
@@ -55,22 +87,6 @@
 
       contains
 
-      integer function bgc_idx(t_idx)
-      ! Takes a tracer array tracer index t(:,:,:,:,t_idx) and returns
-      ! the corresponding bgc tracer index.
-      ! Were previously harcoded individually as, e.g.
-      ! po4_ind_t     = iPO4-iTandS-nt_passive
-      integer, intent(in) :: t_idx
-      bgc_idx = t_idx-iTandS-nt_passive
-
-      end function bgc_idx
-
-      real function t_idx(b_idx)
-      ! Takes a bgc tracer index (e.g. dtracer_module(:,:,:,b_idx)) and
-      ! returns the corresponding tracer array index t(:,:,:,:,t_idx)
-      integer, intent(in) ::b_idx
-      t_idx = b_idx+iTandS+nt_passive
-      end function t_idx
 ! ----------------------------------------------------------------------
       subroutine set_bgc_surf_frc(istr,iend,jstr,jend)  ![
 
@@ -82,8 +98,20 @@
 
       ! this routine is called by # if defined BIOLOGY_BEC2 in set_forces.F of ETH code
 
-      use scalars
-      use bgc_forces
+      use scalars, only: cp, nrhs, rho0
+      use bgc_forces, only: dust, iron, pco2air
+#ifdef MARBL
+     &     , pco2air_alt
+#endif
+#ifdef NOX_FORCING
+     &     , nox
+#endif
+#ifdef NHY_FORCING
+     &     , nhy
+#endif
+#if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
+     &     , swrad_avg
+#endif
 
       implicit none
 
@@ -119,11 +147,12 @@
       call set_frc_data(nc_nhy,nhy,'r')
 #endif /* NHY_FORCING */
 
+      call error_log%abort_check()
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       ! Daily average Short wave radiation
 !     call set_frc_var_tile( istr, iend, jstr, jend, nc_swrad_avg, swrad_avg, interp_frc )
       call set_frc_data(nc_swrad_avg,swrad_avg,'r')
-
+      call error_log%abort_check()
       do j=jstrR,jendR
         do i=istrR,iendR
           swrad_avg(i,j)= swrad_avg(i,j)/(rho0*Cp)
@@ -137,20 +166,9 @@
 #   endif
           endif
 #endif
-
         enddo !<- istrR
       enddo   !<- jstrR
-
 #endif /* DAILYPAR_PHOTOINHIBITION */
-
-#ifdef ALK_SOURCE
-!      call set_frc_var_tile( istr, iend, jstr, jend, nc_alksource, alksource, interp_frc )
-      call set_frc_data(nc_alksource,alksource,'r')
-#endif /* ALK_SOURCE */
-#ifdef DIC_SOURCE
-!      call set_frc_var_tile( istr, iend, jstr, jend, nc_dicsource, dicsource, interp_frc )
-      call set_frc_data(nc_dicsource,dicsource,'r')
-#endif /* DIC_SOURCE */
 
       end subroutine set_bgc_surf_frc  !]
 ! ----------------------------------------------------------------------
@@ -171,20 +189,36 @@
       ! import/export
       logical, intent(in) :: avg
 
-      ! local
+! local
+      character(len=15) :: sr_name = "wrt_bgc_tracers"
       character(len=max_name_size),save :: fname_his,fname_avg
+      character(len=1024) :: error_info
       integer                :: itrc, itavg, ierr
       logical,save           :: first_step_avg=.true.
       logical,save           :: first_step_his=.true.
 
-      if (wrt_his .and. mod(output_period_his,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor of output_period_his!'
+      if (wrt_his .and. mod(output_period_his, dt) /= 0) then
+         write(error_info, *)
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_his (",
+     &        output_period_his, ")"
+
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
+
       if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor of output_period_avg!'
+         write(error_info, *)
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_avg (",
+     &        output_period_avg, ")"
+
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
-
-
+      call error_log%abort_check()
       if (avg) then
 
 !        if (.not. first_step_avg) then
@@ -277,21 +311,36 @@
       subroutine wrt_bgc_diags ![
       implicit none
 #if defined (BEC2_DIAG) || defined (MARBL_DIAGS)
-      ! local
+! local
+      character(len=13) :: sr_name = "wrt_bgc_diags"
       character(len=max_name_size),save :: fname_his,fname_avg
+      character(len=1024) :: error_info
       integer                :: itrc, ierr, idiag
       logical,save           :: first_step_dia_avg=.true.
       logical,save           :: first_step_dia_his=.true.
 
-      if (wrt_his_dia .and. mod(output_period_his_dia,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor ' //
-     &        'of output_period_his_dia for diagnostics!'
-      endif
-      if (wrt_avg_dia .and. mod(output_period_avg_dia,dt) /= 0) then
-        stop 'ERROR :: bgc.opt - dt not a factor' //
-     &        'of output_period_avg_dia for diagnostics!'
+      if (wrt_his_dia .and. mod(output_period_his_dia, dt) /= 0) then
+         write(error_info, *)
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_his_dia (",
+     &        output_period_his_dia, ")"
+
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
       endif
 
+      if (wrt_avg_dia .and. mod(output_period_avg_dia,dt) /= 0) then
+         write(error_info, *)
+     &        "dt (", dt, ") is not a factor of ",
+     &        "output_period_avg_dia (",
+     &        output_period_avg_dia, ")"
+
+         call error_log%raise_global(
+     &        context=module_name//"/"//sr_name,
+     &        info=error_info)
+      endif
+      call error_log%abort_check()
 
       if (wrt_avg_dia) then
 
@@ -447,7 +496,7 @@
           if (wrt_t_avg(itrc)) then
              text_lname='avg_'/ /t_lname(itrc)
              varid = nccreate(ncid,t_vname(itrc),
-     &         (/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/), nf90_double)
+     &         (/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/))
 
              ierr = nf90_put_att(ncid,varid,'long_name',text_lname)
              ierr = nf90_put_att(ncid,varid,'units',t_units(itrc))
@@ -456,9 +505,9 @@
       else
         do itrc=iTandS+nt_passive+1,NT
           if (wrt_t(itrc)) then
-             text_lname='avg_'/ /t_lname(itrc)
+             text_lname=t_lname(itrc)
              varid = nccreate(ncid,t_vname(itrc),
-     &         (/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/), nf90_double)
+     &         (/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/))
              ierr = nf90_put_att(ncid,varid,'long_name',text_lname)
              ierr = nf90_put_att(ncid,varid,'units',t_units(itrc))
           endif
@@ -548,7 +597,7 @@
       do idiag=1,nr_bgc_diag_2d
         if (wrt_bgc_diag_2d(idiag)) then
           varid = nccreate(ncid,vname_bgc_diag_2d(1,idiag),
-     &            (/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/), nf90_double)
+     &            (/dn_xr,dn_yr,dn_tm/),(/xi_rho,eta_rho,0/))
           ierr = nf90_put_att(ncid,varid,'long_name',vname_bgc_diag_2d(2,idiag))
           ierr = nf90_put_att(ncid,varid,'units',vname_bgc_diag_2d(3,idiag))
         endif
@@ -558,7 +607,7 @@
       do idiag=1,nr_bgc_diag_3d
         if (wrt_bgc_diag_3d(idiag)) then
           varid = nccreate(ncid,vname_bgc_diag_3d(1,idiag),
-     &            (/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/), nf90_double)
+     &            (/dn_xr,dn_yr,dn_zr,dn_tm/),(/xi_rho,eta_rho,N,0/))
           ierr = nf90_put_att(ncid,varid,'long_name',vname_bgc_diag_3d(2,idiag))
           ierr = nf90_put_att(ncid,varid,'units',vname_bgc_diag_3d(3,idiag))
         endif
@@ -598,21 +647,21 @@
       if (interp_frc==1) nc_swrad_avg%coarse = 1
 #endif
 
-#if defined ALK_SOURCE
-      allocate( nc_alksource%vdata( GLOBAL_2D_ARRAY,2) )
-#endif
-#if defined DIC_SOURCE
-      allocate( nc_dicsource%vdata( GLOBAL_2D_ARRAY,2) )
-#endif
-
       end subroutine  init_arrays_bgc_frc !]
 ! ----------------------------------------------------------------------
       subroutine wrt_bgc(init)  ![
+#ifdef MARBL_DIAGS
+      use hidden_mpi_vars, only: inode, jnode
+      use param, only: nsub_e, nsub_x
+#endif
       implicit none
 
-! import/export
-      logical,optional       :: init
-
+!     import/export
+      logical,optional,intent(in)       :: init
+      integer :: tile = 0
+#ifdef MARBL_DIAGS
+#include "compute_tile_bounds.h"
+#endif
       ! initialisation writting
       if (wrt_his.and.present(init)) then
          call wrt_bgc_tracers(.false.) ! write his data
@@ -623,6 +672,11 @@
       endif
 
 #if defined BEC2_DIAG || defined MARBL_DIAGS
+#if defined MARBL
+      if (present(init)) then
+         call marbldrv_compute_init_diagnostics(istr,iend,jstr,jend,t)
+      end if
+#endif
       call wrt_bgc_diags
 #endif
 

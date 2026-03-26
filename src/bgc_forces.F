@@ -4,7 +4,7 @@
 #include "cppdefs.opt"
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
 
-      use param
+      use param, only: lm, mm
       implicit none
 
 #ifdef PCO2AIR_FORCING
@@ -42,6 +42,7 @@ CSDISTRIBUTE_RESHAPE  swrad_avgg(BLOCK_PATTERN,*) BLOCK_CLAUSE
      &           swrad_avg_file_id, swrad_avg_id,  swrad_avg_tid
 # endif
 #endif /* DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC */
+
 
 #ifdef NHY_FORCING
 ! NHY flux
