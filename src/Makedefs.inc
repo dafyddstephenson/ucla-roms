@@ -97,6 +97,9 @@ ifeq ($(BUILD_MODE),vtune)
    KEEP_PPSRC=true
 else ifeq ($(BUILD_MODE),grof)
    KEEP_PPSRC=true
+else ifeq ($(BUILD_MODE),scorep)
+   CFT := scorep $(CFT)
+   LDR := scorep $(LDR)
 endif
 
 #Check whether we're compiling with MARBL or NHMG:
@@ -209,14 +212,14 @@ ifeq ($(COMPILER),gnu)
 endif
 
 # Options to link to libraries & modules (NetCDF, etc):
-        LCDF =  $(NETCDFF_LIB) $(NETCDFC_LIB)
+        LCDF =  $(NETCDFF_LIB) $(NETCDFC_LIB) $(SCOREP_LIB)
 ifeq ($(USEMARBL),true)
 	LCDF += $(MARBL_LIB)
 endif
 ifeq ($(USENHMG),true)
 	LCDF += $(NHMG_LIB)
 endif
-	LCDF +=$(NETCDFF_INC) $(NETCDFC_INC)
+	LCDF +=$(NETCDFF_INC) $(NETCDFC_INC) 
 ifeq ($(USEMARBL),true)
 	LCDF += $(MARBL_INC)
 endif

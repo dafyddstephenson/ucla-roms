@@ -17,7 +17,7 @@
 
       integer, parameter :: LLm=192, MMm=192, N=20       ! WEC Example sample grid
 
-      integer, parameter :: NP_XI =  3, NP_ETA = 3
+      integer, parameter :: NP_XI =  8, NP_ETA = 8
       integer, parameter :: NSUB_X = 1, NSUB_E = 1
 
 

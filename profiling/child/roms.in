@@ -2,24 +2,23 @@ title:
    Flux_frc module test.
 
 time_stepping: NTIMES   dt[sec]  NDTFAST  NINFO
-               8064        300      30       1
+               16128        150      30       1
 
 S-coord: THETA_S,   THETA_B,    hc (m)
           5.0D0        2.0D0     300.0D0
 
 grid:  filename
-     input_data/iceland_child_grid.nc
+     ../input_data/partitioned_8_8/child_grid.nc
 
 forcing: filename
-     input_data/iceland_child_tides.nc
-     input_data/iceland_child_surface_forcing.nc
-     input_data/iceland_child_bgc_surface_forcing.nc
-     input_data/iceland_child_boundary_forcing.nc
-     input_data/iceland_child_river_forcing.nc
+     ../input_data/partitioned_8_8/child_tides.nc
+     ../input_data/partitioned_8_8/child_surface_forcing.nc
+     ../input_data/partitioned_8_8/child_bgc_surface_forcing.nc
+     ../input_data/partitioned_8_8/child_boundary_forcing.nc
 
 initial: NRREC  filename
           1
-     input_data/iceland_child_initial_conditions.nc
+     ../input_data/partitioned_8_8/child_initial_conditions.nc
 
 MARBL_biogeochemistry: namelist  tracer_output_list   diagnostic_output_list
       marbl_in
@@ -27,7 +26,7 @@ MARBL_biogeochemistry: namelist  tracer_output_list   diagnostic_output_list
       marbl_diagnostic_output_list
 
 output_root_name:
-     output/iceland_child
+     output/child
 
 lateral_visc:   VISC2,    VISC4    [m^2/sec for all]
                  0.       0.
