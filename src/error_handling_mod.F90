@@ -358,6 +358,7 @@ contains
           write(*,*) "WARNING: GATHER_ERRORS_ON_MAIN_RANK=.false. in error_handling_mod.F90. ", &
                "Some ranks may fail to report errors before abort. ",&
                "For a full error log, set to .true. and recompile."
+          call stop_timers()
           call MPI_Abort(ocean_grid_comm,1)
        end if !
     end if !GATHER_ERRORS_ON_MAIN_RANK
