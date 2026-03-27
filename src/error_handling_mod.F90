@@ -58,6 +58,8 @@ module error_handling_mod
   !     DATE: 2026-01-23
   !-----------------------------------------------------------------------
 
+#undef CONSOLIDATE_ERRORS
+
 #include "cppdefs.opt"
 
   use timers, only: stop_timers
@@ -105,7 +107,7 @@ module error_handling_mod
     character(len=:), allocatable :: context
     character(len=:), allocatable :: info
     type(error_log_entry_type), pointer :: next => null()
-#ifdef MPI
+#if defined(MPI) & defined(CONSOLIDATE_ERRORS)
   contains
     procedure, private :: serialize => serialize_log_entry
 #endif
@@ -144,7 +146,7 @@ module error_handling_mod
     procedure :: abort_check
     procedure, private :: raise_internal
     procedure, private :: append_entry => append_entry_to_log
-#ifdef MPI
+#if defined(MPI) & defined(CONSOLIDATE_ERRORS)
     procedure, private :: serialize => serialize_log
 #endif
   end type error_log_type
@@ -319,6 +321,7 @@ contains
     type(error_log_entry_group_type), allocatable :: grouped_error_log_entries(:)
 
 #ifdef MPI
+#if defined(CONSOLIDATE_ERRORS)
     type(error_log_type) :: global_log
     integer :: local_abort, global_abort
     character(len=:), allocatable :: local_serialized_log, global_serialized_log
@@ -341,14 +344,20 @@ contains
     call MPI_Barrier(ocean_grid_comm)
     call MPI_Abort(ocean_grid_comm, 1)
     call sleep(30) ! stop further output leaking through
-#else
+#else /* CONSOLIDATE_ERRORS */
+    if (this%abort_requested) then
+       call MPI_Abort(ocean_grid_comm,1)
+    end if
+#endif  /*CONSOLIDATE_ERRORS */
+#else /* MPI*/
     if (this%abort_requested) then
        call group_error_log_entries(this, grouped_error_log_entries)
        call print_error_log_entry_groups(grouped_error_log_entries)
        call stop_timers()
        error stop
     end if
-#endif
+#endif /* MPI */
+
   end subroutine abort_check
 
   !=========================================================
@@ -407,6 +416,11 @@ contains
     end if
     this%tail => error_entry
 
+# ifndef CONSOLIDATE_ENTRIES
+    call print_error_log_entry(error_entry)
+#endif
+
+
   end subroutine raise_internal
 
   subroutine append_entry_to_log(this, entry_to_append)
@@ -443,9 +457,51 @@ contains
 
   end subroutine append_entry_to_log
 
+  subroutine print_error_log_entry(error_log_entry)
+    !-----------------------------------------------------------------------
+    !     SUBROUTINE (private): print_error_log_entry
+    !     DESCRIPTION:
+    !     Prints a single error log entry with context/scope information
+    !
+    !     INPUTS:
+    !     error_log_entry (error_log_entry_type): entry to print
+    !-----------------------------------------------------------------------
+
+    use iso_fortran_env, only: error_unit
+    type(error_log_entry_type), intent(in) :: error_log_entry
+
+    integer :: i, j, n_locs, total_raises
+
+    ! Each scope gets a different level of specificity in printed message:
+    ! #########################################
+    ! Write message header (scope, counts)
+    ! #########################################
+    select case (error_log_entry%scope)
+    case (SCOPE_GLOBAL)
+       write(error_unit,*) &
+            'ERROR [global] [', trim(error_log_entry%context), ']:'
+    case (SCOPE_RANK)
+       write(error_unit,'(A,I0,2A)') &
+            'ERROR [raised  from rank ', error_log_entry%rank, '] [', &
+            trim(error_log_entry%context), ']:'
+    case (SCOPE_POINT)
+       write(error_unit,'(A,I0,A,I0,A,I0,A,I0,3A)') &
+            'ERROR [raised from point (i,j,k)=(', &
+            error_log_entry%i, ',',&
+            error_log_entry%j, ',',&
+            error_log_entry%k, ') on rank ',&
+             error_log_entry%rank,'] [', &
+            trim(error_log_entry%context), ']:'
+    end select
+       ! #########################################
+       ! Write message body
+       ! #########################################
+    write(error_unit,*) trim(error_log_entry%info)
+    write(error_unit,*)
+  end subroutine print_error_log_entry
 
   !--------------------------------------------------------------------------------
-  ! GROUPING ENTRIES AND PRINTING
+  ! GROUPING ENTRIES
   !--------------------------------------------------------------------------------
 
   subroutine group_error_log_entries(log, grouped_log_entries)
@@ -653,7 +709,7 @@ contains
     end do
   end subroutine print_error_log_entry_groups
 
-#ifdef MPI
+#if defined(MPI) & defined(CONSOLIDATE_ERRORS)
 !--------------------------------------------------------------------------------
 ! MPI-SPECIFIC SUBROUTINES
 !--------------------------------------------------------------------------------
@@ -961,6 +1017,6 @@ contains
 
   end subroutine deserialize_log_entry
 
-#endif /* MPI */
+#endif /* MPI & CONSOLIDATE_ERRORS */
 
 end module error_handling_mod
