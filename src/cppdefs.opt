@@ -39,7 +39,7 @@
 ----------------------------------------------------------
 
 ! Rotate the advection and diffusion operators so they are oriented in the isoneutral direction
-! Usage notes: 
+! Usage notes:
 #undef ADV_ISONEUTRAL
 
 ! Switch to allow mixed [tiled + single-block] execution in OpenMP.
@@ -59,7 +59,7 @@
 #undef DIAGNOSTICS_NHMG
 
 ! Use non-hydrostatic momentum equations
-! Usage notes: Solves prognostically for the vertical velocity. Apprximately doubles the cost of the model. 
+! Usage notes: Solves prognostically for the vertical velocity. Apprximately doubles the cost of the model.
 ! WARNING: Presently untested and unmaintained by [C]Worthy. May break important features like exact restarts, and may require extra inputs to work successfully (unknown).
 #undef NHMG
 
