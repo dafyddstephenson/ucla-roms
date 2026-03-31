@@ -3,13 +3,22 @@ FROM mambaorg/micromamba:1.5.5
 ENV ENV_NAME=roms-ci
 USER root
 RUN apt update && apt install -y \
-    rsync make wget git cpp\
+    rsync make wget git cpp cmake\
     && rm -rf /var/lib/apt/lists/*
 
-# Write the environment.yml directly into the image
-COPY environment.yml /tmp/environment.yml
-
 # Create the environment
+RUN cat <<'EOF' > /tmp/environment.yml
+name: roms-ci
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - xarray
+  - compilers
+  - netcdf-fortran
+  - mpich
+EOF
 RUN micromamba create -n $ENV_NAME -f /tmp/environment.yml
 ENV MAMBA_DOCKERFILE_ACTIVATE=1
 
@@ -21,15 +30,32 @@ ENV MPIHOME=/opt/conda/envs/roms-ci \
     NETCDFHOME=/opt/conda/envs/roms-ci \
     LD_LIBRARY_PATH=/opt/conda/envs/roms-ci/lib:$LD_LIBRARY_PATH
 
+# Install Score-P
+WORKDIR /opt/
+RUN bash -c "wget -q https://perftools.pages.jsc.fz-juelich.de/cicd/scorep/tags/scorep-9.4/scorep-9.4.tar.gz \
+     && tar -xvf scorep-9.4.tar.gz \
+     && rm scorep-9.4.tar.gz \
+     && mkdir scorep_9.4_install \
+     && cd scorep-9.4 \
+     && mkdir _build \
+     && cd _build \
+     && ../configure --prefix=/opt/scorep_9.4_install --with-mpi=mpich --with-libbfd=download --with-libgotcha=download CC=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-cc CXX=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-c++ FC=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-gfortran F77=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-gfortran MPICC=/opt/conda/envs/roms-ci/bin/mpicc MPICXX=/opt/conda/envs/roms-ci/bin/mpicxx MPIFC=/opt/conda/envs/roms-ci/bin/mpifort MPIF77=/opt/conda/envs/roms-ci/bin/mpif77"
+WORKDIR /opt/scorep-9.4/_build
+#RUN bash -c "make && make install"
+#WORKDIR /opt/
+#RUN rm -rf /opt/scorep-9.4
+#ENV PATH=/opt/scorep_9.4_install/bin:$PATH
+
+# Install MARBL
 ENV MARBL_ROOT=/opt/MARBL
 WORKDIR /opt
 RUN bash -c "wget https://github.com/marbl-ecosys/MARBL/archive/refs/tags/marbl0.45.0.tar.gz \
         && tar xvf marbl0.45.0.tar.gz \
+	&& rm marbl0.45.0.tar.gz \
 	&& mv MARBL-marbl0.45.0 $MARBL_ROOT  \
 	&& cd $MARBL_ROOT/src \
 	&& make gnu USEMPI=TRUE"
 
-
 # Container metadata:
-LABEL org.opencontainers.image.description="gfortran-based, conda-managed ROMS build env with MARBL 0.45.0"
-COPY Containerfile /image-metadata/Containerfile
+LABEL org.opencontainers.image.description="gfortran-based, conda-managed ROMS build env with MARBL 0.45.0 and Score-P 9.4.0"
+COPY Containerfile_gnu /image-metadata/Containerfile
