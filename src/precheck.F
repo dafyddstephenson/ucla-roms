@@ -61,7 +61,7 @@
       character(len=12) :: sr_name = "bgc_precheck"
       character(len=1024) :: error_info
 
-#if defined MARBL && defined BIOLOGY_BEC2      
+#if defined MARBL && defined BIOLOGY_BEC2
           write(error_info,*) "Both MARBL and BEC2 have been enabled"
      & " in cppdefs.opt, but only one (or none) may be used in any"
      & " given run."
