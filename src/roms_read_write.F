@@ -1662,16 +1662,8 @@
       ierr=nf90_put_att (ncid,nf90_global, 'tnu2_units', 'm^2/s')
 # endif
 # ifdef MY25_MIXING
-#  ifdef Q2_DIF2
-      ierr=nf90_put_att(ncid,nf90_global, 'q2nu2', q2nu2)
-      ierr=nf90_put_att (ncid,nf90_global, 'q2nu2_units', 'm^2/s')
-#  endif
-#  ifdef Q2_DIF4
-      ierr=nf90_put_att(ncid,nf90_global,'q2nu4', q2nu4)
-      ierr=nf90_put_att (ncid,nf90_global,'q2nu4_units', 'm^4/s')
-#  endif
 # endif
-# if !defined LMD_MIXING && !defined BVF_MIXING
+# if !defined LMD_MIXING
 
       ierr=nf90_put_att(ncid, nf90_global, 'Akv_bak', Akv_bak)       ! Background vertical viscosity tracer mixing
       ierr=nf90_put_att (ncid, nf90_global, 'Akv_bak_units', 'm^2/s')

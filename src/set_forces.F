@@ -156,22 +156,4 @@ c***              no code here
 
 #endif  /* SOLVE3D */
 
-
-!--> Bottom boundary fluxes [Styles and Glenn (1996) bottom
-!    boundary layer formulation.  Not implemented in this code]
-
-#if defined ANA_BMFLUX
-      call ana_bmflux ILLEGAL
-#elif defined SG_BBL96
-# ifdef ANA_WWAVE
-      call ana_wwave ILLEGAL
-# else
-      call set_wwave_tile(istr,iend,jstr,jend)
-# endif
-      call sg_bbl96 ILLEGAL
-#endif
-
-#ifdef ANA_PSOURCE
-      if (ZEROTH_TILE) call ana_psource
-#endif
       end
