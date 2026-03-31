@@ -12,6 +12,9 @@
       use scalars, only:
      &     akv_bak, forw_start, iic, ntstart, akt_bak, g, rho0
       use param, only: isalt, itemp
+#ifdef FILAMENT_IDEAL
+     &     , hd
+#endif
 !     For Filament example case:
 #ifndef NONLIN_EOS
       use eos_vars, only: tcoef
