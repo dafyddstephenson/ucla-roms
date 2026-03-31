@@ -212,7 +212,7 @@ ifeq ($(COMPILER),gnu)
     endif
 endif
 
-ifeq($(PROFILER),gprof)
+ifeq ($(PROFILER),gprof)
    FFLAGS += -pg
 endif
 
