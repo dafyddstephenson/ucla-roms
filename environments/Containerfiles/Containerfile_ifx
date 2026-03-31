@@ -24,11 +24,6 @@ RUN wget -q https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9e86b555
     && sh ./intel-fortran-essentials-2025.0.1.27_offline.sh -a --silent --cli --eula accept \
     && rm intel-fortran-essentials-2025.0.1.27_offline.sh
 
-## Obtain and hardcode OneAPI environment variables:
-## Updated variables here using:
-# RUN bash -c "source /opt/intel/oneapi/setvars.sh \
-#     && printenv"
-
 ENV TBBROOT=/opt/intel/oneapi/tbb/2022.0/env/.. \
     ONEAPI_ROOT=/opt/intel/oneapi \
     PKG_CONFIG_PATH=/opt/intel/oneapi/tbb/2022.0/env/../lib/pkgconfig:/opt/intel/oneapi/mpi/2021.14/lib/pkgconfig:/opt/intel/oneapi/mkl/2025.0/lib/pkgconfig:/opt/intel/oneapi/dpl/2022.7/lib/pkgconfig:/opt/intel/oneapi/compiler/2025.0/lib/pkgconfig \
@@ -173,8 +168,10 @@ RUN bash -c "source /opt/intel/oneapi/setvars.sh \
     && mkdir _build \
     && cd _build \
     && ../configure --prefix=/opt/scorep_9.4_install --with-mpi=openmpi --with-libbfd=download --with-libgotcha=download CC=/opt/intel/oneapi/compiler/2025.0/bin/icx CXX=/opt/intel/oneapi/compiler/2025.0/bin/icpx FC=/opt/intel/oneapi/compiler/2025.0/bin/ifx F77=/opt/intel/oneapi/compiler/2025.0/bin/ifx MPICC=/opt/openmpi-install/bin/mpicc MPICXX=/opt/openmpi-install/bin/mpicxx MPIFC=/opt/intel/oneapi/mpi/2021.14/bin/mpifc MPIF77=/opt/openmpi-install/bin/mpif77"
-RUN bash -c " source /opt/intel/oneapi/setvars.sh \
+WORKDIR $INSTALL_BASE_DIR/scorep-9.4/_build
+RUN bash -c "source /opt/intel/oneapi/setvars.sh \
     && make -j$(nproc) && make install"
+WORKDIR $INSTALL_BASE_DIR
 RUN rm -rf $INSTALL_BASE_DIR/scorep-9.4
 ENV PATH=$INSTALL_BASE_DIR/scorep_9.4_install/bin:$PATH
 
