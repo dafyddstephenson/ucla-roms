@@ -5,8 +5,10 @@
 COMPILER ?=gnu
 # Set MPI wrapper (auto, mpifort, mpiifx, mpiifort)
 MPI_WRAPPER ?=auto
-# Configure FFLAGS by setting BUILD_MODE to "debug","strict","vtune","gprof", or "scorep"
+# Configure FFLAGS by setting BUILD_MODE to "debug","strict", or "test"
 BUILD_MODE ?=regular
+# Include profiling in the compilation by setting PROFILER to "none","gprof","vtune", or "scorep"
+PROFILER?=none
 # Keep pre-processed source code or not:
 KEEP_PPSRC ?=false
 # Allow additional FFLAGS to defaults without overriding them:
@@ -88,7 +90,7 @@ ifeq ($(findstring $(expected_fc),$(MPIVER)),)
 endif
 
 # Set compiler and linker to chosen wrapper
-ifeq ($(BUILD_MODE),scorep)
+ifeq ($(PROFILER),scorep)
    CFT := scorep $(MPI_WRAPPER)
    LDR := scorep $(MPI_WRAPPER)
 else
@@ -96,10 +98,8 @@ else
    LDR := $(MPI_WRAPPER)
 endif
 
-# For BUILD_MODE = "vtune" or "gprof" always keep source code:
-ifeq ($(BUILD_MODE),vtune)
-   KEEP_PPSRC=true
-else ifeq ($(BUILD_MODE),gprof)
+# For BUILD_MODE = "debug", always keep source code
+ifeq ($(BUILD_MODE),debug)
    KEEP_PPSRC=true
 endif
 
@@ -195,12 +195,12 @@ ifeq ($(COMPILER),$(filter ifort intel, $(COMPILER)))
 	FFLAGS = -O0
     else ifeq ($(BUILD_MODE),strict)
         FFLAGS += -fp-model strict
-    else ifeq ($(BUILD_MODE),vtune)
+    endif
+    ifeq ($(PROFILER),vtune)
         FFLAGS = -g -debug inline-debug-info -parallel-source-info=2
-    else ifeq ($(BUILD_MODE),gprof)
-        FFLAGS += -pg
     endif
 endif
+
 
 # GNU compiler settings
 ifeq ($(COMPILER),gnu)
@@ -210,6 +210,10 @@ ifeq ($(COMPILER),gnu)
     else ifeq ($(BUILD_MODE),test)
 	FFLAGS = -fallow-argument-mismatch -O0
     endif
+endif
+
+ifeq($(PROFILER),gprof)
+   FFLAGS += -pg
 endif
 
 # Options to link to libraries & modules (NetCDF, etc):

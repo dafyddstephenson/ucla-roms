@@ -67,8 +67,8 @@ jobs:
     - name: Update COMPILER arg in make commands
       shell: bash
       run: |
-        sed -i -e "s/make /make COMPILER=gnu USER_FFLAGS=-Werror BUILD_MODE=scorep /g" $ROMS_ROOT/tests/scripts/do_test_roms.sh
-        sed -i -e "s/make /make COMPILER=gnu USER_FFLAGS=-Werror BUILD_MODE=scorep /g" $ROMS_ROOT/tests/bgc_real/do_test_roms.sh
+        sed -i -e "s/make /make COMPILER=gnu USER_FFLAGS=-Werror PROFILER=scorep /g" $ROMS_ROOT/tests/scripts/do_test_roms.sh
+        sed -i -e "s/make /make COMPILER=gnu USER_FFLAGS=-Werror PROFILER=scorep /g" $ROMS_ROOT/tests/bgc_real/do_test_roms.sh
     - name: Run Test for ${{ matrix.example }}
       shell: bash
       run: |
