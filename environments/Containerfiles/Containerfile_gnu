@@ -117,19 +117,23 @@ ENV MPIHOME=/opt/conda/envs/roms-ci \
 
 # Install Score-P
 WORKDIR /opt/
+ENV SCOREP_ROOT=/opt/scorep_9.4_install
 RUN bash -c "wget -q https://zenodo.org/records/17964650/files/scorep-9.4.tar.gz \
      && tar -xvf scorep-9.4.tar.gz \
      && rm scorep-9.4.tar.gz \
-     && mkdir scorep_9.4_install \
+     && mkdir $SCOREP_ROOT \
      && cd scorep-9.4 \
      && mkdir _build \
      && cd _build \
-     && ../configure --prefix=/opt/scorep_9.4_install --with-mpi=mpich --with-libbfd=download --with-libgotcha=download CC=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-cc CXX=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-c++ FC=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-gfortran F77=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-gfortran MPICC=/opt/conda/envs/roms-ci/bin/mpicc MPICXX=/opt/conda/envs/roms-ci/bin/mpicxx MPIFC=/opt/conda/envs/roms-ci/bin/mpifort MPIF77=/opt/conda/envs/roms-ci/bin/mpif77"
+     && ../configure --prefix=$SCOREP_ROOT --with-mpi=mpich --with-libbfd=download --with-libgotcha=download CC=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-cc CXX=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-c++ FC=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-gfortran F77=/opt/conda/envs/roms-ci/bin/x86_64-conda-linux-gnu-gfortran MPICC=/opt/conda/envs/roms-ci/bin/mpicc MPICXX=/opt/conda/envs/roms-ci/bin/mpicxx MPIFC=/opt/conda/envs/roms-ci/bin/mpifort MPIF77=/opt/conda/envs/roms-ci/bin/mpif77"
 WORKDIR /opt/scorep-9.4/_build
 RUN bash -c "make -j$(nproc) && make install"
 WORKDIR /opt/
 RUN rm -rf /opt/scorep-9.4
-ENV PATH=/opt/scorep_9.4_install/bin:$PATH
+ENV PATH=$SCOREP_ROOT/bin:$PATH
+ENV LD_LIBRARY_PATH=$SCOREP_ROOT/lib:$SCOREP_ROOT/lib/scorep/libbfd/2.45/lib:$SCOREP_ROOT/lib/scorep/libgotcha/1.0.8/lib:${LD_LIBRARY_PATH}
+ENV LIBRARY_PATH=$SCOREP_ROOT/lib:$SCOREP_ROOT/lib/scorep/libbfd/2.45/lib:$SCOREP_ROOT/lib/scorep/libgotcha/1.0.8/lib:${LIBRARY_PATH}
+ENV LDFLAGS="-Wl,-rpath,$SCOREP_ROOT/lib -Wl,-rpath,$SCOREP_ROOT/lib/scorep/libbfd/2.45/lib -Wl,-rpath,$SCOREP_ROOT/lib/scorep/libgotcha/1.0.8/lib -Wl,-rpath-link,$SCOREP_ROOT/lib -Wl,-rpath-link,$SCOREP_ROOT/lib/scorep/libbfd/2.45/lib -Wl,-rpath-link,$SCOREP_ROOT/lib/scorep/libgotcha/1.0.8/lib ${LDFLAGS}"
 
 # Install MARBL
 ENV MARBL_ROOT=/opt/MARBL
