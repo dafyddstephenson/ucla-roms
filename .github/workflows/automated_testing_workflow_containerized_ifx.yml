@@ -84,17 +84,18 @@ jobs:
           ./do_test_roms.sh github_ifx
           fi
 
-    - name: Print profiling report
-      shell: bash
-      run : |
-        micromamba run -n roms-ci bash -c '
-        cd ${ROMS_ROOT}/tests/${{ matrix.example}}/
-        scorep-score -r scorep-*/profile.cubex > scorep.out
-        python3 - <<"EOF"
-        s=open("scorep.out").read().rstrip("\n").split("\n\n")
-        k=lambda L: sorted(L, key=lambda x: float(x.split()[4]), reverse=True)
-        print(s[0]); print()
-        print("\n".join([s[1].splitlines()[0]] + k(s[1].splitlines()[1:]))); print("-------------")
-        print("\n".join(k(s[2].splitlines())))
-        EOF
-        '
+      - name: Print profiling report
+        shell: bash
+        run : |
+          micromamba run -n roms-ci bash -c '
+          cd ${ROMS_ROOT}/tests/${{ matrix.example}}/
+          scorep-score -r scorep-*/profile.cubex > scorep.out
+          python3 - <<"EOF"
+          s=open("scorep.out").read().rstrip("\n").split("\n\n")
+          k=lambda L: sorted(L, key=lambda x: float(x.split()[4]), reverse=True)
+          print(s[0]); print()
+          print("\n".join([s[1].splitlines()[0]] + k(s[1].splitlines()[1:]))); print("-------------")
+          print("\n".join(k(s[2].splitlines())))
+          EOF
+          '
+
