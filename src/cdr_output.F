@@ -1,4 +1,4 @@
-      module cstar_output
+      module cdr_output
       ! Collection of variables dedicated to the C-star system
       ! Jeroen Molemaker Feb 2025
 
@@ -32,8 +32,8 @@
 
       private
 
-#include "cstar_output.opt"
-      character(len=12) :: module_name = "cstar_output"
+#include "cdr_output.opt"
+      character(len=10) :: module_name = "cdr_output"
       real    :: output_time = 0
       integer :: record = nrpf ! to trigger the first file creation
 
@@ -84,16 +84,16 @@
       end type CStarOutputVariable
 
 
-      type(CStarOutputVariable), allocatable, save :: cstar_varlist(:) ! TODO save? nah
+      type(CStarOutputVariable), allocatable, save :: cdr_varlist(:) ! TODO save? nah
 
       ! Public functions
-      public wrt_cstar,init_cstar
+      public wrt_cdr_output,init_cdr_output
 
 
 !----------------------------------------------------------------------
 
       contains
-      subroutine add_cstar_output_variable(list, name, dimnames, dims,
+      subroutine add_cdr_output_variable(list, name, dimnames, dims,
      &                                     long_name, units)
         type(CStarOutputVariable), allocatable, intent(inout) :: list(:)
         character(len=*), intent(in) :: name, long_name, units
@@ -120,117 +120,117 @@
         tmp(n+1)%dimsizes(1:nd) = dims
 
         call move_alloc(tmp, list)
-      end subroutine add_cstar_output_variable
+      end subroutine add_cdr_output_variable
 !======================================================================
-      subroutine define_cstar_output_variables
+      subroutine define_cdr_output_variables
 !======================================================================
-      if (.not. allocated(cstar_varlist)) allocate(cstar_varlist(0))
+      if (.not. allocated(cdr_varlist)) allocate(cdr_varlist(0))
 
-      call add_cstar_output_variable(cstar_varlist, 'avg_begin_time',
+      call add_cdr_output_variable(cdr_varlist, 'avg_begin_time',
      &      (/dn_tm/), (/0/),
      &      'Time at beginning of averaging period','seconds')
 
-      call add_cstar_output_variable(cstar_varlist, 'avg_end_time',
+      call add_cdr_output_variable(cdr_varlist, 'avg_end_time',
      &      (/dn_tm/), (/0/),
      &      'Time at end of averaging period','seconds')
 
-      call add_cstar_output_variable(cstar_varlist, 'zeta',
+      call add_cdr_output_variable(cdr_varlist, 'zeta',
      &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
      &      'free-surface elevation','meters')
 
-      call add_cstar_output_variable(cstar_varlist, 'temp',
+      call add_cdr_output_variable(cdr_varlist, 'temp',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'potential temperature','degrees Celsius')
 
-      call add_cstar_output_variable(cstar_varlist, 'salt',
+      call add_cdr_output_variable(cdr_varlist, 'salt',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'salinity','PSU')
 
-      call add_cstar_output_variable(cstar_varlist, 'ALK',
+      call add_cdr_output_variable(cdr_varlist, 'ALK',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      t_lname(iALK), t_units(iALK))
 
-      call add_cstar_output_variable(cstar_varlist, 'DIC',
+      call add_cdr_output_variable(cdr_varlist, 'DIC',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      t_lname(iDIC), t_units(iDIC))
 
-      call add_cstar_output_variable(cstar_varlist, 'ALK_ALT_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'ALK_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      t_lname(iALK_alt), t_units(iALK_alt))
 
-      call add_cstar_output_variable(cstar_varlist, 'DIC_ALT_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'DIC_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      t_lname(iDIC_alt), t_units(iDIC_alt))
 
-      call add_cstar_output_variable(cstar_varlist, 'hALK',
+      call add_cdr_output_variable(cdr_varlist, 'hALK',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'thickness-weighted ' // trim(t_lname(iALK)),
      &      'meters ' // trim(t_units(iALK)))
 
-      call add_cstar_output_variable(cstar_varlist, 'hDIC',
+      call add_cdr_output_variable(cdr_varlist, 'hDIC',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'instantaneous thickness-weighted ' // trim(t_lname(iDIC)),
      &      'meters ' // trim(t_units(iDIC)))
 
-      call add_cstar_output_variable(cstar_varlist, 'hALK_ALT_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'hALK_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'thickness-weighted ' // trim(t_lname(iALK_alt)),
      &      'meters ' // trim(t_units(iALK_alt)))
 
-      call add_cstar_output_variable(cstar_varlist, 'hDIC_ALT_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'hDIC_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'instantaneous thickness-weighted ' // trim(t_lname(iDIC_alt)),
      &      'meters ' // trim(t_units(iDIC_alt)))
 
-      call add_cstar_output_variable(cstar_varlist, 'pH',
+      call add_cdr_output_variable(cdr_varlist, 'pH',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      vname_marbl_ss_3d(2,iPH), vname_marbl_ss_3d(3,iPH))
 
-      call add_cstar_output_variable(cstar_varlist, 'pH_ALT_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'pH_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      vname_marbl_ss_3d(2,iPH_alt), vname_marbl_ss_3d(3,iPH_alt))
 
-      call add_cstar_output_variable(cstar_varlist, 'FG_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'FG_CO2',
      &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
      &      vname_bgc_diag_2d(2,iFG), vname_bgc_diag_2d(3,iFG))
 
-      call add_cstar_output_variable(cstar_varlist, 'FG_ALT_CO2',
+      call add_cdr_output_variable(cdr_varlist, 'FG_ALT_CO2',
      &      (/dn_xr,dn_yr,dn_tm/), (/xi_rho,eta_rho,0/),
      &      vname_bgc_diag_2d(2,iFG_alt), vname_bgc_diag_2d(3,iFG_alt))
 
       if (cdr_source) then
-         call add_cstar_output_variable(cstar_varlist, 'ALK_source',
+         call add_cdr_output_variable(cdr_varlist, 'ALK_source',
      &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &        'ALK source from CDR module','meq/s')
-         call add_cstar_output_variable(cstar_varlist, 'ALK_ALT_source',
+         call add_cdr_output_variable(cdr_varlist, 'ALK_ALT_source',
      &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &        'alt ALK source from CDR module','meq/s')
-         call add_cstar_output_variable(cstar_varlist, 'DIC_source',
+         call add_cdr_output_variable(cdr_varlist, 'DIC_source',
      &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &        'DIC source from CDR module','mmol/s')
-         call add_cstar_output_variable(cstar_varlist, 'DIC_ALT_source',
+         call add_cdr_output_variable(cdr_varlist, 'DIC_ALT_source',
      &        (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &        'alt DIC source from CDR module','mmol/s')
       endif
 
       if (do_avg) then
-       call add_cstar_output_variable(cstar_varlist, 'hDIC_avg',
+       call add_cdr_output_variable(cdr_varlist, 'hDIC_avg',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'time-averaged thickness-weighted ' // trim(t_lname(iDIC)),
      &      'meters ' // trim(t_units(iDIC)))
 
-       call add_cstar_output_variable(cstar_varlist, 'hDIC_ALT_CO2_avg',
+       call add_cdr_output_variable(cdr_varlist, 'hDIC_ALT_CO2_avg',
      &      (/dn_xr,dn_yr,dn_zr,dn_tm/), (/xi_rho,eta_rho,N,0/),
      &      'time-averaged thickness-weighted ' // trim(t_lname(iDIC)),
      &      'meters ' // trim(t_units(iDIC)))
       endif
 
-      end subroutine define_cstar_output_variables
+      end subroutine define_cdr_output_variables
 
-      subroutine init_cstar     ![
+      subroutine init_cdr_output     ![
 !     Allocate and initialize arrays.
       implicit none
-      character(len=9) :: sr_name = "init_cstar"
+      character(len=15) :: sr_name = "init_cdr_output"
 
       ! local
       logical,save :: done=.false.
@@ -256,7 +256,7 @@
           month_at_prev_timestep = date(2)
       endif
 
-      if (mynode==0) print *,'init cstar'
+      if (mynode==0) print *,'init cdr output'
 
       itot = 0
       ! Loop over 2D BGC diagnostics...
@@ -352,10 +352,10 @@
 
 
 
-      call define_cstar_output_variables
-      call display_cstar_output_settings_to_terminal_cstar
+      call define_cdr_output_variables
+      call display_cdr_output_settings_to_terminal_cdr
 
-      end subroutine init_cstar  !]
+      end subroutine init_cdr_output  !]
 !----------------------------------------------------------------------
       subroutine calc_average ![
       ! Update averages
@@ -379,9 +379,9 @@
       if (coef==1) then                                    ! this refreshes average (1-coef)=0
         if (mynode==0) then
           if (monthly_averages) then
-            print *, 'cstar :: started monthly averaging.'
+            print *, 'cdr :: started monthly averaging.'
           else
-            print *, 'cstar :: started averaging. ',
+            print *, 'cdr :: started averaging. ',
      &      'output_period (s) =', output_period
           endif
         endif
@@ -489,26 +489,26 @@
       end subroutine calc_cdr_source !]
 
 ! ----------------------------------------------------------------------
-      subroutine create_cstar_output_variables(ncid)
+      subroutine create_cdr_output_variables(ncid)
         implicit none
         integer, intent(in) :: ncid
         integer :: varid, ierr, idx, nd
 
-        do idx=1,size(cstar_varlist)
-          nd = count(cstar_varlist(idx)%dimnames /= '')
+        do idx=1,size(cdr_varlist)
+          nd = count(cdr_varlist(idx)%dimnames /= '')
           varid = nccreate(ncid,
-     &                     trim(cstar_varlist(idx)%name),
-     &                     cstar_varlist(idx)%dimnames(1:nd),
-     &                     cstar_varlist(idx)%dimsizes(1:nd),
+     &                     trim(cdr_varlist(idx)%name),
+     &                     cdr_varlist(idx)%dimnames(1:nd),
+     &                     cdr_varlist(idx)%dimsizes(1:nd),
      &                     nf90_double)
           ierr = nf90_put_att(ncid,varid,'long_name',
-     &                        trim(cstar_varlist(idx)%long_name))
+     &                        trim(cdr_varlist(idx)%long_name))
           ierr = nf90_put_att(ncid,varid,'units',
-     &                        trim(cstar_varlist(idx)%units))
+     &                        trim(cdr_varlist(idx)%units))
         end do
-        end subroutine create_cstar_output_variables
+        end subroutine create_cdr_output_variables
 !----------------------------------------------------------------------
-      subroutine wrt_cstar  ![
+      subroutine wrt_cdr  ![
       ! Check whether it is time to write to file
       implicit none
 
@@ -519,7 +519,7 @@
       if (monthly_averages) then
         call sec2date(time+dt,date)
 
-        if ((date(2) - month_at_prev_timestep) /= 0) call wrt_output
+        if ((date(2) - month_at_prev_timestep) /= 0) call wrt_cdr_output
 
         month_at_prev_timestep = date(2)
       else
@@ -527,28 +527,28 @@
         output_time = output_time + dt
 
         if (output_time>=output_period) then
-          call wrt_output
+          call wrt_cdr_output
           output_time = 0
         endif
 
       endif
 
-      end subroutine wrt_cstar  !]
+      end subroutine wrt_cdr  !]
 !----------------------------------------------------------------------
-      subroutine wrt_output  ![
+      subroutine wrt_cdr_output  ![
       ! Call wrt after completion of the time-step
       implicit none
 
 ! local
-      character(len=10) :: sr_name = "wrt_output"
+      character(len=14) :: sr_name = "wrt_cdr_output"
       character(len=99),save :: fname
       integer,dimension(3)   :: start
       integer                :: idx,ncid,ierr
 
       if (record==nrpf) then
-          call create_file('_cstar',fname)
+          call create_file('_cdr',fname)
           ierr=nf90_open(fname,nf90_write,ncid)
-          call create_cstar_output_variables(ncid)
+          call create_cdr_output_variables(ncid)
           ierr = nf90_close(ncid)
           record = 0
       endif
@@ -638,26 +638,26 @@
 
         if (mynode == 0) then
           write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')
-     &     'wrt_cstar :: wrote cstar, tdays =', tdays,
+     &     'wrt_cdr :: wrote cdr, tdays =', tdays,
      &     'step =', iic-1, 'rec =', record
         endif
 
         navg = 0
 
 !
-        end subroutine wrt_output !]
+        end subroutine wrt_cdr_output !]
 
-        subroutine display_cstar_output_settings_to_terminal_cstar
+        subroutine display_cdr_output_settings_to_terminal_cdr
 !     Basic header
         character(len=120) :: stdout_str
         integer :: idx
         if (mynode==0) then
            if (.not. do_avg) then
               write(stdout_str,'(7x,A)')
-     &             'cstar_output :: history file '
+     &             'cdr_output :: history file '
            else
               write(stdout_str,'(7x,A)')
-     &             'cstar_output :: average file '
+     &             'cdr_output :: average file '
            end if
 
            write(stdout_str,'(2(A,2x),I4)')
@@ -682,15 +682,15 @@
      &          "Name","Write (T/F)","Long name"
            write(*,'(9x,A)')  repeat('-',62)
 
-           do idx=1,size(cstar_varlist)
+           do idx=1,size(cdr_varlist)
               write(*,'(11x,A,T30,L1,T36,A)')
-     &             trim(cstar_varlist(idx)%name),
+     &             trim(cdr_varlist(idx)%name),
      &             .true.,      ! all variables are written by C-Star by default
-     &             trim(cstar_varlist(idx)%long_name)
+     &             trim(cdr_varlist(idx)%long_name)
            end do
            write(*,'(9x,A)')  repeat('-',62)
         end if
-        end subroutine display_cstar_output_settings_to_terminal_cstar
+        end subroutine display_cdr_output_settings_to_terminal_cdr
 
 !----------------------------------------------------------------------
 
@@ -699,48 +699,48 @@
       use error_handling_mod, only : error_log
 
       implicit none
-      character(len=12) :: module_name = "cstar_output"
+      character(len=10) :: module_name = "cdr_output"
       private
 
-#include "cstar_output.opt"
+#include "cdr_output.opt"
 
       ! Public functions
-      public init_cstar, wrt_cstar
+      public init_cdr_output, wrt_cdr_output
 
       contains
 
-      subroutine init_cstar ![
+      subroutine init_cdr_output ![
 !     Allocate and initialize arrays.
       implicit none
-      character(len=9) :: sr_name = "init_cstar"
+      character(len=15) :: sr_name = "init_cdr_output"
 
 #ifndef MARBL
          call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
-     &        info="cstar_output must have MARBL enabled.")
+     &        info="cdr_output must have MARBL enabled.")
 #endif
 
 #ifndef MARBL_DIAGS
          call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
-     &        info="cstar_output must have MARBL_DIAGS enabled.")
+     &        info="cdr_output must have MARBL_DIAGS enabled.")
 #endif
 
 #ifndef CDR_FORCING
         call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
-     &        info='cstar_output must have CDR_FORCING enabled.')
+     &        info='cdr_output must have CDR_FORCING enabled.')
 #endif
         call error_log%abort_check()
-      end subroutine init_cstar !]
+      end subroutine init_cdr_output !]
 
-      subroutine wrt_cstar ![
+      subroutine wrt_cdr_output ![
 !     Allocate and initialize arrays.
       implicit none
 !     Nothing happening here!
-      end subroutine wrt_cstar !]
+      end subroutine wrt_cdr_output !]
 !----------------------------------------------------------------------
 
 #endif /* MARBL && MARBL_DIAGS && CDR_FORCING */
 
-      end module cstar_output
+      end module cdr_output
