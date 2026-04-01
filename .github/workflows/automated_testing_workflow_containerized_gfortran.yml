@@ -90,7 +90,7 @@ jobs:
         s=open("scorep.out").read().rstrip("\n").split("\n\n")
         k=lambda L: sorted(L, key=lambda x: float(x.split()[4]), reverse=True)
         print(s[0]); print()
-        print("\n".join([s[1].splitlines()[0]] + k(s[1].splitlines()[1:]))); print()
+        print("\n".join([s[1].splitlines()[0]] + k(s[1].splitlines()[1:]))); print("-------------")
         print("\n".join(k(s[2].splitlines())))
         EOF
         '

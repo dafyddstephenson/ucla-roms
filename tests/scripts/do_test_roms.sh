@@ -19,8 +19,8 @@ echo "##############################"
 echo "  test compiling..."
 echo "##############################"
 
-make compile_clean &> /dev/null
-make BUILD_MODE=test
+make COMPILER=gnu USER_FFLAGS=-Werror PROFILER=scorep compile_clean &> /dev/null
+make COMPILER=gnu USER_FFLAGS=-Werror PROFILER=scorep BUILD_MODE=test
 
 
 # 2) Run test case:
