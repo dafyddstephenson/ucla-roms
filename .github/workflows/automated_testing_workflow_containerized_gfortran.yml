@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/dafyddstephenson/roms_gfortran_build_env:1.0
+      image: ghcr.io/cworthy-ocean/marbl_gnu_mpich:0.0
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +45,6 @@ jobs:
       shell: bash
       run: |
         micromamba run -n roms-ci bash -c '
-        #Copy GNU-compatible makefiles
         cd Work/
         cd ${ROMS_ROOT}/Tools-Roms/
         make partit COMPILER=gnu
