@@ -87,7 +87,6 @@ jobs:
       - name: Print profiling report
         shell: bash
         run : |
-          micromamba run -n roms-ci bash -c '
           cd ${ROMS_ROOT}/tests/${{ matrix.example}}/
           scorep-score -r scorep-*/profile.cubex > scorep.out
           python3 - <<"EOF"
@@ -97,5 +96,4 @@ jobs:
           print("\n".join([s[1].splitlines()[0]] + k(s[1].splitlines()[1:]))); print("-------------")
           print("\n".join(k(s[2].splitlines())))
           EOF
-          '
 

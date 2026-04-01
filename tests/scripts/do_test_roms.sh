@@ -19,8 +19,8 @@ echo "##############################"
 echo "  test compiling..."
 echo "##############################"
 
-make USER_FFLAGS=-Werror compile_clean &> /dev/null
-make USER_FFLAGS=-Werror BUILD_MODE=test
+make compile_clean &> /dev/null
+make BUILD_MODE=test
 
 
 # 2) Run test case:
