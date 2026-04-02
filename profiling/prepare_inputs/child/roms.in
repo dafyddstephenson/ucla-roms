@@ -8,17 +8,17 @@ S-coord: THETA_S,   THETA_B,    hc (m)
           5.0D0        2.0D0     300.0D0
 
 grid:  filename
-     ../input_data/partitioned_8_8/child_grid.nc
+     ../../input_data/child_grid.nc
 
 forcing: filename
-     ../input_data/partitioned_8_8/child_tides.nc
-     ../input_data/partitioned_8_8/child_surface_forcing.nc
-     ../input_data/partitioned_8_8/child_bgc_surface_forcing.nc
-     ../input_data/partitioned_8_8/child_boundary_forcing.nc
+     ../../input_data/child_tides.nc
+     ../../input_data/child_surface_forcing.nc
+     ../../input_data/child_bgc_surface_forcing.nc
+     ../../input_data/child_boundary_forcing.nc
 
 initial: NRREC  filename
           1
-     ../input_data/partitioned_8_8/child_initial_conditions.nc
+     ../../input_data/child_initial_conditions.nc
 
 MARBL_biogeochemistry: namelist  tracer_output_list   diagnostic_output_list
       marbl_in
