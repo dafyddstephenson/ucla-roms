@@ -545,13 +545,6 @@
 # ifdef MASKING
      &                                  *umask(i,j)
 # endif
-c--# define TR
-# ifdef TR
-! Daniel add, can proably clean this up with & +ust(i,j,k) instead of
-! double repeated line, but wait for testing
-            ! DC_ik = dz*dy -> is the flux
-            CF(i,k)=0.5*DC(i,k)*(u(i,j,k,nstp)+u(i,j,k,nnew))
-# else
 c--#define EPSIL 0.125
 c--#define DELTA 0.75
 
@@ -563,7 +556,6 @@ c>># define DELTA 0.5790
 
             CF(i,k)=DELTA*FlxU(i,j,k) + EPSIL*DC(i,k)
      &                         *(u(i,j,k,nstp)+u(i,j,k,nnew))
-# endif
             CF(i,0)=CF(i,0)+CF(i,k)    !<-- vertical integration
           enddo
         enddo
@@ -608,14 +600,8 @@ c>># define DELTA 0.5790
 # ifdef MASKING
      &                                    *vmask(i,j)
 
-! Daniel add, mask-1  again, remember to check with Yusuke
-# endif
-# ifdef TR
-              CF(i,k)=0.5*DC(i,k)*(v(i,j,k,nstp)+v(i,j,k,nnew))
-# else
               CF(i,k)=DELTA*FlxV(i,j,k) + EPSIL*DC(i,k)
      &                           *(v(i,j,k,nstp)+v(i,j,k,nnew))
-# endif
               CF(i,0)=CF(i,0)+CF(i,k)
             enddo
           enddo

@@ -22,8 +22,8 @@
      &     , isalt
 #endif
       use mixing, only: akt, akv
-# if defined BVF_MIXING || defined LMD_MIXING  || defined LMD_KPP \
-  || defined MY2_MIXING || defined MY25_MIXING || defined PP_MIXING\
+# if defined LMD_MIXING  || defined LMD_KPP \
+  || defined MY25_MIXING\
   || defined LMD_BKPP
      & , bvf
 #endif
