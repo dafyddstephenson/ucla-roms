@@ -48,8 +48,6 @@
       integer(kind=PIO_OFFSET_KIND) :: frame
 
 
-      !> @brief Specifies the flavor of netCDF output.
-      integer               :: pio_type
       !> @brief The length of the dimension of the netCDF variable.
       integer, dimension(1) :: pio_dimLen_n1r
       integer, dimension(1) :: pio_dimLen_n1u
