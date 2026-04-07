@@ -51,7 +51,7 @@ c--#define TEST_INSERT  ! <-- self testing
      &                                , power
       character(len=16) sffx
 #endif
-      integer, parameter :: digits=5
+      integer, parameter :: digits=8
       character(len=1), parameter :: filesep='/'
       integer fname_start, last_dot, digit
 

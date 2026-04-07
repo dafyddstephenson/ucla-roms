@@ -71,6 +71,8 @@
 # define MARBL_DIAGS
 #endif
 
+#define UPSCALING
+
 !# define BIOLOGY_BEC2
 
 #ifdef BIOLOGY_BEC2
