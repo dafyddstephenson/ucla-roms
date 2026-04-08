@@ -61,6 +61,7 @@
       use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icori,
      &  dxdyi_u, dxdyi_v
 #endif
+      use ext_copy_prv2shr_mod, only: ext_copy_prv2shr_2d_tile
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k

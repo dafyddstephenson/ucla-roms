@@ -1,3 +1,12 @@
+      module ext_copy_prv2shr_mod
+
+      implicit none
+      private
+
+      public :: ext_copy_prv2shr_2d_tile
+
+      contains
+
 #include "cppdefs.opt"
 ! Copy the content of a private array into a shared array over
 ! extended range of indices.
@@ -61,3 +70,5 @@
       end
 # undef XI_ONLY
 #endif
+
+      end module ext_copy_prv2shr_mod
