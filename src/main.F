@@ -120,12 +120,13 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use cdr_output, only: do_cdr, init_cdr_output
       use frc_output, only: do_frc, init_frc
       use analytical, only: ana_vmix
-      use get_init_mod, only: get_init
-#ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
-#endif
 #ifdef ANA_INITIAL
      &     , ana_init
+#endif
+      use get_init_mod, only: get_init
+      use grid_stiffness_mod, only: grid_stiffness
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
