@@ -1,7 +1,16 @@
 #include "cppdefs.opt"
 #if defined SOLVE3D && defined LMD_KPP
 
-      subroutine alfabeta_tile(istr,iend,jstr,jend,
+      module alphabeta_mod
+
+      implicit none
+      private
+
+      public :: alphabeta_tile
+
+      contains
+
+      subroutine alphabeta_tile(istr,iend,jstr,jend,
      &                         imin,imax,jmin,jmax,
      &                                  alpha,beta)
 
@@ -76,8 +85,12 @@
 # endif /* NONLIN_EOS */
         enddo
       enddo
-      end
+      end subroutine alphabeta_tile
+      end module alphabeta_mod
 #else
-      subroutine alfabeta_empty
+      module alphabeta_mod
+      contains
+      subroutine alphabeta_empty
       end
+      end module alphabeta_mod
 #endif /* LMD_KPP */

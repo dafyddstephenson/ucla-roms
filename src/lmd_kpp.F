@@ -10,7 +10,7 @@
      &                         Gm1,dGm1dS,  Gt1,dGt1dS,  Gs1,dGs1dS,
      &                                                   kbls, kmo,
      &                                                         tind)
-
+      use alphabeta_mod, only: alphabeta_tile
       use surf_flux, only: stflx, srflx, svstr, sustr, svstr_r, sustr_r
 !     bulk_frc-> only: sustr_r, svstr_r, stflx, srflx, only:
       use grid, only: f, rmask, umask, vmask
@@ -152,7 +152,7 @@
 # ifdef LMD_KPP
 #  define alpha Bosol
 #  define beta  Bo
-      call alfabeta_tile (istr,iend,jstr,jend, I_EXT_RANGE,
+      call alphabeta_tile (istr,iend,jstr,jend, I_EXT_RANGE,
      &                             J_EXT_RANGE, alpha,beta)
 # endif
       do j=J_EXT_RANGE
