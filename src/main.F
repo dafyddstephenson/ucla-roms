@@ -1,7 +1,6 @@
+      program main              ! Open MP version of ROMS driver
 #include "cppdefs.opt"
 #if !defined GRID_LEVEL || GRID_LEVEL == 1
-
-!!    program main               ! Open MP version of ROMS driver
 
       use param, only: mynode, ocean_grid_comm, nsize
 #ifdef NHMG
@@ -69,8 +68,8 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 # endif
 
       stop
-      end
 
+      contains
 
       subroutine roms_thread
       use basic_output, only: wrt_his_ocean_vars
@@ -554,4 +553,6 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc
 #endif
 
-      end
+      end subroutine roms_step
+
+      end program main
