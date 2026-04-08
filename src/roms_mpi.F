@@ -80,7 +80,10 @@
       contains
 
 !--------------------------------------------------------
-      subroutine mpi_setup  ![
+      subroutine mpi_setup      ![
+#ifdef PARALLEL_IO
+      use insert_node_mod, only: insert_node
+#endif
       implicit none
       integer :: ierr,ncid
       integer,dimension(8) :: neighbors

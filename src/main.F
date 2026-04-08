@@ -12,6 +12,7 @@
       use timers, only: tstart, tend
       use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
+      use init_scalars_mod, only: init_scalars
 #ifdef PARALLEL_IO
       use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
 #endif

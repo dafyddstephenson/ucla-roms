@@ -1,4 +1,11 @@
+      module init_scalars_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
+      public :: init_scalars
+
+      contains
 
       subroutine init_scalars()
 
@@ -81,4 +88,7 @@ c      write(*,*) 'kmp_stacksize =', size
       call set_weights
 #endif
 
-      end
+      end subroutine init_scalars
+
+      end module init_scalars_mod
+

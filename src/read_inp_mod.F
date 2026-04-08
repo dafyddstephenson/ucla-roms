@@ -7,6 +7,7 @@
      &     init_registry, registry, register_keyword,
      &     report_keyword_mismatch, lookup_keyword
       use error_handling_mod, only: error_log
+      use insert_node_mod, only: insert_node
       implicit none
       character(len=12) :: module_name = "read_inp_mod"
       character(len=1024) :: error_info = ""
@@ -867,10 +868,8 @@
 
       lstr = lenstr(fname)
 
-# if defined MPI && defined PARALLEL_FILES
-#ifndef PARALLEL_IO
+# if defined(MPI) && defined(PARALLEL_FILES) && !defined(PARALLEL_IO)
       call insert_node(fname, lstr, mynode, nsize)
-#endif
 # endif
       open(newunit=testunit, file=trim(fname), status='old',
      &     iostat=ios)
