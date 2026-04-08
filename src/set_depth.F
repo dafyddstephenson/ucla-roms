@@ -454,8 +454,9 @@
       use param, only: mynode
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
       implicit none
-      integer is,ie, lenstr
+      integer is,ie
 
       integer lstr
       character(len=16) tmpstr

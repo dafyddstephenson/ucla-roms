@@ -147,7 +147,7 @@
      &      'Possible ambiguity between MPI-node segment length ',
      &        'and time index segment length. ',
      &        'To fix: increase parameter',
-     &        '''digits'' in file "insert_node.F" and recompile.'
+     &        '''digits'' in file "insert_node_mod.F" and recompile.'
          call error_log%raise_from_rank(
      &     context=sr_name,
      &     info=error_info)

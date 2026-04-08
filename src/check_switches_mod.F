@@ -113,6 +113,7 @@
 ! contradictions (if any), and raise errors flag to terminate the run.
 
       use param, only: mynode
+      use utils_mod, only: lenstr
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
 
@@ -120,7 +121,7 @@
       character(len=16) :: sr_name = "check_switches2"
       character(len=1024) :: error_info
       integer nobc_west, nobc_east, nobc_south, nobc_north,
-     &                                ncoupl, nAk, is,ie, lenstr
+     &                                ncoupl, nAk, is,ie
 
       ie=lenstr(cpps)
 

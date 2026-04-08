@@ -752,8 +752,9 @@
       use param, only: mynode
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
       implicit none
-      integer is,ie, lenstr
+      integer is,ie
       character(len=24) :: sr_name = "check_pre_step_switches"
       character(len=1024) :: error_info =""
 

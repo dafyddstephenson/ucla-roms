@@ -794,9 +794,10 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
       use param, only: mynode
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
 
       implicit none
-      integer ierr, is,ie, lenstr
+      integer ierr, is,ie
 
       integer lstr
       character(len=32) tmpstr

@@ -84,6 +84,7 @@
 #ifdef PARALLEL_IO
       use insert_node_mod, only: insert_node
 #endif
+      use utils_mod, only: lenstr
       implicit none
       integer :: ierr,ncid
       integer,dimension(8) :: neighbors
@@ -93,7 +94,7 @@
       integer :: offx,offy
       character(len=9) :: sr_name = "mpi_setup"
       character(len=256) :: grdname_tile
-      integer :: lstr, lenstr
+      integer :: lstr
 
       grdname_tile = trim(grdname)
 #ifdef PARALLEL_IO

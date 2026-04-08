@@ -456,10 +456,11 @@
 #ifdef MARBL_DIAGS
       use marbl_driver, only: marbl_diag_list_fname
 #endif
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in) :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
 
 ! ---------------------------------------------------------
 ! Read MARBL namelist file
@@ -854,10 +855,12 @@
 #ifndef ANA_GRID
       subroutine kwread_grid(unit)
       use dimensions, only: grdname
+      use utils_mod, only: lenstr
+
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname
@@ -891,10 +894,11 @@
 !     of analytical initial conditions and nrrec=0 initial conditions are
 !     created internally and no file is needed).
       use roms_read_write, only: nrrec, ininame
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
 
       read(unit,*,iostat=ios) nrrec
@@ -941,11 +945,12 @@
       use roms_read_write, only:
      &     force_files, force_info, max_frc_files,
      &     store_string_att, frcfile, max_frc, frcfile_full
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in)    :: unit
 
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
       character(len=15) :: sr_name = "kwread_forcing"
 
@@ -1042,10 +1047,11 @@ c$$$                  end if TODO
 ! climatology file is needed.  The following code segments also
 ! checks for availability of clm_file.
 
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname

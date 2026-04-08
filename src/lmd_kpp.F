@@ -660,9 +660,10 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       use strings, only: cpps, max_opt_size
       use param, only: mynode
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
 
       implicit none
-      integer is,ie, lenstr
+      integer is,ie
       character(len=19) :: sr_name = "check_kpp_switches"
       character(len=1024) :: error_info = ""
 
