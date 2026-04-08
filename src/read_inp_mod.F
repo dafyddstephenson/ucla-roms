@@ -113,6 +113,9 @@
 !-----------------------------------------------------------------------
 
          use check_switches_mod, only: check_switches2
+#ifdef LMD_KPP
+         use lmd_kpp_mod, only: check_kpp_switches
+#endif
 
          implicit none
 

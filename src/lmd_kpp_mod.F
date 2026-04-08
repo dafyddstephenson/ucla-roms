@@ -1,3 +1,14 @@
+
+      module lmd_kpp_mod
+
+      implicit none
+      private
+
+      public :: lmd_kpp_tile
+      public :: check_kpp_switches
+
+      contains
+
 #include "cppdefs.opt"
 #if defined SOLVE3D && defined LMD_KPP
 
@@ -709,7 +720,11 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
 # endif
       call error_log%abort_check()
       end subroutine check_kpp_switches
+      end module lmd_kpp_mod
 #else
+      module lmd_kpp_mod
+      contains
       subroutine lmd_kpp_empty
       end
+      end module lmd_kpp_mod
 #endif /* LMD_KPP || LMD_BKPP */

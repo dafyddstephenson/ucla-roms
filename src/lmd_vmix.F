@@ -5,6 +5,9 @@
       subroutine lmd_vmix(tind)
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use private_scratch, only: a3d, a2d, ia2d
+# if defined LMD_KPP || defined LMD_BKPP
+      use lmd_kpp_mod, only: lmd_kpp_tile
+#endif
       implicit none
       integer,save :: tile=0
       integer      :: tind
