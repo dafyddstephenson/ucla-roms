@@ -98,11 +98,10 @@
       call exchange_xxx(swr_frac)
 # endif
       end subroutine
-      end module lmd_swr_frac_mod
 #else
       subroutine swr_frac_empty
       end
 
 #endif /* LMD_KPP */
-
+      end module lmd_swr_frac_mod
 

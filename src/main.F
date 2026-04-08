@@ -385,6 +385,9 @@ CR      write(*,*)  ' -2' MYID
       use diagnostics, only: diag_uv,diag_trc,do_diagnostics
 #endif
       use roms_read_write, only: frc_time
+#ifdef LMD_MIXING
+      use lmd_vmix_mod, only: lmd_vmix
+#endif
 
       implicit none
 

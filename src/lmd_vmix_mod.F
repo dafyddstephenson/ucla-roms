@@ -1,4 +1,13 @@
+      module lmd_vmix_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
+      public :: lmd_vmix
+
+
+      contains
+
 #if defined SOLVE3D && defined LMD_MIXING
 # define SMOOTH_RIG  /* local Ri number smoothing */
 
@@ -437,3 +446,4 @@ c----#  define tind nstp
       subroutine lmd_vmix_empty
       end
 #endif /* LMD_MIXING */
+      end module lmd_vmix_mod
