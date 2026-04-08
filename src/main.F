@@ -107,6 +107,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
 #endif
+      use diag_mod, only: diag
       use basic_output, only: init_restarts, wrt_his_ocean_vars
       use scalars, only:
      &     diag_sync, dt, iic, iif, knew, kstp,
@@ -352,7 +353,7 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-
+      use diag_mod, only: diag
       use extract_data, only: do_extract, do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,

@@ -1,3 +1,12 @@
+      module diag_mod
+
+      implicit none
+      private
+
+      public :: diag
+
+      contains
+
 #include "cppdefs.opt"
 
 ! Compute and report various diagnostics: volume-averaged kinetic and
@@ -657,3 +666,4 @@ C$OMP END CRITICAL (diag_cr_rgn)
       diag_sync=.true.          !<-- to signal that "diag" has been called
       end
 
+      end module diag_mod
