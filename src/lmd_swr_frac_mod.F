@@ -1,4 +1,10 @@
+      module lmd_swr_frac_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
+      public :: swr_frac
+      contains
 #ifdef LMD_KPP
 
       subroutine swr_frac (tile)
@@ -91,10 +97,12 @@
 # ifdef EXCHANGE
       call exchange_xxx(swr_frac)
 # endif
-      end
+      end subroutine
+      end module lmd_swr_frac_mod
 #else
       subroutine swr_frac_empty
       end
+
 #endif /* LMD_KPP */
 
 

@@ -146,6 +146,9 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use precheck, only: do_precheck
       use error_handling_mod, only: error_log
       use calc_pflx_mod, only: init_pflx
+#ifdef LMD_KPP
+      use lmd_swr_frac_mod, only: swr_frac
+#endif
 
       implicit none
 
