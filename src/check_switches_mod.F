@@ -1,4 +1,16 @@
+      module check_switches_mod
+
 #include "cppdefs.opt"
+
+      implicit none
+      private
+
+      public :: check_tiling
+      public :: check_tile_bounds
+      public :: print_switches
+      public :: check_switches2
+
+      contains
                                            ! Checking compatibility of
       subroutine check_tiling () ! dimensions of the grid and
       use error_handling_mod, only: error_log
@@ -338,3 +350,4 @@
 #endif
 
       end subroutine
+      end module check_switches_mod

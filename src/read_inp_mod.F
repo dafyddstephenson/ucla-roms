@@ -111,6 +111,8 @@
 !     lateral boundary conditions; this code is also hand written).
 !-----------------------------------------------------------------------
 
+         use check_switches_mod, only: check_switches2
+
          implicit none
 
 !         call check_tiling()
@@ -145,6 +147,7 @@
 !     to the registered handler to parse the settings from that section.
 !-----------------------------------------------------------------------
 
+      use check_switches_mod, only: print_switches
 
       implicit none
       integer  ios, idx, ierr
