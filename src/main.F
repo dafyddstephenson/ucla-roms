@@ -148,6 +148,9 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #ifdef LMD_KPP
       use lmd_swr_frac_mod, only: swr_frac
 #endif
+#ifdef SOLVE3D
+      use omega_mod, only: omega
+#endif
 
       implicit none
 
@@ -376,6 +379,9 @@ CR      write(*,*)  ' -2' MYID
       use boundary, only: set_bry_all
       use tides, only: set_tides
       use roms_read_write, only: frc_time
+#ifdef SOLVE3D
+      use omega_mod, only: omega
+#endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
 #endif

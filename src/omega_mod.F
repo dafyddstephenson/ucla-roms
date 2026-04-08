@@ -1,4 +1,12 @@
+      module omega_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
+      public :: omega
+
+      contains
+
 #ifdef SOLVE3D
 
       subroutine omega
@@ -245,4 +253,5 @@ c**         Wi(i,j,k)=0.            !<-- back to fully explicit code
       subroutine omega_empty
       end
 #endif /* SOLVE3D */
+      end module omega_mod
 
