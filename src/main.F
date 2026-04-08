@@ -120,6 +120,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use cdr_output, only: do_cdr, init_cdr_output
       use frc_output, only: do_frc, init_frc
       use analytical, only: ana_vmix
+      use get_init_mod, only: get_init
 #ifdef DIAGNOSTICS
       use diagnostics, only: diag_uv,diag_trc,init_diagnostics
 #endif

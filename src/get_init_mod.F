@@ -1,3 +1,12 @@
+      module get_init_mod
+
+      implicit none
+      private
+
+      public :: get_init
+
+      contains
+
 #include "cppdefs.opt"
 
       subroutine get_init(req_rec, tindx)    ! Reads initial conditions
@@ -693,3 +702,5 @@ c--#define VERBOSE
 #endif
       return
       end subroutine get_init
+
+      end module get_init_mod
