@@ -2,7 +2,7 @@
 
       use param, only: mynode, nnodes, ocean_grid_comm, nsize
       use mpi_f08, only: mpi_byte
-      use roms_read_write, only: git_hash
+      use add_git_hash_mod, only: git_hash
       use keyword_registry, only:
      &     init_registry, registry, register_keyword,
      &     report_keyword_mismatch, lookup_keyword

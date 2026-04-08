@@ -6,6 +6,7 @@
       ! are appended with frame and node number and are limited to 32
 #include "cppdefs.opt"
 
+      use add_git_hash_mod, only: add_git_hash, git_hash
       use netcdf, only:
      &     nf90_noerr, nf90_nowrite, nf90_double,
      &     nf90_netcdf4, nf90_global, nf90_enotatt, nf90_open,
@@ -94,7 +95,6 @@
       integer, target :: test_var
       integer, parameter, public :: max_name_size=256
       character(len=max_name_size), public  :: output_root_name
-      character(len=41), public  :: git_hash= "xxx"
 
       ! Dimension names for in and output in netcdf files
       ! All dimension names need to be strings of 7 characters
