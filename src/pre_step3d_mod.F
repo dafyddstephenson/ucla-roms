@@ -70,7 +70,11 @@
      &  dxdyi_u, dxdyi_v
 #endif
       use ext_copy_prv2shr_mod, only: ext_copy_prv2shr_2d_tile
+#ifdef SOLVE3D
       use t3dbc_mod, only: t3dbc_tile
+      use u3dbc_mod, only: u3dbc_tile
+#endif
+
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY,N) :: ru,rv,Hz_bak,
@@ -527,15 +531,6 @@
           enddo
         enddo
       endif  ! <-- river_source
-
-!     if (split_bc) then
-!       call u3dbc(u_slow)
-!       call u3dbc(u_fast)
-!       call v3dbc(v_slow)
-!       call v3dbc(v_fast)
-
-!     else
-!     endif
 
       call u3dbc_tile (istr,iend,jstr,jend, wrk1)
       call v3dbc_tile (istr,iend,jstr,jend, wrk1)

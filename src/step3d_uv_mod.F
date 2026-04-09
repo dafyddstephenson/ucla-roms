@@ -627,6 +627,9 @@
       use ocean_vars, only: u, ubar, v, vbar, hz, flxu, flxv, z_w
       use scalars, only: n, knew, nnew, nstp, g, rho0, dt
       use roms_mpi, only: exchange_xxx
+#ifdef SOLVE3D
+      use u3dbc_mod, only: u3dbc_tile
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -1035,7 +1038,6 @@
 
 ! Set PHYSICAL lateral boundary conditions.
 
-!     call u3dbc_new
       call u3dbc_tile (istr,iend,jstr,jend, DC)
       call v3dbc_tile (istr,iend,jstr,jend, DC)
 
