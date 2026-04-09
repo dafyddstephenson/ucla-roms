@@ -1,4 +1,10 @@
+      module setup_grid_mod
+
 #include "cppdefs.opt"
+      implicit none
+      private
+      public :: setup_grid1
+      contains
                                             ! Setting up curvilinear
       subroutine setup_grid1(tile)          ! grid: Compute various
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
@@ -207,3 +213,4 @@ C***      if (gamma2 < 0.) pmask(i,j)=2.-pmask(i,j)
 # endif
 #endif /* EXCHANGE */
       end
+      end module setup_grid_mod

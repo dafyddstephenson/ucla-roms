@@ -157,7 +157,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #ifdef SPONGE
       use set_nudgcof_mod, only: set_nudgcof
 #endif
-
+      use setup_grid_mod, only: setup_grid1
 
       implicit none
 
