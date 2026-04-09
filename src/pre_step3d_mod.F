@@ -70,7 +70,7 @@
      &  dxdyi_u, dxdyi_v
 #endif
       use ext_copy_prv2shr_mod, only: ext_copy_prv2shr_2d_tile
-
+      use t3dbc_mod, only: t3dbc_tile
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY,N) :: ru,rv,Hz_bak,
