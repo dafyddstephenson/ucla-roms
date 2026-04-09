@@ -42,6 +42,9 @@
       use scalars, only: dtfast, g, iif, knew, kstp, nfast
       use roms_mpi, only: exchange_xxx
       use surf_flux, only: swflx
+#ifdef SOLVE3D
+      use set_depth_mod, only: set_depth_tile
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, i,j, kbak, kold, icdr, cidx

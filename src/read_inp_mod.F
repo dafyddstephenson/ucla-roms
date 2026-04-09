@@ -8,6 +8,9 @@
      &     report_keyword_mismatch, lookup_keyword
       use error_handling_mod, only: error_log
       use insert_node_mod, only: insert_node
+#ifdef SOLVE3D
+      use set_depth_mod, only: check_set_huv1_switches
+#endif
       implicit none
       character(len=12) :: module_name = "read_inp_mod"
       character(len=1024) :: error_info = ""
@@ -118,6 +121,7 @@
 #endif
 #ifdef SOLVE3D
          use pre_step3d_mod, only: check_pre_step_switches
+         use set_depth_mod, only: check_set_huv1_switches
 #endif
 
 

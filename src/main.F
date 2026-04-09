@@ -151,6 +151,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #ifdef SOLVE3D
       use omega_mod, only: omega
       use rho_eos_mod, only: rho_eos
+      use set_depth_mod, only: set_depth, set_HUV, set_HUV1
 #endif
 
       implicit none
@@ -307,17 +308,19 @@ CR      write(*,*) ' -6' MYID
      &                   dn_r(0:Lm+1,0:Mm+1)    )
 #endif
 
+
+#ifdef SOLVE3D
 CR      write(*,*)  ' -4' MYID
       do tile=my_tile_range
         call set_HUV
       enddo
 C$OMP BARRIER
-CR      write(*,*)  ' -3' MYID
+C     R      write(*,*)  ' -3' MYID
 
       call omega
 
       call rho_eos(nrhs)
-
+#endif
 CR      write(*,*)  ' -2' MYID
 
       if (floats) then
@@ -385,6 +388,7 @@ CR      write(*,*)  ' -2' MYID
       use pre_step3d_mod, only: pre_step3d
       use prsgrd_mod, only: prsgrd
       use rho_eos_mod, only: rho_eos
+      use set_depth_mod, only: set_huv, set_huv1
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
@@ -435,6 +439,7 @@ CR      write(*,*)  ' -2' MYID
 
       if (bry_tides.or.pot_tides) call set_tides(0)
 
+#ifdef SOLVE3D
       ! currrently, rho_eos works with t(nrhs), nrhs==nstp => time n
       call rho_eos(nrhs)
 
@@ -446,6 +451,7 @@ CR      write(*,*)  ' -2' MYID
       ! Here, omega corresponds to time n
       ! Should be already available from previous time-step
       call omega
+#endif
 
 # if defined LMD_MIXING
       call lmd_vmix(nstp)
@@ -458,7 +464,7 @@ CR      write(*,*)  ' -2' MYID
 
       !! nnew ==n+1/2
 
-
+#ifdef SOLVE3D
       !! set_HUV1 is like set_HUV, but first removes the barotr/barocl mismatch
       !! set_HUV1 works with nnew, which here is time n+1/2
       ! It's using the Hz from time n though
@@ -472,7 +478,7 @@ CR      write(*,*)  ' -2' MYID
       call omega
 
       call rho_eos(nrhs)  !!! use the right time index
-
+#endif
       call set_forces   ! get for time n+1/2
 # if defined LMD_MIXING
       call lmd_vmix(nrhs)
