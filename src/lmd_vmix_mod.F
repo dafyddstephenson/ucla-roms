@@ -3,12 +3,12 @@
       implicit none
       private
 
-      public :: lmd_vmix
+#if defined SOLVE3D && defined LMD_MIXING
 
+      public :: lmd_vmix
 
       contains
 
-#if defined SOLVE3D && defined LMD_MIXING
 # define SMOOTH_RIG  /* local Ri number smoothing */
 
       subroutine lmd_vmix(tind)
@@ -443,6 +443,7 @@ c----#  define tind nstp
 # endif /* LMD_KPP || LMD_BKPP */
       end
 #else
+      contains
       subroutine lmd_vmix_empty
       end
 #endif /* LMD_MIXING */

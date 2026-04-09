@@ -2,10 +2,9 @@
 #include "cppdefs.opt"
       implicit none
       private
-
+#ifdef LMD_KPP
       public :: swr_frac
       contains
-#ifdef LMD_KPP
 
       subroutine swr_frac (tile)
 
@@ -99,6 +98,7 @@
 # endif
       end subroutine
 #else
+      contains
       subroutine swr_frac_empty
       end
 
