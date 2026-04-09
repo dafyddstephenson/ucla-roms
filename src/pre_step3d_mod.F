@@ -730,10 +730,6 @@
 
 !     ! velocities are now in m/s
 
-!     call u3dbc_tile(istr,iend,jstr,jend, wrk1)
-!     call v3dbc_tile(istr,iend,jstr,jend, wrk1)
-!     call w3dbc_tile(istr,iend,jstr,jend, wrk1)
-
       !! u and v are exchanged in set_depth (set_HUV1)
       !! for neatness, we could move this exchange there as well
 #  ifdef EXCHANGE
