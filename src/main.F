@@ -407,6 +407,7 @@ CR      write(*,*)  ' -2' MYID
       use lmd_vmix_mod, only: lmd_vmix
 #endif
       use step2d_mod, only: step2d
+      use step3d_t_mod, only: step3d_t
       implicit none
 
 
@@ -517,13 +518,14 @@ CR      write(*,*)  ' -2' MYID
         call step2d
 
       enddo
-
+#ifdef SOLVE3D
       ! step3d_uv2 re-computes FlxU,FlV but still for n+1/2
       call step3d_uv2(0)
 
       call omega
 
       call step3d_t(0)
+#endif
 !GOOD
 # if defined TS_DIF2 || defined TS_DIF4
       call t3dmix

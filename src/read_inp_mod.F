@@ -122,6 +122,7 @@
 #ifdef SOLVE3D
          use pre_step3d_mod, only: check_pre_step_switches
          use set_depth_mod, only: check_set_huv1_switches
+         use step3d_t_mod, only: check_step_t_switches
 #endif
 
 
