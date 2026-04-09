@@ -48,6 +48,7 @@
       use scalars, only: dtfast, g, iif, knew, kstp, nfast
       use roms_mpi, only: exchange_xxx
       use surf_flux, only: swflx
+      use u2dbc_mod, only: u2dbc_tile
 #ifdef SOLVE3D
       use set_depth_mod, only: set_depth_tile
 #endif

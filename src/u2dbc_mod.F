@@ -1,4 +1,11 @@
+      module u2dbc_mod
+
 #include "cppdefs.opt"
+      implicit none
+      private
+      public :: u2dbc_tile
+
+      contains
 
       subroutine u2dbc_tile (istr,iend,jstr,jend, grad)
 
@@ -478,3 +485,4 @@ c****
 
       end
 
+      end module u2dbc_mod
