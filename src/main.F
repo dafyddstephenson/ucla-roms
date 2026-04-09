@@ -394,6 +394,9 @@ CR      write(*,*)  ' -2' MYID
       use prsgrd_mod, only: prsgrd
       use rho_eos_mod, only: rho_eos
       use set_depth_mod, only: set_huv, set_huv1
+# if defined TS_DIF2 || defined TS_DIF4
+      use t3dmix_mod, only: t3dmix => t3dmix_s
+#endif
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
