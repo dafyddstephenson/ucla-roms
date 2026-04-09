@@ -292,7 +292,7 @@
       use grid, only: pn, pm
       use dimensions, only: i0,i1,j0,j1
       use tracers, only: wrt_his_trc
-      use wvlcty_mod, only: wvlcty, wvlcty_tile
+      use wvlcty_mod, only: wvlcty
 
       implicit none
 
@@ -1047,6 +1047,7 @@
       use private_scratch, only: a2d
       use dimensions, only: i0, i1, j0, j1, nx, ny
       use tracers, only: set_avg_trc
+      use wvlcty_mod, only: wvlcty_tile
       implicit none
 
       ! local
