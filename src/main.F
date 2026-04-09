@@ -150,6 +150,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 #ifdef SOLVE3D
       use omega_mod, only: omega
+      use rho_eos_mod, only: rho_eos
 #endif
 
       implicit none
@@ -383,6 +384,7 @@ CR      write(*,*)  ' -2' MYID
       use omega_mod, only: omega
       use pre_step3d_mod, only: pre_step3d
       use prsgrd_mod, only: prsgrd
+      use rho_eos_mod, only: rho_eos
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc

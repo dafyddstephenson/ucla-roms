@@ -1,4 +1,14 @@
+      module rho_eos_mod
+
 #include "cppdefs.opt"
+
+      implicit none
+      private
+
+      public :: rho_eos
+
+      contains
+
 #ifdef SOLVE3D
 # define DUKO_2001
 
@@ -407,3 +417,4 @@ c**       dpth=z_w(i,j,N)-z_r(i,j,N)
       subroutine rho_eos_empty
       end
 #endif /* SOLVE3D */
+      end module rho_eos_mod
