@@ -412,6 +412,9 @@ CR      write(*,*)  ' -2' MYID
       use step2d_mod, only: step2d
       use step3d_t_mod, only: step3d_t
       use step3d_uv_mod, only: step3d_uv1, step3d_uv2
+#  ifdef UV_VIS2
+      use visc3d_mod, only: visc3d => visc3d_s
+#endif
       implicit none
 
 

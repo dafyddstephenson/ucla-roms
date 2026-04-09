@@ -1,7 +1,13 @@
+      module visc3d_mod
 #include "cppdefs.opt"
-# if defined SOLVE3D && defined UV_VIS2
+      implicit none
+      private
 
-      subroutine visc3d
+# if defined SOLVE3D && defined UV_VIS2
+      public :: visc3d_s
+      contains
+
+      subroutine visc3d_s
 
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use private_scratch, only: a2d
@@ -10,11 +16,11 @@
       integer,parameter :: tile=0
 
 # include "compute_tile_bounds.h"
-      call visc3d_tile (istr,iend,jstr,jend, A2d(1,1), A2d(1,2),
+      call visc3d_s_tile (istr,iend,jstr,jend, A2d(1,1), A2d(1,2),
      &                                       A2d(1,3), A2d(1,4))
       end
 
-      subroutine visc3d_tile (istr,iend,jstr,jend, UFx,UFe,VFx,VFe)
+      subroutine visc3d_s_tile (istr,iend,jstr,jend, UFx,UFe,VFx,VFe)
 
 ! Compute harmonic mixing of momentum, along constant S-surfaces as
 ! horizontal divergence of the stress tensor. A transverse isotropy is
@@ -132,6 +138,8 @@
       end
 
 #else
+      contains
       subroutine visc3d_empty
       end
 #endif
+      end module visc3d_mod
