@@ -1,3 +1,12 @@
+      module prsgrd_mod
+
+      implicit none
+      private
+
+      public :: prsgrd
+
+      contains
+
 #include "cppdefs.opt"
 #ifdef SOLVE3D
 
@@ -510,3 +519,4 @@ c    &            -0.75*rx(i,j)-0.125*(rx(i,j-1)+rx(i,j+1))
       subroutine prsgrd_empty
       end
 #endif /* SOLVE3D */
+      end module prsgrd_mod
