@@ -3,7 +3,7 @@
       implicit none
       private
 #ifdef SOLVE3D
-      public :: wvlcty
+      public :: wvlcty, wvlcty_tile
 
       contains
 
