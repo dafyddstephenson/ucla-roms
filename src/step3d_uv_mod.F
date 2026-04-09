@@ -630,7 +630,9 @@
 #ifdef SOLVE3D
       use u3dbc_mod, only: u3dbc_tile
       use v3dbc_mod, only: v3dbc_tile
+#ifdef NHMG
       use w3dbc_mod, only: w3dbc_tile
+#endif
 #endif
 
       implicit none
@@ -1335,7 +1337,7 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
 !--------------------------------------------------------------------
 ! Update physical boundary values
 !--------------------------------------------------------------------
-#ifdef SOLVE3d
+#ifdef SOLVE3D
       call w3dbc_tile (Istr,Iend,Jstr,Jend, DC)
 #endif
 

@@ -1,4 +1,4 @@
-module w3dbc_module
+      module w3dbc_mod
 #include "cppdefs.opt"
       implicit none
       private

@@ -564,6 +564,7 @@
       ! extract data for all objects, for all vars
       ! and write to file
       use roms_mpi, only: exchange_xxx
+      use wvlcty_mod, only: wvlcty
       implicit none
 
       ! local

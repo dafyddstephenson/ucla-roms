@@ -292,6 +292,7 @@
       use grid, only: pn, pm
       use dimensions, only: i0,i1,j0,j1
       use tracers, only: wrt_his_trc
+      use wvlcty_mod, only: wvlcty
 
       implicit none
 
@@ -385,9 +386,6 @@
           call ncwrite(ncid,vname(1,indxO),work(i0:i1,j0:j1,:),start)
         endif
         if (wrt_W) then                              ! true vertical velocity (m/s).
-!         do tile=0,NSUB_X*NSUB_E-1
-!           call wvlcty (tile, work)
-!         enddo
           call wvlcty (0, work)
           call ncwrite(ncid,vname(1,indxW),work(i0:i1,j0:j1,1:N),start)
         endif
