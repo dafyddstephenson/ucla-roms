@@ -116,6 +116,10 @@
 #ifdef LMD_KPP
          use lmd_kpp_mod, only: check_kpp_switches
 #endif
+#ifdef SOLVE3D
+         use pre_step3d_mod, only: check_pre_step_switches
+#endif
+
 
          implicit none
 

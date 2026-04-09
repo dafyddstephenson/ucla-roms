@@ -1,4 +1,12 @@
+      module pre_step3d_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
+      public :: pre_step3d
+      public :: check_pre_step_switches
+
+      contains
 #ifdef SOLVE3D
                                     ! Note that arrays A2d(1,1:4) in
       subroutine pre_step3d (tile)  ! the call just below are repeated
@@ -779,3 +787,4 @@
       subroutine pre_step3d_empty
       end
 #endif  /* SOLVE3D */
+      end module pre_step3d_mod

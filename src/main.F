@@ -381,6 +381,7 @@ CR      write(*,*)  ' -2' MYID
       use roms_read_write, only: frc_time
 #ifdef SOLVE3D
       use omega_mod, only: omega
+      use pre_step3d_mod, only: pre_step3d
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
