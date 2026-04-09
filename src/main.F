@@ -505,7 +505,7 @@ CR      write(*,*)  ' -2' MYID
       ! All of this seems to happen with Hz's from time n
       ! Corrector step
       call prsgrd
-#ifdef SOLVE3d
+#ifdef SOLVE3D
       call step3d_uv1(0)  ! update u/v(nnew) with dt*ru/rv
 #endif
 
