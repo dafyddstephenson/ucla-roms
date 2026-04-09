@@ -1,6 +1,12 @@
+      module set_scoord_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
 #ifdef SOLVE3D
-                                         ! Setup S-coordinate system:
+      public ::set_scoord
+      contains
+                                         !     Setup S-coordinate system:
       subroutine set_scoord              ! input: theta_s, theta_b, hc
 
       use param, only: mynode
@@ -11,7 +17,7 @@
       implicit none                      ! output: Cs_w(0:N), Cs_r(1:N)
 
       integer k                          ! Compute vertical stretching
-      real ds,sc, z1,zhc,z2,z3, CSF      ! curves at W- and RHO-points,
+      real ds,sc, z1,zhc,z2,z3      ! curves at W- and RHO-points,
 
       ds=1.D0/dble(N)                    !      -1 < Cs_r,Cs_w < 0,
       Cs_w(N)=0.D0
@@ -66,6 +72,8 @@
       end                                     ! J. Comput. Phys.
 
 #else
+      contains
       subroutine set_scoord_empty
       end
 #endif /* SOLVE3D */
+      end module set_scoord_mod

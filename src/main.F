@@ -152,6 +152,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use omega_mod, only: omega
       use rho_eos_mod, only: rho_eos
       use set_depth_mod, only: set_depth, set_HUV, set_HUV1
+      use set_scoord_mod, only: set_scoord
 #endif
 #ifdef SPONGE
       use set_nudgcof_mod, only: set_nudgcof
