@@ -153,6 +153,10 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use rho_eos_mod, only: rho_eos
       use set_depth_mod, only: set_depth, set_HUV, set_HUV1
 #endif
+#ifdef SPONGE
+      use set_nudgcof_mod, only: set_nudgcof
+#endif
+
 
       implicit none
 
