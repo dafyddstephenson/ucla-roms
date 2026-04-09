@@ -1,4 +1,9 @@
+      module zetabc_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+      public :: zetabc_tile
+      contains
 
       subroutine zetabc_tile (istr,iend,jstr,jend, zeta_new)
 
@@ -219,5 +224,5 @@ c          if (cx < 0.) cx=0.
       endif
 # endif
 #endif
-      end
-
+      end subroutine zetabc_tile
+      end module zetabc_mod

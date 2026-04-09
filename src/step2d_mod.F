@@ -53,6 +53,7 @@
 #ifdef SOLVE3D
       use set_depth_mod, only: set_depth_tile
 #endif
+      use zetabc_mod, only: zetabc_tile
 
       implicit none
       integer istr,iend,jstr,jend, i,j, kbak, kold, icdr, cidx
