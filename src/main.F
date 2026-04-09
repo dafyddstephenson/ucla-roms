@@ -408,7 +408,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       use step2d_mod, only: step2d
       use step3d_t_mod, only: step3d_t
-      use step3d_uv_mod, only: step3d_uv1
+      use step3d_uv_mod, only: step3d_uv1, step3d_uv2
       implicit none
 
 
