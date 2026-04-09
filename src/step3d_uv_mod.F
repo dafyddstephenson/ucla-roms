@@ -1,6 +1,12 @@
+      module step3d_uv_mod
 #include "cppdefs.opt"
+      implicit none
+      private
 #ifdef SOLVE3D
 # define UPSTREAM_UV
+      public :: step3d_uv1, check_step_uv1_switches
+
+      contains
 
       subroutine step3d_uv1(tile)
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
@@ -75,7 +81,7 @@
       real  Flxw,Uflxw,Vflxw
       real  ub,ut
       real  div,dmax
-!     integer :: ierr !,imx,jmx,kmx
+
 #endif
 
 # include "compute_auxiliary_bounds.h"
@@ -531,7 +537,7 @@
 
       end
 
-      subroutine check_step_uv1_switches(ierr)
+      subroutine check_step_uv1_switches()
 
 ! This code must be placed here rather than in a separate file in order
 ! to be exposed to the relevant CPP-macros defined locally in this file
@@ -544,7 +550,7 @@
       use utils_mod, only: lenstr
 
       implicit none
-      integer ierr, is,ie
+      integer  is,ie
       character(len=24) :: sr_name = "check_step_uv1_switches"
       character(len=1024) :: error_info =""
 
@@ -565,10 +571,11 @@
 # include "track_advec_switches.h"
 
       return
-      ierr=ierr+1
       end
 
 #else
+      contains
       subroutine step3d_uv1_empty
       end
 #endif
+      end module step3d_uv_mod

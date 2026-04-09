@@ -408,6 +408,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       use step2d_mod, only: step2d
       use step3d_t_mod, only: step3d_t
+      use step3d_uv_mod, only: step3d_uv1
       implicit none
 
 
@@ -498,8 +499,9 @@ CR      write(*,*)  ' -2' MYID
       ! All of this seems to happen with Hz's from time n
       ! Corrector step
       call prsgrd
-
+#ifdef SOLVE3d
       call step3d_uv1(0)  ! update u/v(nnew) with dt*ru/rv
+#endif
 
 #  ifdef UV_VIS2
       call visc3d
