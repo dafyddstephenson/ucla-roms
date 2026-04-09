@@ -292,7 +292,7 @@
       use grid, only: pn, pm
       use dimensions, only: i0,i1,j0,j1
       use tracers, only: wrt_his_trc
-      use wvlcty_mod, only: wvlcty
+      use wvlcty_mod, only: wvlcty, wvlcty_tile
 
       implicit none
 
