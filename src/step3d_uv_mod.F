@@ -629,6 +629,7 @@
       use roms_mpi, only: exchange_xxx
 #ifdef SOLVE3D
       use u3dbc_mod, only: u3dbc_tile
+      use v3dbc_mod, only: v3dbc_tile
 #endif
 
       implicit none

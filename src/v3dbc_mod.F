@@ -1,5 +1,12 @@
+      module v3dbc_mod
+
 #include "cppdefs.opt"
+      implicit none
+      private
 #ifdef SOLVE3D
+      public :: v3dbc_tile
+
+      contains
 
       subroutine v3dbc_tile (istr,iend,jstr,jend, grad)
 
@@ -426,7 +433,8 @@
 
       end
 #else
+      contains
       subroutine v3dbc_empty
       end
 #endif /* SOLVE3D */
-
+      end module v3dbc_mod

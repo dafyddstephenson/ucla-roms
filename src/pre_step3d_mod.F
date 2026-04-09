@@ -73,6 +73,7 @@
 #ifdef SOLVE3D
       use t3dbc_mod, only: t3dbc_tile
       use u3dbc_mod, only: u3dbc_tile
+      use v3dbc_mod, only: v3dbc_tile
 #endif
 
       implicit none
