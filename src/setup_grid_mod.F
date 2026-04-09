@@ -3,7 +3,7 @@
 #include "cppdefs.opt"
       implicit none
       private
-      public :: setup_grid1
+      public :: setup_grid1, setup_grid2
       contains
                                             ! Setting up curvilinear
       subroutine setup_grid1(tile)          ! grid: Compute various

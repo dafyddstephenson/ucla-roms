@@ -157,7 +157,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #ifdef SPONGE
       use set_nudgcof_mod, only: set_nudgcof
 #endif
-      use setup_grid_mod, only: setup_grid1
+      use setup_grid_mod, only: setup_grid1, setup_grid2
 
       implicit none
 
@@ -406,7 +406,7 @@ CR      write(*,*)  ' -2' MYID
 #ifdef LMD_MIXING
       use lmd_vmix_mod, only: lmd_vmix
 #endif
-
+      use step2d_mod, only: step2d
       implicit none
 
 

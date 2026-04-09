@@ -1,4 +1,10 @@
+      module step2d_mod
 #include "cppdefs.opt"
+
+      implicit none
+      private
+      public :: step2d
+      contains
 
       subroutine step2d
 
@@ -573,4 +579,5 @@ c<<     &     +cff*iA_v(i,j)
       call exchange_xxx(zeta(:,:,knew),ubar(:,:,knew),vbar(:,:,knew))
 #endif
 
-      end
+      end subroutine step2d_FB_tile
+      end module step2d_mod
