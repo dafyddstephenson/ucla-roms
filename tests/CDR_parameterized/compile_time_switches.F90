@@ -125,6 +125,8 @@ module compile_time_switches
   logical,parameter :: pot_tides=.false. ! Surface tidal potential
   logical,parameter :: ana_tides=.false. ! Surface tidal potential
 
+  !upscale_output.opt
+  logical,parameter :: do_upscale = .false.
 
 end module compile_time_switches
 

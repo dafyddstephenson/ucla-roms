@@ -72,11 +72,12 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       contains
 
       subroutine roms_thread
+      use compile_time_switches, only: do_upscale
       use basic_output, only: wrt_his_ocean_vars
       use scalars, only: ntimes, iic, ntstart, diag_sync
       use timers, only: start_timers, stop_timers
       use error_handling_mod, only: error_log
-      use upscale_output, only: do_upscale, wrt_upscale
+      use upscale_output, only: wrt_upscale
 
       implicit none
 
@@ -104,7 +105,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 
       subroutine roms_init
       use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc,
-     &     wrt_frc, floats, do_random, ub_tune
+     &     wrt_frc, floats, do_random, ub_tune, do_upscale
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
@@ -116,7 +117,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     nnew, nrhs, nstp, numthreads, priv_count, sec2day,
      &     start_time, synchro_flag, tdays, time, proc
       use particles, only: init_particles
-      use upscale_output, only: do_upscale, init_upscale
+      use upscale_output, only:  init_upscale
       use random_output, only:  init_random
       use cdr_output, only:  init_cdr_output
       use frc_output, only: init_frc_output

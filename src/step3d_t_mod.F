@@ -58,7 +58,7 @@ c--# define CONST_TRACERS
 # endif
      &     )
       use compile_time_switches, only: cdr_source, forcing_3d, diag_trc,
-     &     pipe_source, river_source
+     &     pipe_source, river_source, do_upscale
       use pipe_frc, only: pidx, pipe_idx, pipe_trc,
      &     pipe_prf, pipe_flx
       use dimensions, only: inode, jnode, npx, npy
@@ -93,7 +93,7 @@ c--# define CONST_TRACERS
       use scalars, only: n, dt, nnew, nrhs, nt, nstp
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
       use upscale_output, only:
-     &     do_upscale, calc_forcing_rates, wrt_upscale
+     &     calc_forcing_rates, wrt_upscale
 #endif
 #ifdef ADV_ISONEUTRAL
       use eos_vars, only: drdx, drde, idrz
