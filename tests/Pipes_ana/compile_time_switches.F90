@@ -100,7 +100,10 @@ module compile_time_switches
 
   !pipe_frc.opt
   logical,parameter,public :: pipe_source  = .true.      ! use pipe forcing
-  logical,parameter        :: p_analytical = .true.      ! analytical forcing true
+  logical,parameter        :: p_analytical = .false.      ! analytical forcing true
+
+  !random_output.opt
+  logical,public,parameter :: do_random = .false.
 
 end module compile_time_switches
 

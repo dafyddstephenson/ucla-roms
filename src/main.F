@@ -103,7 +103,8 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
-      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, wrt_frc, floats
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc,
+     &     wrt_frc, floats, do_random
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
@@ -117,7 +118,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use sponge_tune, only: ub_tune
       use particles, only: init_particles
       use upscale_output, only: do_upscale, init_upscale
-      use random_output, only: do_random, init_random
+      use random_output, only:  init_random
       use cdr_output, only:  init_cdr_output
       use frc_output, only: init_frc_output
       use analytical, only: ana_vmix

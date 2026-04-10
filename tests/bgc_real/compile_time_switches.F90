@@ -102,5 +102,8 @@ module compile_time_switches
   logical,parameter,public :: pipe_source  = .false.      ! use pipe forcing
   logical,parameter        :: p_analytical = .false.      ! analytical forcing true
 
+  !random_output.opt
+  logical,public,parameter :: do_random = .false.
+
 end module compile_time_switches
 
