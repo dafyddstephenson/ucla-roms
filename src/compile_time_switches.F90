@@ -14,5 +14,7 @@ module compile_time_switches
   ! prev wrt_his, wrt_avg, wrt_his_dia, wrt_avg_dia
 #endif
 
+  !calc_pflx.opt
+      logical, parameter  :: calc_pflx     = .true.   ! Baroclinic pressure fluxes
 end module compile_time_switches
 

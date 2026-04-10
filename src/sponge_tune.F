@@ -5,14 +5,14 @@
 
 #include "cppdefs.opt"
 
-
+      use compile_time_switches, only: calc_pflx
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_inq_varid,
      &     nf90_open, nf90_put_att, nf90_close
       use nc_read_write, only: nccreate, ncread, ncwrite
       use scalars, only: iic, tdays, time, dt
       use dimensions, only: nx, ny, xi_rho, npx, npy
-      use calc_pflx_mod, only: up, vp, calc_pflx
+      use calc_pflx_mod, only: up, vp
       use roms_read_write, only:
      &     ncforce, bfx, bfy, dn_tm, dn_xr,
      &     dn_yr, bc_options, create_file, set_frc_data,

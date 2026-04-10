@@ -37,7 +37,8 @@
 # ifdef NHMG
      &                                                       rw,
 # endif
-     &                                      dR,dZ, FC,dZx,rx,dRx)
+     &     dR,dZ, FC,dZx,rx,dRx)
+      use compile_time_switches, only: calc_pflx
       use grid, only: f, pm, pn, umask, dn_u, vmask, dm_v
       use tides, only: pot_tides, ptide
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
@@ -59,7 +60,7 @@
       use diagnostics, only: calc_diag, diag_uv, udiag,
      &  vdiag, ipgr, dxdyi_u, dxdyi_v
 #endif
-      use calc_pflx_mod, only: calc_pflx, calc_pressure_flux
+      use calc_pflx_mod, only: calc_pressure_flux
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k, imin,imax,jmin,jmax
