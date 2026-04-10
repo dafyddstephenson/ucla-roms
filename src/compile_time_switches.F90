@@ -37,5 +37,10 @@ module compile_time_switches
   ! multiply together to get tracer flux.
   ! Set to false if you want to read in a vertical profile(s).
 
+  ! cdr_output.opt
+  logical,parameter :: wrt_cdr_avg   = .true.  ! NOTE: For most applications .true. is recommended
+  logical,parameter :: cdr_monthly_averages = .false. ! This overrides output_period
+
+
 end module compile_time_switches
 
