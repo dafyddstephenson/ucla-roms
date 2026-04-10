@@ -119,7 +119,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use upscale_output, only: do_upscale, init_upscale
       use random_output, only: do_random, init_random
       use cdr_output, only:  init_cdr_output
-      use frc_output, only: do_frc, init_frc
+      use frc_output, only: wrt_frc, init_frc_output
       use analytical, only: ana_vmix
 #ifdef ANA_INITIAL
      &     , ana_init
@@ -350,7 +350,7 @@ CR      write(*,*)  ' -2' MYID
       if (do_upscale) then
         call init_upscale
       endif
-      if (do_frc) call init_frc
+      if (wrt_frc) call init_frc_output
 
 
         mpi_master_only write(*,'(/1x,A/)')
@@ -371,7 +371,8 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
+     &     wrt_frc
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data
       use scalars, only:
@@ -382,7 +383,7 @@ CR      write(*,*)  ' -2' MYID
       use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
       use random_output, only: do_random, wrt_random
       use cdr_output, only:  wrt_cdr_output
-      use frc_output, only: do_frc, wrt_frc
+      use frc_output, only:  wrt_frc_output
       use zslice_output, only: do_zslice, wrt_zslice
       use basic_output, only:
      &     calc_avg_ocean_vars, wrt_avg_ocean_vars,
@@ -580,7 +581,7 @@ CR      write(*,*)  ' -2' MYID
       if (wrt_cdr)  call wrt_cdr_output
 #endif
       if (do_zslice) call wrt_zslice
-      if (do_frc)    call wrt_frc
+      if (wrt_frc)    call wrt_frc_output
 
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc

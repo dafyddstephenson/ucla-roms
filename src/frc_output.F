@@ -63,11 +63,11 @@
       integer,parameter :: prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
 
       ! Misc:
-      public :: init_frc, wrt_frc
+      public :: init_frc_output, wrt_frc_output
 
       contains
 ! ----------------------------------------------------------------------
-      subroutine init_frc ![
+      subroutine init_frc_output ![
       ! Allocate and initialize arrays.
       implicit none
 
@@ -80,7 +80,7 @@
         return
       else
 
-      if (do_avg) then
+      if (wrt_frc_avg) then
 #ifdef BULK_FRC
         allocate(tair_avg(GLOBAL_2D_ARRAY) )
         tair_avg(:,:)=0
@@ -127,10 +127,10 @@
         srflx_avg(:,:)=0
         allocate(swflx_avg(GLOBAL_2D_ARRAY) )
         swflx_avg(:,:)=0
-      endif ! do_avg
+      endif ! wrt_frc_avg
       endif ! done
 
-      end subroutine init_frc  !]
+      end subroutine init_frc_output  !]
 !----------------------------------------------------------------------
       subroutine calc_average ![
       ! Update averages
@@ -175,7 +175,7 @@
 
       end subroutine calc_average !]
 !----------------------------------------------------------------------!
-      subroutine wrt_frc ![
+      subroutine wrt_frc_output ![
       ! extract data for all objects, for all vars
       ! and write to file
 
@@ -194,7 +194,7 @@
       prate_ms(:,:) = prate(:,:)/(100.*3600.*24.)
 #endif
 
-      if (do_avg) call calc_average
+      if (wrt_frc_avg) call calc_average
       output_time = output_time + dt
 
       if (output_time>=output_period) then
@@ -202,7 +202,7 @@
       record = record+1
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
-      if (do_avg) then
+      if (wrt_frc_avg) then
 #ifdef BULK_FRC
       call ncwrite(ncid,'tair',tair_avg(i0:i1,j0:j1),(/1,1,record/))
       tair_avg(:,:) = 0
@@ -275,7 +275,7 @@
 
       if (mynode == 0) then
         write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')
-     &   'wrt_frc :: wrote frc, tdays =', tdays,
+     &   'wrt_frc_output :: wrote frc, tdays =', tdays,
      &   'step =', iic-1, 'rec =', record
       endif
 
@@ -284,7 +284,7 @@
 
       endif
 
-      end subroutine wrt_frc  !]
+      end subroutine wrt_frc_output  !]
 ! ----------------------------------------------------------------------
       subroutine create_frc_file(fname) ![
       implicit none

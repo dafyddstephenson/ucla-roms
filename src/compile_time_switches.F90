@@ -53,5 +53,9 @@ module compile_time_switches
   !extract_data.opt
   logical,parameter,public :: do_extract = .false.
 
+  !frc_output.opt
+  logical,public,parameter :: wrt_frc = .false.
+  logical,parameter        :: wrt_frc_avg   = .false.
+
 end module compile_time_switches
 
