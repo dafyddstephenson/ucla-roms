@@ -30,7 +30,7 @@
       private
 
       integer, public  :: nriv = 0
-      namelist /RIVER/ nriv
+      namelist /RIVER_FRC_SETTINGS/ nriv
       ! realistic rivers only: enter netcdf variable name and time name
       type (ncforce) :: nc_rvol = ncforce(
      &     vname='river_volume', tname='river_time')
@@ -106,17 +106,19 @@
 !     ----------------------------------------------------------------------
 
       subroutine read_river_nml
-!     Read the "RIVER" section of the namelist file
+!     Read the "RIVER_FRC_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
       character(len=15) :: sr_name = "read_river_nml"
       ! Read namelist
       call open_namelist_file(namelist_unit)
-      read (unit=namelist_unit, nml=RIVER, iostat=ios)
+      read (unit=namelist_unit, nml=RIVER_FRC_SETTINGS, iostat=ios)
       if (ios /= 0) then
-         error_log%raise_global(
-     &        context=module_name//"/"//sr_name,
-     &        info="could not read RIVER section of namelist file")
+         call error_log%raise_global(
+     &   context=module_name//"/"//sr_name,
+     &   info=
+     &   "could not read RIVER_FRC_SETTINGS section of namelist file"
+     &        )
       end if
       close(namelist_unit)
 

@@ -25,9 +25,11 @@
       private
 
       integer, public :: npip = 0
-      namelist /PIPES/ npip
-      type (ncforce) :: nc_pvol = ncforce( vname='pipe_volume', tname='pipe_time')
-      type (ncforce) :: nc_ptrc = ncforce( vname='pipe_tracer', tname='pipe_time')
+      namelist /PIPE_FRC_SETTINGS/ npip
+      type (ncforce) :: nc_pvol = ncforce(
+     &     vname='pipe_volume', tname='pipe_time')
+      type (ncforce) :: nc_ptrc = ncforce(
+     &     vname='pipe_tracer', tname='pipe_time')
       character(len=8) :: module_name = "pipe_frc"
       ! Variables used in the evolution equations
       integer,public  :: pidx ! Pipe index for looping through pipes
@@ -56,16 +58,18 @@
       contains
 
       subroutine read_pipe_nml
-!     Read the "PIPES" section of the namelist file
+!     Read the "PIPE_FRC_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
+      character(len=14) :: sr_name = "read_pipe_nml"
       ! Read namelist
       call open_namelist_file(namelist_unit)
-      read (unit=namelist_unit, nml=PIPES, iostat=ios)
+      read (unit=namelist_unit, nml=PIPE_FRC_SETTINGS, iostat=ios)
       if (ios /= 0) then
-         error_log%raise_global(
-     &        context=module_name//"/"//sr_name,
-     &        info="could not read PIPES section of namelist file")
+         call error_log%raise_global(
+     &   context=module_name//'/'//sr_name, info=
+     &   'could not read PIPE_FRC_SETTINGS section of namelist file'
+     &     )
       end if
       close(namelist_unit)
 

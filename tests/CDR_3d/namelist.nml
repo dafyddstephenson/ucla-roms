@@ -1,0 +1,13 @@
+&RIVER_FRC_SETTINGS
+nriv = 0
+/
+
+&PIPE_FRC_SETTINGS
+npip = 0
+/
+
+&CDR_FRC_SETTINGS
+cdr_file = "cdr_forcing_3d.nc"  ! NetCDF forcing file
+ncdr_parm = 1  !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
+nz_chd = 50
+/
