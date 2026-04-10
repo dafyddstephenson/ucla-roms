@@ -6,6 +6,8 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #include "cppdefs.opt"
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       use compile_time_switches, only: wrt_bgc_his, wrt_bgc_avg, wrt_bgc_dia_avg
+      use namelist_mod, only: open_namelist_file
+      use error_handling_mod, only: error_log
       use param, only: mynode, nt_passive, ntrc_bio, lm, mm, n
       use roms_read_write, only: ncforce
       use tracers, only:
@@ -77,10 +79,56 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #endif
 
       implicit none
+      character(len=18) :: module_name = "bgc_shared_vars.F"
+! BGC forcing file settings
+      type (ncforce) :: nc_dust = ncforce(
+     &     vname='dust', tname='dust_time' ) ! dust forcing
+      type (ncforce) :: nc_iron = ncforce(
+     &     vname='iron', tname='iron_time' ) ! iron forcing
+#ifdef PCO2AIR_FORCING
+      type (ncforce) :: nc_pco2air = ncforce(
+     &     vname='pco2_air',   tname='pco2_time' )
+#ifdef MARBL
+      type (ncforce) :: nc_pco2air_alt = ncforce(
+     &     vname='pco2_air_alt',   tname='pco2_time' )
+#endif
+#endif
+#if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
+      type (ncforce) :: nc_swrad_avg = ncforce(
+     &     vname='swrad_davg', tname='srf_davg_time' )
+#endif
+#ifdef NOX_FORCING
+      type (ncforce) :: nc_nox = ncforce(
+     &     vname='nox', tname='nox_time' )
+#endif
+#ifdef NHY_FORCING
+      type (ncforce) :: nc_nhy = ncforce(
+     &     vname='nhy', tname='nhy_time' )
+#endif
 
-#include "bgc.opt"
+      integer :: interp_frc  = 0  ! interpolate forcing from coarser input grid (=1) or not (=0)
+      ! note: choice of bgc tracers to output is still selected in tracers.opt.
 
+      real    :: output_period_his = 0.        ! output period in seconds
+      integer :: nrpf_his          = 0                  ! total recs per file
 
+      real    :: output_period_avg = 0.        ! output averaging period in seconds
+      integer :: nrpf_avg          = 0                  ! total recs per file
+
+      real    :: output_period_his_dia = 0.  ! output period in seconds
+      integer :: nrpf_his_dia          = 0             ! total recs per file
+
+      real    :: output_period_avg_dia = 0.    ! output period in seconds
+      integer :: nrpf_avg_dia          = 0              ! total recs per file
+
+      integer :: nbgc_flx = 0                   ! number of surface bgc flux forcings
+
+      namelist /BGC_SETTINGS/ interp_frc,
+     &     output_period_his, nrpf_his,
+     &     output_period_avg, nrpf_avg,
+     &     output_period_his_dia, nrpf_his_dia,
+     &     output_period_avg_dia, nrpf_avg_dia,
+     &     nbgc_flx
 #if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
 !
 ! Diagnostic variables appearing in average and history files:
@@ -189,12 +237,42 @@ c # TODO marbldrve_configure_diagnostics for pointers example
       end subroutine find_write_bgc_diag  !]
 #endif /* BEC2_DIAG || MARBL_DIAGS */
 
+      subroutine read_bgc_nml
+
+!     Read the "BGC_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=13) :: sr_name = "read_bgc_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=BGC_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read BGC_SETTINGS section of namelist file: '
+     &   //trim(msg)
+     &      )
+      end if
+      nbgc_flx = nbgc_flx
+#ifdef PCO2AIR_FORCING
+     &                                +1
+#endif
+#if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
+     &                                +1
+#endif
+      close(namelist_unit)
+
+      end subroutine read_bgc_nml
+
 
       subroutine init_arrays_bgc_shared_vars
       implicit none
 
 #if defined(BEC2_DIAG) || defined (MARBL_DIAGS)
-
+      call read_bgc_nml
       call find_write_bgc_diag
       call display_bgc_output_settings_to_terminal
 

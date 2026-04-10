@@ -173,7 +173,7 @@
 
 !     Read the "CDR_FRC_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=17) :: sr_name = "read_river_nml"
+      character(len=17) :: sr_name = "read_cdr_frc_nml"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=CDR_FRC_SETTINGS, iostat=ios)
@@ -690,7 +690,6 @@
 
       private
       character(len=9) :: module_name="cdr_frc"
-#include "cdr_frc.opt"
 
       ! Public functions
       public set_cdr_frc

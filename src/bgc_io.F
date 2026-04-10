@@ -69,10 +69,10 @@
       real    :: t_avg_dia_bgc=0
       integer,save :: navg_bgc = 0               ! number of samples in average
       integer,save :: navg_dia_bgc = 0           ! number of samples in average
-      integer :: record_avg = nrpf_avg           ! Triggers making of initial file
-      integer :: record_his = nrpf_his
-      integer :: record_dia_avg = nrpf_avg_dia   ! Triggers making of initial file
-      integer :: record_dia_his = nrpf_his_dia
+      integer :: record_avg = 0           ! Triggers making of initial file
+      integer :: record_his = 0
+      integer :: record_dia_avg = 0   ! Triggers making of initial file
+      integer :: record_dia_his = 0
       real,save :: output_time_his = 0
       real,save :: output_time_avg = 0
       real,save :: output_time_dia_his = 0
