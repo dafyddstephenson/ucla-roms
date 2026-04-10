@@ -122,7 +122,7 @@ module compile_time_switches
 
   !tides.opt
   logical,parameter :: bry_tides=.false. ! Barotropic tides at the boundary from TPXO
-  logical,parameter :: pot_tides=.false. ! Surface tidal potential
+  logical,parameter :: pot_tides=.true. ! Surface tidal potential
   logical,parameter :: ana_tides=.false. ! Surface tidal potential
 
   !upscale_output.opt
@@ -131,9 +131,9 @@ module compile_time_switches
   !zslice_output.opt
   logical,parameter :: do_zslice  = .false.
   logical,parameter :: zslice_avg = .false.
-  logical,parameter :: wrt_T_zsl  = .false. , &  ! tracers
-                       wrt_U_zsl  = .true. ,  &  ! u-velocity
-                       wrt_V_zsl  = .true.    &  ! v-velocity
+  logical,parameter :: wrt_T_zsl  = .false., &  ! tracers
+                       wrt_U_zsl  = .true.,  &  ! u-velocity
+                       wrt_V_zsl  = .true.     ! v-velocity
 
 
 end module compile_time_switches
