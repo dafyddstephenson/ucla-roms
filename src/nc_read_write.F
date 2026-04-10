@@ -1,7 +1,7 @@
       module nc_read_write
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only: nccreate_shuffle
       use netcdf, only:
      &     nf90_float, nf90_noerr, nf90_strerror,
      &     nf90_inq_dimid, nf90_def_dim, nf90_def_var, nf90_inq_varid,
@@ -379,7 +379,7 @@
       enddo
       if (varname /= '') then
       ierr=nf90_def_var(ncid,varname,xtype,dimid,varid,
-     &                  deflate_level=deflate_level, shuffle=shuffle)
+     &                  deflate_level=deflate_level, shuffle=nccreate_shuffle)
       if (ierr/=nf90_noerr) then
          call error_log%check_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//fn_name,

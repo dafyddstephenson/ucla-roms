@@ -57,5 +57,8 @@ module compile_time_switches
   logical,public,parameter :: wrt_frc = .false.
   logical,parameter        :: wrt_frc_avg   = .false.
 
+  !nc_read_write.opt
+  logical,parameter  :: nccreate_shuffle=.true.  ! Shuffle on for extra conmpression
+
 end module compile_time_switches
 
