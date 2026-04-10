@@ -109,6 +109,11 @@ module compile_time_switches
   logical,parameter,public :: river_source = .true.   ! default should be false if not using rivers
   logical,parameter        :: river_analytical = .true.   ! analytical forcing, if false then realistic
 
+  !sponge_tune.opt
+  logical,parameter  :: ub_tune = .false.
+  logical,parameter  :: spn_avg = .true.
+  logical,parameter  :: wrt_sponge=.true.     ! yes/no output sponge to file
+
 
 end module compile_time_switches
 

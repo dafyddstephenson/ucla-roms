@@ -5,7 +5,7 @@
 
 #include "cppdefs.opt"
 
-      use compile_time_switches, only: calc_pflx
+      use compile_time_switches, only: calc_pflx, spn_avg, wrt_sponge
       use netcdf, only:
      &     nf90_noerr, nf90_write, nf90_inq_varid,
      &     nf90_open, nf90_put_att, nf90_close

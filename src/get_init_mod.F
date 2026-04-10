@@ -11,7 +11,7 @@
 
       subroutine get_init(req_rec, tindx)    ! Reads initial conditions
                                              ! from netCDF file.
-      use compile_time_switches, only: calc_pflx
+      use compile_time_switches, only: calc_pflx, ub_tune
       use scalars, only:
      &     day2sec, dt, forw_start, iic, ntstart,
      &     sec2day, start_time
@@ -56,7 +56,7 @@
       use roms_mpi, only: exchange_xxx
       use error_handling_mod, only: error_log
       use calc_pflx_mod, only : get_init_slow
-      use sponge_tune, only: ub_tune, get_init_ub
+      use sponge_tune, only: get_init_ub
       use pio_roms, only: use_pio, pio_gtype
       use checkdims_mod, only: checkdims
 

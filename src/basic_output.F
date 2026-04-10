@@ -10,7 +10,7 @@
      &     wrt_Akv, wrt_Akt, wrt_aks, wrt_Hbls, wrt_Hbbl,
      &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
      &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
-     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl
+     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl, ub_tune
       use netcdf, only:
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
@@ -21,7 +21,7 @@
      &     max_name_size, dn_tm, dn_xr, dn_xu,
      &     dn_yr, dn_yv, dn_zr, dn_zw,
      &     avg_output, create_file, sec2date
-      use sponge_tune, only: ub_tune, wrt_rst_ub
+      use sponge_tune, only:  wrt_rst_ub
       use calc_pflx_mod, only: wrt_rst_diag_slow
       use scalars, only:
      &     NT, iic, knew, nstp, time,
