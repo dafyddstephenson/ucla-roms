@@ -114,6 +114,12 @@ module compile_time_switches
   logical,parameter  :: spn_avg = .true.
   logical,parameter  :: wrt_sponge=.true.     ! yes/no output sponge to file
 
+  !surf_flux.opt
+  logical,public,parameter :: wrt_smflx = .false.              ! output surface momentum flux
+  logical,public,parameter :: wrt_stflx = .false.              ! output surface tracer flux
+  logical,public,parameter :: wrt_swflx = .false.              ! output surface water flux (P-E)
+  logical,parameter :: sflx_avg  = .false.              ! write averaged sflx data
+
 
 end module compile_time_switches
 

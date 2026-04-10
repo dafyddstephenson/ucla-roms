@@ -372,7 +372,7 @@ CR      write(*,*)  ' -2' MYID
 
       subroutine roms_step
       use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
-     &     wrt_frc, floats, do_random, ub_tune
+     &     wrt_frc, floats, do_random, ub_tune, wrt_smflx, wrt_stflx
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data
       use scalars, only:
@@ -380,7 +380,7 @@ CR      write(*,*)  ' -2' MYID
      &     nstp, ntstart, sec2day, start_time, tdays, time
       use sponge_tune, only: adjust_orlanski
       use particles, only: do_particles
-      use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
+      use surf_flux, only: wrt_sflux
       use random_output, only: wrt_random
       use cdr_output, only:  wrt_cdr_output
       use frc_output, only:  wrt_frc_output
