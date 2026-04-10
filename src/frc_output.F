@@ -4,6 +4,7 @@
 ! or thermodynamically forced.
 
 #include "cppdefs.opt"
+      use compile_time_switches, only: wrt_frc_avg
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x,
      &     lm, mm, isalt, itemp, mynode
       use dimensions, only: i0, i1, j0, j1, eta_rho, eta_v, xi_rho, xi_u

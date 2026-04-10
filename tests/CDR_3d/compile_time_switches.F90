@@ -45,5 +45,17 @@ module compile_time_switches
   !diag.opt
   logical, parameter :: code_check_mode =.true.
 
+  !diagnostics.opt
+  logical, parameter         :: diag_avg      = .true.    ! compute history (=F) or averages (=T)
+  logical, parameter, public :: diag_uv       = .false.   ! Momentum diagnostics
+  logical, parameter, public :: diag_trc      = .false.   ! Selected tracers diagnostics
+
+  !extract_data.opt
+  logical,parameter,public :: do_extract = .false.
+
+  !frc_output.opt
+  logical,public,parameter :: wrt_frc = .false.
+  logical,parameter        :: wrt_frc_avg   = .false.
+
 end module compile_time_switches
 

@@ -37,7 +37,7 @@ fi
 
 # 2) Python - confirm values:
 cp $ROMS_ROOT/tests/scripts/test_roms.py .
-python3 test_roms.py $bm_file
+python test_roms.py $bm_file
 retval=$?
 
 rm test_roms.py

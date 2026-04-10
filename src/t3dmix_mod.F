@@ -281,11 +281,12 @@
       subroutine t3dmix_gp_tile (istr,iend,jstr,jend, itrc, LapT,FX,FE,
      &                               FSC,dTdz, dTdx,dTde,dZdx,dZde)
 
+      use compile_time_switches, only: diag_trc
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta, N
       use tracers, only: t, wrt_t_dia
       use dimensions, only: inode, jnode
       use diagnostics, only:
-     &     calc_diag, diag_trc, tmixx, tmixy, td,
+     &     calc_diag, tmixx, tmixy, td,
      &     tdiag
       use grid, only: nz, umask, pmon_u, vmask, pnom_v, pn, pm, dn_u, dm_v
       use mixing, only: diff2
