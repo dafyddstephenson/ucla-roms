@@ -5,6 +5,7 @@
 #include "cppdefs.opt"
 
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
+      use compile_time_switches, only: cdr_source, forcing_3d
       use tracers, only: t_units
       use param, only: itemp, isalt
       use marbl_driver, only:
@@ -26,7 +27,7 @@
       use error_handling_mod, only: error_log
       use cdr_frc, only: cdr_flx_3d_ALK, cdr_flx_3d_DIC, cdr_prf,
      &                   cdr_flx, cdr_nprf, cdr_icdr, cdr_iloc,
-     &                   cdr_jloc, cdr_source, forcing_3d
+     &                   cdr_jloc
       implicit none
 
       private

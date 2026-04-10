@@ -40,8 +40,9 @@
 
 ! Parameter setting: "cu_min" is threshold value for Courant Number
 ! below which vertical advection is fully explicit; "cu_max" is the
-! maximum CN which the explicit component "We" is allowed to reach.
+!     maximum CN which the explicit component "We" is allowed to reach.
 
+      use compile_time_switches, only: cdr_source, cdr_volume
       use param, only: ieast, iwest, jnorth, jsouth, np_eta, np_xi
       use dimensions, only: nx, ny, nz, inode, jnode
       use grid, only: pn, pm, dn_r, dm_r, rmask
@@ -50,7 +51,7 @@
      &     pipe_flx
 #if defined(CDR_FORCING)
       use cdr_frc, only:
-     &     cdr_nprf, cdr_source, cdr_volume, cdr_icdr,
+     &     cdr_nprf, cdr_icdr,
      &     cdr_iloc, cdr_prf, cdr_vol
 #endif
       use roms_mpi, only: exchange_xxx
