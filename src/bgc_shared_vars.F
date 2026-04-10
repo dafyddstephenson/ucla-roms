@@ -5,7 +5,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
 #include "cppdefs.opt"
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
-
+      use compile_time_switches, only: wrt_bgc_his, wrt_bgc_avg, wrt_bgc_dia_avg
       use param, only: mynode, nt_passive, ntrc_bio, lm, mm, n
       use roms_read_write, only: ncforce
       use tracers, only:
@@ -211,7 +211,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
       bec2_diag_3d => bgc_diag_3d
 #endif
 
-      if (wrt_avg_dia) then
+      if (wrt_bgc_dia_avg) then
         allocate( bgc_diag_3d_avg(GLOBAL_2D_ARRAY,N,nr_bgc_wrdiag_3d) )
         allocate( bgc_diag_2d_avg(GLOBAL_2D_ARRAY,nr_bgc_wrdiag_2d) )
         bgc_diag_2d_avg=0.0
@@ -286,13 +286,13 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #endif /* BEC2_DIAG || MARBL_DIAGS */
 
       if (mynode==0) then
-         if (wrt_his) then
+         if (wrt_bgc_his) then
             write(*,'(/7x,2A,F6.1,2x,A,I4)') ! write to terminal output in simulation pre-amble text which
      &           'bgc :: history file ', ! result variables are being stored
      &           'output_period =', output_period_his,
      &           'recs/file =', nrpf_his
          end if
-         if (wrt_avg) then
+         if (wrt_bgc_avg) then
             write(*,'(/7x,2A,F6.1,2x,A,I4)') ! write to terminal output in simulation pre-amble text which
      &        'bgc :: average file ', ! result variables are being stored
      &        'output_period =', output_period_avg,

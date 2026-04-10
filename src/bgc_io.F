@@ -10,7 +10,9 @@
 
 #if defined BIOLOGY_BEC2 || defined MARBL
 
-      ! param needed for GLOBAL_2D_array to work. NT = number tracer from param
+! param needed for GLOBAL_2D_array to work. NT = number tracer from param
+      use compile_time_switches, only: wrt_bgc_his, wrt_bgc_avg,
+     &     wrt_bgc_dia_his, wrt_bgc_dia_avg
       use param, only: ieast, itemp, iwest, jnorth, jsouth
       use tracers, only: t_avg, wrt_t_avg, nt_2_t_avg, t_units
 #ifdef MARBL_DIAGS
@@ -32,14 +34,14 @@
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
      &     , nc_swrad_avg
 #endif
-     &     , bgc_idx, t_idx, wrt_avg, wrt_his, interp_frc, lm, mm, itands,
+     &     , bgc_idx, t_idx, interp_frc, lm, mm, itands,
      &     mynode, nt_passive, output_period_avg, output_period_his,
      &     t_vname, wrt_t, t_lname
 #if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
      &     , bgc_diag_2d_avg, bgc_diag_3d_avg,
      &     bgc_diag_2d, bgc_diag_3d, nr_bgc_diag_2d, nr_bgc_diag_3d,
      &     nr_bgc_wrdiag_2d, nr_bgc_wrdiag_3d, output_period_avg_dia,
-     &     output_period_his_dia, wrt_avg_dia, wrt_his_dia,
+     &     output_period_his_dia,
      &     wrt_bgc_diag_2d, idx_bgc_diag_2d, vname_bgc_diag_2d,
      &     wrt_bgc_diag_3d, idx_bgc_diag_3d, vname_bgc_diag_3d
 #endif
@@ -196,7 +198,7 @@
       logical,save           :: first_step_avg=.true.
       logical,save           :: first_step_his=.true.
 
-      if (wrt_his .and. mod(output_period_his, dt) /= 0) then
+      if (wrt_bgc_his .and. mod(output_period_his, dt) /= 0) then
          write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_his (",
@@ -207,7 +209,7 @@
      &        info=error_info)
       endif
 
-      if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
+      if (wrt_bgc_avg .and. mod(output_period_avg,dt) /= 0) then
          write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_avg (",
@@ -318,7 +320,7 @@
       logical,save           :: first_step_dia_avg=.true.
       logical,save           :: first_step_dia_his=.true.
 
-      if (wrt_his_dia .and. mod(output_period_his_dia, dt) /= 0) then
+      if (wrt_bgc_dia_his .and. mod(output_period_his_dia, dt) /= 0) then
          write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_his_dia (",
@@ -329,7 +331,7 @@
      &        info=error_info)
       endif
 
-      if (wrt_avg_dia .and. mod(output_period_avg_dia,dt) /= 0) then
+      if (wrt_bgc_dia_avg .and. mod(output_period_avg_dia,dt) /= 0) then
          write(error_info, *)
      &        "dt (", dt, ") is not a factor of ",
      &        "output_period_avg_dia (",
@@ -341,7 +343,7 @@
       endif
       call error_log%abort_check()
 
-      if (wrt_avg_dia) then
+      if (wrt_bgc_dia_avg) then
 
 !         if (.not. first_step_dia_avg) then
             call calc_avg_dia_bgc                              ! don't include t=0 in averaging
@@ -382,7 +384,7 @@
 
       endif
 
-      if (wrt_his_dia) then
+      if (wrt_bgc_dia_his) then
 
         if (.not. first_step_dia_his) then
            output_time_dia_his = output_time_dia_his + dt
@@ -662,12 +664,12 @@
 #include "compute_tile_bounds.h"
 #endif
       ! initialisation writting
-      if (wrt_his.and.present(init)) then
+      if (wrt_bgc_his.and.present(init)) then
          call wrt_bgc_tracers(.false.) ! write his data
       else
       ! local
-         if (wrt_his)     call wrt_bgc_tracers(.false.) ! write his data
-         if (wrt_avg)     call wrt_bgc_tracers(.true.) ! write avg data
+         if (wrt_bgc_his)     call wrt_bgc_tracers(.false.) ! write his data
+         if (wrt_bgc_avg)     call wrt_bgc_tracers(.true.) ! write avg data
       endif
 
 #if defined BEC2_DIAG || defined MARBL_DIAGS
