@@ -63,7 +63,7 @@ module compile_time_switches
   !ocean_vars.opt
   logical,parameter :: wrt_file_rst      = .false.     ! t/f to write module history file
   logical,parameter :: monthly_restarts = .false.      ! This overrides output_period
-  logical,parameter :: wrt_file_his      = .false.     ! t/f to write module history file
+  logical,parameter :: wrt_file_his      = .true.     ! t/f to write module history file
   logical,parameter :: wrt_file_avg      = .false.     ! t/f to write module averages file
 
   logical,parameter :: wrt_Z =.true., &
@@ -93,6 +93,14 @@ module compile_time_switches
                        wrt_avg_Aks=.true., &
                        wrt_avg_Hbls=.true., &
                        wrt_avg_Hbbl=.true.
+
+  ! particles.opt
+  logical,parameter :: floats = .false.
+  logical :: full_seed = .true.           ! seed with constant density
+
+  !pipe_frc.opt
+  logical,parameter,public :: pipe_source  = .true.      ! use pipe forcing
+  logical,parameter        :: p_analytical = .true.      ! analytical forcing true
 
 end module compile_time_switches
 

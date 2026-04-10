@@ -57,8 +57,8 @@ c--# define CONST_TRACERS
 #  endif
 # endif
      &     )
-      use compile_time_switches, only: cdr_source, forcing_3d, diag_trc
-      use pipe_frc, only: pidx, pipe_source, pipe_idx, pipe_trc,
+      use compile_time_switches, only: cdr_source, forcing_3d, diag_trc, pipe_source
+      use pipe_frc, only: pidx, pipe_idx, pipe_trc,
      &     pipe_prf, pipe_flx
       use dimensions, only: inode, jnode, npx, npy
 #if defined CDR_FORCING && defined MARBL

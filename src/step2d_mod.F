@@ -29,12 +29,12 @@
       subroutine step2d_FB_tile( istr,iend,jstr,jend, zeta_new,Dnew,
      &                           rubar,rvbar, urhs,vrhs,  DUon,DVom,
      &     Drhs, UFx,UFe,VFx,VFe)
-      use compile_time_switches, only: cdr_source, cdr_volume
+      use compile_time_switches, only: cdr_source, cdr_volume, pipe_source
       use dimensions, only: inode, jnode
       use river_frc, only:
      &     iriver, river_flux, river_source, riv_uflx,
      &     riv_vol, riv_vflx
-      use pipe_frc, only: pipe_source, pipe_idx, pipe_flx
+      use pipe_frc, only: pipe_idx, pipe_flx
 #if defined(CDR_FORCING)
       use cdr_frc, only:
      &     cdr_prf, cdr_nprf,

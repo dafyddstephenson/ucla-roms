@@ -11,7 +11,7 @@
 #include "cppdefs.opt"
 ! we have no PIPE_SOURCE flag here anymore, since we are moving away from cpp flags.
 ! Variables still need to be visible within code even when pipes are not used.
-
+      use compile_time_switches, only: p_analytical
       use dimensions, only: i0, i1, j0, j1, nx, ny, grdname
       use roms_read_write, only:
      &     ncforce, pipe_frc_opt,

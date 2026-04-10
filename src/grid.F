@@ -184,7 +184,8 @@
       subroutine ana_grid ![
 !     Provide analytical definition of coordinates, grid scale, coriolis, and depth
 #ifdef ANA_PIPES
-      use pipe_frc, only: pipe_source, pipe_fraction, pipe_idx
+      use compile_time_switches, only: pipe_source
+      use pipe_frc, only: pipe_fraction, pipe_idx
 #elif defined(ANA_RIVER_USWC)
       use param, only: llm, mmm
 #endif
