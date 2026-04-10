@@ -4,7 +4,7 @@
       ! Particles live in index space: [0:nx]x[0:ny][0:nz]
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only: full_seed
       use netcdf, only:
      &     nf90_double, nf90_global, nf90_nofill,
      &     nf90_put_att, nf90_set_fill, nf90_noerr, nf90_write,

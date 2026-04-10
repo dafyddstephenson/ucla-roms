@@ -94,5 +94,8 @@ module compile_time_switches
                        wrt_avg_Hbls=.true., &
                        wrt_avg_Hbbl=.true.
 
+  ! particles.opt
+  logical,parameter :: floats = .false.
+  logical :: full_seed = .true.           ! seed with constant density
 end module compile_time_switches
 

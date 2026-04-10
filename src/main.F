@@ -103,7 +103,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
-      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, wrt_frc
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, wrt_frc, floats
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
@@ -115,7 +115,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     nnew, nrhs, nstp, numthreads, priv_count, sec2day,
      &     start_time, synchro_flag, tdays, time, proc
       use sponge_tune, only: ub_tune
-      use particles, only: floats, init_particles
+      use particles, only: init_particles
       use upscale_output, only: do_upscale, init_upscale
       use random_output, only: do_random, init_random
       use cdr_output, only:  init_cdr_output
@@ -372,14 +372,14 @@ CR      write(*,*)  ' -2' MYID
 
       subroutine roms_step
       use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
-     &     wrt_frc
+     &     wrt_frc, floats
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
      &     nstp, ntstart, sec2day, start_time, tdays, time
       use sponge_tune, only: ub_tune, adjust_orlanski
-      use particles, only: floats, do_particles
+      use particles, only: do_particles
       use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
       use random_output, only: do_random, wrt_random
       use cdr_output, only:  wrt_cdr_output
