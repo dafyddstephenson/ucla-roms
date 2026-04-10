@@ -61,7 +61,7 @@ c--#define MAX_BY_VERT_CFL_ONLY
      &                            , ke2b, ke3bc, kesrf, ub,vb
 #endif
      &                                                      )
-
+      use compile_time_switches, only: code_check_mode
       use comm_vars, only: area, first_time, tile_count, volume
       use diag_vars, only:
      &     avke, avke2b, avke3bc, avkesrf, avpe,
@@ -85,7 +85,6 @@ c--#define MAX_BY_VERT_CFL_ONLY
 
       implicit none
       character(len=9) :: sr_name = "diag_tile"
-#include "diag.opt"
 
       integer istr,iend,jstr,jend
       real :: walltime0 = 0.
@@ -535,7 +534,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
           walltime0 = MPI_Wtime()-tstart
           if (first_time==0) then
             first_time=1
-            if (code_check) then
+            if (code_check_mode) then
               write(*,3) 'STEP',  'KINETIC_ENRG',                  ! Special for code checks
      &              'BAROTR_KE', 'MAX_ADV_CFL', 'MAX_VERT_CFL'
             else
@@ -546,7 +545,7 @@ c**     write(*,*) 'received avke =', buff(3)/volume
 
             endif
           endif
-          if (code_check) then
+          if (code_check_mode) then
             write(*,4) iic, avke,  avke2b, Cu_Adv, Cu_W
           else
              write(check_line,2,iostat=ierr)
@@ -611,7 +610,7 @@ C$   &                                                 , 'trd'
      &                             avke, avpe, avke+avpe, avzeta
 C$   &                                                 , proc(2)
 #endif /* SOLVE3D */
-          if (.not.code_check) then
+          if (.not.code_check_mode) then
           ie=max_check_line
           do while (check_line(ie:ie)==' ' .and. ie>0)
             ie=ie-1
@@ -651,7 +650,7 @@ C$   &                                                 , proc(2)
           enddo
           write(*,'(I7,2(1x,A))') iic, tstring(i:i+8),
      &                                check_line(is:ie)
-          endif ! .not. code_check
+          endif ! .not. code_check_mode
 
           call flush(6)
 

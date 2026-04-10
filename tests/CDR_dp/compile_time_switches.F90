@@ -12,7 +12,7 @@ module compile_time_switches
   logical, parameter  :: calc_pflx     = .true.   ! Baroclinic pressure fluxes
 
   !cdr.opt (requires CDR_FORCING)
-  logical,parameter :: cdr_source  = .true.  ! Should be false if not using CDR forcing
+  logical,parameter :: cdr_source  = .false.  ! Should be false if not using CDR forcing
 
 
   ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
@@ -36,6 +36,14 @@ module compile_time_switches
   ! If .true., read in volume flux and tracer concentration, and
   ! multiply together to get tracer flux.
   ! Set to false if you want to read in a vertical profile(s).
+
+  ! cdr_output.opt
+  logical,parameter :: wrt_cdr   = .false.
+  logical,parameter :: wrt_cdr_avg   = .false.  ! NOTE: For most applications .true. is recommended
+  logical,parameter :: cdr_monthly_averages = .false. ! This overrides output_period
+
+  !diag.opt
+  logical, parameter :: code_check_mode =.true.
 
 end module compile_time_switches
 

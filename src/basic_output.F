@@ -404,12 +404,11 @@
 # endif
 #endif
         ierr=nf90_close(ncid)
-        if (mynode == 0 .and. (.not.code_check)) then                 ! supress output for code_check
+        if (mynode == 0) then
           write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')
      &     'ocean_vars :: wrote history, tdays =', tdays,
      &     'step =', iic, 'rec =', rec_his
         endif
-        code_check=.false.
 
         output_time_his=0
       endif

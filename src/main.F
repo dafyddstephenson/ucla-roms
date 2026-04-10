@@ -103,6 +103,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
+      use compile_time_switches, only: wrt_cdr
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
@@ -117,7 +118,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use particles, only: floats, init_particles
       use upscale_output, only: do_upscale, init_upscale
       use random_output, only: do_random, init_random
-      use cdr_output, only: do_cdr, init_cdr_output
+      use cdr_output, only:  init_cdr_output
       use frc_output, only: do_frc, init_frc
       use analytical, only: ana_vmix
 #ifdef ANA_INITIAL
@@ -345,7 +346,7 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc(.true.)
 #endif
       if (do_random) call init_random
-      if (do_cdr)  call init_cdr_output
+      if (wrt_cdr)  call init_cdr_output
       if (do_upscale) then
         call init_upscale
       endif
@@ -370,6 +371,7 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
+      use compile_time_switches, only: wrt_cdr
       use diag_mod, only: diag
       use extract_data, only: do_extract, do_extract_data
       use scalars, only:
@@ -379,7 +381,7 @@ CR      write(*,*)  ' -2' MYID
       use particles, only: floats, do_particles
       use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
       use random_output, only: do_random, wrt_random
-      use cdr_output, only: do_cdr, wrt_cdr_output
+      use cdr_output, only:  wrt_cdr_output
       use frc_output, only: do_frc, wrt_frc
       use zslice_output, only: do_zslice, wrt_zslice
       use basic_output, only:
@@ -575,7 +577,7 @@ CR      write(*,*)  ' -2' MYID
 
       if (do_random) call wrt_random
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
-      if (do_cdr)  call wrt_cdr_output
+      if (wrt_cdr)  call wrt_cdr_output
 #endif
       if (do_zslice) call wrt_zslice
       if (do_frc)    call wrt_frc

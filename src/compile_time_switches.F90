@@ -18,7 +18,7 @@ module compile_time_switches
   ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
   logical,public :: forcing_depth_profiles = .false.     ! T if this file contains depth profiles
   logical,public :: forcing_3d             = .false.     ! T if this file contains 3d forcing
-  logical,public :: forcing_parameterized  = .true.      ! T if forcing with idealized Gaussian profiles
+  logical,public :: forcing_parameterized  = .false.      ! T if forcing with idealized Gaussian profiles
 
   ! INTERPOLATE FORCING IN TIME, OR NO?
   logical :: time_interpolation = .false.   ! T if using time interpolation. If T, forcing is linearly
@@ -38,9 +38,12 @@ module compile_time_switches
   ! Set to false if you want to read in a vertical profile(s).
 
   ! cdr_output.opt
-  logical,parameter :: wrt_cdr_avg   = .true.  ! NOTE: For most applications .true. is recommended
+  logical,parameter :: wrt_cdr   = .false.
+  logical,parameter :: wrt_cdr_avg   = .false.  ! NOTE: For most applications .true. is recommended
   logical,parameter :: cdr_monthly_averages = .false. ! This overrides output_period
 
+  !diag.opt
+  logical, parameter :: code_check_mode =.true.
 
 end module compile_time_switches
 
