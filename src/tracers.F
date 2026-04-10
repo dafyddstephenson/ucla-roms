@@ -67,7 +67,7 @@
       integer,public        :: n_t_avg                               ! number of tracer averages to output <= NT
 
 #if defined(BIOLOGY_BEC2) && !defined(MARBL)
-# include "bgc_tracers_indx.opt"
+# include "BEC_tracers_indx.h"
 #endif
 
       public set_surf_tracer_flx

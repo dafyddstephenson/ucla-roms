@@ -207,8 +207,8 @@ c # TODO marbldrve_configure_diagnostics for pointers example
       vname_bec2_diag_2d => vname_bgc_diag_2d
       vname_bec2_diag_3d => vname_bgc_diag_3d
 
-#include "bgc_2Ddiagnostics.opt"
-#include "bgc_3Ddiagnostics.opt"
+#include "BEC_2Ddiagnostics.h"
+#include "BEC_3Ddiagnostics.h"
 
 #endif /* MARBL_DIAGS */
 
