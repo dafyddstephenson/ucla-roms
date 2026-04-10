@@ -1,5 +1,17 @@
+
+      module lmd_kpp_mod
+
 #include "cppdefs.opt"
+
+      implicit none
+      private
+
 #if defined SOLVE3D && defined LMD_KPP
+
+      public :: lmd_kpp_tile
+      public :: check_kpp_switches
+
+      contains
 
 # define INT_AT_RHO_POINTS
 # define SMOOTH_HBL
@@ -10,7 +22,7 @@
      &                         Gm1,dGm1dS,  Gt1,dGt1dS,  Gs1,dGs1dS,
      &                                                   kbls, kmo,
      &                                                         tind)
-
+      use alphabeta_mod, only: alphabeta_tile
       use surf_flux, only: stflx, srflx, svstr, sustr, svstr_r, sustr_r
 !     bulk_frc-> only: sustr_r, svstr_r, stflx, srflx, only:
       use grid, only: f, rmask, umask, vmask
@@ -152,7 +164,7 @@
 # ifdef LMD_KPP
 #  define alpha Bosol
 #  define beta  Bo
-      call alfabeta_tile (istr,iend,jstr,jend, I_EXT_RANGE,
+      call alphabeta_tile (istr,iend,jstr,jend, I_EXT_RANGE,
      &                             J_EXT_RANGE, alpha,beta)
 # endif
       do j=J_EXT_RANGE
@@ -660,9 +672,10 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       use strings, only: cpps, max_opt_size
       use param, only: mynode
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
 
       implicit none
-      integer is,ie, lenstr
+      integer is,ie
       character(len=19) :: sr_name = "check_kpp_switches"
       character(len=1024) :: error_info = ""
 
@@ -709,6 +722,9 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       call error_log%abort_check()
       end subroutine check_kpp_switches
 #else
+      contains
+
       subroutine lmd_kpp_empty
       end
 #endif /* LMD_KPP || LMD_BKPP */
+      end module lmd_kpp_mod

@@ -1,10 +1,22 @@
+      module lmd_vmix_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
 #if defined SOLVE3D && defined LMD_MIXING
+
+      public :: lmd_vmix
+
+      contains
+
 # define SMOOTH_RIG  /* local Ri number smoothing */
 
       subroutine lmd_vmix(tind)
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
       use private_scratch, only: a3d, a2d, ia2d
+# if defined LMD_KPP || defined LMD_BKPP
+      use lmd_kpp_mod, only: lmd_kpp_tile
+#endif
       implicit none
       integer,save :: tile=0
       integer      :: tind
@@ -431,6 +443,8 @@ c----#  define tind nstp
 # endif /* LMD_KPP || LMD_BKPP */
       end
 #else
+      contains
       subroutine lmd_vmix_empty
       end
 #endif /* LMD_MIXING */
+      end module lmd_vmix_mod

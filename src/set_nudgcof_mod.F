@@ -1,5 +1,11 @@
+      module set_nudgcof_mod
 #include "cppdefs.opt"
+      implicit none
+      private
 #if defined SPONGE || defined TCLIMATOLOGY
+
+      public :: set_nudgcof
+      contains
 
       subroutine set_nudgcof (tile)  ! Set up nudging-to-climatology
 
@@ -111,6 +117,8 @@
 #  endif
       end
 #else
+      contains
       subroutine set_nudgcof_empty
       end
 #endif
+      end module set_nudgcof_mod

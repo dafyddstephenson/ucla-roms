@@ -1,7 +1,6 @@
+      program main              ! Open MP version of ROMS driver
 #include "cppdefs.opt"
 #if !defined GRID_LEVEL || GRID_LEVEL == 1
-
-!!    program main               ! Open MP version of ROMS driver
 
       use param, only: mynode, ocean_grid_comm, nsize
 #ifdef NHMG
@@ -12,6 +11,7 @@
       use timers, only: tstart, tend
       use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
+      use init_scalars_mod, only: init_scalars
 #ifdef PARALLEL_IO
       use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
 #endif
@@ -68,8 +68,8 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 # endif
 
       stop
-      end
 
+      contains
 
       subroutine roms_thread
       use basic_output, only: wrt_his_ocean_vars
@@ -107,6 +107,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
 #endif
+      use diag_mod, only: diag
       use basic_output, only: init_restarts, wrt_his_ocean_vars
       use scalars, only:
      &     diag_sync, dt, iic, iif, knew, kstp,
@@ -119,11 +120,13 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use cdr_output, only: do_cdr, init_cdr_output
       use frc_output, only: do_frc, init_frc
       use analytical, only: ana_vmix
-#ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
-#endif
 #ifdef ANA_INITIAL
      &     , ana_init
+#endif
+      use get_init_mod, only: get_init
+      use grid_stiffness_mod, only: grid_stiffness
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
@@ -142,6 +145,18 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use precheck, only: do_precheck
       use error_handling_mod, only: error_log
       use calc_pflx_mod, only: init_pflx
+#ifdef LMD_KPP
+      use lmd_swr_frac_mod, only: swr_frac
+#endif
+#ifdef SOLVE3D
+      use omega_mod, only: omega
+      use rho_eos_mod, only: rho_eos
+      use set_depth_mod, only: set_depth, set_HUV, set_HUV1
+#endif
+#ifdef SPONGE
+      use set_nudgcof_mod, only: set_nudgcof
+#endif
+
 
       implicit none
 
@@ -297,17 +312,19 @@ CR      write(*,*) ' -6' MYID
      &                   dn_r(0:Lm+1,0:Mm+1)    )
 #endif
 
+
+#ifdef SOLVE3D
 CR      write(*,*)  ' -4' MYID
       do tile=my_tile_range
         call set_HUV
       enddo
 C$OMP BARRIER
-CR      write(*,*)  ' -3' MYID
+C     R      write(*,*)  ' -3' MYID
 
       call omega
 
       call rho_eos(nrhs)
-
+#endif
 CR      write(*,*)  ' -2' MYID
 
       if (floats) then
@@ -352,7 +369,7 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-
+      use diag_mod, only: diag
       use extract_data, only: do_extract, do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
@@ -370,6 +387,13 @@ CR      write(*,*)  ' -2' MYID
       use boundary, only: set_bry_all
       use tides, only: set_tides
       use roms_read_write, only: frc_time
+#ifdef SOLVE3D
+      use omega_mod, only: omega
+      use pre_step3d_mod, only: pre_step3d
+      use prsgrd_mod, only: prsgrd
+      use rho_eos_mod, only: rho_eos
+      use set_depth_mod, only: set_huv, set_huv1
+#endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
 #endif
@@ -378,6 +402,9 @@ CR      write(*,*)  ' -2' MYID
       use diagnostics, only: diag_uv,diag_trc,do_diagnostics
 #endif
       use roms_read_write, only: frc_time
+#ifdef LMD_MIXING
+      use lmd_vmix_mod, only: lmd_vmix
+#endif
 
       implicit none
 
@@ -416,6 +443,7 @@ CR      write(*,*)  ' -2' MYID
 
       if (bry_tides.or.pot_tides) call set_tides(0)
 
+#ifdef SOLVE3D
       ! currrently, rho_eos works with t(nrhs), nrhs==nstp => time n
       call rho_eos(nrhs)
 
@@ -427,6 +455,7 @@ CR      write(*,*)  ' -2' MYID
       ! Here, omega corresponds to time n
       ! Should be already available from previous time-step
       call omega
+#endif
 
 # if defined LMD_MIXING
       call lmd_vmix(nstp)
@@ -439,7 +468,7 @@ CR      write(*,*)  ' -2' MYID
 
       !! nnew ==n+1/2
 
-
+#ifdef SOLVE3D
       !! set_HUV1 is like set_HUV, but first removes the barotr/barocl mismatch
       !! set_HUV1 works with nnew, which here is time n+1/2
       ! It's using the Hz from time n though
@@ -453,7 +482,7 @@ CR      write(*,*)  ' -2' MYID
       call omega
 
       call rho_eos(nrhs)  !!! use the right time index
-
+#endif
       call set_forces   ! get for time n+1/2
 # if defined LMD_MIXING
       call lmd_vmix(nrhs)
@@ -544,4 +573,6 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc
 #endif
 
-      end
+      end subroutine roms_step
+
+      end program main

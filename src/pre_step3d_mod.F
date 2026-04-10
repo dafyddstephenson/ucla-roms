@@ -1,4 +1,12 @@
+      module pre_step3d_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
+      public :: pre_step3d
+      public :: check_pre_step_switches
+
+      contains
 #ifdef SOLVE3D
                                     ! Note that arrays A2d(1,1:4) in
       subroutine pre_step3d (tile)  ! the call just below are repeated
@@ -61,6 +69,7 @@
       use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icori,
      &  dxdyi_u, dxdyi_v
 #endif
+      use ext_copy_prv2shr_mod, only: ext_copy_prv2shr_2d_tile
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k
@@ -751,8 +760,9 @@
       use param, only: mynode
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
       implicit none
-      integer is,ie, lenstr
+      integer is,ie
       character(len=24) :: sr_name = "check_pre_step_switches"
       character(len=1024) :: error_info =""
 
@@ -777,3 +787,4 @@
       subroutine pre_step3d_empty
       end
 #endif  /* SOLVE3D */
+      end module pre_step3d_mod

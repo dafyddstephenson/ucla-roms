@@ -2,11 +2,15 @@
 
       use param, only: mynode, nnodes, ocean_grid_comm, nsize
       use mpi_f08, only: mpi_byte
-      use roms_read_write, only: git_hash
+      use add_git_hash_mod, only: git_hash
       use keyword_registry, only:
      &     init_registry, registry, register_keyword,
      &     report_keyword_mismatch, lookup_keyword
       use error_handling_mod, only: error_log
+      use insert_node_mod, only: insert_node
+#ifdef SOLVE3D
+      use set_depth_mod, only: check_set_huv1_switches
+#endif
       implicit none
       character(len=12) :: module_name = "read_inp_mod"
       character(len=1024) :: error_info = ""
@@ -111,6 +115,16 @@
 !     lateral boundary conditions; this code is also hand written).
 !-----------------------------------------------------------------------
 
+         use check_switches_mod, only: check_switches2
+#ifdef LMD_KPP
+         use lmd_kpp_mod, only: check_kpp_switches
+#endif
+#ifdef SOLVE3D
+         use pre_step3d_mod, only: check_pre_step_switches
+         use set_depth_mod, only: check_set_huv1_switches
+#endif
+
+
          implicit none
 
 !         call check_tiling()
@@ -145,6 +159,7 @@
 !     to the registered handler to parse the settings from that section.
 !-----------------------------------------------------------------------
 
+      use check_switches_mod, only: print_switches
 
       implicit none
       integer  ios, idx, ierr
@@ -452,10 +467,11 @@
 #ifdef MARBL_DIAGS
       use marbl_driver, only: marbl_diag_list_fname
 #endif
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in) :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
 
 ! ---------------------------------------------------------
 ! Read MARBL namelist file
@@ -850,10 +866,12 @@
 #ifndef ANA_GRID
       subroutine kwread_grid(unit)
       use dimensions, only: grdname
+      use utils_mod, only: lenstr
+
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname
@@ -864,10 +882,8 @@
 
       lstr = lenstr(fname)
 
-# if defined MPI && defined PARALLEL_FILES
-#ifndef PARALLEL_IO
+# if defined(MPI) && defined(PARALLEL_FILES) && !defined(PARALLEL_IO)
       call insert_node(fname, lstr, mynode, nsize)
-#endif
 # endif
       open(newunit=testunit, file=trim(fname), status='old',
      &     iostat=ios)
@@ -889,10 +905,11 @@
 !     of analytical initial conditions and nrrec=0 initial conditions are
 !     created internally and no file is needed).
       use roms_read_write, only: nrrec, ininame
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
 
       read(unit,*,iostat=ios) nrrec
@@ -939,11 +956,12 @@
       use roms_read_write, only:
      &     force_files, force_info, max_frc_files,
      &     store_string_att, frcfile, max_frc, frcfile_full
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in)    :: unit
 
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
       character(len=15) :: sr_name = "kwread_forcing"
 
@@ -1040,10 +1058,11 @@ c$$$                  end if TODO
 ! climatology file is needed.  The following code segments also
 ! checks for availability of clm_file.
 
+      use utils_mod, only: lenstr
       implicit none
 
       integer, intent(in)    :: unit
-      integer :: ios, lstr, lenstr
+      integer :: ios, lstr
       character(len=256) :: fname
 
       read(unit,'(A)',iostat=ios) fname

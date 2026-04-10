@@ -1,4 +1,14 @@
+      module checkdims_mod
 #include "cppdefs.opt"
+
+      use utils_mod, only: lenstr
+      implicit none
+      private
+
+      public :: checkdims
+
+      contains
+
       character(len=200) function write_dim_error_info(dimname, filename,
      &     expected_size, actual_size) result(info_msg)
 
@@ -42,13 +52,12 @@
       character(len=9) :: fn_name="checkdims"
       character(len=1024) :: error_info
       integer ncid, max_rec, ierr, icount, ndims, recdim,
-     &                       dsize, id, ldim, lname, lenstr
+     &                       dsize, id, ldim, lname
       character(len=*) fname
       character(len=16) dname
-      character(len=200) write_dim_error_info
 
 #ifdef SOLVE3D
-      integer check_scoord, chk_Cs_wr
+      integer chk_Cs_wr
       chk_Cs_wr=0
 #endif
 
@@ -198,7 +207,7 @@
       character(len=*) fname
       real, parameter :: epsil=1.D-7
       real tst_val(N+1)
-      integer ierr, k, icount, lfile, lenstr, read_nc1dat
+      integer ierr, k, icount, lfile
       logical chk_Cs_w, chk_Cs_r
 
       if (mod(what_to_check,2) == 1) then
@@ -362,7 +371,7 @@
       real value(nlen)
 
       integer ndims, dimids(8), varid, vtype, size,
-     &     i,j, ierr,  lvar, lfile, lenstr
+     &     i,j, ierr,  lvar, lfile
 
       lvar=lenstr(vname) ; lfile=lenstr(fname)
 
@@ -470,5 +479,4 @@
       read_nc1dat=ierr
 
       end                       !]
-
-
+      end module checkdims_mod

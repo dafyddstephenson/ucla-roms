@@ -1,4 +1,14 @@
+      module grid_stiffness_mod
+
+      implicit none
+      private
+
+      public :: grid_stiffness
+
+      contains
+
 #include "cppdefs.opt"
+
 #ifdef SOLVE3D
 
       subroutine grid_stiffness (tile)
@@ -133,7 +143,11 @@ C$OMP CRITICAL (grd_stff_cr_rgn)
       endif
 C$OMP END CRITICAL(grd_stff_cr_rgn)
       end
+      end module grid_stiffness_mod
 #else
+      module grid_stiffness_mod
+      contains
       subroutine grid_stiffness_empty
       end
+      end module grid_stiffness_mod
 #endif  /* SOLVE3D */

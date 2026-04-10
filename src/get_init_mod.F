@@ -1,3 +1,12 @@
+      module get_init_mod
+
+      implicit none
+      private
+
+      public :: get_init
+
+      contains
+
 #include "cppdefs.opt"
 
       subroutine get_init(req_rec, tindx)    ! Reads initial conditions
@@ -49,13 +58,14 @@
       use calc_pflx_mod, only : calc_pflx, get_init_slow
       use sponge_tune, only: ub_tune, get_init_ub
       use pio_roms, only: use_pio, pio_gtype
+      use checkdims_mod, only: checkdims
 
       implicit none
       character(len=8) :: sr_name = "get_init"
       character(len=1024) :: error_info
       integer :: req_rec, tindx, max_rec, record, ncid, varid, i, j, k,
      &           ierr,  start(4), count(2), ibuff(iaux),
-     &           checkdims , itrc
+     &           itrc
       real    :: time_scale
       integer :: init_type, tile=0 ! set tile to zero for compute_tile_bounds.h below. Needed to fixed closed boundaries.
       integer, parameter :: init_run=1,  rst_run=2
@@ -692,3 +702,5 @@ c--#define VERBOSE
 #endif
       return
       end subroutine get_init
+
+      end module get_init_mod

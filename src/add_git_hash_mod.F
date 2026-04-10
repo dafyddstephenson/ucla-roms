@@ -1,6 +1,15 @@
+      module add_git_hash_mod
+
+      implicit none
+      private
+
+      public :: add_git_hash
+      character(len=41), public  :: git_hash= "xxx"
+
+      contains
+
       subroutine add_git_hash(ncid)
 
-      use roms_read_write, only: git_hash
       use netcdf, only: nf90_global, nf90_noerr, nf90_put_att
       use error_handling_mod, only: error_log
 
@@ -13,3 +22,5 @@
      &     context="add_git_hash")
       end subroutine add_git_hash
 
+
+      end module add_git_hash_mod

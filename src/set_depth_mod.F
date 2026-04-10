@@ -1,5 +1,16 @@
+      module set_depth_mod
 #include "cppdefs.opt"
+      implicit none
+      private
+
 #ifdef SOLVE3D
+      public :: set_HUV
+      public :: set_HUV1
+      public :: set_depth
+      public :: set_depth_tile
+      public :: check_set_HUV1_switches
+
+      contains
 
       subroutine set_depth(tile)
 
@@ -454,8 +465,9 @@
       use param, only: mynode
       use strings, only: cpps, max_opt_size
       use error_handling_mod, only: error_log
+      use utils_mod, only: lenstr
       implicit none
-      integer is,ie, lenstr
+      integer is,ie
 
       integer lstr
       character(len=16) tmpstr
@@ -533,6 +545,9 @@
 # endif
       end subroutine check_set_HUV1_switches
 #else
+      contains
+
       subroutine set_depth_empty
       end
 #endif /* SOLVE3D */
+      end module set_depth_mod
