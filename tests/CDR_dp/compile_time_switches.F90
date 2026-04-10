@@ -128,5 +128,13 @@ module compile_time_switches
   !upscale_output.opt
   logical,parameter :: do_upscale = .false.
 
+  !zslice_output.opt
+  logical,parameter :: do_zslice  = .false.
+  logical,parameter :: zslice_avg = .false.
+  logical,parameter :: wrt_T_zsl  = .false. , &  ! tracers
+                       wrt_U_zsl  = .true. ,  &  ! u-velocity
+                       wrt_V_zsl  = .true.    &  ! v-velocity
+
+
 end module compile_time_switches
 

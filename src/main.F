@@ -374,7 +374,7 @@ CR      write(*,*)  ' -2' MYID
       subroutine roms_step
       use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
      &     wrt_frc, floats, do_random, ub_tune, wrt_smflx, wrt_stflx,
-     &     bry_tides, pot_tides
+     &     bry_tides, pot_tides, do_zslice
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data
       use scalars, only:
@@ -386,7 +386,7 @@ CR      write(*,*)  ' -2' MYID
       use random_output, only: wrt_random
       use cdr_output, only:  wrt_cdr_output
       use frc_output, only:  wrt_frc_output
-      use zslice_output, only: do_zslice, wrt_zslice
+      use zslice_output, only: wrt_zslice
       use basic_output, only:
      &     calc_avg_ocean_vars, wrt_avg_ocean_vars,
      &     wrt_his_ocean_vars, wrt_rst_ocean_vars

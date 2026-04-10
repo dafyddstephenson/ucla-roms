@@ -2,7 +2,8 @@
       ! Collection of zslice variables for output
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only:
+     &     zslice_avg, wrt_T_zsl, wrt_U_zsl, wrt_V_zsl
       use grid, only: rmask
       use param, only: lm, mm, mynode
       use roms_mpi, only: exchange_xxx
@@ -55,7 +56,7 @@
       if (wrt_T_zsl)  then
           allocate( Tz(GLOBAL_2D_ARRAY,ndep,nt_z) )
           Tz=0.
-          if (do_avg)  then
+          if (zslice_avg)  then
              allocate( Tz_avg(GLOBAL_2D_ARRAY,ndep,nt_z) )
              Tz_avg=0.
           endif
@@ -64,7 +65,7 @@
       if (wrt_U_zsl)  then
           allocate( Uz(GLOBAL_2D_ARRAY,ndep) )
           Uz=0.
-          if (do_avg)  then
+          if (zslice_avg)  then
              allocate( Uz_avg(GLOBAL_2D_ARRAY,ndep) )
              Uz_avg=0.
           endif
@@ -73,7 +74,7 @@
       if (wrt_V_zsl)  then
           allocate( Vz(GLOBAL_2D_ARRAY,ndep) )
           Vz=0.
-          if (do_avg)  then
+          if (zslice_avg)  then
              allocate( Vz_avg(GLOBAL_2D_ARRAY,ndep) )
              Vz_avg=0.
           endif
@@ -295,7 +296,7 @@
       do n=1,nt_z
       varid = nccreate(ncid,t_vname(trc2zsc(n)),
      &         (/dn_xr,dn_yr,'depth',dn_tm/),(/xi_rho,eta_rho,ndep,0/))
-      if (do_avg) then
+      if (zslice_avg) then
         ierr = nf90_put_att(ncid,varid,'long_name','averaged'//t_lname(trc2zsc(n)))
       else
         ierr = nf90_put_att(ncid,varid,'long_name',t_lname(trc2zsc(n)))
@@ -306,7 +307,7 @@
 
       if (wrt_U_zsl) then
       varid = nccreate(ncid,'u',(/dn_xu,dn_yr,'depth',dn_tm/),(/xi_u,eta_rho,ndep,0/))
-      if (do_avg) then
+      if (zslice_avg) then
         ierr = nf90_put_att(ncid,varid,'long_name','averaged u-momentum component')
       else
         ierr = nf90_put_att(ncid,varid,'long_name','u-momentum component')
@@ -316,7 +317,7 @@
 
       if (wrt_V_zsl) then
       varid = nccreate(ncid,'v',(/dn_xr,dn_yv,'depth',dn_tm/),(/xi_rho,eta_v,ndep,0/))
-      if (do_avg) then
+      if (zslice_avg) then
          ierr = nf90_put_att(ncid,varid,'long_name','averaged v-momentum component')
       else
          ierr = nf90_put_att(ncid,varid,'long_name','v-momentum component')
@@ -343,8 +344,8 @@
         call init_zslice
       endif
 
-      if (do_avg) call calc_zslice
-      if (do_avg) call calc_average
+      if (zslice_avg) call calc_zslice
+      if (zslice_avg) call calc_average
 
       output_time = output_time + dt
 
@@ -359,7 +360,7 @@
           record = 0
         endif
 
-        if (.not. do_avg) call calc_zslice
+        if (.not. zslice_avg) call calc_zslice
         record = record+1
 
         ierr=nf90_open(fname,nf90_write,ncid)
@@ -372,7 +373,7 @@
         call ncwrite(ncid,'ocean_time',(/time/),(/record/))
         if (wrt_T_zsl) then
           do n=1,nt_z
-          if (do_avg) then
+          if (zslice_avg) then
           call ncwrite(ncid,trim(t_vname(trc2zsc(n))),Tz_avg(1:nx,1:ny,:,n),
      &        (/bfx,bfy,1,record/))
           else
@@ -381,14 +382,14 @@
           enddo
         endif
         if (wrt_U_zsl) then
-          if (do_avg) then
+          if (zslice_avg) then
           call ncwrite(ncid,'u',Uz_avg(1:nx,1:ny,:),(/1,bfy,1,record/))
           else
           call ncwrite(ncid,'u',Uz(1:nx,1:ny,:),(/1,bfy,1,record/))
           endif
         endif
         if (wrt_V_zsl) then
-          if (do_avg) then
+          if (zslice_avg) then
           call ncwrite(ncid,'v',Vz_avg(1:nx,1:ny,:),(/bfx,1,1,record/))
           else
           call ncwrite(ncid,'v',Vz(1:nx,1:ny,:),(/bfx,1,1,record/))
