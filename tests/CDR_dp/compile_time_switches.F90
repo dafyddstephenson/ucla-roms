@@ -57,5 +57,42 @@ module compile_time_switches
   logical,public,parameter :: wrt_frc = .false.
   logical,parameter        :: wrt_frc_avg   = .false.
 
+  !nc_read_write.opt
+  logical,parameter  :: nccreate_shuffle=.true.  ! Shuffle on for extra conmpression
+
+  !ocean_vars.opt
+  logical,parameter :: wrt_file_rst      = .false.     ! t/f to write module history file
+  logical,parameter :: monthly_restarts = .false.      ! This overrides output_period
+  logical,parameter :: wrt_file_his      = .false.     ! t/f to write module history file
+  logical,parameter :: wrt_file_avg      = .false.     ! t/f to write module averages file
+
+  logical,parameter :: wrt_Z =.true., &
+                       wrt_Ub=.true., &
+                       wrt_Vb=.true., &
+                       wrt_U=.true., &
+                       wrt_V=.true., &
+                       wrt_R=.false., &
+                       wrt_O=.false., &
+                       wrt_W=.false., &
+                       wrt_Akv=.false., &
+                       wrt_Akt=.false., &
+                       wrt_Aks=.false., &
+                       wrt_Hbls=.false., &
+                       wrt_Hbbl=.false.
+
+  logical,parameter :: wrt_avg_Z =.true., &
+                       wrt_avg_Ub=.true., &
+                       wrt_avg_Vb=.true., &
+                       wrt_avg_U=.true., &
+                       wrt_avg_V=.true., &
+                       wrt_avg_R=.true., &
+                       wrt_avg_O=.true., &
+                       wrt_avg_W=.true., &
+                       wrt_avg_Akv=.true., &
+                       wrt_avg_Akt=.true., &
+                       wrt_avg_Aks=.true., &
+                       wrt_avg_Hbls=.true., &
+                       wrt_avg_Hbbl=.true.
+
 end module compile_time_switches
 

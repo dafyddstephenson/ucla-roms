@@ -301,7 +301,7 @@
      &       'bgc :: wrote history, tdays =', tdays,
      &       'step =', iic-1, 'rec =', record_his
           endif
-        endif  ! <-- wrt_file_his
+        endif
 
       endif
 
@@ -421,7 +421,7 @@
      &       'bgc diag :: wrote history, tdays =', tdays,
      &       'step =', iic, 'rec =', record_dia_his
           endif
-        endif  ! <-- wrt_file_his
+        endif
 
       endif
 

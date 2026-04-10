@@ -2,10 +2,10 @@ module compile_time_switches
   implicit none
   public
 ! bgc.opt (requires MARBL or BIOLOGY_BEC2, and MARBL_DIAGS or BEC2_DIAG for diagnostics)
-  logical,parameter :: wrt_bgc_his = .false. ! t/f to write module history file
-  logical,parameter :: wrt_bgc_avg = .false. ! t/f to write module averages file
-  logical,parameter :: wrt_bgc_dia_his = .false. ! t/f to write module history file
-  logical,parameter :: wrt_bgc_dia_avg = .false.         ! t/f to write module history file
+  logical,parameter :: wrt_bgc_his = .true. ! t/f to write module history file
+  logical,parameter :: wrt_bgc_avg = .true. ! t/f to write module averages file
+  logical,parameter :: wrt_bgc_dia_his = .true. ! t/f to write module history file
+  logical,parameter :: wrt_bgc_dia_avg = .true.         ! t/f to write module history file
   ! prev wrt_his, wrt_avg, wrt_his_dia, wrt_avg_dia
 
   !calc_pflx.opt
@@ -17,7 +17,7 @@ module compile_time_switches
 
   ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
   logical,public :: forcing_depth_profiles = .false.     ! T if this file contains depth profiles
-  logical,public :: forcing_3d             = .true.     ! T if this file contains 3d forcing
+  logical,public :: forcing_3d             = .false.     ! T if this file contains 3d forcing
   logical,public :: forcing_parameterized  = .false.      ! T if forcing with idealized Gaussian profiles
 
   ! INTERPOLATE FORCING IN TIME, OR NO?

@@ -4,7 +4,13 @@
       ! his, avg, and rst files
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: calc_pflx
+      use compile_time_switches, only: calc_pflx,
+     &     wrt_file_rst, wrt_file_avg, wrt_file_his, monthly_restarts,
+     &     wrt_Z, wrt_Ub, wrt_Vb, wrt_U, wrt_V, wrt_R, wrt_O, wrt_W,
+     &     wrt_Akv, wrt_Akt, wrt_aks, wrt_Hbls, wrt_Hbbl,
+     &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
+     &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
+     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl
       use netcdf, only:
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
