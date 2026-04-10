@@ -1,6 +1,7 @@
       module tides
 
 #include "cppdefs.opt"
+      use compile_time_switches, only: pot_tides, bry_tides, ana_tides
       use dimensions, only: inode, jnode, x_,x0,x1,y_,y0,y1
       use param, only:
      &     mynode, ieast, iwest, jnorth, jsouth, lm, mm, np_xi, np_eta

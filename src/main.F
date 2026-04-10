@@ -372,7 +372,8 @@ CR      write(*,*)  ' -2' MYID
 
       subroutine roms_step
       use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
-     &     wrt_frc, floats, do_random, ub_tune, wrt_smflx, wrt_stflx
+     &     wrt_frc, floats, do_random, ub_tune, wrt_smflx, wrt_stflx,
+     &     bry_tides, pot_tides
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data
       use scalars, only:
@@ -404,7 +405,6 @@ CR      write(*,*)  ' -2' MYID
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
 #endif
-      use tides, only: bry_tides, pot_tides
 #ifdef DIAGNOSTICS
       use diagnostics, only: do_diagnostics
 #endif

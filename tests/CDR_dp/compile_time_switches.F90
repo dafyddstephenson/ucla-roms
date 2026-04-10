@@ -115,10 +115,15 @@ module compile_time_switches
   logical,parameter  :: wrt_sponge=.true.     ! yes/no output sponge to file
 
   !surf_flux.opt
-  logical,public,parameter :: wrt_smflx = .false.              ! output surface momentum flux
-  logical,public,parameter :: wrt_stflx = .false.              ! output surface tracer flux
-  logical,public,parameter :: wrt_swflx = .false.              ! output surface water flux (P-E)
+  logical,parameter :: wrt_smflx = .false.              ! output surface momentum flux
+  logical,parameter :: wrt_stflx = .false.              ! output surface tracer flux
+  logical,parameter :: wrt_swflx = .false.              ! output surface water flux (P-E)
   logical,parameter :: sflx_avg  = .false.              ! write averaged sflx data
+
+  !tides.opt
+  logical,parameter :: bry_tides=.false. ! Barotropic tides at the boundary from TPXO
+  logical,parameter :: pot_tides=.false. ! Surface tidal potential
+  logical,parameter :: ana_tides=.false. ! Surface tidal potential
 
 
 end module compile_time_switches
