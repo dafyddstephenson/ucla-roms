@@ -32,7 +32,8 @@
 # ifdef NHMG
      &                                            ,rw
 # endif
-     &                                                              )
+     &     )
+      use compile_time_switches, only: diag_uv
       use dimensions, only: inode, jnode
 # ifdef NHMG
       use ocean_vars, only:
@@ -43,7 +44,7 @@
       use mg_namelist, only: surface_neumann
       use mg_grids, only: mggrid => grid
 # endif
-      use diagnostics, only: diag_uv, u_prev, v_prev, calc_diag, udiag,
+      use diagnostics, only: u_prev, v_prev, calc_diag, udiag,
      &  vdiag, icori, dxdyi_u, dxdyi_v, idiss, ipgr, iadv, ivmix,
      &     set_diags_u_4th_adv, set_diags_v_4th_adv
       use surf_flux, only: sustr, svstr

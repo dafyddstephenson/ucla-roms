@@ -57,7 +57,7 @@ c--# define CONST_TRACERS
 #  endif
 # endif
      &     )
-      use compile_time_switches, only: cdr_source, forcing_3d
+      use compile_time_switches, only: cdr_source, forcing_3d, diag_trc
       use pipe_frc, only: pidx, pipe_source, pipe_idx, pipe_trc,
      &     pipe_prf, pipe_flx
       use dimensions, only: inode, jnode, npx, npy
@@ -98,7 +98,7 @@ c--# define CONST_TRACERS
       use eos_vars, only: drdx, drde, idrz
 #endif
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_trc, calc_diag, tdiag, tmixx, tadvx, tadvy,
+      use diagnostics, only: calc_diag, tdiag, tmixx, tadvx, tadvy,
      &  tmixy, tadvy, tadvz, td, vflxd, zflx, tmixz, diag_t_adv_vc4, diag_t_adv_hc4
 #endif
       use bulk_frc, only: tair

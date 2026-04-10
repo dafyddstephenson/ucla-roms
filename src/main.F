@@ -103,7 +103,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
-      use compile_time_switches, only: wrt_cdr
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
@@ -127,7 +127,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use get_init_mod, only: get_init
       use grid_stiffness_mod, only: grid_stiffness
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
+      use diagnostics, only: init_diagnostics
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
@@ -371,7 +371,7 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-      use compile_time_switches, only: wrt_cdr
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc
       use diag_mod, only: diag
       use extract_data, only: do_extract, do_extract_data
       use scalars, only:
@@ -405,7 +405,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       use tides, only: bry_tides, pot_tides
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,do_diagnostics
+      use diagnostics, only: do_diagnostics
 #endif
       use roms_read_write, only: frc_time
 #ifdef LMD_MIXING

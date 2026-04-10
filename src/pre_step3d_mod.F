@@ -33,7 +33,8 @@
 # ifdef NHMG
      &                                            ,rw
 # endif
-     &                                                              )
+     &     )
+      use compile_time_switches, only: diag_uv
       use dimensions, only: inode, jnode, npx, npy
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
@@ -66,7 +67,7 @@
      &     n, dt, forw_start, iic, nnew, nrhs, nstp, nt,
      &     rdrg, vonkar, zob, ntstart
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icori,
+      use diagnostics, only: calc_diag, udiag, vdiag, icori,
      &  dxdyi_u, dxdyi_v
 #endif
       use ext_copy_prv2shr_mod, only: ext_copy_prv2shr_2d_tile
