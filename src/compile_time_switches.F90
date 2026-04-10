@@ -50,7 +50,8 @@ module compile_time_switches
   logical, parameter, public :: diag_uv       = .false.   ! Momentum diagnostics
   logical, parameter, public :: diag_trc      = .false.   ! Selected tracers diagnostics
 
-
+  !extract_data.opt
+  logical,parameter,public :: do_extract = .false.
 
 end module compile_time_switches
 

@@ -39,7 +39,7 @@
       !]
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: calc_pflx
+      use compile_time_switches, only: calc_pflx, do_extract
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
       use nc_read_write, only: nccreate, ncread, ncwrite

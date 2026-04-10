@@ -371,9 +371,9 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract
       use diag_mod, only: diag
-      use extract_data, only: do_extract, do_extract_data
+      use extract_data, only:  do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
      &     nstp, ntstart, sec2day, start_time, tdays, time
