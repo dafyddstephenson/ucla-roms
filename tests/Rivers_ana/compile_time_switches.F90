@@ -105,5 +105,10 @@ module compile_time_switches
   !random_output.opt
   logical,public,parameter :: do_random = .false.
 
+  !river_frc.opt
+  logical,parameter,public :: river_source = .true.   ! default should be false if not using rivers
+  logical,parameter        :: river_analytical = .true.   ! analytical forcing, if false then realistic
+
+
 end module compile_time_switches
 

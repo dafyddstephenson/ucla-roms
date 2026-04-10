@@ -587,10 +587,10 @@
       end
 
       subroutine step3d_uv2_tile(istr,iend,jstr,jend, WC,FC,CF,DC)
-
+      use compile_time_switches, only: river_source
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
-     &     river_source, riv_uflx, riv_vol, riv_vflx
+     &     riv_uflx, riv_vol, riv_vflx
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use dimensions, only: inode, jnode
 

@@ -57,7 +57,8 @@ c--# define CONST_TRACERS
 #  endif
 # endif
      &     )
-      use compile_time_switches, only: cdr_source, forcing_3d, diag_trc, pipe_source
+      use compile_time_switches, only: cdr_source, forcing_3d, diag_trc,
+     &     pipe_source, river_source
       use pipe_frc, only: pidx, pipe_idx, pipe_trc,
      &     pipe_prf, pipe_flx
       use dimensions, only: inode, jnode, npx, npy
@@ -67,7 +68,7 @@ c--# define CONST_TRACERS
      &      ncdr
 #endif
       use river_frc, only: iriver, riv_depth, riv_uvel, riv_vvel,
-     & river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
+     & riv_uflx, riv_vol, riv_trc, riv_vflx
       use surf_flux, only: stflx, srflx
       use tracers, only: t, itands, wrt_t_dia
 #ifdef MARBL

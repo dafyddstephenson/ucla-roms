@@ -100,10 +100,15 @@ module compile_time_switches
 
   !pipe_frc.opt
   logical,parameter,public :: pipe_source  = .true.      ! use pipe forcing
-  logical,parameter        :: p_analytical = .false.      ! analytical forcing true
+  logical,parameter        :: p_analytical = .true.      ! analytical forcing true
 
   !random_output.opt
   logical,public,parameter :: do_random = .false.
+
+  !river_frc.opt
+  logical,parameter,public :: river_source = .false.   ! default should be false if not using rivers
+  logical,parameter        :: river_analytical = .false.   ! analytical forcing, if false then realistic
+
 
 end module compile_time_switches
 
