@@ -39,7 +39,7 @@
       !]
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: calc_pflx, do_extract
+      use compile_time_switches, only: calc_pflx, do_extract, wrt_file_rst
       use namelist_mod, only: open_namelist_file
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
@@ -57,7 +57,7 @@
      &     nt_passive, mynode, lm, mm, N
       use scoord, only: theta_s, theta_b, hc
       use calc_pflx_mod, only:  up, vp
-      use basic_output, only: vn=>vname
+      use basic_output, only: vn=>vname, output_period_rst
 #ifdef SOLVE3D
      &     ,indxt, indxu, indxv, indxw
 #endif
@@ -175,9 +175,38 @@
         module procedure  interpolate_2D, interpolate_3D
       end interface
 
-      public do_extract_data
+      public do_extract_data, extract_data_precheck
       contains
 !     ----------------------------------------------------------------------
+      subroutine extract_data_precheck
+
+      implicit none
+
+      character(len=21) :: sr_name = "extract_data_precheck"
+      character(len=1024) :: error_info
+      real :: extract_newfile_freq
+
+      call read_extract_nml
+      
+      if (wrt_file_rst .and. do_extract) then
+        extract_newfile_freq = nrpf_extract * extract_period
+
+        if (mod(output_period_rst,extract_newfile_freq) /= 0) then
+          write(error_info,*) "Extract data frequency = ", extract_newfile_freq,
+     & ". Restart freuency = ", output_period_rst, ". The frequency of",
+     & " writing the extract_data file must evenly divide the restart ",
+     & "frequency (this prevents writing partial extract_data files)."
+          call error_log%raise_global(
+     &      context=module_name//"/"//sr_name,
+     &      info=error_info)
+          call error_log%abort_check()
+        endif
+
+      endif
+
+      end subroutine extract_data_precheck
+
+      
       subroutine read_extract_nml
 !     Read the "EXTRACT_DATA_SETTINGS" section of the namelist file
 
@@ -208,7 +237,6 @@
       real,dimension(:),allocatable :: angp ! grid angle
       character(len=17) :: sr_name = "init_extract_data"
 
-      call read_extract_nml
 
       call read_extraction_objects
       call error_log%abort_check()

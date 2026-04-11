@@ -162,6 +162,26 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
       contains
 
+      subroutine bgc_precheck
+
+      implicit none
+
+      character(len=12) :: sr_name = "bgc_precheck"
+      character(len=1024) :: error_info
+
+#if defined MARBL && defined BIOLOGY_BEC2
+          write(error_info,*) "Both MARBL and BEC2 have been enabled"
+     & " in cppdefs.opt, but only one (or none) may be used in any"
+     & " given run."
+          call error_log%raise_global(
+     &      context=module_name//"/"//sr_name,
+     &      info=error_info)
+          call error_log%abort_check()
+#endif
+
+      end subroutine bgc_precheck
+      
+      
       integer function bgc_idx(t_idx)
       ! Takes a tracer array tracer index t(:,:,:,:,t_idx) and returns
       ! the corresponding bgc tracer index.
