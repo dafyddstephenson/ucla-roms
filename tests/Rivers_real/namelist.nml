@@ -78,3 +78,12 @@ sp_timscale = 86400
 nrpf = 7
 output_period = 86400
 /
+
+&SURF_FLX_SETTINGS
+output_period = 120
+nrpf = 10
+/
+
+&TIDES_SETTINGS
+ntides = 10
+/
