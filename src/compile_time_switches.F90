@@ -1,7 +1,6 @@
 module compile_time_switches
   implicit none
   public
-  ! bgc.opt (requires MARBL or BIOLOGY_BEC2, and MARBL_DIAGS or BEC2_DIAG for diagnostics)
   !================================================================================
   !                               BIOGEOCHEMISTRY
   !================================================================================
