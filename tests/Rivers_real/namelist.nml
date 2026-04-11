@@ -72,3 +72,9 @@ pmin = 200
 output_period = 3600
 nrpf=10
 /
+
+&SPONGE_TUNE_SETTINGS
+sp_timscale = 86400
+nrpf = 7
+output_period = 86400
+/
