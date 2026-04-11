@@ -67,3 +67,8 @@ nrpf = 100
 ppm3 = 1e-6
 pmin = 200
 /
+
+&RANDOM_OUTPUT_SETTINGS
+output_period = 3600
+nrpf=10
+/
