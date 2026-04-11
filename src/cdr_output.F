@@ -114,7 +114,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_pipe_nml
+      end subroutine read_cdr_output_nml
 
       subroutine add_cdr_output_variable(list, name, dimnames, dims,
      &                                     long_name, units)

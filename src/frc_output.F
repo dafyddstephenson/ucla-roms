@@ -5,6 +5,8 @@
 
 #include "cppdefs.opt"
       use compile_time_switches, only: wrt_frc_avg
+      use namelist_mod, only: open_namelist_file
+      use error_handling_mod, only: error_log
       use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x,
      &     lm, mm, isalt, itemp, mynode
       use dimensions, only: i0, i1, j0, j1, eta_rho, eta_v, xi_rho, xi_u
@@ -26,11 +28,14 @@
 
       implicit none
       private
+      character(len=10) :: module_name = "frc_output"
+      real :: output_period = 0.   ! in seconds
+      integer :: nrpf   = 0          ! number of frames per file
 
-#include "frc_output.opt"
+      namelist /FRC_OUTPUT_SETTINGS/ output_period, nrpf
 
       real    :: output_time = 0
-      integer :: record = nrpf ! to trigger the first file creation
+      integer :: record = 0 ! to trigger the first file creation
 
       integer :: navg = 0
 
@@ -67,7 +72,31 @@
       public :: init_frc_output, wrt_frc_output
 
       contains
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_frc_output_nml
+
+!     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_frc_output_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=FRC_OUTPUT_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read FRC_OUTPUT_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_frc_output_nml
+
       subroutine init_frc_output ![
       ! Allocate and initialize arrays.
       implicit none
@@ -76,7 +105,7 @@
       logical,save :: done=.false.
       integer :: itot=0
       integer :: idx
-
+      call read_frc_output_nml
       if (done) then
         return
       else
