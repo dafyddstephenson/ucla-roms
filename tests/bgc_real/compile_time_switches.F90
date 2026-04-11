@@ -133,6 +133,12 @@ module compile_time_switches
   logical,parameter :: pot_tides=.true. ! Surface tidal potential
   logical,parameter :: ana_tides=.false. ! Surface tidal potential
 
+  !tracers.opt
+  logical,parameter :: wrt_temp = .true.
+  logical,parameter :: wrt_temp_dia = .true.
+  logical,parameter :: wrt_salt = .true.
+  logical,parameter :: wrt_salt_dia = .true.
+
   !upscale_output.opt
   logical,parameter :: do_upscale = .false.
 
