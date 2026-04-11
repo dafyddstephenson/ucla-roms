@@ -8,15 +8,15 @@
 
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
 
-      use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x
+      use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x, np_xi, np_eta
       use namelist_mod, only: open_namelist_file
       use error_handling_mod, only: error_log
       use tracers, only: t_units
-      use dimensions, only: i0, i1, j0, j1
+      use dimensions, only: i0, i1, j0, j1, eta_rho,
+     &     xi_rho, npx, npy, inode, jnode
       use grid, only: latr, lonr
       use nc_read_write, only: nccreate, ncwrite
-      use roms_read_write, only: dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
-     &     xi_rho, create_file
+      use roms_read_write, only: create_file, dn_tm, dn_xr, dn_yr, dn_zr
       use netcdf, only:
      &     nf90_double, nf90_write, nf90_put_att,
      &     nf90_open, nf90_close
@@ -34,8 +34,8 @@
       namelist /UPSCALE_SETTINGS/ nrpf_uscl, output_period_uscl
       integer :: uscl_prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
       character(len=15) :: module_name = "upscale_output"
-      integer                        :: record_uscl=nrpf_uscl   ! record number in file
-      real                           :: otime=output_period_uscl   ! time since last output; setting the initial
+      integer                        :: record_uscl=0   ! record number in file
+      real                           :: otime=0   ! time since last output; setting the initial
                                               ! value to output_period should make it write a record upon startup (which
                                               ! is desired)
       integer :: navg = 0
@@ -129,14 +129,14 @@
      &      )
       end if
       close(namelist_unit)
-
+      record_uscl = nrpf_uscl
+      otime = output_period_uscl
       end subroutine read_upscale_nml
 
       subroutine init_upscale ![
       ! Allocate and initialize arrays.
 
       use param, only: lm, mm, mynode
-      use dimensions, only: inode, jnode
 
       implicit none
 

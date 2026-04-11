@@ -26,7 +26,6 @@
       private
 
 
-#include "particles.opt"
       integer :: np=50                   ! local number of particles
       real    :: extra_space_fac = 1.5   ! buffer space to receive extra exchanged particles
       real    :: exchange_facx = 0.1     ! maximum number of particles for transfer in NS
