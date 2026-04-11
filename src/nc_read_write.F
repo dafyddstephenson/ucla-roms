@@ -17,7 +17,8 @@
 
       character(len=13) :: module_name = "nc_read_write"
 
-#include "nc_read_write.opt"
+      integer,parameter  :: deflate_level=1 ! Compression level for joined file
+      integer,parameter :: default_prec = nf90_float
 
       interface ncwrite
         module procedure  ncwrite_1D, ncwrite_2D, ncwrite_3D
