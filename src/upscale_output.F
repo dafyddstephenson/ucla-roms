@@ -650,6 +650,7 @@
 
 !----------------------------------------------------------------------
       use netcdf, only: nf90_double
+      use error_handling_mod, only: error_log
       implicit none
       character(len=15) :: module_name = "upscale_output"
       private

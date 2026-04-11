@@ -87,3 +87,17 @@ nrpf = 10
 &TIDES_SETTINGS
 ntides = 10
 /
+
+&UPSCALE_SETTINGS
+nrpf_uscl = 48
+output_period_uscl = 100
+/
+
+&ZSLICE_SETTINGS
+output_period = 1200
+nrpf = 72
+ndep = 6
+vecdep = (/-2.0, -15.0, -30.0, -60.0, -120.0, -250.0/) ! depths slice
+nt_z = 2
+trc2zsc = (/1, 2/)
+/
