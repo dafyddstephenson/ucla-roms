@@ -83,3 +83,8 @@ output_period = 86400
 output_period = 120
 nrpf = 10
 /
+
+&UPSCALE_SETTINGS
+nrpf_uscl = 48
+output_period_uscl = 100
+/

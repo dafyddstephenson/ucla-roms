@@ -9,6 +9,8 @@
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
 
       use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x
+      use namelist_mod, only: open_namelist_file
+      use error_handling_mod, only: error_log
       use tracers, only: t_units
       use dimensions, only: i0, i1, j0, j1
       use grid, only: latr, lonr
@@ -26,7 +28,11 @@
       implicit none
       private
 
-#include "upscale_output.opt"
+      integer :: nrpf_uscl = 48                  ! number of records per output file
+      real    :: output_period_uscl = 100         ! output period in seconds
+
+      namelist /UPSCALE_SETTINGS/ nrpf_uscl, output_period_uscl
+      integer :: uscl_prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
       character(len=15) :: module_name = "upscale_output"
       integer                        :: record_uscl=nrpf_uscl   ! record number in file
       real                           :: otime=output_period_uscl   ! time since last output; setting the initial
@@ -101,7 +107,31 @@
       public init_upscale, wrt_upscale, calc_forcing_rates
 
       contains
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_upscale_nml
+
+!     Read the "UPSCALE_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_upscale_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=UPSCALE_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read UPSCALE_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_upscale_nml
+
       subroutine init_upscale ![
       ! Allocate and initialize arrays.
 
@@ -121,7 +151,7 @@
       if (done) then
         return
       else
-
+         call read_upscale_nml
 #ifndef OBC_TSPECIFIED
         if (mynode == 0) then
           print *, 'WARNING: Upscale output is requested, but ',
@@ -623,7 +653,6 @@
       implicit none
       character(len=15) :: module_name = "upscale_output"
       private
-#include "upscale_output.opt"
 
       ! Public functions
       public init_upscale, wrt_upscale
@@ -631,7 +660,6 @@
       contains
 
       subroutine init_upscale   ![
-      use error_handling_mod, only: error_log
       ! Allocate and initialize arrays.
       implicit none
       character(len=13) :: sr_name
