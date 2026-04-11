@@ -7,7 +7,8 @@
 
 #include "cppdefs.opt"
 
-      ! Modules needed:
+! Modules needed:
+      use compile_time_switches, only: interp_flux_frc
       use tracers, only: t
       use surf_flux, only: sustr, svstr, stflx, srflx, sss, sst,
      &       apply_surf_field_corr, swflx
@@ -24,8 +25,17 @@
       private ! All variables private to module unless public specified
 
       ! Includes:
-#include "flux_frc.opt"
+      type (ncforce) :: nc_sustr  = ncforce(
+     &     vname='sustr', tname='sms_time') ! sustr - surface u-momentum stress flux (input data in N/m^2)
+      type (ncforce) :: nc_svstr  = ncforce(
+     &     vname='svstr', tname='sms_time') ! svstr - surface v-momentum stress flux (input data in N/m^2)
 
+      type (ncforce) :: nc_shflx  = ncforce(
+     &     vname='shflux',tname='shf_time' ) ! stflx(itemp) - surface heat flux (input data in W/m^2)
+      type (ncforce) :: nc_swflux = ncforce(
+     &     vname='swflux',tname='swf_time' ) ! stflx(isalt) - surface freshwater flux (input data in cm/day). Might want to use #if def SALINITY?
+      type (ncforce) :: nc_swrad  = ncforce(
+     &     vname='swrad', tname='srf_time' ) ! swrad - surface short-wave radiation flux (input data in W/m^2)
 
       public set_flux_frc
       public init_arrays_flux_frc
@@ -42,7 +52,7 @@
       allocate( nc_swflux%vdata(GLOBAL_2D_ARRAY,2) );nc_swflux%vdata = 0
       allocate( nc_swrad%vdata(GLOBAL_2D_ARRAY,2) ) ;nc_swrad%vdata = 0
 
-      if (interp_frc==1) then
+      if (interp_flux_frc) then
         nc_sustr%coarse=1
         nc_svstr%coarse=1
         nc_shflx%coarse=1
@@ -53,7 +63,7 @@
       ! Print user options (flux_frc.opt) to netcdf attributes
       ! Note: to turn flux forces off, edit cppdefs!
       flux_frc_opt = ''
-      if (interp_frc==1) then
+      if (interp_flux_frc) then
         call store_string_att(flux_frc_opt, 'Interpolation ON')
       else
         call store_string_att(flux_frc_opt, 'Interpolation OFF')
