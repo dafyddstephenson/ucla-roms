@@ -55,3 +55,15 @@ nrpf_his = 20
 output_period_avg = 100
 nrpf_avg = 20
 /
+
+&PARTICLES_SETTINGS
+np=50
+extra_space_fac = 1.5
+exchange_facx = 0.1
+exchange_facy = 0.1
+exchange_facc = 0.01
+output_period = 400
+nrpf = 100
+ppm3 = 1e-6
+pmin = 200
+/

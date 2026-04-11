@@ -357,22 +357,11 @@
       logical,save           :: supress=.false.
       logical                :: blowup,initial
 
-c$$$      if (mynode==0) then
-c$$$         print *, "OUTPUT_PERIOD_HIS OI", output_period_his
-c$$$         print *, "NRPF_HIS OI", nrpf_his
-c$$$         print *, "FIRST STEP OI", first_step
-c$$$         print *, "OUTPUT_TIME_HIS OI", output_time_his
-c$$$      end if
-
       if (first_step) then
          output_time_his=output_period_his+10
          rec_his = nrpf_his
          first_step = .false.
       end if
-
-c$$$      if (mynode==0) then
-c$$$         print *, "OUTPUT_TIME_HIS ii OI", output_time_his
-c$$$      end if
 
       blowup = .false.
       initial= .false.
