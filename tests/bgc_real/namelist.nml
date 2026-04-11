@@ -21,5 +21,8 @@ output_period_his_dia = 100
 nrpf_his_dia = 10
 output_period_avg_dia = 100
 nrpf_avg_dia = 10
-nbgc_flx = 2
+/
+
+&CALC_PFLX_SETTINGS
+timescale = 86400
 /

@@ -40,7 +40,7 @@ module compile_time_switches
 
   ! bulk_frc.opt
   logical,parameter :: interp_bulk_frc = .true. ! Factor 2 only for now
-  logical,parameter :: check_bulk_frc_units = .false.                  ! check units of input vars
+  logical :: check_bulk_frc_units = .false.                  ! check units of input vars
 
   ! cdr_output.opt
   logical,parameter :: wrt_cdr   = .false.
