@@ -46,3 +46,12 @@ hc_chd = 250.0
 output_period = 3600.
 nrpf = 4
 /
+
+&BASIC_OUTPUT_SETTINGS
+output_period_rst = 2000
+nrpf_rst = 10
+output_period_his = 100
+nrpf_his = 20
+output_period_avg = 100
+nrpf_avg = 20
+/

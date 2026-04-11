@@ -7,11 +7,10 @@
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_double
       use extract_data, only: nrpf_extract, extract_period
+      use basic_output, only:  output_period_rst
 
       implicit none
       private
-
-#include "ocean_vars.opt"
 
       character(len=8) :: module_name="precheck"
 

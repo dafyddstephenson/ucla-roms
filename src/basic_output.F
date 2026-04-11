@@ -11,6 +11,7 @@
      &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
      &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
      &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl, ub_tune
+      use namelist_mod, only: open_namelist_file
       use netcdf, only:
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
@@ -35,7 +36,20 @@
       implicit none
       private
 
-#include "ocean_vars.opt"
+      real, public :: output_period_rst = 100        ! output period in seconds
+      real    :: nrpf_rst          = 10
+
+      real    :: output_period_his = 100         ! output period in seconds
+      integer :: nrpf_his          = 20          ! total recs per file
+
+      real    :: output_period_avg = 100         ! output averaging period in seconds
+      integer :: nrpf_avg          = 20          ! total recs per file
+
+      namelist /BASIC_OUTPUT_SETTINGS/
+     &     output_period_rst, nrpf_rst,
+     &     output_period_his, nrpf_his,
+     &     output_period_avg, nrpf_avg
+
       character(len=12) :: module_name = "basic_output"
 # ifdef SOLVE3D
       real,allocatable,dimension(:,:,:) :: akv_avg
@@ -103,7 +117,32 @@
       public :: init_avg_arrays
       public :: init_restarts
 
-      contains  !]
+      contains                  !]
+
+      subroutine read_basic_output_nml
+
+!     Read the "BASIC_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_basic_output_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=BASIC_OUTPUT_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read BASIC_OUTPUT_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_basic_output_nml
+
 !----------------------------------------------------------------------
       subroutine init_restarts  ![
 
@@ -122,6 +161,8 @@
       implicit none
       character(len=15) :: sr_name = "init_avg_arrays"
       character(len=1024) :: error_info
+
+      call read_basic_output_nml
 
       if (wrt_file_his .and. mod(output_period_his, dt) /= 0) then
          write(error_info, *)
@@ -307,15 +348,31 @@
       logical,optional       :: special !! for blowup and initial history file
       ! local
       integer,dimension(4)   :: start
-      integer,save           :: rec_his=nrpf_his                     ! current file output record
-      integer,save           :: total_rec_his=0                      ! total his output records so far
-      real,save              :: output_time_his=output_period_his+10
+      integer,save           :: rec_his                     ! current file output record
+      integer                :: total_rec_his=0                      ! total his output records so far
+      real,save              :: output_time_his=0
       logical,save           :: first_step=.true.
       character(len=max_name_size),save :: fname_his
       integer                :: tile, ierr, i, j, k
       logical,save           :: supress=.false.
       logical                :: blowup,initial
 
+c$$$      if (mynode==0) then
+c$$$         print *, "OUTPUT_PERIOD_HIS OI", output_period_his
+c$$$         print *, "NRPF_HIS OI", nrpf_his
+c$$$         print *, "FIRST STEP OI", first_step
+c$$$         print *, "OUTPUT_TIME_HIS OI", output_time_his
+c$$$      end if
+
+      if (first_step) then
+         output_time_his=output_period_his+10
+         rec_his = nrpf_his
+         first_step = .false.
+      end if
+
+c$$$      if (mynode==0) then
+c$$$         print *, "OUTPUT_TIME_HIS ii OI", output_time_his
+c$$$      end if
 
       blowup = .false.
       initial= .false.
@@ -330,8 +387,10 @@
 
       if (wrt_file_his.or.blowup) then
 
-        if (.not.present(special)) then
-         output_time_his = output_time_his + dt
+         if (.not.present(special)) then
+c$$$            if (mynode==0) print *, "incrementing output_time_his by", dt
+            output_time_his = output_time_his + dt
+c$$$            if (mynode==0) print *, "OUTPUT_TIME_HIS iii OI",output_time_his
         endif
 
 
@@ -437,14 +496,19 @@
 
       ! local
       integer,dimension(4)   :: start
-      integer,save           :: rec_avg=nrpf_avg
+      integer                :: rec_avg
       integer,save           :: total_rec_avg=0                      ! total avg output records so far
       real,save              :: output_time_avg=0                    ! time since last output
-      logical,save           :: first_step=.true.
       character(len=max_name_size),save :: fname_avg
       character(len=99)      :: output_time_string
       character(len=99)      :: formatted_string
       integer :: tile, tn, ierr, k
+      logical, save          :: first_step
+
+      if (first_step) then
+         rec_avg = nrpf_avg
+         first_step = .false.
+      end if
 
       if (wrt_file_avg) then
 
