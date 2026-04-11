@@ -6,12 +6,12 @@
       use compile_time_switches, only: do_extract, wrt_file_rst
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_double
+      use extract_data, only: nrpf_extract, extract_period
 
       implicit none
       private
 
 #include "ocean_vars.opt"
-#include "extract_data.opt"
 
       character(len=8) :: module_name="precheck"
 

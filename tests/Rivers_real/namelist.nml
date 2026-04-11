@@ -31,3 +31,13 @@ timescale = 86400
 output_period = 3600
 nrpf = 4
 /
+
+&EXTRACT_DATA_SETTINGS
+extract_period = 1800.0
+extract_file = "sample_edata.nc"
+nrpf_extract = 48
+N_chd = 90
+theta_s_chd = 5.0
+theta_b_chd = 2.0
+hc_chd = 250.0
+/

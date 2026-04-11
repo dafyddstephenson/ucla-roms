@@ -40,6 +40,7 @@
 
 #include "cppdefs.opt"
       use compile_time_switches, only: calc_pflx, do_extract
+      use namelist_mod, only: open_namelist_file
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
       use nc_read_write, only: nccreate, ncread, ncwrite
@@ -74,7 +75,21 @@
       implicit none
       private
 
-#include "extract_data.opt"
+      real,public              :: extract_period = 0.   ! output period (seconds)
+      character(len=60)        :: extract_file = 'sample_edata.nc'
+      integer,public :: nrpf_extract = 0    ! number of records per output file
+
+      ! S-coordinate parameters for child grid
+      integer  :: N_chd       = 0
+      real     :: theta_s_chd = 5.0
+      real     :: theta_b_chd = 2.0
+      real     :: hc_chd      = 250.0
+
+      namelist /EXTRACT_DATA_SETTINGS/ extract_period, extract_file,
+     &     nrpf_extract, N_chd, theta_s_chd, theta_b_chd, hc_chd
+
+      integer,parameter        :: edat_prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
+
 
       character(len=12) :: module_name = "extract_data"
       integer :: total_rec=0 ! total records
@@ -112,7 +127,7 @@
 
         !! Initializing record at nrpf will trigger the making of a file
         !! at the first time step
-        integer                        :: record=nrpf_extract   ! record number in file
+        integer                        :: record=0   ! record number in file
 
         real,   dimension(:,:),pointer     :: Hz_par    ! interpolated thickness for parent
         real,   dimension(:,:),pointer     :: Hz_par_u  ! interpolated thickness for parent at u-interface
@@ -162,7 +177,25 @@
 
       public do_extract_data
       contains
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_extract_nml
+!     Read the "EXTRACT_DATA_SETTINGS" section of the namelist file
+
+      integer ::  namelist_unit, ios
+      character(len=17) :: sr_name = "read_extract_nml"
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      read (unit=namelist_unit, nml=EXTRACT_DATA_SETTINGS, iostat=ios)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context=module_name//'/'//sr_name, info=
+     &   'could not read EXTRACT_DATA_SETTINGS section of namelist file'
+     &     )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_extract_nml
+
       subroutine init_extract_data  ![
       ! Allocate space and compute interpolation coefficients
       ! for rho,u,and v variables.
@@ -174,6 +207,8 @@
       integer :: i,np,ierr,lpre
       real,dimension(:),allocatable :: angp ! grid angle
       character(len=17) :: sr_name = "init_extract_data"
+
+      call read_extract_nml
 
       call read_extraction_objects
       call error_log%abort_check()
