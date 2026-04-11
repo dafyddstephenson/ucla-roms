@@ -6,6 +6,7 @@ module compile_time_switches
   logical,parameter :: wrt_bgc_avg = .true. ! t/f to write module averages file
   logical,parameter :: wrt_bgc_dia_his = .true. ! t/f to write module history file
   logical,parameter :: wrt_bgc_dia_avg = .true.         ! t/f to write module history file
+  logical,parameter :: interp_bgc_frc = .true. ! interpolate forcing from coarser input grid or not
   ! prev wrt_his, wrt_avg, wrt_his_dia, wrt_avg_dia
 
   !calc_pflx.opt
@@ -32,10 +33,14 @@ module compile_time_switches
   ! recentered to the nearest wet point.
 
   ! PARAMETERIZED VERTICAL PROFILES ********************************
-  logical,parameter,public :: cdr_volume  = .false.  ! Set to .false. if you want a tracer flux but no added water.
+  logical,parameter :: cdr_volume  = .false.  ! Set to .false. if you want a tracer flux but no added water.
   ! If .true., read in volume flux and tracer concentration, and
   ! multiply together to get tracer flux.
   ! Set to false if you want to read in a vertical profile(s).
+
+  ! bulk_frc.opt
+  logical,parameter :: interp_bulk_frc = .true. ! Factor 2 only for now
+  logical,parameter :: check_bulk_frc_units = .false.                  ! check units of input vars
 
   ! cdr_output.opt
   logical,parameter :: wrt_cdr   = .false.

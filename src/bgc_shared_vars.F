@@ -106,7 +106,6 @@ c # TODO marbldrve_configure_diagnostics for pointers example
      &     vname='nhy', tname='nhy_time' )
 #endif
 
-      integer :: interp_frc  = 0  ! interpolate forcing from coarser input grid (=1) or not (=0)
       ! note: choice of bgc tracers to output is still selected in tracers.opt.
 
       real    :: output_period_his = 0.        ! output period in seconds
@@ -123,7 +122,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
       integer :: nbgc_flx = 0                   ! number of surface bgc flux forcings
 
-      namelist /BGC_SETTINGS/ interp_frc,
+      namelist /BGC_SETTINGS/
      &     output_period_his, nrpf_his,
      &     output_period_avg, nrpf_avg,
      &     output_period_his_dia, nrpf_his_dia,

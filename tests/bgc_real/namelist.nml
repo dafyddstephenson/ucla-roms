@@ -13,7 +13,6 @@ nz_chd = 50
 /
 
 &BGC_SETTINGS
-interp_frc = 1
 output_period_his = 100
 nrpf_his = 10
 output_period_avg = 100
