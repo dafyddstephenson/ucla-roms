@@ -311,7 +311,7 @@
 
       ! Additional passive tracers:
 #ifdef BIOLOGY_BEC2
-#include BEC_tracers.h
+#include "BEC_tracers.h"
 #endif
 
 #ifdef MARBL

@@ -217,6 +217,16 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
+
+      if (first_step_his) then
+         record_his = nrpf_his
+         record_dia_his = nrpf_his_dia
+      end if
+      if (first_step_avg) then
+         record_avg = nrpf_avg
+         record_dia_avg = nrpf_avg_dia
+      end if
+
       call error_log%abort_check()
       if (avg) then
 

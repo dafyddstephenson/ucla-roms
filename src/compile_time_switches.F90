@@ -10,15 +10,15 @@ module compile_time_switches
   logical,parameter :: wrt_bgc_avg = .false.     ! t/f to write tracer averages file
   logical,parameter :: wrt_bgc_dia_his = .false. ! t/f to write diagnostic history file
   logical,parameter :: wrt_bgc_dia_avg = .false. ! t/f to write diagnostic averages file
-  logical,parameter :: interp_bgc_frc = .true.   ! interpolate forcing from coarser grid
+  logical,parameter :: interp_bgc_frc = .false.   ! interpolate forcing from coarser grid
 
   !================================================================================
   !                                BULK FORCING
   !================================================================================
   ! Formerly in `bulk_frc.opt`
   !================================================================================
-  logical,parameter :: interp_bulk_frc = .true. ! Interpolate forcing from coarser grid
-  logical,parameter :: check_bulk_frc_units = .false. ! Check units in forcing file
+  logical,parameter :: interp_bulk_frc = .false. ! Interpolate forcing from coarser grid
+  logical           :: check_bulk_frc_units = .false. ! Check units in forcing file
 
   !================================================================================
   !                       PRESSURE FLUX CALCULATION
@@ -74,7 +74,7 @@ module compile_time_switches
   logical, parameter, public :: diag_trc      = .false. ! Selected tracers diagnostics
 
   ! Change STDOUT diagnostics stream for model testing:
-  logical, parameter :: code_check_mode =.true.
+  logical, parameter :: code_check_mode = .false.
 
   !================================================================================
   !                        NESTED BOUNDARY FILE GENERATION
@@ -88,7 +88,7 @@ module compile_time_switches
   !================================================================================
   ! Formerly in `flux_frc.opt`
   !================================================================================
-  logical,parameter,public :: interp_flux_frc = .true. ! Interpolate from coarser grid
+  logical,parameter,public :: interp_flux_frc = .false. ! Interpolate from coarser grid
 
   !================================================================================
   !                           INCLUDE FORCING AS OUTPUT
@@ -109,9 +109,9 @@ module compile_time_switches
   !                        BASIC MODEL NETCDF OUTPUT CONTROLS
   !================================================================================
   ! Formerly in `ocean_vars.opt`
-  logical,parameter :: wrt_file_his      = .true.   ! Write output as snapshots
-  logical,parameter :: wrt_file_avg      = .false.  ! Write output as averages
-  logical,parameter :: wrt_file_rst      = .false.  ! Write model restart files
+  logical,parameter :: wrt_file_his = .false.   ! Write output as snapshots
+  logical,parameter :: wrt_file_avg = .false.  ! Write output as averages
+  logical,parameter :: wrt_file_rst = .false.  ! Write model restart files
 
   ! Write restarts at start of calendar month (overrides output_period_rst):
   logical,parameter :: monthly_restarts = .false.   ! This overrides output_period

@@ -7,6 +7,7 @@
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use compile_time_switches, only: cdr_source, forcing_3d,
      &     wrt_cdr_avg, cdr_monthly_averages
+      use namelist_mod, only: open_namelist_file
       use tracers, only: t_units
       use param, only: itemp, isalt
       use marbl_driver, only:
@@ -39,7 +40,7 @@
 
       character(len=10) :: module_name = "cdr_output"
       real    :: output_time = 0
-      integer :: record = nrpf ! to trigger the first file creation
+      integer :: record = 0 ! to trigger the first file creation
 
       integer,dimension(6) :: date
       character(len=15)  :: datestr
@@ -113,7 +114,7 @@
      &     )
       end if
       close(namelist_unit)
-
+      record = nrpf
       end subroutine read_cdr_output_nml
 
       subroutine add_cdr_output_variable(list, name, dimnames, dims,
