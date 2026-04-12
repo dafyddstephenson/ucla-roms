@@ -408,13 +408,17 @@
         endif
 
 
-        ! Handler for single-point release
-        if ((cdr_hsc(icdr) == 0) .or. (forcing_depth_profiles)) then
-          if (mynode == global_minloc(2)) then
-            frac(lmi(1),lmi(2),icdr) = 1
-            cidx = cidx+1
-          endif
-        ! Handler for nonzero hscl
+! Handler for single-point release
+        if (forcing_depth_profiles) then
+           if (mynode == global_minloc(2)) then
+              frac(lmi(1),lmi(2),icdr) = 1
+              cidx = cidx+1
+           endif
+        else if ((forcing_parameterized) .and. (cdr_hsc(icdr) ==0)) then
+           if (mynode == global_minloc(2)) then
+              frac(lmi(1),lmi(2),icdr) = 1
+              cidx = cidx+1
+           endif
         else
           call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
           frac(:,:,icdr) = exp(-(dist/cdr_hsc(icdr))**2)
