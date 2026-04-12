@@ -180,8 +180,8 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #endif
 
       end subroutine bgc_precheck
-      
-      
+
+
       integer function bgc_idx(t_idx)
       ! Takes a tracer array tracer index t(:,:,:,:,t_idx) and returns
       ! the corresponding bgc tracer index.

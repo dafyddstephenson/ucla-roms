@@ -94,7 +94,7 @@
      &      )
       end if
       close(namelist_unit)
-
+      record = nrpf
       end subroutine read_frc_output_nml
 
       subroutine init_frc_output ![
