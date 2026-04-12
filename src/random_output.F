@@ -57,7 +57,7 @@
       close(namelist_unit)
 
       end subroutine read_random_nml
-
+      record = nrpf
       subroutine init_random ![
       ! Allocate and initialize arrays.
       implicit none
@@ -72,7 +72,6 @@
       endif
       call read_random_nml
       ! put the relevant part of your code here
-      record = nrpf
 
       if (mynode==0) print *,'init random'
 

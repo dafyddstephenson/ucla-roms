@@ -184,7 +184,7 @@
      &     )
       end if
       close(namelist_unit)
-
+      record = nrpf
       end subroutine read_diagnostics_nml
 
 ! ----------------------------------------------------------------------
