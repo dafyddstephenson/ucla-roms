@@ -63,6 +63,7 @@ module error_handling_mod
   use timers, only: stop_timers
   use param, only: mynode, nnodes, ocean_grid_comm
   use utils_mod, only: replace_string
+  use compile_time_switches, only: gather_errors_on_main_rank
 #ifdef MPI
   use mpi_f08, only: MPI_Gather, MPI_Gatherv, MPI_INTEGER, MPI_CHARACTER, MPI_MAX, MPI_Allreduce, MPI_Barrier, MPI_Abort
 #endif
@@ -89,15 +90,6 @@ module error_handling_mod
   integer, parameter :: SCOPE_GLOBAL = 0
   integer, parameter :: SCOPE_RANK   = 1
   integer, parameter :: SCOPE_POINT  = 2
-
-  !==============================
-  ! Module-level options
-  !==============================
-  ! GATHER_ERRORS_ON_MAIN_RANK ensures MPI synchronization before abort.
-  ! This can add runtime bottlenecks due to the use of MPI collectives,
-  ! But guarantees all ranks are able to report, and groups identical errors
-  ! spanning multiple ranks for more human-readable output:
-  logical :: GATHER_ERRORS_ON_MAIN_RANK = .false.
 
   !--------------------------------------------------------------------------------
   ! DERIVED TYPES
@@ -332,7 +324,7 @@ contains
     integer :: local_abort, global_abort
     character(len=:), allocatable :: local_serialized_log, global_serialized_log
 
-    if (GATHER_ERRORS_ON_MAIN_RANK) then
+    if (gather_errors_on_main_rank) then
        local_abort = merge(1, 0, this%abort_requested)
        call MPI_Allreduce(local_abort, global_abort, 1, MPI_INTEGER, MPI_MAX, ocean_grid_comm)
 
@@ -351,17 +343,17 @@ contains
        call MPI_Barrier(ocean_grid_comm)
        call MPI_Abort(ocean_grid_comm, 1)
        call sleep(30) ! stop further output leaking through
-    else ! GATHER_ERRORS_ON_MAIN_RANK
+    else ! gather_errors_on_main_rank
        if (this%abort_requested) then
           call group_error_log_entries(this, grouped_error_log_entries)
           call print_error_log_entry_groups(grouped_error_log_entries)
-          write(*,*) "WARNING: GATHER_ERRORS_ON_MAIN_RANK=.false. in error_handling_mod.F90. ", &
+          write(*,*) "WARNING: gather_errors_on_main_rank=.false. in error_handling_mod.F90. ", &
                "Some ranks may fail to report errors before abort. ",&
                "For a full error log, set to .true. and recompile."
           call stop_timers()
           call MPI_Abort(ocean_grid_comm,1)
        end if !
-    end if !GATHER_ERRORS_ON_MAIN_RANK
+    end if !gather_errors_on_main_rank
 #else /* MPI*/
     if (this%abort_requested) then
        call group_error_log_entries(this, grouped_error_log_entries)

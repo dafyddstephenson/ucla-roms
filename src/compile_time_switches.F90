@@ -213,5 +213,16 @@ module compile_time_switches
                        wrt_V_zsl  = .true.      ! Include v-velocity
 
 
+  !================================================================================
+  !                           ERROR HANDLING
+  !================================================================================
+  ! GATHER_ERRORS_ON_MAIN_RANK ensures MPI synchronization before abort.
+  ! This can add runtime bottlenecks due to the use of MPI collectives,
+  ! But guarantees all ranks are able to report, and groups identical errors
+  ! spanning multiple ranks for more human-readable output:
+  logical,parameter :: gather_errors_on_main_rank = .false.
+
+
+
 end module compile_time_switches
 
