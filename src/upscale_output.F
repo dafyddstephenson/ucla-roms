@@ -8,13 +8,13 @@
 
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
 
-      use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x
+      use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x, np_xi, np_eta
       use tracers, only: t_units
-      use dimensions, only: i0, i1, j0, j1
+      use dimensions, only: i0, i1, j0, j1, eta_rho,
+     &     xi_rho, npx, npy, inode, jnode
       use grid, only: latr, lonr
       use nc_read_write, only: nccreate, ncwrite
-      use roms_read_write, only: dn_tm, dn_xr, dn_yr, dn_zr, eta_rho,
-     &     xi_rho, create_file
+      use roms_read_write, only: create_file, dn_tm, dn_xr, dn_yr, dn_zr
       use netcdf, only:
      &     nf90_double, nf90_write, nf90_put_att,
      &     nf90_open, nf90_close
