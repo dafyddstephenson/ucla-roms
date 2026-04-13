@@ -1,6 +1,12 @@
-#include "cppdefs.opt"
-#ifdef SOLVE3D
 
+      module step3d_t_mod
+#include "cppdefs.opt"
+      implicit none
+      private
+
+#ifdef SOLVE3D
+      public :: step3d_t, check_step_t_switches
+      contains
 #ifndef ADV_ISONEUTRAL
 # define UPSTREAM_TS
 #endif
@@ -80,7 +86,7 @@ c--# define CONST_TRACERS
 #ifdef ADV_ISONEUTRAL
      &     , diff3u, diff3v
 #endif
-
+      use t3dbc_mod, only : t3dbc_tile
       use ocean_vars, only: flxu, flxv, z_w, hz, we, wi, z_r
       use scalars, only: n, dt, nnew, nrhs, nt, nstp
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
@@ -1212,6 +1218,8 @@ c??         enddo
 
       end subroutine check_step_t_switches
 #else
+      contains
       subroutine step3d_t_empty
       end subroutine step3d_t_empty
 #endif  /* SOLVE3D */
+      end module step3d_t_mod

@@ -1,5 +1,11 @@
+      module wvlcty_mod
 #include "cppdefs.opt"
+      implicit none
+      private
 #ifdef SOLVE3D
+      public :: wvlcty, wvlcty_tile
+
+      contains
 
       subroutine wvlcty (tile, Wvlc)
       use param, only:
@@ -189,6 +195,8 @@ c**    Wrk(i,k)=0.!(uncomment to test the second part)
 # endif
       end
 #else
+      contains
       subroutine wvlcty_empty
       end
 #endif /* SOLVE3D */
+      end module wvlcty_mod

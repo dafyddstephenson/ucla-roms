@@ -1,6 +1,10 @@
+      module t3dbc_mod
 #include "cppdefs.opt"
+      implicit none
+      private
 #ifdef SOLVE3D
-
+      public :: t3dbc_tile
+      contains
       subroutine t3dbc_tile (istr,iend,jstr,jend, itrc, grad)
 
 ! Set lateral boundary conditions for tracer field t(:,:,:,itrc)
@@ -416,6 +420,8 @@ c-->     &                                           , dft,dfx,dfy
 # endif
       end
 #else
+      contains
       subroutine t3dbc_empty
       end
 #endif /* SOLVE3D */
+      end module t3dbc_mod

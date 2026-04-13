@@ -1,4 +1,10 @@
+      module step2d_mod
 #include "cppdefs.opt"
+
+      implicit none
+      private
+      public :: step2d
+      contains
 
       subroutine step2d
 
@@ -42,9 +48,12 @@
       use scalars, only: dtfast, g, iif, knew, kstp, nfast
       use roms_mpi, only: exchange_xxx
       use surf_flux, only: swflx
+      use u2dbc_mod, only: u2dbc_tile
+      use v2dbc_mod, only: v2dbc_tile
 #ifdef SOLVE3D
       use set_depth_mod, only: set_depth_tile
 #endif
+      use zetabc_mod, only: zetabc_tile
 
       implicit none
       integer istr,iend,jstr,jend, i,j, kbak, kold, icdr, cidx
@@ -573,4 +582,5 @@ c<<     &     +cff*iA_v(i,j)
       call exchange_xxx(zeta(:,:,knew),ubar(:,:,knew),vbar(:,:,knew))
 #endif
 
-      end
+      end subroutine step2d_FB_tile
+      end module step2d_mod

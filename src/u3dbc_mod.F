@@ -1,6 +1,11 @@
+      module u3dbc_mod
 #include "cppdefs.opt"
-#ifdef SOLVE3D
+      implicit none
+      private
 
+#ifdef SOLVE3D
+      public :: u3dbc_tile
+      contains
       subroutine u3dbc_tile (istr,iend,jstr,jend, grad)
 
 ! Set lateral boundary conditions for XI-component velocity
@@ -415,6 +420,8 @@
 
       end
 #else
+      contains
       subroutine u3dbc_empty
       end
 #endif /* SOLVE3D */
+      end module u3dbc_mod

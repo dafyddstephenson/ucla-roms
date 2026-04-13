@@ -152,11 +152,12 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use omega_mod, only: omega
       use rho_eos_mod, only: rho_eos
       use set_depth_mod, only: set_depth, set_HUV, set_HUV1
+      use set_scoord_mod, only: set_scoord
 #endif
 #ifdef SPONGE
       use set_nudgcof_mod, only: set_nudgcof
 #endif
-
+      use setup_grid_mod, only: setup_grid1, setup_grid2
 
       implicit none
 
@@ -393,6 +394,9 @@ CR      write(*,*)  ' -2' MYID
       use prsgrd_mod, only: prsgrd
       use rho_eos_mod, only: rho_eos
       use set_depth_mod, only: set_huv, set_huv1
+# if defined TS_DIF2 || defined TS_DIF4
+      use t3dmix_mod, only: t3dmix => t3dmix_s
+#endif
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
@@ -405,7 +409,12 @@ CR      write(*,*)  ' -2' MYID
 #ifdef LMD_MIXING
       use lmd_vmix_mod, only: lmd_vmix
 #endif
-
+      use step2d_mod, only: step2d
+      use step3d_t_mod, only: step3d_t
+      use step3d_uv_mod, only: step3d_uv1, step3d_uv2
+#  ifdef UV_VIS2
+      use visc3d_mod, only: visc3d => visc3d_s
+#endif
       implicit none
 
 
@@ -496,8 +505,9 @@ CR      write(*,*)  ' -2' MYID
       ! All of this seems to happen with Hz's from time n
       ! Corrector step
       call prsgrd
-
+#ifdef SOLVE3D
       call step3d_uv1(0)  ! update u/v(nnew) with dt*ru/rv
+#endif
 
 #  ifdef UV_VIS2
       call visc3d
@@ -516,13 +526,14 @@ CR      write(*,*)  ' -2' MYID
         call step2d
 
       enddo
-
+#ifdef SOLVE3D
       ! step3d_uv2 re-computes FlxU,FlV but still for n+1/2
       call step3d_uv2(0)
 
       call omega
 
       call step3d_t(0)
+#endif
 !GOOD
 # if defined TS_DIF2 || defined TS_DIF4
       call t3dmix

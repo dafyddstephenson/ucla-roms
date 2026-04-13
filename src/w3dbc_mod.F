@@ -1,6 +1,10 @@
+      module w3dbc_mod
 #include "cppdefs.opt"
+      implicit none
+      private
 #if defined SOLVE3D && defined NHMG
-
+      public :: w3dbc_tile
+      contains
       subroutine w3dbc_tile (istr,iend,jstr,jend,grad)
 
       use param, only: ieast, iwest, jnorth, jsouth
@@ -351,8 +355,9 @@
       end subroutine w3dbc_tile
 
 #else
-
+      contains
       subroutine w3dbc_empty
       end
 
 #endif /* SOLVE3D && NHMG */
+      end module w3dbc_mod

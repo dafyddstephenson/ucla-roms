@@ -1,4 +1,13 @@
+      module v2dbc_mod
 #include "cppdefs.opt"
+
+      implicit none
+
+      private
+
+      public :: v2dbc_tile
+
+      contains
 
       subroutine v2dbc_tile (istr,iend,jstr,jend, grad)
 
@@ -467,5 +476,6 @@ c****
       endif
 #endif
 
-      end
+      end subroutine v2dbc_tile
 
+      end module v2dbc_mod
