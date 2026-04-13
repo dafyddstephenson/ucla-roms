@@ -55,9 +55,9 @@
      &      )
       end if
       close(namelist_unit)
-
-      end subroutine read_random_nml
       record = nrpf
+      end subroutine read_random_nml
+
       subroutine init_random ![
       ! Allocate and initialize arrays.
       implicit none
