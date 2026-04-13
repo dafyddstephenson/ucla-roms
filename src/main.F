@@ -378,7 +378,7 @@ CR      write(*,*)  ' -2' MYID
       use particles, only: floats, do_particles
       use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
       use random_output, only: do_random, wrt_random
-      use cdr_output, only: do_cdr, wrt_cdr_output
+      use cdr_output, only: do_cdr, wrt_cdr
       use frc_output, only: do_frc, wrt_frc
       use zslice_output, only: do_zslice, wrt_zslice
       use basic_output, only:
@@ -564,7 +564,7 @@ CR      write(*,*)  ' -2' MYID
 
       if (do_random) call wrt_random
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
-      if (do_cdr)  call wrt_cdr_output
+      if (do_cdr)  call wrt_cdr
 #endif
       if (do_zslice) call wrt_zslice
       if (do_frc)    call wrt_frc
