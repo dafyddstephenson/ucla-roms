@@ -87,7 +87,7 @@
       type(CStarOutputVariable), allocatable, save :: cdr_varlist(:) ! TODO save? nah
 
       ! Public functions
-      public wrt_cdr_output,init_cdr_output
+      public :: wrt_cdr,init_cdr_output
 
 
 !----------------------------------------------------------------------
@@ -705,7 +705,7 @@
 #include "cdr_output.opt"
 
       ! Public functions
-      public init_cdr_output, wrt_cdr_output
+      public init_cdr_output, wrt_cdr
 
       contains
 
@@ -734,11 +734,11 @@
         call error_log%abort_check()
       end subroutine init_cdr_output !]
 
-      subroutine wrt_cdr_output ![
+      subroutine wrt_cdr ![
 !     Allocate and initialize arrays.
       implicit none
 !     Nothing happening here!
-      end subroutine wrt_cdr_output !]
+      end subroutine wrt_cdr !]
 !----------------------------------------------------------------------
 
 #endif /* MARBL && MARBL_DIAGS && CDR_FORCING */
