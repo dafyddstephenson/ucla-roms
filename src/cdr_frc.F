@@ -272,7 +272,7 @@
 
       ncdr = ncdr_parm
 
-      allocate(cdr_hsc(ncdr));      cdr_hsc(:) = 0      
+      allocate(cdr_hsc(ncdr));      cdr_hsc(:) = 0
       allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
       allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
       allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
