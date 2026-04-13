@@ -102,8 +102,8 @@
 
 !!! Variables used only for (1)
       real,public,allocatable,dimension(:)           :: cdr_vol       ! cdr volume
-      real,public,allocatable,dimension(:,:)        :: cdr_trc       ! cdr tracer concentration
-      real, allocatable, dimension(:)            :: cdr_hsc ! cdr horizontal scale
+      real,public,allocatable,dimension(:,:)         :: cdr_trc ! cdr tracer concentration
+      real, allocatable, dimension(:)                :: cdr_hsc       ! cdr horizontal scale
       real,allocatable,dimension(:)                  :: cdr_vsc       ! cdr vertical scale
       real,allocatable,dimension(:)                  :: cdr_dep       ! cdr depth
 

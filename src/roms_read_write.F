@@ -168,7 +168,9 @@
       character, public :: date_str*44, title*80
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
       character(len=max_name_size), public :: ininame,frcfile(max_frc_files),frcfile_full(max_frc_files)
-
+c$$$      namelist /SIMULATION_TITLE/ title
+c$$$      namelist /INITIAL_CONDITIONS/ ininame
+c$$$      namelist /FORCING_FILES/ frcfile
 
       public :: insert_nodes
       public :: findstr,append_date_node
@@ -195,7 +197,10 @@
 
       contains
 
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_nml_roms_read_write
+
+      end subroutine read_nml_roms_read_write
       subroutine init_output_indices  ![
       ! these indices also relate to reading input fields!
       !

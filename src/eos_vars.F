@@ -16,7 +16,15 @@
 #  ifdef SALINITY
       real Scoef, S0
 #  endif
+
+      namelist /LIN_RHO_EOS_SETTINGS/ Tcoef, T0
+#ifdef SALINITY
+     &     , Scoef, S0
+#endif
+
 # endif
+
+
 
 # ifdef SPLIT_EOS
       real,allocatable,dimension(:,:,:) :: rho1

@@ -6,12 +6,11 @@
       use compile_time_switches, only: do_extract, wrt_file_rst
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_double
+      use extract_data, only: extract_data_precheck
 #if defined(MARBL) || defined(BIOLOGY_BEC2)
       use bgc_shared_vars, only: bgc_precheck
 #endif
-      use extract_data, only:  extract_data_precheck
       use basic_output, only:  output_period_rst
-
       implicit none
       private
 

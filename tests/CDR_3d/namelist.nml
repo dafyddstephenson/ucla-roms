@@ -1,4 +1,117 @@
 !================================================================================
+!                               READ INP MIGRATION
+!================================================================================
+!#ifndef ANA_GRID
+&GRID_SETTINGS
+!      use dimensions, only: grdname
+grdname = "input_data/example_input_grid.nc"
+/
+
+!ifndef NONLIN_EOS
+&LIN_RHO_EOS_SETTINGS ! in eos_vars
+Tcoef = 0.2
+T0 = 1.0
+Scoef = 0.822 !ifdef SALINITY
+S0 = 1.0
+/
+
+&OUTPUT_ROOT_NAME ! instant_output.F
+instant_root_name = "roms"
+/
+
+&MARBL_BIOGEOCHEMISTRY_SETTINGS ! in marbl_driver.F
+marbl_namelist_fname = "marbl_in"
+marbl_tracer_list_fname = "marbl_tracer_output_list"
+marbl_diag_list_fname = "marbl_diagnostics_output_list"
+/
+
+&SIMULATION_TITLE
+!      use roms_read_write, only: title
+title = "roms_run"
+/
+
+&INITIAL_CONDITIONS
+!      use roms_read_write, only: nrrec, ininame
+ininame = "initial_conditions.nc""
+/
+
+&FORCING_FILES
+! force_files in roms_read_write but reading is more complex/more imports in read_inp
+/
+
+!if !defined EW_PERIODIC || !defined NS_PERIODIC
+&GAMMA2
+!      use scalars, only: gamma2
+/
+
+!ifdef TS_DIF2
+&TRACER_DIFF2
+!      use scalars, only: nt, tnu2
+/
+
+
+&BOTTOM_DRAG
+!      use scalars, only: rdrg, rdrg2, zob
+/
+
+!ifdef SOLVE3D
+&VERTICAL_MIXING
+!      use scalars, only: akv_bak, akt_bak, nt
+/
+
+!ifdef MY25_MIXING
+&MY_BAK_MIXING
+! akq_bak is in scalars
+/
+
+!ifdef UV_VIS2
+&LATERAL_VISC
+!      use scalars, only: visc2
+/
+
+&TIME_STEPPING
+!      use scalars, only: dt, dtfast, ndtfast, ntimes, ninfo
+/
+
+!if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
+!  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
+!                       || defined M3NUDGING  || defined WKB_FRC_BRY
+&UBIND
+!      use scalars, only: ubind
+/
+
+!#ifdef SPONGE
+&V_SPONGE
+!      use scalars, only: v_sponge
+/
+
+!ifdef SOLVE3D
+&S_COORD
+!      use scoord, only: hc, theta_b, theta_s
+/
+
+&RHO0
+/
+!/* SOLVE3D */
+
+!if defined SFLX_CORR && defined SALINITY
+&SSS_CORRECTION
+! dSSSdt is in surf_flux.F
+/
+
+!ifdef QCORRECTION
+&SST_CORRECTION
+! dSSTdt is in surf_flux.F
+/
+!/* SOLVE3D */
+
+!!if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
+!&CLIMATOLOGY
+!! clm_file is set by read_inp_mod but never used
+!/
+
+
+!================================================================================
 !                               BIOGEOCHEMISTRY
 !================================================================================
 ! Formerly in `bgc.opt`. Require MARBL or BIOLOGY_BEC2 cpp keys to take effect

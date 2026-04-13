@@ -74,6 +74,11 @@
      &                   'marbl_diagnostic_output_list'
 #endif
 
+      namelist /MARBL_BIOGEOCHEMISTRY_SETTINGS/ marbl_namelist_fname,
+     &     marbl_tracer_list_fname
+#ifdef MARBL_DIAGS
+     &     , marbl_diag_list_fname
+#endif
 
 !     Surface flux forcing variable indices (-1 means unused,default)
       integer,public ::    u10_sqr_ind=-1,       sss_ind=-1,      sst_ind=-1,

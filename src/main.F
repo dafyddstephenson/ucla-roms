@@ -12,6 +12,7 @@
       use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
       use init_scalars_mod, only: init_scalars
+      use namelist_read_mod, only: read_namelists
 #ifdef PARALLEL_IO
       use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
 #endif
@@ -34,6 +35,7 @@ C$    ierr=0
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
 
+      call read_namelists
       call read_inp
 
       call mpi_setup

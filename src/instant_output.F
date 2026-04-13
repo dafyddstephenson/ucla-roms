@@ -37,7 +37,7 @@
       end interface
 
       character(len=256),public :: instant_root_name
-
+      namelist /OUTPUT_ROOT_NAME/ instant_root_name
       ! Public functions
       public wrt_instant
 

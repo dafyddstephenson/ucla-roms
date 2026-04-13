@@ -160,6 +160,8 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
 #endif /* BEC2_DIAG  || MARBL_DIAGS */
 
+      public bgc_precheck
+
       contains
 
       subroutine bgc_precheck
