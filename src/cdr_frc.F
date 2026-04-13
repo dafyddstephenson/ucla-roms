@@ -101,11 +101,11 @@
 
 
       !!! Variables used only for (1)
-      real,public,allocatable,dimension(:)           :: cdr_vol       ! cdr volume
-      real,public,allocatable,dimension(:,:)        :: cdr_trc       ! cdr tracer concentration
-      real,allocatable,dimension(:)                  :: cdr_hsc       ! cdr horizontal scale
-      real,allocatable,dimension(:)                  :: cdr_vsc       ! cdr vertical scale
-      real,allocatable,dimension(:)                  :: cdr_dep       ! cdr depth
+      real,public,dimension(ncdr_parm)           :: cdr_vol       ! cdr volume
+      real,public,dimension(ncdr_parm,nt)        :: cdr_trc       ! cdr tracer concentration
+      real, allocatable, dimension(:)            :: cdr_hsc       ! cdr horizontal scale
+      real,dimension(ncdr_parm)                  :: cdr_vsc       ! cdr vertical scale
+      real,dimension(ncdr_parm)                  :: cdr_dep       ! cdr depth
 
       !!! Variables used only for (2)
       real, allocatable, dimension(:,:,:)        :: cdr_flx_dp    ! cdr tracer flux (depth profile)
@@ -281,6 +281,7 @@
 
       allocate(cdr_flx_dp(ncdr,2,N_src));  cdr_flx_dp(:,:,:) = 0
       allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
+      allocate(cdr_hsc(ncdr));             cdr_hsc(:) = 0
       allocate(cdr_lon(ncdr));             cdr_lon(:) = 0
       allocate(cdr_lat(ncdr));             cdr_lat(:) = 0
       allocate(cdr_flx(ncdr,nt));          cdr_flx(:,:) = 0
@@ -331,12 +332,7 @@
 
       ncdr = ncdr_parm
 
-      allocate(cdr_vol(ncdr_parm))
-      allocate(cdr_trc(ncdr_parm,nt))
-      allocate(cdr_hsc(ncdr_parm))
-      allocate(cdr_vsc(ncdr_parm))
-      allocate(cdr_dep(ncdr_parm))
-
+      allocate(cdr_hsc(ncdr));      cdr_hsc(:) = 0
       allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
       allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
       allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
@@ -408,17 +404,13 @@
         endif
 
 
-! Handler for single-point release
-        if (forcing_depth_profiles) then
-           if (mynode == global_minloc(2)) then
-              frac(lmi(1),lmi(2),icdr) = 1
-              cidx = cidx+1
-           endif
-        else if ((forcing_parameterized) .and. (cdr_hsc(icdr) ==0)) then
-           if (mynode == global_minloc(2)) then
-              frac(lmi(1),lmi(2),icdr) = 1
-              cidx = cidx+1
-           endif
+        ! Handler for single-point release
+        if ((forcing_depth_profiles) .or. (cdr_hsc(icdr) == 0)) then
+          if (mynode == global_minloc(2)) then
+            frac(lmi(1),lmi(2),icdr) = 1
+            cidx = cidx+1
+          endif
+        ! Handler for nonzero hscl
         else
           call ll2dist(lonr,latr,cdr_lon(icdr),cdr_lat(icdr),dist);
           frac(:,:,icdr) = exp(-(dist/cdr_hsc(icdr))**2)
