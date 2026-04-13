@@ -65,7 +65,7 @@
       !!! Variables used only for (1)
       real,public,dimension(ncdr_parm)           :: cdr_vol       ! cdr volume
       real,public,dimension(ncdr_parm,nt)        :: cdr_trc       ! cdr tracer concentration
-      real,dimension(ncdr_parm)                  :: cdr_hsc       ! cdr horizontal scale
+      real, allocatable, dimension(:)            :: cdr_hsc       ! cdr horizontal scale
       real,dimension(ncdr_parm)                  :: cdr_vsc       ! cdr vertical scale
       real,dimension(ncdr_parm)                  :: cdr_dep       ! cdr depth
 
@@ -221,6 +221,7 @@
 
       allocate(cdr_flx_dp(ncdr,2,N_src));  cdr_flx_dp(:,:,:) = 0
       allocate(cdr_hz(ncdr,N_src));        cdr_hz(:,:) = 0
+      allocate(cdr_hsc(ncdr));             cdr_hsc(:) = 0
       allocate(cdr_lon(ncdr));             cdr_lon(:) = 0
       allocate(cdr_lat(ncdr));             cdr_lat(:) = 0
       allocate(cdr_flx(ncdr,nt));          cdr_flx(:,:) = 0
@@ -271,6 +272,7 @@
 
       ncdr = ncdr_parm
 
+      allocate(cdr_hsc(ncdr));      cdr_hsc(:) = 0
       allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
       allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
       allocate(cdr_flx(ncdr,nt));   cdr_flx(:,:) = 0
@@ -343,7 +345,7 @@
 
 
         ! Handler for single-point release
-        if ((cdr_hsc(icdr) == 0) .or. (forcing_depth_profiles)) then
+        if ((forcing_depth_profiles) .or. (cdr_hsc(icdr) == 0)) then
           if (mynode == global_minloc(2)) then
             frac(lmi(1),lmi(2),icdr) = 1
             cidx = cidx+1
