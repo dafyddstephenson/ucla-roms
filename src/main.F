@@ -104,7 +104,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
-      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc,
+      use compile_time_switches, only: do_cdr_output, diag_uv, diag_trc,
      &     wrt_frc, floats, do_random, ub_tune, do_upscale
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
@@ -347,7 +347,7 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc(.true.)
 #endif
       if (do_random) call init_random
-      if (wrt_cdr)  call init_cdr_output
+      if (do_cdr_output)  call init_cdr_output
       if (do_upscale) then
         call init_upscale
       endif
@@ -372,19 +372,20 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
+      use compile_time_switches, only: do_cdr_output, diag_uv, diag_trc, do_extract,
      &     wrt_frc, floats, do_random, ub_tune, wrt_smflx, wrt_stflx,
-     &     bry_tides, pot_tides, do_zslice
+     &     bry_tides, pot_tides, do_zslice, do_cdr_output
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
      &     nstp, ntstart, sec2day, start_time, tdays, time
+
       use sponge_tune, only: adjust_orlanski
       use particles, only: do_particles
       use surf_flux, only: wrt_sflux
       use random_output, only: wrt_random
-      use cdr_output, only:  wrt_cdr_output
+      use cdr_output, only:  wrt_cdr
       use frc_output, only:  wrt_frc_output
       use zslice_output, only: wrt_zslice
       use basic_output, only:
@@ -579,7 +580,7 @@ CR      write(*,*)  ' -2' MYID
 
       if (do_random) call wrt_random
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
-      if (wrt_cdr)  call wrt_cdr_output
+      if (do_cdr_output)  call wrt_cdr
 #endif
       if (do_zslice) call wrt_zslice
       if (wrt_frc)    call wrt_frc_output

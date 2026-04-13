@@ -50,7 +50,7 @@ module compile_time_switches
   ! Formerly in `cdr_output.opt` or `cstar_output.opt`
   ! Require CDR_OUTPUT cpp key to take effect.
   !================================================================================
-  logical,parameter :: wrt_cdr   = .false. ! on/off switch for CDR-specific output
+  logical,parameter :: do_cdr_output   = .false. ! on/off switch for CDR-specific output
   logical,parameter :: wrt_cdr_avg   = .true. ! Write averages (T) or snapshots(F)
   ! Write averages over calendar months:
   logical,parameter :: cdr_monthly_averages = .false.
