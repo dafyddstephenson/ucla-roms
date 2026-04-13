@@ -100,12 +100,12 @@
       real, allocatable, dimension(:)             :: cdr_lat      ! latitude of cdr location
 
 
-      !!! Variables used only for (1)
-      real,public,dimension(ncdr_parm)           :: cdr_vol       ! cdr volume
-      real,public,dimension(ncdr_parm,nt)        :: cdr_trc       ! cdr tracer concentration
-      real, allocatable, dimension(:)            :: cdr_hsc       ! cdr horizontal scale
-      real,dimension(ncdr_parm)                  :: cdr_vsc       ! cdr vertical scale
-      real,dimension(ncdr_parm)                  :: cdr_dep       ! cdr depth
+!!! Variables used only for (1)
+      real,public,allocatable,dimension(:)           :: cdr_vol       ! cdr volume
+      real,public,allocatable,dimension(:,:)        :: cdr_trc       ! cdr tracer concentration
+      real, allocatable, dimension(:)            :: cdr_hsc ! cdr horizontal scale
+      real,allocatable,dimension(:)                  :: cdr_vsc       ! cdr vertical scale
+      real,allocatable,dimension(:)                  :: cdr_dep       ! cdr depth
 
       !!! Variables used only for (2)
       real, allocatable, dimension(:,:,:)        :: cdr_flx_dp    ! cdr tracer flux (depth profile)
@@ -331,7 +331,10 @@
       ! local
 
       ncdr = ncdr_parm
-
+      allocate(cdr_vol(ncdr_parm)) ; cdr_vol(:) = 0
+      allocate(cdr_trc(ncdr_parm,nt)); cdr_trc(:,:) = 0
+      allocate(cdr_vsc(ncdr_parm)); cdr_vsc(:) = 0
+      allocate(cdr_dep(ncdr_parm)); cdr_vsc(:) = 0
       allocate(cdr_hsc(ncdr));      cdr_hsc(:) = 0
       allocate(cdr_lon(ncdr));      cdr_lon(:) = 0
       allocate(cdr_lat(ncdr));      cdr_lat(:) = 0
