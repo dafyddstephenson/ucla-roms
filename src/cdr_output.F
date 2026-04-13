@@ -87,7 +87,7 @@
       type(CStarOutputVariable), allocatable, save :: cdr_varlist(:) ! TODO save? nah
 
       ! Public functions
-      public wrt_cdr_output,init_cdr_output
+      public wrt_cdr,init_cdr_output
 
 
 !----------------------------------------------------------------------
