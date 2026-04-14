@@ -67,6 +67,7 @@
 
       public set_river_frc
       public init_river_frc
+      public read_river_nml
 
       contains
 
@@ -81,7 +82,6 @@
       implicit none
 
       if (.not. init_riv_done) then
-         call read_river_nml
          allocate(riv_vol(nriv));    riv_vol = 0.0
          allocate(riv_trc(nriv,nt)); riv_trc = 0.0
          allocate(nc_rvol%vdata(nriv,1 ,2))

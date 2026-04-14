@@ -104,7 +104,7 @@
 
 #endif
 
-      public init_upscale, wrt_upscale, calc_forcing_rates
+      public init_upscale, wrt_upscale, calc_forcing_rates, read_upscale_nml
 
       contains
 !     ----------------------------------------------------------------------
@@ -151,7 +151,6 @@
       if (done) then
         return
       else
-         call read_upscale_nml
 #ifndef OBC_TSPECIFIED
         if (mynode == 0) then
           print *, 'WARNING: Upscale output is requested, but ',

@@ -116,6 +116,7 @@
       public :: wrt_rst_ocean_vars
       public :: init_avg_arrays
       public :: init_restarts
+      public :: read_basic_output_nml
 
       contains                  !]
 
@@ -162,7 +163,6 @@
       character(len=15) :: sr_name = "init_avg_arrays"
       character(len=1024) :: error_info
 
-      call read_basic_output_nml
 
       if (wrt_file_his .and. mod(output_period_his, dt) /= 0) then
          write(error_info, *)

@@ -160,7 +160,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
 #endif /* BEC2_DIAG  || MARBL_DIAGS */
 
-      public bgc_precheck
+      public bgc_precheck, read_bgc_nml
 
       contains
 
@@ -291,7 +291,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
       subroutine init_arrays_bgc_shared_vars
       implicit none
-      call read_bgc_nml
+
 #if defined(BEC2_DIAG) || defined (MARBL_DIAGS)
       call find_write_bgc_diag
       call display_bgc_output_settings_to_terminal

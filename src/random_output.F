@@ -29,7 +29,7 @@
       integer :: record = 0 ! to trigger the first file creation
 
       ! Public functions
-      public wrt_random,init_random
+      public wrt_random,init_random, read_random_nml
 
       contains
 
@@ -70,7 +70,7 @@
       else
         done = .true.
       endif
-      call read_random_nml
+
       ! put the relevant part of your code here
 
       if (mynode==0) print *,'init random'

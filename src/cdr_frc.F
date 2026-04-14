@@ -118,7 +118,7 @@
       real,public,allocatable,dimension(:,:,:)   :: cdr_flx_3d_ALK    ! 3d cdr tracer flux for ALK
       real,public,allocatable,dimension(:,:,:)   :: cdr_flx_3d_DIC    ! 3d cdr tracer flux for DIC
 
-      public set_cdr_frc
+      public set_cdr_frc, read_cdr_frc_nml
 
       contains
 
@@ -200,8 +200,6 @@
       integer      :: ierr, type_count =0
       integer      :: ncid
       character(1) :: tmp1
-
-      call read_cdr_frc_nml
 
       ! Check if we selected too many forcing types
       if (forcing_depth_profiles) type_count = type_count+1

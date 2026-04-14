@@ -165,6 +165,7 @@
       public do_diagnostics
       public set_diags_u_4th_adv
       public set_diags_v_4th_adv
+      public read_diagnostics_nml
            !]
 
       contains
@@ -194,8 +195,6 @@
 
       ! local
       integer :: itrc,idx
-
-      call read_diagnostics_nml
 
       if (diag_uv) then
         allocate(Udiag(nx,ny,nz,nmd) )

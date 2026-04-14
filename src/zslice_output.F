@@ -54,7 +54,7 @@
       real,allocatable,dimension(:,:) :: var_zlv
 
       ! Public functions
-      public wrt_zslice
+      public wrt_zslice, read_zslice_nml
 
       contains
 
@@ -89,7 +89,6 @@
 
       integer m
 
-      call read_zslice_nml
 
       if (wrt_T_zsl)  then
           allocate( Tz(GLOBAL_2D_ARRAY,ndep,nt_z) )

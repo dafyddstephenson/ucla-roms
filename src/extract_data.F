@@ -175,7 +175,7 @@
         module procedure  interpolate_2D, interpolate_3D
       end interface
 
-      public do_extract_data, extract_data_precheck
+      public do_extract_data, extract_data_precheck, read_extract_nml
       contains
 !     ----------------------------------------------------------------------
       subroutine extract_data_precheck
@@ -186,7 +186,6 @@
       character(len=1024) :: error_info
       real :: extract_newfile_freq
 
-      call read_extract_nml
 
       if (wrt_file_rst .and. do_extract) then
         extract_newfile_freq = nrpf_extract * extract_period

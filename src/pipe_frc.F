@@ -54,6 +54,7 @@
 
       public set_pipe_frc
       public init_arrays_pipes
+      public read_pipe_nml
 
       contains
 
@@ -216,8 +217,6 @@
       implicit none
 
       character(len=30) :: string
-
-      call read_pipe_nml
 
       allocate( pipe_idx(GLOBAL_2D_ARRAY) );      pipe_idx=0.
       allocate( pidx_real(GLOBAL_2D_ARRAY) );     pidx_real=0.

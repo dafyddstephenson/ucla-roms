@@ -105,7 +105,7 @@
       integer :: rn_s, rn_w, rn_n, rn_e                       ! received msg buffer size
       integer :: rn_sw,rn_se,rn_nw,rn_ne
 
-      public do_particles,init_particles
+      public do_particles,init_particles,read_particles_nml
 
       contains
 !-------------------------------------------------
@@ -174,7 +174,6 @@
       real    :: h_mn,dx_mn,dy_mn,est_np
       real    :: hvol
 
-      call read_particles_nml
       allocate(Wp(0:nx+1,0:ny+1,0:nz)) ! total vertical flux in m/s
       allocate(zw(0:nz));
 

@@ -29,7 +29,7 @@
       real, dimension(:,:,:),allocatable :: ptide_r,ptide_i
       real, public,dimension(:,:),  allocatable :: ptide
 
-      public set_tides
+      public set_tides, read_tides_nml
 
       contains
 
@@ -67,7 +67,7 @@
       if (.not.pot_tides.and..not.bry_tides) then
          return
       endif
-      call read_tides_nml
+
       allocate(ftide(ntides))
 
       if (bry_tides) then

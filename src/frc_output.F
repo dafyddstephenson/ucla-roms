@@ -69,7 +69,7 @@
       integer,parameter :: prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
 
       ! Misc:
-      public :: init_frc_output, wrt_frc_output
+      public :: init_frc_output, wrt_frc_output, read_frc_output_nml
 
       contains
 !     ----------------------------------------------------------------------
@@ -105,7 +105,7 @@
       logical,save :: done=.false.
       integer :: itot=0
       integer :: idx
-      call read_frc_output_nml
+
       if (done) then
         return
       else

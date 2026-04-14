@@ -39,6 +39,7 @@
       public calc_pressure_flux
       public get_init_slow
       public wrt_rst_diag_slow
+      public read_pflx_nml
 
       contains
 !     ----------------------------------------------------------------------
@@ -63,8 +64,6 @@
       subroutine init_pflx  ![
 
       implicit none
-
-      call read_pflx_nml
 
       if (calc_pflx) then
 

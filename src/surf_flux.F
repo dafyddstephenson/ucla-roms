@@ -82,6 +82,7 @@
       public set_surf_field_corr
       public wrt_sflux
       public apply_surf_field_corr
+      public read_surf_flx_nml
 
       contains
 
@@ -114,8 +115,6 @@
       use error_handling_mod, only: error_log
       use scalars, only: init, nt
       implicit none
-
-      call read_surf_flx_nml
 
       ! local
       allocate( uwnd  (GLOBAL_2D_ARRAY)     ); uwnd = 0

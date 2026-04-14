@@ -1,9 +1,7 @@
 !================================================================================
 !                               READ INP MIGRATION
 !================================================================================
-!#ifndef ANA_GRID
-&GRID_SETTINGS
-!      use dimensions, only: grdname
+&GRID_SETTINGS !(in dimensions, ifndef ANA_GRID)
 grdname = "input_data/example_input_grid.nc"
 /
 
@@ -291,8 +289,8 @@ output_period_uscl = 100
 output_period = 1200
 nrpf = 72
 ndep = 6
-vecdep = (/-2.0, -15.0, -30.0, -60.0, -120.0, -250.0/) ! depths slice
+vecdep = -2.0, -15.0, -30.0, -60.0, -120.0, -250.0
 nt_z = 2
-trc2zsc = (/1, 2/)
+trc2zsc = 1, 2
 /
 

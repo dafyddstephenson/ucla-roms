@@ -67,6 +67,7 @@
       public init_orlanski_tune
       public wrt_rst_ub
       public get_init_ub
+      public read_sponge_tune_nml
 
       contains
 
@@ -103,7 +104,6 @@
 
       ! local
       integer :: i
-      call read_sponge_tune_nml
 
       if (.not.calc_pflx.and.mynode==0) then
         print *,'For Orlanski tuning,'
