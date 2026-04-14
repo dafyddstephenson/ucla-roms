@@ -54,16 +54,16 @@
       real,allocatable,dimension(:,:) :: var_zlv
 
       ! Public functions
-      public wrt_zslice, read_zslice_nml
+      public wrt_zslice, read_nml_zslice
 
       contains
 
 !----------------------------------------------------------------------
-      subroutine read_zslice_nml
+      subroutine read_nml_zslice
 
 !     Read the "ZSLICE_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_zslice_nml"
+      character(len=20) :: sr_name = "read_nml_zslice"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -81,7 +81,7 @@
       end if
       close(namelist_unit)
       record = nrpf
-      end subroutine read_zslice_nml
+      end subroutine read_nml_zslice
 
       subroutine init_zslice ![
       ! Allocate and initialize arrays.

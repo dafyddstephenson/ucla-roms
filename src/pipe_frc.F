@@ -54,15 +54,15 @@
 
       public set_pipe_frc
       public init_arrays_pipes
-      public read_pipe_nml
+      public read_nml_pipe
 
       contains
 
-      subroutine read_pipe_nml
+      subroutine read_nml_pipe
 !     Read the "PIPE_FRC_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
-      character(len=14) :: sr_name = "read_pipe_nml"
+      character(len=14) :: sr_name = "read_nml_pipe"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=PIPE_FRC_SETTINGS, iostat=ios)
@@ -74,7 +74,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_pipe_nml
+      end subroutine read_nml_pipe
 
 ! ----------------------------------------------------------------------
       subroutine set_pipe_frc  ![

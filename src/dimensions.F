@@ -41,14 +41,14 @@
       logical,parameter,public :: analytical_grid = .false.
 # endif
 
-      public :: init_dimensions, read_grid_nml
+      public :: init_dimensions, read_nml_grid
       character(len=10) :: module_name = "dimensions"
       character(len=256), public :: grdname = "roms_grid.nc"
       namelist /GRID_SETTINGS/ grdname
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_grid_nml
+      subroutine read_nml_grid
       use param, only: mynode, nsize
       use error_handling_mod, only: error_log
       use namelist_mod, only: open_namelist_file
@@ -57,7 +57,7 @@
       integer ::  namelist_unit, ios, lstr
       integer :: testunit
 c$$$      character(len=256) :: fname
-      character(len=20) :: sr_name = "read_grid_nml"
+      character(len=20) :: sr_name = "read_nml_grid"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -95,7 +95,7 @@ c$$$      character(len=256) :: fname
 
       close(namelist_unit)
 
-      end subroutine read_grid_nml
+      end subroutine read_nml_grid
 
       subroutine init_dimensions  ![
       implicit none

@@ -29,16 +29,16 @@
       integer :: record = 0 ! to trigger the first file creation
 
       ! Public functions
-      public wrt_random,init_random, read_random_nml
+      public wrt_random,init_random, read_nml_random
 
       contains
 
 !----------------------------------------------------------------------
-      subroutine read_random_nml
+      subroutine read_nml_random
 
 !     Read the "RANDOM_OUTPUT_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_random_nml"
+      character(len=20) :: sr_name = "read_nml_random"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -56,7 +56,7 @@
       end if
       close(namelist_unit)
       record = nrpf
-      end subroutine read_random_nml
+      end subroutine read_nml_random
 
       subroutine init_random ![
       ! Allocate and initialize arrays.

@@ -175,7 +175,7 @@
         module procedure  interpolate_2D, interpolate_3D
       end interface
 
-      public do_extract_data, extract_data_precheck, read_extract_nml
+      public do_extract_data, extract_data_precheck, read_nml_extract
       contains
 !     ----------------------------------------------------------------------
       subroutine extract_data_precheck
@@ -206,11 +206,11 @@
       end subroutine extract_data_precheck
 
 
-      subroutine read_extract_nml
+      subroutine read_nml_extract
 !     Read the "EXTRACT_DATA_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
-      character(len=17) :: sr_name = "read_extract_nml"
+      character(len=17) :: sr_name = "read_nml_extract"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=EXTRACT_DATA_SETTINGS, iostat=ios)
@@ -222,7 +222,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_extract_nml
+      end subroutine read_nml_extract
 
       subroutine init_extract_data  ![
       ! Allocate space and compute interpolation coefficients

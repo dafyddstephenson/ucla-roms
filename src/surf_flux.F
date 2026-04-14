@@ -82,16 +82,16 @@
       public set_surf_field_corr
       public wrt_sflux
       public apply_surf_field_corr
-      public read_surf_flx_nml
+      public read_nml_surf_flx
 
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_surf_flx_nml
+      subroutine read_nml_surf_flx
 
 !     Read the "SURF_FLX_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_surf_flx_nml"
+      character(len=20) :: sr_name = "read_nml_surf_flx"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -109,7 +109,7 @@
       end if
       close(namelist_unit)
       record = nrpf
-      end subroutine read_surf_flx_nml
+      end subroutine read_nml_surf_flx
 
       subroutine init_arrays_surf_flx ![
       use error_handling_mod, only: error_log

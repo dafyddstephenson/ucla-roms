@@ -105,15 +105,15 @@
       integer :: rn_s, rn_w, rn_n, rn_e                       ! received msg buffer size
       integer :: rn_sw,rn_se,rn_nw,rn_ne
 
-      public do_particles,init_particles,read_particles_nml
+      public do_particles,init_particles,read_nml_particles
 
       contains
 !-------------------------------------------------
-      subroutine read_particles_nml
+      subroutine read_nml_particles
 
 !     Read the "PARTICLES_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_particles_nml"
+      character(len=20) :: sr_name = "read_nml_particles"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -131,7 +131,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_particles_nml
+      end subroutine read_nml_particles
 
       subroutine do_particles![
       implicit none

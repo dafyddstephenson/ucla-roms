@@ -118,7 +118,7 @@
       real,public,allocatable,dimension(:,:,:)   :: cdr_flx_3d_ALK    ! 3d cdr tracer flux for ALK
       real,public,allocatable,dimension(:,:,:)   :: cdr_flx_3d_DIC    ! 3d cdr tracer flux for DIC
 
-      public set_cdr_frc, read_cdr_frc_nml
+      public set_cdr_frc, read_nml_cdr_frc
 
       contains
 
@@ -169,11 +169,11 @@
 
       end subroutine set_cdr_frc !]
 
-      subroutine read_cdr_frc_nml
+      subroutine read_nml_cdr_frc
 
 !     Read the "CDR_FRC_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=17) :: sr_name = "read_cdr_frc_nml"
+      character(len=17) :: sr_name = "read_nml_cdr_frc"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=CDR_FRC_SETTINGS, iostat=ios)
@@ -186,7 +186,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_cdr_frc_nml
+      end subroutine read_nml_cdr_frc
 
 ! ----------------------------------------------------------------------
       subroutine init_cdr_frc  ![

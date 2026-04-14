@@ -116,15 +116,15 @@
       public :: wrt_rst_ocean_vars
       public :: init_avg_arrays
       public :: init_restarts
-      public :: read_basic_output_nml
+      public :: read_nml_basic_output
 
       contains                  !]
 
-      subroutine read_basic_output_nml
+      subroutine read_nml_basic_output
 
 !     Read the "BASIC_OUTPUT_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_basic_output_nml"
+      character(len=20) :: sr_name = "read_nml_basic_output"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -142,7 +142,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_basic_output_nml
+      end subroutine read_nml_basic_output
 
 !----------------------------------------------------------------------
       subroutine init_restarts  ![

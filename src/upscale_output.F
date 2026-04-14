@@ -104,15 +104,15 @@
 
 #endif
 
-      public init_upscale, wrt_upscale, calc_forcing_rates, read_upscale_nml
+      public init_upscale, wrt_upscale, calc_forcing_rates, read_nml_upscale
 
       contains
 !     ----------------------------------------------------------------------
-      subroutine read_upscale_nml
+      subroutine read_nml_upscale
 
 !     Read the "UPSCALE_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_upscale_nml"
+      character(len=20) :: sr_name = "read_nml_upscale"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -131,7 +131,7 @@
       close(namelist_unit)
       record_uscl = nrpf_uscl
       otime = output_period_uscl
-      end subroutine read_upscale_nml
+      end subroutine read_nml_upscale
 
       subroutine init_upscale ![
       ! Allocate and initialize arrays.

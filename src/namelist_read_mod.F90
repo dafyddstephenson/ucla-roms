@@ -21,68 +21,68 @@ contains
 
   subroutine read_namelists
 #ifndef ANA_GRID
-    use dimensions, only: read_grid_nml
+    use dimensions, only: read_nml_grid
 #endif
 #if defined(MARBL) || defined(BIOLOGY_BEC2)
-    use bgc_shared_vars, only: read_bgc_nml
+    use bgc_shared_vars, only: read_nml_bgc
 #endif
 #if defined MARBL && defined CDR_FORCING
-    use cdr_frc, only: read_cdr_frc_nml
+    use cdr_frc, only: read_nml_cdr_frc
 #endif
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
     use cdr_output, only: read_cdr_output_nml
 #endif
 #ifdef DIAGNOSTICS
-    use diagnostics, only: read_diagnostics_nml
+    use diagnostics, only: read_nml_diagnostics
 #endif
-    use basic_output, only: read_basic_output_nml
-    use calc_pflx_mod, only: read_pflx_nml
-    use extract_data, only: read_extract_nml
-    use frc_output, only: read_frc_output_nml
-    use particles, only: read_particles_nml
-    use pipe_frc, only: read_pipe_nml
-    use random_output, only: read_random_nml
-    use river_frc, only: read_river_nml
-    use sponge_tune, only: read_sponge_tune_nml
-    use surf_flux, only: read_surf_flx_nml
-    use tides, only: read_tides_nml
+    use basic_output, only: read_nml_basic_output
+    use calc_pflx_mod, only: read_nml_pflx
+    use extract_data, only: read_nml_extract
+    use frc_output, only: read_nml_frc_output
+    use particles, only: read_nml_particles
+    use pipe_frc, only: read_nml_pipe
+    use random_output, only: read_nml_random
+    use river_frc, only: read_nml_river
+    use sponge_tune, only: read_nml_sponge_tune
+    use surf_flux, only: read_nml_surf_flx
+    use tides, only: read_nml_tides
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
-    use upscale_output, only: read_upscale_nml
+    use upscale_output, only: read_nml_upscale
 #endif
-    use zslice_output, only: read_zslice_nml
+    use zslice_output, only: read_nml_zslice
 
     implicit none
 
 #ifndef ANA_GRID
-    call read_grid_nml
+    call read_nml_grid
 #endif
 #if defined(MARBL) || defined(BIOLOGY_BEC2)
-    call read_bgc_nml
+    call read_nml_bgc
 #endif
 #if defined MARBL && defined CDR_FORCING
-    call read_cdr_frc_nml
+    call read_nml_cdr_frc
 #endif
 #ifdef DIAGNOSTICS
-    call read_diagnostics_nml
+    call read_nml_diagnostics
 #endif
-    call read_basic_output_nml
-    call read_pflx_nml
+    call read_nml_basic_output
+    call read_nml_pflx
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
     call read_cdr_output_nml
 #endif
-    call read_extract_nml
-    call read_frc_output_nml
-    call read_particles_nml
-    call read_pipe_nml
-    call read_random_nml
-    call read_river_nml
-    call read_sponge_tune_nml
-    call read_surf_flx_nml
-    call read_tides_nml
+    call read_nml_extract
+    call read_nml_frc_output
+    call read_nml_particles
+    call read_nml_pipe
+    call read_nml_random
+    call read_nml_river
+    call read_nml_sponge_tune
+    call read_nml_surf_flx
+    call read_nml_tides
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
-    call read_upscale_nml
+    call read_nml_upscale
 #endif
-    call read_zslice_nml
+    call read_nml_zslice
 
   end subroutine read_namelists
 

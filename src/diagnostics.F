@@ -165,16 +165,16 @@
       public do_diagnostics
       public set_diags_u_4th_adv
       public set_diags_v_4th_adv
-      public read_diagnostics_nml
+      public read_nml_diagnostics
            !]
 
       contains
 
-      subroutine read_diagnostics_nml
+      subroutine read_nml_diagnostics
 !     Read the "DIAGNOSTICS_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
-      character(len=21) :: sr_name = "read_diagnostics_nml"
+      character(len=21) :: sr_name = "read_nml_diagnostics"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=DIAGNOSTICS_SETTINGS, iostat=ios)
@@ -186,7 +186,7 @@
       end if
       close(namelist_unit)
       record = nrpf
-      end subroutine read_diagnostics_nml
+      end subroutine read_nml_diagnostics
 
 ! ----------------------------------------------------------------------
       subroutine init_diagnostics ![
