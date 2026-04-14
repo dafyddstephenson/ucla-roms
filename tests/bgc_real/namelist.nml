@@ -14,6 +14,7 @@ S0 = 1.0
 
 &SIMULATION_NAME_SETTINGS ! roms_read_write.F
 output_root_name = "roms"
+title = "my roms run"
 /
 
 &MARBL_BIOGEOCHEMISTRY_SETTINGS ! in marbl_driver.F

@@ -95,7 +95,6 @@
       integer, target :: test_var
       integer, parameter, public :: max_name_size=256
       character(len=max_name_size), public  :: output_root_name
-      namelist /SIMULATION_NAME_SETTINGS/ output_root_name
       ! Dimension names for in and output in netcdf files
       ! All dimension names need to be strings of 7 characters
 !     character(len=7), public,parameter  :: xdim = 'xi_rho '
@@ -168,6 +167,8 @@
       character, public :: date_str*44, title*80
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
       character(len=max_name_size), public :: ininame,frcfile(max_frc_files),frcfile_full(max_frc_files)
+      namelist /SIMULATION_NAME_SETTINGS/ output_root_name, title
+
 c$$$      namelist /SIMULATION_TITLE/ title
 c$$$      namelist /INITIAL_CONDITIONS/ ininame
 c$$$      namelist /FORCING_FILES/ frcfile
