@@ -5,16 +5,15 @@
 grdname = "input_data/example_input_grid.nc"
 /
 
-!ifndef NONLIN_EOS
-&LIN_RHO_EOS_SETTINGS ! in eos_vars
+&LIN_RHO_EOS_SETTINGS
 Tcoef = 0.2
 T0 = 1.0
-Scoef = 0.822 !ifdef SALINITY
+Scoef = 0.822
 S0 = 1.0
 /
 
-&OUTPUT_ROOT_NAME ! instant_output.F
-instant_root_name = "roms"
+&OUTPUT_ROOT_NAME_SETTINGS ! roms_read_write.F
+output_root_name = "roms"
 /
 
 &MARBL_BIOGEOCHEMISTRY_SETTINGS ! in marbl_driver.F
@@ -155,6 +154,18 @@ nz_chd = 50
 output_period = 3600
 nrpf = 4
 /
+
+!================================================================================
+!                            DIAGNOSTICS SETTINGS
+!================================================================================
+! Formerly in `diagnostics.opt`
+! Require DIAGNOSTICS cpp key to take effect.
+!================================================================================
+&CDR_OUTPUT_SETTINGS
+output_period = 3600
+nrpf = 4
+/
+
 
 !================================================================================
 !                        NESTED BOUNDARY FILE GENERATION

@@ -29,7 +29,7 @@
      &   pio_i0c, pio_i1c, pio_j0c, pio_j1c, pio_initialize_coarse
 #endif
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
-      use instant_output, only: wrt_instant
+      use instant_output, only: wrt_instant, instant_root_name
       implicit none
       character(len=15) :: module_name="roms_read_write"
 
@@ -95,7 +95,7 @@
       integer, target :: test_var
       integer, parameter, public :: max_name_size=256
       character(len=max_name_size), public  :: output_root_name
-
+      namelist /OUTPUT_ROOT_NAME_SETTINGS/ output_root_name
       ! Dimension names for in and output in netcdf files
       ! All dimension names need to be strings of 7 characters
 !     character(len=7), public,parameter  :: xdim = 'xi_rho '
@@ -185,6 +185,7 @@ c$$$      namelist /FORCING_FILES/ frcfile
       public :: offset
       public :: sec2date
       public :: init_refdate
+      public :: read_nml_root_name
 
       interface set_frc_data
         module procedure
@@ -198,9 +199,31 @@ c$$$      namelist /FORCING_FILES/ frcfile
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_nml_roms_read_write
+      subroutine read_nml_root_name
+      use error_handling_mod, only: error_log
+      use namelist_mod, only: open_namelist_file
+!     Read the "OUTPUT_ROOT_NAME_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=21) :: sr_name = "read_nml_root_name"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
 
-      end subroutine read_nml_roms_read_write
+      read (unit=namelist_unit, nml=OUTPUT_ROOT_NAME_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read OUTPUT_ROOT_NAME_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      output_root_name=trim(output_root_name)
+      close(namelist_unit)
+
+      end subroutine read_nml_root_name
       subroutine init_output_indices  ![
       ! these indices also relate to reading input fields!
       !
@@ -1271,27 +1294,23 @@ c$$$      namelist /FORCING_FILES/ frcfile
 
       ! local
       integer :: ierr,ncid,varid
-
       fname=trim(adjustl(output_root_name)) / / trim(ftype)
       if (present(nodate)) then
-        call append_date_node(fname,nodate)
+         call append_date_node(fname,nodate)
       else
-        call append_date_node(fname)
+         call append_date_node(fname)
       endif
-
       ierr=nf90_create(trim(fname),nf90_netcdf4,ncid)
       if (ierr/=nf90_noerr) then
          call error_log%check_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info="unable to create file "//trim(fname))
       end if
-
       if (.not.present(nodate)) then
         varid = nccreate(ncid,'ocean_time',(/dn_tm/),(/0/),nf90_double)
         ierr = nf90_put_att(ncid,varid,'long_name', refdatestr)
         ierr = nf90_put_att(ncid,varid,'units','second' )
       endif
-
       call put_global_atts(ncid, ierr)                     ! put global attributes in file
       if (ierr/=nf90_noerr) then
          call error_log%check_netcdf_status(netcdf_status=ierr,

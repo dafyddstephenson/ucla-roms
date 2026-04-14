@@ -90,7 +90,7 @@ c$$$#endif
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA
          call register_keyword(name="climatology",handler=kwread_climatology)
 #endif
-         call register_keyword(name="output_root_name",handler=kwread_output_root_name)
+c$$$         call register_keyword(name="output_root_name",handler=kwread_output_root_name)
 
       end subroutine register_keywords
 

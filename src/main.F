@@ -52,7 +52,7 @@ C$    ierr=0
 # endif
       call init_scalars         ! Initialize global scalars,
       call init_tracers
-C$        call omp_set_dynamic(.false.)
+C     $        call omp_set_dynamic(.false.)
 C$OMP PARALLEL                           ! fast-time averaging weights
       call roms_thread          ! for barotropic mode, and
 C$OMP END PARALLEL                       ! launch the model in OpenMP
@@ -216,7 +216,6 @@ C$OMP BARRIER
 #endif
 
       call do_precheck
-
       call get_grid                  ! can be analytic or from netcdf
 
 
@@ -278,7 +277,6 @@ CR      write(*,*) ' -6' MYID
                                     ! either analytically or read
       if (nrrec > 0) then
 #endif
-
 
 #ifdef EXACT_RESTART
         call get_init(nrrec-1,2)
@@ -343,7 +341,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       ! The optional argument refers to
       ! blowup if true, and initial if false.
-      ! Come up with a better name!
+! Come up with a better name!
       call wrt_his_ocean_vars(.false.)
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc(.true.)
@@ -355,12 +353,10 @@ CR      write(*,*)  ' -2' MYID
       endif
       if (wrt_frc) call init_frc_output
 
-
         mpi_master_only write(*,'(/1x,A/)')
      &     'main :: initialization complete, started time-stepping.'
 
       call diag  ! log file output of global norms
-
       end subroutine roms_init
 
 

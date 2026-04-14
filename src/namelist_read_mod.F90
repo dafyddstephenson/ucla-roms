@@ -21,39 +21,39 @@ contains
 
   subroutine read_namelists
 #ifndef ANA_GRID
-    use dimensions, only: read_nml_grid
+    use dimensions, only: read_nml_grid           !GRID_SETTINGS
 #endif
 #if defined(MARBL) || defined(BIOLOGY_BEC2)
-    use bgc_shared_vars, only: read_nml_bgc
+    use bgc_shared_vars, only: read_nml_bgc       !BGC_SETTINGS
 #endif
 #if defined MARBL && defined CDR_FORCING
-    use cdr_frc, only: read_nml_cdr_frc
+    use cdr_frc, only: read_nml_cdr_frc           !CDR_FRC_SETTINGS
 #endif
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
-    use cdr_output, only: read_cdr_output_nml
+    use cdr_output, only: read_cdr_output_nml     !CDR_OUTPUT_SETTINGS
 #endif
 #ifdef DIAGNOSTICS
-    use diagnostics, only: read_nml_diagnostics
+    use diagnostics, only: read_nml_diagnostics   !DIAGNOSTICS_SETTINGS
 #endif
-    use basic_output, only: read_nml_basic_output
-    use calc_pflx_mod, only: read_nml_pflx
-    use extract_data, only: read_nml_extract
-    use frc_output, only: read_nml_frc_output
-    use particles, only: read_nml_particles
-    use pipe_frc, only: read_nml_pipe
-    use random_output, only: read_nml_random
-    use river_frc, only: read_nml_river
-    use sponge_tune, only: read_nml_sponge_tune
-    use surf_flux, only: read_nml_surf_flx
-    use tides, only: read_nml_tides
+    use basic_output, only: read_nml_basic_output !BASIC_OUTPUT_SETTINGS
+    use calc_pflx_mod, only: read_nml_pflx        !CALC_PFLX_SETTINGS
+    use extract_data, only: read_nml_extract      !EXTRACT_DATA_SETTINGS
+    use frc_output, only: read_nml_frc_output     !FRC_OUTPUT_SETTINGS
+    use particles, only: read_nml_particles       !PARTICLES_SETTINGS
+    use pipe_frc, only: read_nml_pipe             !PIPE_FRC_SETTINGS
+    use random_output, only: read_nml_random      !RANDOM_OUTPUT_SETTINGS
+    use river_frc, only: read_nml_river           !RIVER_FRC_SETTINGS
+    use sponge_tune, only: read_nml_sponge_tune   !SPONGE_TUNE_SETTINGS
+    use surf_flux, only: read_nml_surf_flx        !SURF_FLX_SETTINGS
+    use tides, only: read_nml_tides               !TIDES_SETTINGS
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
-    use upscale_output, only: read_nml_upscale
+    use upscale_output, only: read_nml_upscale    !UPSCALE_SETTINGS
 #endif
-    use zslice_output, only: read_nml_zslice
+    use zslice_output, only: read_nml_zslice      !ZSLICE_SETTINGS
 #if defined(SOLVE3D) && !defined(NONLIN_EOS)
-    use eos_vars, only: read_nml_lin_rho_eos
+    use eos_vars, only: read_nml_lin_rho_eos      !LIN_RHO_EOS_SETTINGS
 #endif
-
+    use roms_read_write, only: read_nml_root_name  !OUTPUT_ROOT_NAME
     implicit none
 
 #ifndef ANA_GRID
@@ -89,6 +89,7 @@ contains
 #if defined(SOLVE3D) && !defined(NONLIN_EOS)
     call read_nml_lin_rho_eos
 #endif
+    call read_nml_root_name
 
   end subroutine read_namelists
 
