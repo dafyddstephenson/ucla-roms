@@ -53,7 +53,10 @@ contains
 #if defined(SOLVE3D) && !defined(NONLIN_EOS)
     use eos_vars, only: read_nml_lin_rho_eos      !LIN_RHO_EOS_SETTINGS
 #endif
-    use roms_read_write, only: read_nml_root_name  !OUTPUT_ROOT_NAME
+    use roms_read_write, only: read_nml_root_name  !OUTPUT_ROOT_NAME_SETTINGS
+#ifdef MARBL
+    use marbl_driver, only: read_nml_marbl         !MARBL_BIOGEOCHEMISTRY_SETTINGS
+#endif
     implicit none
 
 #ifndef ANA_GRID
@@ -90,6 +93,9 @@ contains
     call read_nml_lin_rho_eos
 #endif
     call read_nml_root_name
+#ifdef MARBL
+    call read_nml_marbl
+#endif
 
   end subroutine read_namelists
 

@@ -35,9 +35,9 @@
 
          call register_keyword(name="title",handler=kwread_title)
          call register_keyword(name="time_stepping",handler=kwread_time_stepping)
-#ifdef MARBL
-         call register_keyword(name="MARBL_biogeochemistry",handler=kwread_marbl_bgc)
-#endif
+c$$$#ifdef MARBL
+c$$$         call register_keyword(name="MARBL_biogeochemistry",handler=kwread_marbl_bgc)
+c$$$#endif
 #ifdef SOLVE3D
          call register_keyword(name="S-coord",handler=kwread_scoord)
          call register_keyword(name="rho0",handler=kwread_rho0)
