@@ -50,6 +50,9 @@ contains
     use upscale_output, only: read_nml_upscale
 #endif
     use zslice_output, only: read_nml_zslice
+#if defined(SOLVE3D) && !defined(NONLIN_EOS)
+    use eos_vars, only: read_nml_lin_rho_eos
+#endif
 
     implicit none
 
@@ -83,6 +86,9 @@ contains
     call read_nml_upscale
 #endif
     call read_nml_zslice
+#if defined(SOLVE3D) && !defined(NONLIN_EOS)
+    call read_nml_lin_rho_eos
+#endif
 
   end subroutine read_namelists
 
