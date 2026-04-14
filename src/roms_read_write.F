@@ -164,10 +164,12 @@
 !     &                              xi_u=xi_rho-1, eta_v=eta_rho-1
 #endif
 
-      character, public :: date_str*44, title*80
+      character, public :: date_str*44
+      character(len=80), public :: title = "my roms run"
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
       character(len=max_name_size), public :: ininame,frcfile(max_frc_files),frcfile_full(max_frc_files)
       namelist /SIMULATION_NAME_SETTINGS/ output_root_name, title
+      namelist /INITIAL_CONDITIONS/ nrrec, ininame
 
 c$$$      namelist /SIMULATION_TITLE/ title
 c$$$      namelist /INITIAL_CONDITIONS/ ininame
@@ -186,7 +188,7 @@ c$$$      namelist /FORCING_FILES/ frcfile
       public :: offset
       public :: sec2date
       public :: init_refdate
-      public :: read_nml_sim_name
+      public :: read_nml_roms_read_write
 
       interface set_frc_data
         module procedure
@@ -200,12 +202,15 @@ c$$$      namelist /FORCING_FILES/ frcfile
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_nml_sim_name
+      subroutine read_nml_roms_read_write
+      use insert_node_mod, only: insert_node
+      use param, only: mynode, nsize
       use error_handling_mod, only: error_log
       use namelist_mod, only: open_namelist_file
-!     Read the "SIMULATION_NAME_SETTINGS" section of the namelist file
-      integer ::  namelist_unit, ios
-      character(len=21) :: sr_name = "read_nml_sim_name"
+      use utils_mod, only: lenstr
+!     Read the "SIMULATION_NAME_SETTINGS", "INITIAL_CONDITIONS" section of the namelist file
+      integer ::  namelist_unit, ios, lstr, testunit
+      character(len=25) :: sr_name = "read_nml_roms_read_write"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -222,9 +227,53 @@ c$$$      namelist /FORCING_FILES/ frcfile
      &      )
       end if
       output_root_name=trim(output_root_name)
+      instant_root_name = output_root_name
+
+      read (unit=namelist_unit, nml=INITIAL_CONDITIONS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read INITIAL_CONDITIONS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+
+
+#ifdef ANA_INITIAL
+      if (nrrec > 0) then
+#endif
+
+         lstr = lenstr(ininame)
+
+# if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
+         call insert_node(ininame, lstr, mynode, nsize)
+#endif
+# endif
+         open(newunit=testunit, file=trim(ininame), status='old',
+     &        iostat=ios)
+         if (ios /= 0) then
+            call error_log%raise_from_rank(
+     &           info="Cannot find input file '" // trim(ininame) // "'",
+     &           context=module_name)
+            return
+         end if
+         close(testunit)
+         ininame = trim(ininame)
+         mpi_master_only write(*,'(1x,A,I3,2x,3A)')
+     &        'initial condition :: rec =', nrrec,
+     &        'file = ''', trim(ininame), ''''
+
+#ifdef ANA_INITIAL
+      endif
+#endif
+
+
       close(namelist_unit)
 
-      end subroutine read_nml_sim_name
+      end subroutine read_nml_roms_read_write
       subroutine init_output_indices  ![
       ! these indices also relate to reading input fields!
       !

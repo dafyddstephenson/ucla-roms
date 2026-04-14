@@ -53,7 +53,8 @@ contains
 #if defined(SOLVE3D) && !defined(NONLIN_EOS)
     use eos_vars, only: read_nml_lin_rho_eos      !LIN_RHO_EOS_SETTINGS
 #endif
-    use roms_read_write, only: read_nml_sim_name  !SIMULATION_NAME_SETTINGS
+    use roms_read_write, only: read_nml_roms_read_write  ! SIMULATION_NAME_SETTINGS,
+                                                         ! INITIAL_CONDITIONS
 #ifdef MARBL
     use marbl_driver, only: read_nml_marbl         !MARBL_BIOGEOCHEMISTRY_SETTINGS
 #endif
@@ -92,7 +93,7 @@ contains
 #if defined(SOLVE3D) && !defined(NONLIN_EOS)
     call read_nml_lin_rho_eos
 #endif
-    call read_nml_sim_name
+    call read_nml_roms_read_write
 #ifdef MARBL
     call read_nml_marbl
 #endif

@@ -84,7 +84,7 @@ c$$$#endif
 c$$$#ifndef ANA_GRID
 c$$$         call register_keyword(name="grid",handler=kwread_grid)
 c$$$#endif
-         call register_keyword(name="initial",handler=kwread_initial)
+c$$$         call register_keyword(name="initial",handler=kwread_initial)
          call register_keyword(name="forcing",handler=kwread_forcing)
 #if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA

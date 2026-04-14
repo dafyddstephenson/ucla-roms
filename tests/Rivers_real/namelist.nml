@@ -12,8 +12,9 @@ Scoef = 0.822
 S0 = 1.0
 /
 
-&OUTPUT_ROOT_NAME_SETTINGS ! roms_read_write.F
+&SIMULATION_NAME_SETTINGS ! roms_read_write.F
 output_root_name = "roms"
+title = "my roms run"
 /
 
 &MARBL_BIOGEOCHEMISTRY_SETTINGS ! in marbl_driver.F
@@ -28,8 +29,8 @@ title = "roms_run"
 /
 
 &INITIAL_CONDITIONS
-!      use roms_read_write, only: nrrec, ininame
-ininame = "initial_conditions.nc""
+ininame = "input_data/example_input_bgc_initial_conditions.nc"
+nrrec = 1
 /
 
 &FORCING_FILES
