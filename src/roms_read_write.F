@@ -95,7 +95,7 @@
       integer, target :: test_var
       integer, parameter, public :: max_name_size=256
       character(len=max_name_size), public  :: output_root_name
-      namelist /OUTPUT_ROOT_NAME_SETTINGS/ output_root_name
+      namelist /SIMULATION_NAME_SETTINGS/ output_root_name
       ! Dimension names for in and output in netcdf files
       ! All dimension names need to be strings of 7 characters
 !     character(len=7), public,parameter  :: xdim = 'xi_rho '
@@ -185,7 +185,7 @@ c$$$      namelist /FORCING_FILES/ frcfile
       public :: offset
       public :: sec2date
       public :: init_refdate
-      public :: read_nml_root_name
+      public :: read_nml_sim_name
 
       interface set_frc_data
         module procedure
@@ -199,23 +199,23 @@ c$$$      namelist /FORCING_FILES/ frcfile
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_nml_root_name
+      subroutine read_nml_sim_name
       use error_handling_mod, only: error_log
       use namelist_mod, only: open_namelist_file
-!     Read the "OUTPUT_ROOT_NAME_SETTINGS" section of the namelist file
+!     Read the "SIMULATION_NAME_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=21) :: sr_name = "read_nml_root_name"
+      character(len=21) :: sr_name = "read_nml_sim_name"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
       rewind(namelist_unit)
 
-      read (unit=namelist_unit, nml=OUTPUT_ROOT_NAME_SETTINGS, iostat=ios, iomsg=msg)
+      read (unit=namelist_unit, nml=SIMULATION_NAME_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
          call error_log%raise_global(
      &   context = module_name//'/'//sr_name,
-     &   info='could not read OUTPUT_ROOT_NAME_SETTINGS'
+     &   info='could not read SIMULATION_NAME_SETTINGS'
      &        //' section of namelist file: '
      &        //trim(msg)
      &      )
@@ -223,7 +223,7 @@ c$$$      namelist /FORCING_FILES/ frcfile
       output_root_name=trim(output_root_name)
       close(namelist_unit)
 
-      end subroutine read_nml_root_name
+      end subroutine read_nml_sim_name
       subroutine init_output_indices  ![
       ! these indices also relate to reading input fields!
       !
