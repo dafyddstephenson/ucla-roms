@@ -34,37 +34,38 @@
       implicit none
 
 c$$$         call register_keyword(name="title",handler=kwread_title)
-         call register_keyword(name="time_stepping",handler=kwread_time_stepping)
+c$$$         call register_keyword(name="time_stepping",handler=kwread_time_stepping)
 c$$$#ifdef MARBL
 c$$$         call register_keyword(name="MARBL_biogeochemistry",handler=kwread_marbl_bgc)
 c$$$#endif
 #ifdef SOLVE3D
          call register_keyword(name="S-coord",handler=kwread_scoord)
-         call register_keyword(name="rho0",handler=kwread_rho0)
+!================================================================================
+c$$$         call register_keyword(name="rho0",handler=kwread_rho0)
 #endif
-#ifndef NONLIN_EOS
-         call register_keyword(name="lin_rho_eos",handler=kwread_lin_rho_eos)
-#endif
-#ifdef UV_VIS2
-         call register_keyword(name="lateral_visc",handler=kwread_lateral_visc)
-#if !defined EW_PERIODIC || !defined NS_PERIODIC
-         call register_keyword(name="gamma2",handler=kwread_gamma2)
-#endif
-#endif
-#ifdef TS_DIF2
-         call register_keyword(name="tracer_diff2",handler=kwread_tracer_diff2)
-#endif
-         call register_keyword(name="bottom_drag",handler=kwread_bottom_drag)
-
+c$$$#ifndef NONLIN_EOS
+c$$$         call register_keyword(name="lin_rho_eos",handler=kwread_lin_rho_eos)
+c$$$#endif
+c$$$#ifdef UV_VIS2
+c$$$         call register_keyword(name="lateral_visc",handler=kwread_lateral_visc)
+c$$$#if !defined EW_PERIODIC || !defined NS_PERIODIC
+c$$$         call register_keyword(name="gamma2",handler=kwread_gamma2)
+c$$$#endif
+c$$$#endif
+c$$$#ifdef TS_DIF2
+c$$$         call register_keyword(name="tracer_diff2",handler=kwread_tracer_diff2)
+c$$$#endif
+c$$$         call register_keyword(name="bottom_drag",handler=kwread_bottom_drag)
+c$$$
 #ifdef SOLVE3D
-!#if !defined LMD_MIXING && !defined MY25_MIXING
-
-         call register_keyword(name="vertical_mixing",
-     &        required=.false., handler=kwread_vertical_mixing)
-!#endif
-#ifdef MY25_MIXING
-         call register_keyword(name="MY_bak_mixing",handler=kwread_my_bak_mixing)
-#endif
+c$$$!#if !defined LMD_MIXING && !defined MY25_MIXING
+c$$$
+c$$$         call register_keyword(name="vertical_mixing",
+c$$$     &        required=.false., handler=kwread_vertical_mixing)
+c$$$!#endif
+c$$$#ifdef MY25_MIXING
+c$$$         call register_keyword(name="MY_bak_mixing",handler=kwread_my_bak_mixing)
+c$$$#endif
 #if defined SFLX_CORR && defined SALINITY
          call register_keyword(name="SSS_correction",handler=kwread_sss_correction)
 #endif
@@ -72,20 +73,22 @@ c$$$#endif
          call register_keyword(name="SST_correction",handler=kwread_sst_correction)
 #endif
 #endif /* SOLVE3D */
-
-#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
-  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
-                       || defined M3NUDGING  || defined WKB_FRC_BRY
-         call register_keyword(name="ubind",handler=kwread_ubind)
-#endif
-#ifdef SPONGE
-         call register_keyword(name="v_sponge",handler=kwread_v_sponge)
-#endif
+!================================================================================
+c$$$#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
+c$$$  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
+c$$$                       || defined M3NUDGING  || defined WKB_FRC_BRY
+c$$$         call register_keyword(name="ubind",handler=kwread_ubind)
+c$$$#endif
+c$$$#ifdef SPONGE
+c$$$         call register_keyword(name="v_sponge",handler=kwread_v_sponge)
+c$$$#endif
+!================================================================================
 c$$$#ifndef ANA_GRID
 c$$$         call register_keyword(name="grid",handler=kwread_grid)
 c$$$#endif
 c$$$         call register_keyword(name="initial",handler=kwread_initial)
 c$$$         call register_keyword(name="forcing",handler=kwread_forcing)
+
 #if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA
          call register_keyword(name="climatology",handler=kwread_climatology)

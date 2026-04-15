@@ -60,7 +60,6 @@ module error_handling_mod
 
 #include "cppdefs.opt"
 
-  use timers, only: stop_timers
   use param, only: mynode, nnodes, ocean_grid_comm
   use utils_mod, only: replace_string
   use compile_time_switches, only: gather_errors_on_main_rank
@@ -339,7 +338,6 @@ contains
           call print_error_log_entry_groups(grouped_error_log_entries)
        end if
 
-       call stop_timers()
        call MPI_Barrier(ocean_grid_comm)
        call MPI_Abort(ocean_grid_comm, 1)
        call sleep(30) ! stop further output leaking through
@@ -350,7 +348,6 @@ contains
           ! write(*,*) "WARNING: gather_errors_on_main_rank=.false. in error_handling_mod.F90. ", &
           !      "Some ranks may fail to report errors before abort. ",&
           !      "For a full error log, set to .true. and recompile."
-          call stop_timers()
           call MPI_Abort(ocean_grid_comm,1)
        end if !
     end if !gather_errors_on_main_rank
@@ -358,7 +355,6 @@ contains
     if (this%abort_requested) then
        call group_error_log_entries(this, grouped_error_log_entries)
        call print_error_log_entry_groups(grouped_error_log_entries)
-       call stop_timers()
        error stop
     end if
 #endif /* MPI */

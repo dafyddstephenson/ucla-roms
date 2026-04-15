@@ -255,7 +255,7 @@ c**         enddo
      &  '!!!!!! Number of Configuration Choices:',nexample, '!!!!!!',
      &  '!!!!!! Total number of CPP-switches:', nswtchs,  '!!!!!!'
       write(iout,'(9(/6x,A))')
-     &  'use param', 'use scalars', 'use strings', 'implicit none',
+     &  'use param', '!use scalars', 'use strings', 'implicit none',
      &  'integer ierr, is,ie, iexample',
      &  'do is=1,max_opt_size', '  cpps(is:is)='' ''',   'enddo',
      &                          'iexample=0'

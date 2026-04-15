@@ -58,6 +58,7 @@ contains
 #ifdef MARBL
     use marbl_driver, only: read_nml_marbl         !MARBL_BIOGEOCHEMISTRY_SETTINGS
 #endif
+   use scalars, only: read_nml_scalars
     implicit none
 
 #ifndef ANA_GRID
@@ -97,6 +98,7 @@ contains
 #ifdef MARBL
     call read_nml_marbl
 #endif
+   call read_nml_scalars
 
   end subroutine read_namelists
 

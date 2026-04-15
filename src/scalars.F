@@ -2,9 +2,9 @@
 
 #include "cppdefs.opt"
 
-      use param, only: nt, N
+      use param, only: nt, N, mynode
       implicit none
-
+      character(len=7) :: module_name = "scalars"
 ! This is include file "scalars"
 !----- -- ------- ---- -----------
 ! The following common block contains time variables and indices for
@@ -80,7 +80,8 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #ifdef SOLVE3D
       real rho0, tnu2(NT)
 
-      real Akv_bak, Akt_bak(NT)
+      real :: Akv_bak = 0.
+      real :: Akt_bak(NT) = 0.
 
 # ifdef MY25_MIXING
       real Akq_bak,   q2nu2,   q2nu4
@@ -134,5 +135,197 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #endif
 
       real :: init  !=1.0e+33          ! initialize all arrays. set to huge number to check for bugs.
+#if !defined EW_PERIODIC || !defined NS_PERIODIC
+      namelist /GAMMA2_SETTINGS/ gamma2
+#endif
+#if define SOLVE3D && defined TS_DIF2
+      namelist /TRACER_DIFF2/ tnu2
+#endif
+      namelist /BOTTOM_DRAG_SETTINGS/ rdrg, rdrg2
+#ifdef SOLVE3D
+     &     , zob
+      namelist /VERTICAL_MIXING_SETTINGS/ akv_bak, akt_bak
+#endif
+#ifdef MY25_MIXING
+      namelist /MY_BAK_MIXING_SETTINGS/ akq_bak
+#endif
+#ifdef UV_VIS2
+      namelist /LATERAL_VISC_SETTINGS/ visc2
+#endif
+      namelist /TIME_STEPPING/ dt, dtfast, ndtfast, ntimes, ninfo
+#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING || defined M3NUDGING  || defined WKB_FRC_BRY
+      namelist /UBIND_SETTINGS/ ubind
+#endif
+#ifdef SPONGE
+      namelist /V_SPONGE_SETTINGS/ v_sponge
+#endif
+      namelist /RHO0_SETTINGS/ rho0
+      public read_nml_scalars
+      contains
+
+      subroutine read_nml_scalars
+      use error_handling_mod, only: error_log
+      use namelist_mod, only: open_namelist_file
+      implicit none
+!     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_nml_scalars"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+!================================================================================
+! set `gamma2`
+#if !defined EW_PERIODIC || !defined NS_PERIODIC
+      read (unit=namelist_unit, nml=GAMMA2_SETTINGS, iostat=ios, iomsg=msg)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read GAMMA2_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *, "SCALARS: set gamma2=",gamma2
+#endif
+!================================================================================
+! set `tnu2`
+#if define SOLVE3D && defined TS_DIF2
+      read (unit=namelist_unit, nml=TRACER_DIFF2, iostat=ios, iomsg=msg)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read TRACER_DIFF2'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *, "SCALARS: set tnu=",tnu2
+#endif
+!================================================================================
+! set rdrg, rdrg2
+      read (unit=namelist_unit, nml=BOTTOM_DRAG_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read BOTTOM_DRAG_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *,
+     &     "SCALARS: set rdrg = ",rdrg,", rdrg2=",rdrg2
+!================================================================================
+!Akv_bak, Akt_bak
+#ifdef SOLVE3D
+      read (unit=namelist_unit, nml=VERTICAL_MIXING_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read VERTICAL_MIXING_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *,
+     &     "SCALARS: set akv_bak = ",akv_bak,", akt_bak=",akt_bak
+#endif
+!===============================================================================
+! akq_bak
+#ifdef MY25_MIXING
+      read (unit=namelist_unit, nml=MY_BAK_MIXING_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read MY_BAK_MIXING_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *, "SCALARS: set akq_bak = ", akq_bak
+#endif
+!===============================================================================
+!visc2
+#ifdef UV_VIS2
+      read (unit=namelist_unit, nml=LATERAL_VISC_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read LATERAL_VISC_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *, "SCALARS: set visc2 = ", visc2
+#endif
+!===============================================================================
+!dt, dtfast, ndtfast, ntimes ninfo
+      read (unit=namelist_unit, nml=TIME_STEPPING, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read TIME_STEPPING'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &        )
+      end if
+         if (mynode==0) print *, "SCALARS: set dt = ", dt, ", dtfast=",dtfast
+     &     ,", ndtfast = ",ndtfast, ", ntimes = ",ntimes,", ninfo =",ninfo
+         dtfast = dt/dble(ndtfast)
+!===============================================================================
+! ubind
+#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING || defined M3NUDGING  || defined WKB_FRC_BRY
+      read (unit=namelist_unit, nml=UBIND_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read UBIND_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *, "SCALARS: set ubind = ", ubind
+#endif
+!===============================================================================
+!v_sponge
+#ifdef SPONGE
+      read (unit=namelist_unit, nml=V_SPONGE_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read V_SPONGE_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      if (mynode==0) print *, "SCALARS: set v_sponge = ", v_sponge
+#endif
+!===============================================================================
+! rho0
+      read (unit=namelist_unit, nml=RHO0_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read RHO0_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &        )
+      if (mynode==0) print *, "SCALARS: set rho0 = ", rho0
+      end if
+
+!===============================================================================
+
+      close(namelist_unit)
+      end subroutine read_nml_scalars
+
 
       end module scalars

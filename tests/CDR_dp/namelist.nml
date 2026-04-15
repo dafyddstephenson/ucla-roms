@@ -32,58 +32,72 @@ nrrec = 1
 frcfile = 'input_data/example_input_bgc_surface_forcing_clim.nc','input_data/example_input_bgc_boundary_forcing_clim.nc','input_data/example_input_boundary_forcing.nc','input_data/example_input_surface_forcing.nc','input_data/example_input_tides.nc'
 /
 
-!if !defined EW_PERIODIC || !defined NS_PERIODIC
-&GAMMA2
+&GAMMA2_SETTINGS
 !      use scalars, only: gamma2
+gamma2 = 1.0
 /
 
-!ifdef TS_DIF2
 &TRACER_DIFF2
 !      use scalars, only: nt, tnu2
+tnu=0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.
 /
 
 
-&BOTTOM_DRAG
-!      use scalars, only: rdrg, rdrg2, zob
+&BOTTOM_DRAG_SETTINGS
+!      use scalars, only: rdrg, rdrg2, zo
+rdrg = 0.e-4
+rdrg2 = 1.0e-3
+zob = 1.e-2
 /
 
-!ifdef SOLVE3D
-&VERTICAL_MIXING
+&VERTICAL_MIXING_SETTINGS
 !      use scalars, only: akv_bak, akt_bak, nt
+akv_bak = 0.0
+akt_bak = 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 /
 
-!ifdef MY25_MIXING
 &MY_BAK_MIXING
 ! akq_bak is in scalars
 /
 
 !ifdef UV_VIS2
-&LATERAL_VISC
+&LATERAL_VISC_SETTINGS
 !      use scalars, only: visc2
+visc2 = 0.
 /
 
 &TIME_STEPPING
 !      use scalars, only: dt, dtfast, ndtfast, ntimes, ninfo
+ntimes = 10
+dt = 40
+ndtfast = 30
+ninfo = 1
 /
 
 !if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
 !  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
 !                       || defined M3NUDGING  || defined WKB_FRC_BRY
-&UBIND
+&UBIND_SETTINGS
 !      use scalars, only: ubind
+ubind = 0.1
 /
 
 !#ifdef SPONGE
-&V_SPONGE
+&V_SPONGE_SETTINGS
 !      use scalars, only: v_sponge
+v_sponge = 1.0
 /
 
 !ifdef SOLVE3D
 &S_COORD
 !      use scoord, only: hc, theta_b, theta_s
+theta_s = 6.D0
+theta_b = 6.D0
+hc = 25.0D0
 /
 
-&RHO0
+&RHO0_SETTINGS
+rho0 = 1027.5
 /
 !/* SOLVE3D */
 

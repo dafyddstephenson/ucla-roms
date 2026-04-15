@@ -48,7 +48,7 @@
 
       character(len=12) :: sr_name = "insert_node"
       character(len=1024) :: error_info = ""
-      if (mynode==0) print *, "CALLING INSERT NODE WITH ||"//name//"||"
+
       ! Find the last filesep to isolate just the filename
       fname_start = 1
       do i = 1, lstr

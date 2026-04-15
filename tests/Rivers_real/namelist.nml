@@ -5,22 +5,9 @@
 grdname = "input_data/example_input_grid.nc"
 /
 
-&LIN_RHO_EOS_SETTINGS
-Tcoef = 0.2
-T0 = 1.0
-Scoef = 0.822
-S0 = 1.0
-/
-
 &SIMULATION_NAME_SETTINGS ! roms_read_write.F
 output_root_name = "roms"
 title = "roms_run"
-/
-
-&MARBL_BIOGEOCHEMISTRY_SETTINGS ! in marbl_driver.F
-marbl_namelist_fname = "marbl_in"
-marbl_tracer_list_fname = "marbl_tracer_output_list"
-marbl_diag_list_fname = "marbl_diagnostics_output_list"
 /
 
 &INITIAL_CONDITIONS
@@ -32,61 +19,70 @@ nrrec = 1
 frcfile = 'input_data/example_input_surface_flux_forcing.nc','input_data/example_input_river_forcing.nc','input_data/example_input_boundary_forcing.nc'
 /
 
-!if !defined EW_PERIODIC || !defined NS_PERIODIC
-&GAMMA2
+&GAMMA2_SETTINGS
 !      use scalars, only: gamma2
+gamma2 = 1.D0
 /
 
-!ifdef TS_DIF2
 &TRACER_DIFF2
 !      use scalars, only: nt, tnu2
+tnu=0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.
 /
 
-
-&BOTTOM_DRAG
-!      use scalars, only: rdrg, rdrg2, zob
+&BOTTOM_DRAG_SETTINGS
+!      use scalars, only: rdrg, rdrg2, zo
+rdrg = 0.E-4
+rdrg2 = 1.0E-3
+zob = 1.E-2
 /
 
-!ifdef SOLVE3D
-&VERTICAL_MIXING
+&VERTICAL_MIXING_SETTINGS
 !      use scalars, only: akv_bak, akt_bak, nt
-/
-
-!ifdef MY25_MIXING
-&MY_BAK_MIXING
-! akq_bak is in scalars
+akv_bak = 0.0
+akt_bak = 0.0 0.0
 /
 
 !ifdef UV_VIS2
-&LATERAL_VISC
+&LATERAL_VISC_SETTINGS
 !      use scalars, only: visc2
+visc2 = 0.
 /
 
 &TIME_STEPPING
 !      use scalars, only: dt, dtfast, ndtfast, ntimes, ninfo
+ntimes = 20
+dt = 40
+ndtfast = 30
+ninfo = 1
 /
 
 !if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
 !  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
 !                       || defined M3NUDGING  || defined WKB_FRC_BRY
-&UBIND
+&UBIND_SETTINGS
 !      use scalars, only: ubind
+ubind = 0.1
 /
 
 !#ifdef SPONGE
-&V_SPONGE
+&V_SPONGE_SETTINGS
 !      use scalars, only: v_sponge
+v_sponge = 1.0
 /
 
 !ifdef SOLVE3D
 &S_COORD
 !      use scoord, only: hc, theta_b, theta_s
+theta_s = 6.D0
+theta_b = 6.D0
+hc = 25.0D0
 /
 
-&RHO0
+&RHO0_SETTINGS
+rho0 = 1027.5
 /
+
 !/* SOLVE3D */
-
 !if defined SFLX_CORR && defined SALINITY
 &SSS_CORRECTION
 ! dSSSdt is in surf_flux.F
