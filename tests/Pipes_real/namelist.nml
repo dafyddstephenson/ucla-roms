@@ -12,8 +12,9 @@ Scoef = 0.822
 S0 = 1.0
 /
 
-&OUTPUT_ROOT_NAME_SETTINGS ! roms_read_write.F
+&SIMULATION_NAME_SETTINGS ! roms_read_write.F
 output_root_name = "roms"
+title = "roms_run"
 /
 
 &MARBL_BIOGEOCHEMISTRY_SETTINGS ! in marbl_driver.F
@@ -22,18 +23,13 @@ marbl_tracer_list_fname = "marbl_tracer_output_list"
 marbl_diag_list_fname = "marbl_diagnostics_output_list"
 /
 
-&SIMULATION_TITLE
-!      use roms_read_write, only: title
-title = "roms_run"
-/
-
 &INITIAL_CONDITIONS
-!      use roms_read_write, only: nrrec, ininame
-ininame = "initial_conditions.nc""
+ininame = "input_data/example_input_bgc_initial_conditions.nc"
+nrrec = 1
 /
 
 &FORCING_FILES
-! force_files in roms_read_write but reading is more complex/more imports in read_inp
+frcfile = 'input_data/example_input_surface_flux_forcing.nc','input_data/example_input_boundary_forcing.nc','input_data/example_input_pipe_forcing.nc'
 /
 
 !if !defined EW_PERIODIC || !defined NS_PERIODIC

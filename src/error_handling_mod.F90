@@ -347,9 +347,9 @@ contains
        if (this%abort_requested) then
           call group_error_log_entries(this, grouped_error_log_entries)
           call print_error_log_entry_groups(grouped_error_log_entries)
-          write(*,*) "WARNING: gather_errors_on_main_rank=.false. in error_handling_mod.F90. ", &
-               "Some ranks may fail to report errors before abort. ",&
-               "For a full error log, set to .true. and recompile."
+          ! write(*,*) "WARNING: gather_errors_on_main_rank=.false. in error_handling_mod.F90. ", &
+          !      "Some ranks may fail to report errors before abort. ",&
+          !      "For a full error log, set to .true. and recompile."
           call stop_timers()
           call MPI_Abort(ocean_grid_comm,1)
        end if !

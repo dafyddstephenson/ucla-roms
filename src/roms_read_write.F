@@ -167,13 +167,16 @@
       character, public :: date_str*44
       character(len=80), public :: title = "my roms run"
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
-      character(len=max_name_size), public :: ininame,frcfile(max_frc_files),frcfile_full(max_frc_files)
+      character(len=max_name_size), public :: ininame = ""
+      character(len=max_name_size), public ::
+     &     frcfile(max_frc_files) = ""
+      character(len=max_name_size), public ::
+     &     frcfile_full(max_frc_files) = ""
       namelist /SIMULATION_NAME_SETTINGS/ output_root_name, title
+#ifndef ANA_INITIAL
       namelist /INITIAL_CONDITIONS/ nrrec, ininame
-
-c$$$      namelist /SIMULATION_TITLE/ title
-c$$$      namelist /INITIAL_CONDITIONS/ ininame
-c$$$      namelist /FORCING_FILES/ frcfile
+#endif
+      namelist /FORCING_FILES/ frcfile
 
       public :: insert_nodes
       public :: findstr,append_date_node
@@ -208,14 +211,14 @@ c$$$      namelist /FORCING_FILES/ frcfile
       use error_handling_mod, only: error_log
       use namelist_mod, only: open_namelist_file
       use utils_mod, only: lenstr
-!     Read the "SIMULATION_NAME_SETTINGS", "INITIAL_CONDITIONS" section of the namelist file
       integer ::  namelist_unit, ios, lstr, testunit
       character(len=25) :: sr_name = "read_nml_roms_read_write"
       character(len=512) :: msg = ""
+      character(len=max_name_size) :: fname
       ! Read namelist
       call open_namelist_file(namelist_unit)
       rewind(namelist_unit)
-
+!     Read the "SIMULATION_NAME_SETTINGS", "INITIAL_CONDITIONS" section of the namelist file
       read (unit=namelist_unit, nml=SIMULATION_NAME_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -228,7 +231,8 @@ c$$$      namelist /FORCING_FILES/ frcfile
       end if
       output_root_name=trim(output_root_name)
       instant_root_name = output_root_name
-
+!==========================================================================================
+#ifndef ANA_INITIAL
       read (unit=namelist_unit, nml=INITIAL_CONDITIONS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -240,10 +244,6 @@ c$$$      namelist /FORCING_FILES/ frcfile
      &      )
       end if
 
-
-#ifdef ANA_INITIAL
-      if (nrrec > 0) then
-#endif
 
          lstr = lenstr(ininame)
 
@@ -266,10 +266,88 @@ c$$$      namelist /FORCING_FILES/ frcfile
      &        'initial condition :: rec =', nrrec,
      &        'file = ''', trim(ininame), ''''
 
-#ifdef ANA_INITIAL
-      endif
-#endif
+#endif /*ANA_INITIAL*/
+!==========================================================================================
+      read (unit=namelist_unit, nml=FORCING_FILES, iostat=ios, iomsg=msg)
 
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read FORCING_FILES'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+!     Reset forcing storage.
+
+      force_files = ''
+      force_info  = ''
+      max_frc     = 0
+      lstr        = 1
+
+
+!  Read filenames until a blank line or max_frc_files reached.
+      do while (lstr > 0 .and. max_frc < max_frc_files)
+
+         fname = trim(frcfile(max_frc+1))
+         lstr = lenstr(trim(fname))
+
+         if (lstr > 0) then
+# if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
+            call insert_node(fname, lstr, mynode, nsize)
+#endif
+# endif
+! Test file availability
+
+            open(newunit=testunit, file=fname,
+     &           status='old', iostat=ios)
+            if (ios /= 0) then
+               call error_log%raise_from_rank(
+     &         info="Cannot find input file '" // fname // "'",
+     &         context=module_name
+     &              )
+               return
+            end if
+            close(testunit)
+
+! Store file if within limit of allowed no. of forcing files
+
+            if (max_frc < max_frc_files) then
+
+               max_frc = max_frc + 1
+               frcfile(max_frc) = trim(fname)
+! Write file info to output stream
+# ifdef MPI_SILENT_MODE
+                if (mynode == 0) then
+# endif
+                  if (max_frc == 1) then
+                    write(*,'(1x,2A)') 'forcing data file(s): ',
+     &                                 trim(frcfile(max_frc))
+                  else
+                    write(*,'(23x,A)') trim(frcfile(max_frc))
+                 endif
+
+! Add to attributes
+# ifdef MPI_SILENT_MODE
+               end if
+# endif
+               call store_string_att(force_files,
+     &              frcfile(max_frc)(1:lstr))
+
+            else !(if max_frc < max_frc_files )
+               write(error_info,*)
+     &              'Too many forcing files are ',
+     &              'specified in input script.',  'Increase parameter ',
+     &              '''max_frc_files'' in ',
+     &              'roms_read_write and recompile.'
+               call error_log%raise_global(
+     &              info=error_info,
+     &              context=module_name//"/"//sr_name)
+            end if !(max_frc < max_frc_files)
+         end if   ! lstr > 0
+      end do      ! filename loop
+!================================================================================
 
       close(namelist_unit)
 
@@ -380,8 +458,6 @@ c$$$      namelist /FORCING_FILES/ frcfile
       nyc_righ = ceiling(1.0*gnyc/np_eta) - floor(off_yc/2.0)
       ny_righ  = ceiling(1.0*gny/np_eta)  - floor(off_y/2.0)
       dfy  = max(ny_left - nyc_left*2, ny_righ-nyc_righ*2)
-!     print *, 'dfx: ', dfx
-!     print *, 'dfx: ', dfx
       cbf = max(ceiling(0.5*dfx)+1,2)
       cbf = max(ceiling(0.5*dfy)+1,cbf)
       cbf = cbf + 1

@@ -85,7 +85,7 @@ c$$$#ifndef ANA_GRID
 c$$$         call register_keyword(name="grid",handler=kwread_grid)
 c$$$#endif
 c$$$         call register_keyword(name="initial",handler=kwread_initial)
-         call register_keyword(name="forcing",handler=kwread_forcing)
+c$$$         call register_keyword(name="forcing",handler=kwread_forcing)
 #if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
                         defined T_FRC_BRY )) && !defined ANA_TCLIMA
          call register_keyword(name="climatology",handler=kwread_climatology)
@@ -988,6 +988,9 @@ c$$$         call register_keyword(name="output_root_name",handler=kwread_output
 
          if (lstr > 0) then
 
+            if (mynode==0) print *,
+     &           "READ_INP CALLING INSERT_NODE WITH ||"
+     &           //fname//"||"
 # if defined MPI && defined PARALLEL_FILES
 #ifndef PARALLEL_IO
             call insert_node(fname, lstr, mynode, nsize)

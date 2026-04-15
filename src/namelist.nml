@@ -24,12 +24,12 @@ marbl_diag_list_fname = "marbl_diagnostics_output_list"
 /
 
 &INITIAL_CONDITIONS
-!      use roms_read_write, only: nrrec, ininame
-ininame = "initial_conditions.nc""
+ininame = "input_data/example_input_bgc_initial_conditions.nc"
+nrrec = 1
 /
 
 &FORCING_FILES
-! force_files in roms_read_write but reading is more complex/more imports in read_inp
+frcfile = ''
 /
 
 !if !defined EW_PERIODIC || !defined NS_PERIODIC
