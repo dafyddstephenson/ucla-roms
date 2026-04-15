@@ -103,19 +103,15 @@ rho0 = 1027.5
 !if defined SFLX_CORR && defined SALINITY
 &SSS_CORRECTION
 ! dSSSdt is in surf_flux.F
+dSSSdt = 0.
 /
 
 !ifdef QCORRECTION
 &SST_CORRECTION
 ! dSSTdt is in surf_flux.F
+dSSTdt = 0.
 /
 !/* SOLVE3D */
-
-!!if defined SOLVE3D &&( defined TCLIMATOLOGY ||( defined TNUDGING && \
-!&CLIMATOLOGY
-!! clm_file is set by read_inp_mod but never used
-!/
-
 
 !================================================================================
 !                               BIOGEOCHEMISTRY

@@ -68,9 +68,9 @@
 
       ! Sea-surface temperature (SST) and salinity (SSS) data for restoring
       real,public,allocatable,dimension(:,:) :: sst
-      real,public :: dSSTdt
+      real,public :: dSSTdt = 0.
       real,public,allocatable,dimension(:,:) :: sss
-      real,public :: dSSSdt                                ! input units (cm/day)
+      real,public :: dSSSdt = 0.                           ! input units (cm/day)
 
       ! Netcdf outputting:
       real    :: output_time = 0
@@ -107,6 +107,31 @@
      &        //trim(msg)
      &      )
       end if
+
+#if defined SFLX_CORR && defined SALINITY
+      read (unit=namelist_unit, nml=SSS_CORRECTION, iostat=ios, iomsg=msg)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read SSS_CORRECTION'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+#endif
+
+#ifdef QCORRECTION
+      read (unit=namelist_unit, nml=SST_CORRECTION, iostat=ios, iomsg=msg)
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read SST_CORRECTION'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+#endif
+
+
       close(namelist_unit)
       record = nrpf
       end subroutine read_nml_surf_flx
