@@ -1,9 +1,9 @@
       module scoord
 
 #include "cppdefs.opt"
-
       use param, only: n, isw_corn, iwest, jsouth, jsw_corn
       implicit none
+      character(len=6) :: module_name = "scoord"
 
 ! Control parameters for vertical coordinate transform: "theta_s" and
 ! "theta_b" are surface and bottom refinement coefficients for Cs=Cs(s)
@@ -38,6 +38,36 @@
 
 #ifdef SOLVE3D
       real theta_s,theta_b, hc, Cs_w(0:N), Cs_r(N)
-#endif
+      namelist /S_COORD/ theta_s, theta_b, hc
+      public :: read_nml_scoord
+      contains
 
+!     ----------------------------------------------------------------------
+      subroutine read_nml_scoord
+      use error_handling_mod, only: error_log
+      use namelist_mod, only: open_namelist_file
+      implicit none
+!     Read the "SCOORD_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_nml_scoord"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=S_COORD, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read S_COORD'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_nml_scoord
+
+#endif
       end module scoord

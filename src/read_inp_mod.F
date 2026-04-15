@@ -39,7 +39,7 @@ c$$$#ifdef MARBL
 c$$$         call register_keyword(name="MARBL_biogeochemistry",handler=kwread_marbl_bgc)
 c$$$#endif
 #ifdef SOLVE3D
-         call register_keyword(name="S-coord",handler=kwread_scoord)
+c$$$         call register_keyword(name="S-coord",handler=kwread_scoord)
 !================================================================================
 c$$$         call register_keyword(name="rho0",handler=kwread_rho0)
 #endif

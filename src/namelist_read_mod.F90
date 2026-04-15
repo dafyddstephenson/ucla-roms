@@ -58,7 +58,10 @@ contains
 #ifdef MARBL
     use marbl_driver, only: read_nml_marbl         !MARBL_BIOGEOCHEMISTRY_SETTINGS
 #endif
-   use scalars, only: read_nml_scalars
+    use scalars, only: read_nml_scalars
+#ifdef SOLVE3D
+    use scoord, only: read_nml_scoord
+#endif
     implicit none
 
 #ifndef ANA_GRID
@@ -98,8 +101,10 @@ contains
 #ifdef MARBL
     call read_nml_marbl
 #endif
-   call read_nml_scalars
-
+    call read_nml_scalars
+#ifdef SOLVE3D
+   call read_nml_scoord
+#endif
   end subroutine read_namelists
 
   end module namelist_read_mod
