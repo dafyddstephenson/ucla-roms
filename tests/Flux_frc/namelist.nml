@@ -14,10 +14,10 @@ title = "roms_run"
 !================================================================================
 ! Previously set in `roms.in`
 !================================================================================
-&TIME_STEPPING							       !scalars.F
+&TIME_STEPPING 							       !scalars.F
 !-------------
 ntimes = 20
-dt = 40
+dt = 20
 ndtfast = 30
 ninfo = 1
 /
@@ -47,7 +47,9 @@ nrrec = 1
 
 &FORCING_FILES                                                 !roms_read_write.F
 !-------------
-frcfile = ''
+frcfile =
+'input_data/example_input_boundary_forcing.nc',
+'input_data/example_input_surface_flux_forcing.nc'
 /
 
 !================================================================================
@@ -56,7 +58,7 @@ frcfile = ''
 ! Previously set in `river_frc.opt`
 !================================================================================
 &RIVER_FRC_SETTINGS                                                  !river_frc.F
-nriv = 1
+nriv = 0
 /
 
 !================================================================================
@@ -77,19 +79,19 @@ ntides = 10
 ! Previously set in `ocean_vars.opt`
 !---------------------
 output_period_rst = 2000
-nrpf_rst = 10
-output_period_his = 100
-nrpf_his = 20
+nrpf_rst = 2
+output_period_his = 400
+nrpf_his = 50
 output_period_avg = 100
-nrpf_avg = 20
+nrpf_avg = 10
 /
 
 &FRC_OUTPUT_SETTINGS                                                !frc_output.F
 !-------------------
 ! Previously set in `frc_output.opt`
 !-------------------
-output_period = 3600.
-nrpf = 4
+output_period = 0.
+nrpf = 0
 /
 
 !================================================================================
@@ -100,13 +102,13 @@ nrpf = 4
 ! Previously set in `extract_data.opt`,
 ! require EXTRACT_DATA cppkey
 !---------------------
-extract_period = 1800.0
-extract_file = "sample_edata.nc"
-nrpf_extract = 48
-N_chd = 90
-theta_s_chd = 5.0
-theta_b_chd = 2.0
-hc_chd = 250.0
+extract_period = 0.0
+extract_file = ""
+nrpf_extract = 0
+N_chd = 0
+theta_s_chd = 0
+theta_b_chd = 0
+hc_chd = 0
 /
 
 &SPONGE_TUNE_SETTINGS                                              !sponge_tune.F
@@ -114,16 +116,16 @@ hc_chd = 250.0
 ! Previously set in `sponge_tune.opt`
 ! Require SPONGE_TUNE cppkey
 !--------------------
-sp_timscale = 86400
-nrpf = 7
-output_period = 86400
+sp_timscale = 0
+nrpf = 0
+output_period = 0
 /
 
 &CALC_PFLX_SETTINGS                                              !calc_pflx_mod.F
 !---------------------
 ! Previously set in `calc_pflx.opt`
 !---------------------
-timescale = 86400
+timescale = 0
 /
 
 !================================================================================
@@ -132,12 +134,12 @@ timescale = 86400
 ! Previously set in `zslice_output.opt`
 !================================================================================
 &ZSLICE_SETTINGS                                                 !zslice_output.F
-output_period = 1200
-nrpf = 72
-ndep = 6
-vecdep = -2.0, -15.0, -30.0, -60.0, -120.0, -250.0
-nt_z = 2
-trc2zsc = 1, 2
+output_period = 0
+nrpf = 0
+ndep = 0
+vecdep = -0,0
+nt_z = 0
+trc2zsc = 0, 0
 /
 
 
@@ -177,8 +179,8 @@ marbl_diag_list_fname = "marbl_diagnostics_output_list"
 ! Previously set in `cdr_frc.opt`
 ! Requires CDR_FORCING cppkey
 !----------------
-cdr_file = "cdr_release.nc"  ! NetCDF forcing file
-ncdr_parm = 1  !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
+cdr_file = "input_data/cdr_forcing_dp.nc"  ! NetCDF forcing file
+ncdr_parm = 0  !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 nz_chd = 50
 /
 
@@ -186,8 +188,8 @@ nz_chd = 50
 !-------------------
 ! Previously set in `cdr_output.opt`
 !-------------------
-output_period = 3600
-nrpf = 4
+output_period = 0
+nrpf = 0
 /
 
 &UPSCALE_SETTINGS                                              !upscale_output.F
@@ -195,8 +197,8 @@ nrpf = 4
 ! Previously set in `upscale_output.opt`
 ! Requires UPSCALING cppkey
 !----------------
-nrpf_uscl = 48
-output_period_uscl = 100
+nrpf_uscl = 0
+output_period_uscl = 0
 /
 
 !================================================================================
@@ -206,10 +208,10 @@ output_period_uscl = 100
 !================================================================================
 &LIN_RHO_EOS_SETTINGS                                                  !scalars.F
 !--------------------
-Tcoef = 0.2
-T0 = 1.0
-Scoef = 0.822
-S0 = 1.0
+Tcoef = 0.
+T0 = 0.
+Scoef = 0.
+S0 = 0.
 /
 
 &RHO0_SETTINGS                                                         !scalars.F
@@ -295,24 +297,24 @@ dSSTdt = 0.
 ! Previously set in `diagnostics.opt`
 ! Requires DIAGNOSTICS cppkey
 !--------------------
-output_period = 3600
-nrpf = 4
+output_period = 0.
+nrpf = 0
 /
 
 &RANDOM_OUTPUT_SETTINGS
 !----------------------
 ! Previously set in `random.opt`
 !----------------------
-output_period = 3600
-nrpf=10
+output_period = 0
+nrpf=0
 /
 
 &SURF_FLX_SETTINGS
 !-----------------
 ! Previously set in `surf_flx.opt`
 !-----------------
-output_period = 120
-nrpf = 10
+output_period = 0
+nrpf = 0
 /
 
 !================================================================================
@@ -321,7 +323,7 @@ nrpf = 10
 ! Formerly in `pipe_frc.opt`
 !================================================================================
 &PIPE_FRC_SETTINGS
-npip = 1
+npip = 0
 /
 
 !================================================================================
@@ -330,15 +332,15 @@ npip = 1
 ! Formerly in `particles.opt`
 !================================================================================
 &PARTICLES_SETTINGS
-np=50
-extra_space_fac = 1.5
-exchange_facx = 0.1
-exchange_facy = 0.1
-exchange_facc = 0.01
-output_period = 400
-nrpf = 100
-ppm3 = 1e-6
-pmin = 200
+np=0
+extra_space_fac = 0.
+exchange_facx = 0.
+exchange_facy = 0.
+exchange_facc = 0.
+output_period = 0
+nrpf = 0
+ppm3 = 0.
+pmin = 0
 /
 
 

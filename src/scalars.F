@@ -153,7 +153,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #ifdef UV_VIS2
       namelist /LATERAL_VISC_SETTINGS/ visc2
 #endif
-      namelist /TIME_STEPPING/ dt, dtfast, ndtfast, ntimes, ninfo
+      namelist /TIME_STEPPING/ dt, ndtfast, ntimes, ninfo
 #if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING || defined M3NUDGING  || defined WKB_FRC_BRY
       namelist /UBIND_SETTINGS/ ubind
 #endif
@@ -174,11 +174,11 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
-      rewind(namelist_unit)
 
 !================================================================================
 ! set `gamma2`
 #if !defined EW_PERIODIC || !defined NS_PERIODIC
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=GAMMA2_SETTINGS, iostat=ios, iomsg=msg)
       if (ios /= 0) then
          call error_log%raise_global(
@@ -193,6 +193,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !================================================================================
 ! set `tnu2`
 #if define SOLVE3D && defined TS_DIF2
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=TRACER_DIFF2, iostat=ios, iomsg=msg)
       if (ios /= 0) then
          call error_log%raise_global(
@@ -206,8 +207,8 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #endif
 !================================================================================
 ! set rdrg, rdrg2
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=BOTTOM_DRAG_SETTINGS, iostat=ios, iomsg=msg)
-
       if (ios /= 0) then
          call error_log%raise_global(
      &   context = module_name//'/'//sr_name,
@@ -221,6 +222,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !================================================================================
 !Akv_bak, Akt_bak
 #ifdef SOLVE3D
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=VERTICAL_MIXING_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -237,6 +239,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !===============================================================================
 !visc2
 #ifdef UV_VIS2
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=LATERAL_VISC_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -251,6 +254,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #endif
 !===============================================================================
 !dt, dtfast, ndtfast, ntimes ninfo
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=TIME_STEPPING, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -261,12 +265,13 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &        )
       end if
-         if (mynode==0) print *, "SCALARS: set dt = ", dt, ", dtfast=",dtfast
+      dtfast = dt/dble(ndtfast)
+      if (mynode==0) print *, "SCALARS: set dt = ", dt, ", dtfast=",dtfast
      &     ,", ndtfast = ",ndtfast, ", ntimes = ",ntimes,", ninfo =",ninfo
-         dtfast = dt/dble(ndtfast)
 !===============================================================================
 ! ubind
 #if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING || defined M3NUDGING  || defined WKB_FRC_BRY
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=UBIND_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -282,6 +287,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !===============================================================================
 !v_sponge
 #ifdef SPONGE
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=V_SPONGE_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
@@ -296,6 +302,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #endif
 !===============================================================================
 ! rho0
+      rewind(namelist_unit)
       read (unit=namelist_unit, nml=RHO0_SETTINGS, iostat=ios, iomsg=msg)
 
       if (ios /= 0) then
