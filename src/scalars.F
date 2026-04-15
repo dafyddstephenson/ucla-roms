@@ -84,7 +84,8 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
       real :: Akt_bak(NT) = 0.
 
 # ifdef MY25_MIXING
-      real Akq_bak,   q2nu2,   q2nu4
+      real :: Akq_bak = 0.
+      real q2nu2,   q2nu4
 # endif
 #endif
 #ifdef SPONGE
@@ -145,9 +146,9 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 #ifdef SOLVE3D
      &     , zob
       namelist /VERTICAL_MIXING_SETTINGS/ akv_bak, akt_bak
-#endif
 #ifdef MY25_MIXING
-      namelist /MY_BAK_MIXING_SETTINGS/ akq_bak
+     &     ,akq_bak
+#endif
 #endif
 #ifdef UV_VIS2
       namelist /LATERAL_VISC_SETTINGS/ visc2
@@ -232,21 +233,6 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
       end if
       if (mynode==0) print *,
      &     "SCALARS: set akv_bak = ",akv_bak,", akt_bak=",akt_bak
-#endif
-!===============================================================================
-! akq_bak
-#ifdef MY25_MIXING
-      read (unit=namelist_unit, nml=MY_BAK_MIXING_SETTINGS, iostat=ios, iomsg=msg)
-
-      if (ios /= 0) then
-         call error_log%raise_global(
-     &   context = module_name//'/'//sr_name,
-     &   info='could not read MY_BAK_MIXING_SETTINGS'
-     &        //' section of namelist file: '
-     &        //trim(msg)
-     &      )
-      end if
-      if (mynode==0) print *, "SCALARS: set akq_bak = ", akq_bak
 #endif
 !===============================================================================
 !visc2
