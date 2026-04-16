@@ -729,7 +729,6 @@
       character(len=10) :: module_name = "cdr_output"
       private
 
-#include "cdr_output.opt"
 
       ! Public functions
       public init_cdr_output, wrt_cdr
