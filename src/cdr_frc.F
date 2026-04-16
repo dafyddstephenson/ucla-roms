@@ -9,7 +9,9 @@
 #include "cppdefs.opt"
 
 #if defined MARBL && defined CDR_FORCING
-
+      use compile_time_switches, only: cdr_source,
+     &     forcing_depth_profiles, forcing_3d, forcing_parameterized,
+     &     time_interpolation, relocate_to_wet_pts, cdr_volume
       use roms_read_write, only:
      &     ncforce, ncforce3d, cdr_frc_opt,
      &     set_frc_data, store_string_att

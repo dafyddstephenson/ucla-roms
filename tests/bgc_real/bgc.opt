@@ -7,19 +7,15 @@
       ! notes : - choice of bgc tracers to output is still selected in tracers.opt.
       !       : - choice of diagnostics to output is in bgc_2Ddiagnostics.opt and bgc_3Ddiagnostics.opt
 
-      logical,parameter :: wrt_his           = .true.             ! t/f to write module history file
       real,parameter    :: output_period_his = 100                ! output period in seconds
       integer,parameter :: nrpf_his          = 10                 ! total recs per file
 
-      logical,parameter :: wrt_avg           = .false.            ! t/f to write module averages file
       real,parameter    :: output_period_avg = 100                ! output averaging period in seconds
       integer,parameter :: nrpf_avg          = 10                 ! total recs per file
 
-      logical,parameter :: wrt_his_dia           = .true.         ! t/f to write module history file
       real,parameter    :: output_period_his_dia = 100            ! output period in seconds
       integer,parameter :: nrpf_his_dia          = 10             ! total recs per file
 
-      logical,parameter :: wrt_avg_dia           = .false.        ! t/f to write module history file
       real,parameter    :: output_period_avg_dia = 100            ! output period in seconds
       integer,parameter :: nrpf_avg_dia          = 10             ! total recs per file
 

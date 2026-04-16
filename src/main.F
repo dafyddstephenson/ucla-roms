@@ -72,11 +72,12 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       contains
 
       subroutine roms_thread
+      use compile_time_switches, only: do_upscale
       use basic_output, only: wrt_his_ocean_vars
       use scalars, only: ntimes, iic, ntstart, diag_sync
       use timers, only: start_timers, stop_timers
       use error_handling_mod, only: error_log
-      use upscale_output, only: do_upscale, wrt_upscale
+      use upscale_output, only: wrt_upscale
 
       implicit none
 
@@ -103,6 +104,8 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc,
+     &     wrt_frc, floats, do_random, ub_tune, do_upscale
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
       use ocean_vars, only: dzdeta, dzdxi, hz
@@ -113,12 +116,11 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     diag_sync, dt, iic, iif, knew, kstp,
      &     nnew, nrhs, nstp, numthreads, priv_count, sec2day,
      &     start_time, synchro_flag, tdays, time, proc
-      use sponge_tune, only: ub_tune
-      use particles, only: floats, init_particles
-      use upscale_output, only: do_upscale, init_upscale
-      use random_output, only: do_random, init_random
-      use cdr_output, only: do_cdr, init_cdr_output
-      use frc_output, only: do_frc, init_frc
+      use particles, only: init_particles
+      use upscale_output, only:  init_upscale
+      use random_output, only:  init_random
+      use cdr_output, only:  init_cdr_output
+      use frc_output, only: init_frc_output
       use analytical, only: ana_vmix
 #ifdef ANA_INITIAL
      &     , ana_init
@@ -126,7 +128,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use get_init_mod, only: get_init
       use grid_stiffness_mod, only: grid_stiffness
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
+      use diagnostics, only: init_diagnostics
 #endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
@@ -345,11 +347,11 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc(.true.)
 #endif
       if (do_random) call init_random
-      if (do_cdr)  call init_cdr_output
+      if (wrt_cdr)  call init_cdr_output
       if (do_upscale) then
         call init_upscale
       endif
-      if (do_frc) call init_frc
+      if (wrt_frc) call init_frc_output
 
 
         mpi_master_only write(*,'(/1x,A/)')
@@ -370,18 +372,21 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
+      use compile_time_switches, only: wrt_cdr, diag_uv, diag_trc, do_extract,
+     &     wrt_frc, floats, do_random, ub_tune, wrt_smflx, wrt_stflx,
+     &     bry_tides, pot_tides, do_zslice
       use diag_mod, only: diag
-      use extract_data, only: do_extract, do_extract_data
+      use extract_data, only:  do_extract_data
       use scalars, only:
      &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
      &     nstp, ntstart, sec2day, start_time, tdays, time
-      use sponge_tune, only: ub_tune, adjust_orlanski
-      use particles, only: floats, do_particles
-      use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
-      use random_output, only: do_random, wrt_random
-      use cdr_output, only: do_cdr, wrt_cdr_output
-      use frc_output, only: do_frc, wrt_frc
-      use zslice_output, only: do_zslice, wrt_zslice
+      use sponge_tune, only: adjust_orlanski
+      use particles, only: do_particles
+      use surf_flux, only: wrt_sflux
+      use random_output, only: wrt_random
+      use cdr_output, only:  wrt_cdr_output
+      use frc_output, only:  wrt_frc_output
+      use zslice_output, only: wrt_zslice
       use basic_output, only:
      &     calc_avg_ocean_vars, wrt_avg_ocean_vars,
      &     wrt_his_ocean_vars, wrt_rst_ocean_vars
@@ -401,9 +406,8 @@ CR      write(*,*)  ' -2' MYID
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bgc_io, only: wrt_bgc
 #endif
-      use tides, only: bry_tides, pot_tides
 #ifdef DIAGNOSTICS
-      use diagnostics, only: diag_uv,diag_trc,do_diagnostics
+      use diagnostics, only: do_diagnostics
 #endif
       use roms_read_write, only: frc_time
 #ifdef LMD_MIXING
@@ -575,10 +579,10 @@ CR      write(*,*)  ' -2' MYID
 
       if (do_random) call wrt_random
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
-      if (do_cdr)  call wrt_cdr_output
+      if (wrt_cdr)  call wrt_cdr_output
 #endif
       if (do_zslice) call wrt_zslice
-      if (do_frc)    call wrt_frc
+      if (wrt_frc)    call wrt_frc_output
 
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc

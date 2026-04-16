@@ -1,7 +1,7 @@
       module calc_pflx_mod
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only: calc_pflx
       use netcdf, only: nf90_noerr, nf90_inq_varid
       use dimensions, only: nx, ny, nz, i0, i1, j0, j1,x_,x0,x1,y_,y0,y1
       use scalars, only: dt, knew, nrhs

@@ -4,7 +4,6 @@
       ! at vertical transects on the parent grid.
       !
       !------------------------------
-      logical,parameter,public :: do_upscale = .false.
 
       integer,parameter :: nrpf_uscl = 48                  ! number of records per output file
       real,parameter    :: output_period_uscl = 100         ! output period in seconds

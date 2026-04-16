@@ -39,7 +39,7 @@
       !]
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only: calc_pflx, do_extract
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
       use nc_read_write, only: nccreate, ncread, ncwrite
@@ -55,7 +55,7 @@
       use param, only: isalt, nt, itemp, isw_corn, jsw_corn,
      &     nt_passive, mynode, lm, mm, N
       use scoord, only: theta_s, theta_b, hc
-      use calc_pflx_mod, only: calc_pflx, up, vp
+      use calc_pflx_mod, only:  up, vp
       use basic_output, only: vn=>vname
 #ifdef SOLVE3D
      &     ,indxt, indxu, indxv, indxw

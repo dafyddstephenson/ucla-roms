@@ -8,7 +8,7 @@
       ! in the direction of the unmasked cell.
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only: river_analytical
       use roms_read_write, only: ncforce, frcfile, set_frc_data
       use nc_read_write, only: nccreate, ncread, ncwrite
       use scalars, only: nt
@@ -78,7 +78,7 @@
       end if
 
       ! set river flux volumes and tracer data:
-      if(analytical) then
+      if(river_analytical) then
 
         call set_ana_river_frc ! cppflags needed else won't link without the analytical.F
 
@@ -120,7 +120,7 @@
       allocate( ridx_real(GLOBAL_2D_ARRAY) )    ; ridx_real = 0.
       allocate( rfrc(GLOBAL_2D_ARRAY) )    ; rfrc = 0.
 
-      if (analytical) then
+      if (river_analytical) then
         riv_west=xl*0.4 ! River west bank at 40% from west
         riv_east=xl*0.6 ! River west bank at 60% from west
         ! pm is constant for this case

@@ -48,7 +48,7 @@ else
 fi
 
 # 2) Python - confirm values:
-python3 test_roms.py $bm_file
+python test_roms.py $bm_file
 retval=$?
 echo "exit code for ${BGC_MODEL} test: $retval"
 

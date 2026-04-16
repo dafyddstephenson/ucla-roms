@@ -4,6 +4,13 @@
       ! his, avg, and rst files
 
 #include "cppdefs.opt"
+      use compile_time_switches, only: calc_pflx,
+     &     wrt_file_rst, wrt_file_avg, wrt_file_his, monthly_restarts,
+     &     wrt_Z, wrt_Ub, wrt_Vb, wrt_U, wrt_V, wrt_R, wrt_O, wrt_W,
+     &     wrt_Akv, wrt_Akt, wrt_aks, wrt_Hbls, wrt_Hbbl,
+     &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
+     &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
+     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl, ub_tune
       use netcdf, only:
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
@@ -14,8 +21,8 @@
      &     max_name_size, dn_tm, dn_xr, dn_xu,
      &     dn_yr, dn_yv, dn_zr, dn_zw,
      &     avg_output, create_file, sec2date
-      use sponge_tune, only: ub_tune, wrt_rst_ub
-      use calc_pflx_mod, only: calc_pflx, wrt_rst_diag_slow
+      use sponge_tune, only:  wrt_rst_ub
+      use calc_pflx_mod, only: wrt_rst_diag_slow
       use scalars, only:
      &     NT, iic, knew, nstp, time,
      &     N, dt, start_time, nnew, tdays
@@ -403,12 +410,11 @@
 # endif
 #endif
         ierr=nf90_close(ncid)
-        if (mynode == 0 .and. (.not.code_check)) then                 ! supress output for code_check
+        if (mynode == 0) then
           write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')
      &     'ocean_vars :: wrote history, tdays =', tdays,
      &     'step =', iic, 'rec =', rec_his
         endif
-        code_check=.false.
 
         output_time_his=0
       endif

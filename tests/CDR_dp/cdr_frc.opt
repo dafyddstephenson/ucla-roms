@@ -2,33 +2,9 @@
       ! ****************************************************************
       ! user inputs
 
-      logical,parameter,public :: cdr_source  = .true.  ! Should be false if not using CDR forcing
-
       character(len=60) :: cdr_file = 'input_data/cdr_forcing_dp.nc'   ! NetCDF forcing file and variable names
 
       integer,parameter,public :: ncdr_parm=1   !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
-
-      ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
-      logical,public                     :: forcing_depth_profiles = .true.     ! T if this file contains depth profiles
-      logical,public                     :: forcing_3d             = .false.     ! T if this file contains 3d forcing
-      logical,public                     :: forcing_parameterized  = .false.      ! T if forcing with idealized Gaussian profiles
-
-      ! INTERPOLATE FORCING IN TIME, OR NO?
-      logical                            :: time_interpolation = .false.   ! T if using time interpolation. If T, forcing is linearly
-                                                                           ! interpolated in time between consecutive records; otherwise,
-                                                                           ! forcing is held constant until the next record is reached
-
-      ! RELOCATE CDR FORCING TO NEAREST WET POINT?
-      logical                            :: relocate_to_wet_pts = .false.  ! If false, any depth profile or single-point parameterized
-                                                                           ! forcing that is centered on land will cause the model to
-                                                                           ! error out.  If true, the forcing will be relocated or
-                                                                           ! recentered to the nearest wet point.
-
-      ! PARAMETERIZED VERTICAL PROFILES ********************************
-      logical,parameter,public :: cdr_volume  = .false.  ! Set to .false. if you want a tracer flux but no added water.
-                                                         ! If .true., read in volume flux and tracer concentration, and
-                                                         ! multiply together to get tracer flux.
-                                                         ! Set to false if you want to read in a vertical profile(s).
 
       ! Use either volume flux [m3/s] and tracer concentrations [mmol/m3], or use tracer flux [mmol/s]
       type (ncforce) :: nc_cdrvol = ncforce( vname='cdr_volume', tname='cdr_time')

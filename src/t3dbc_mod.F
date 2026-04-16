@@ -8,7 +8,7 @@
       subroutine t3dbc_tile (istr,iend,jstr,jend, itrc, grad)
 
 ! Set lateral boundary conditions for tracer field t(:,:,:,itrc)
-
+      use compile_time_switches, only: ub_tune
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use tracers, only: t
       use boundary, only: t_west, t_east, t_south, t_north
@@ -18,7 +18,7 @@
       use ocean_vars, only: u, v
       use scalars, only: dt, n, nnew, nrhs, nstp
       use sponge_tune, only:
-     &     ub_tune, ub_west, ub_east, ub_south,
+     &     ub_west, ub_east, ub_south,
      &     ub_north
 
       implicit none

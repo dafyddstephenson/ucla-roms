@@ -32,7 +32,8 @@
 # ifdef NHMG
      &                                            ,rw
 # endif
-     &                                                              )
+     &     )
+      use compile_time_switches, only: diag_uv
       use dimensions, only: inode, jnode
 # ifdef NHMG
       use ocean_vars, only:
@@ -43,7 +44,7 @@
       use mg_namelist, only: surface_neumann
       use mg_grids, only: mggrid => grid
 # endif
-      use diagnostics, only: diag_uv, u_prev, v_prev, calc_diag, udiag,
+      use diagnostics, only: u_prev, v_prev, calc_diag, udiag,
      &  vdiag, icori, dxdyi_u, dxdyi_v, idiss, ipgr, iadv, ivmix,
      &     set_diags_u_4th_adv, set_diags_v_4th_adv
       use surf_flux, only: sustr, svstr
@@ -586,10 +587,10 @@
       end
 
       subroutine step3d_uv2_tile(istr,iend,jstr,jend, WC,FC,CF,DC)
-
+      use compile_time_switches, only: river_source
       use river_frc, only:
      &     iriver, riv_depth, riv_uvel, riv_vvel,
-     &     river_source, riv_uflx, riv_vol, riv_vflx
+     &     riv_uflx, riv_vol, riv_vflx
       use param, only: ieast, iwest, jnorth, jsouth, np_xi, np_eta
       use dimensions, only: inode, jnode
 

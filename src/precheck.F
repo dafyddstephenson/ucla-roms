@@ -3,7 +3,7 @@
       ! A place to conduct runtime checking of inputs and settings
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only: do_extract, wrt_file_rst
       use error_handling_mod, only: error_log
       use netcdf, only: nf90_double
 
