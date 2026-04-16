@@ -5,6 +5,8 @@
 
 #include "cppdefs.opt"
       use compile_time_switches, only: diag_avg, diag_uv, diag_trc
+      use namelist_mod, only : open_namelist_file
+      use error_handling_mod, only: error_log
       use netcdf, only:
      &     nf90_double, nf90_global, nf90_nofill,
      &     nf90_put_att, nf90_set_fill, nf90_noerr,
@@ -35,7 +37,13 @@
       implicit none
       private
 
-#include "diagnostics.opt"
+      character(len=11) :: module_name = "diagnostics"
+      integer          :: output_period =  0       ! output period
+      integer          :: nrpf          =  0        ! total recs per file
+
+      namelist /DIAGNOSTICS_SETTINGS/ output_period, nrpf
+
+      integer, parameter         :: diag_prec     = nf90_double ! Precision of output variables (nf90_float/nf90_double)
 
       ![ Potential issues:
       !  - Since we don't have pressure in the boundary buffer, we can't get u'p' at the bry.
@@ -108,7 +116,7 @@
       ! Netcdf outputting:
       ! -----------------
       real    :: output_time = 0         ! record number of output. 0 indicates we need new file
-      integer :: record = nrpf           ! to trigger the first file creation
+      integer :: record = 0           ! to trigger the first file creation
       integer :: ncid=-1, prev_fill_mode
 
       real, public,allocatable, dimension(:,:) :: dxdyi_u, dxdyi_v,dxdyi ! 1/ surface of cells
@@ -161,6 +169,24 @@
 
       contains
 
+      subroutine read_diagnostics_nml
+!     Read the "DIAGNOSTICS_SETTINGS" section of the namelist file
+
+      integer ::  namelist_unit, ios
+      character(len=21) :: sr_name = "read_diagnostics_nml"
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      read (unit=namelist_unit, nml=DIAGNOSTICS_SETTINGS, iostat=ios)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context=module_name//'/'//sr_name, info=
+     &   'could not read DIAGNOSTICS_SETTINGS section of namelist file'
+     &     )
+      end if
+      close(namelist_unit)
+      record = nrpf
+      end subroutine read_diagnostics_nml
+
 ! ----------------------------------------------------------------------
       subroutine init_diagnostics ![
       ! Allocate and initialize diagnostic arrays.
@@ -169,6 +195,7 @@
       ! local
       integer :: itrc,idx
 
+      call read_diagnostics_nml
 
       if (diag_uv) then
         allocate(Udiag(nx,ny,nz,nmd) )

@@ -2,6 +2,7 @@
 
 #include "cppdefs.opt"
       use compile_time_switches, only: pot_tides, bry_tides, ana_tides
+      use namelist_mod, only: open_namelist_file
       use dimensions, only: inode, jnode, x_,x0,x1,y_,y0,y1
       use param, only:
      &     mynode, ieast, iwest, jnorth, jsouth, lm, mm, np_xi, np_eta
@@ -11,12 +12,15 @@
      &     force_info, frctype, max_frc,
      &     tide_opt, frcfile, store_string_att
       use grid, only: xr, yr
+      use error_handling_mod, only: error_log
 
       implicit none
 
       private                                              ! default variables private to module
       character(len=5) :: module_name = "tides"
-#include "tides.opt"
+
+      integer :: ntides = 0
+      namelist /TIDES_SETTINGS/ ntides
 
       real, dimension(:)    ,allocatable :: ftide
       real, dimension(:,:,:),allocatable :: ztide_r,ztide_i
@@ -30,6 +34,30 @@
       contains
 
 !-----------------------------------------------------------------------
+      subroutine read_tides_nml
+
+!     Read the "TIDES_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_tides_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=TIDES_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read TIDES_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_tides_nml
+
       subroutine init_tides  ![
       ! allocate tidal variables and read tidal data
       implicit none
@@ -39,6 +67,7 @@
       if (.not.pot_tides.and..not.bry_tides) then
          return
       endif
+      call read_tides_nml
       allocate(ftide(ntides))
 
       if (bry_tides) then
@@ -260,7 +289,6 @@
      &     nf90_global, nf90_nowrite, nf90_open,
      &     nf90_inq_varid, nf90_get_var, nf90_get_att
       use dimensions, only: i0, i1, j0, j1
-      use error_handling_mod, only: error_log
       use roms_mpi, only: exchange_xxx
       use nc_read_write, only: ncread
       use pio_roms, only: use_pio, pio_gtype

@@ -4,6 +4,7 @@
 #include "cppdefs.opt"
       use compile_time_switches, only:
      &     zslice_avg, wrt_T_zsl, wrt_U_zsl, wrt_V_zsl
+      use namelist_mod, only: open_namelist_file
       use grid, only: rmask
       use param, only: lm, mm, mynode
       use roms_mpi, only: exchange_xxx
@@ -24,10 +25,21 @@
 
       private
       character(len=13) :: module_name = "zslice_output"
-#include "zslice_output.opt"
+      integer,parameter :: max_ndep = 20
+      integer,parameter :: max_nt_z = 10
+
+      real           :: output_period = 1200 ! in seconds
+      integer        :: nrpf   = 72          ! number of frames per file
+      integer        :: ndep   =  6          ! number of depth slice
+      real, dimension(max_ndep) :: vecdep = (/0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/) ! depths slice
+      integer        :: nt_z   =  2        ! number of tracers to slice
+      integer, dimension(max_nt_z) :: trc2zsc = (/0,0,0,0,0,0,0,0,0,0/) ! index of the tracer to slice
+
+      namelist /ZSLICE_SETTINGS/ output_period, nrpf, ndep,
+     &     vecdep, nt_z, trc2zsc
 
       real    :: output_time = 0
-      integer :: record = nrpf    ! to trigger the first file creation
+      integer :: record = 0    ! to trigger the first file creation
       integer :: navg = 0         ! number of samples in average
       real    :: FillValue=1.E+33 !
 
@@ -47,11 +59,37 @@
       contains
 
 !----------------------------------------------------------------------
+      subroutine read_zslice_nml
+
+!     Read the "ZSLICE_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_zslice_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=ZSLICE_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read ZSLICE_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+      record = nrpf
+      end subroutine read_zslice_nml
+
       subroutine init_zslice ![
       ! Allocate and initialize arrays.
       implicit none
 
       integer m
+
+      call read_zslice_nml
 
       if (wrt_T_zsl)  then
           allocate( Tz(GLOBAL_2D_ARRAY,ndep,nt_z) )
@@ -355,7 +393,7 @@
           call create_file('_zsl',fname)
           ierr=nf90_open(fname,nf90_write,ncid)
           call def_vars_zslice(ncid)
-          call ncwrite(ncid,'depth',vecdep)
+          call ncwrite(ncid,'depth',vecdep(1:ndep))
           ierr = nf90_close(ncid)
           record = 0
         endif

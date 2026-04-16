@@ -1,139 +1,248 @@
 module compile_time_switches
   implicit none
   public
-! bgc.opt (requires MARBL or BIOLOGY_BEC2, and MARBL_DIAGS or BEC2_DIAG for diagnostics)
-  logical,parameter :: wrt_bgc_his = .false. ! t/f to write module history file
-  logical,parameter :: wrt_bgc_avg = .false. ! t/f to write module averages file
-  logical,parameter :: wrt_bgc_dia_his = .false. ! t/f to write module history file
-  logical,parameter :: wrt_bgc_dia_avg = .false.         ! t/f to write module history file
-  ! prev wrt_his, wrt_avg, wrt_his_dia, wrt_avg_dia
+  !================================================================================
+  !                               BIOGEOCHEMISTRY
+  !================================================================================
+  ! Formerly in `bgc.opt`. Require MARBL or BIOLOGY_BEC2 cpp keys to take effect
+  !================================================================================
+  logical,parameter :: wrt_bgc_his = .false.     ! t/f to write tracer history file
+  logical,parameter :: wrt_bgc_avg = .false.     ! t/f to write tracer averages file
+  logical,parameter :: wrt_bgc_dia_his = .false. ! t/f to write diagnostic history file
+  logical,parameter :: wrt_bgc_dia_avg = .false. ! t/f to write diagnostic averages file
+  logical,parameter :: interp_bgc_frc = .true.   ! interpolate forcing from coarser grid
 
-  !calc_pflx.opt
+  !================================================================================
+  !                                BULK FORCING
+  !================================================================================
+  ! Formerly in `bulk_frc.opt`
+  !================================================================================
+  logical,parameter :: interp_bulk_frc = .true. ! Interpolate forcing from coarser grid
+  logical           :: check_bulk_frc_units = .false. ! Check units in forcing file
+
+  !================================================================================
+  !                       PRESSURE FLUX CALCULATION
+  !================================================================================
+  ! Formerly in `calc_pflx.opt`
+  !================================================================================
   logical, parameter  :: calc_pflx     = .true.   ! Baroclinic pressure fluxes
 
-  !cdr.opt (requires CDR_FORCING)
-  logical,parameter :: cdr_source  = .false.  ! Should be false if not using CDR forcing
+  !================================================================================
+  !                    CARBON DIOXIDE REMOVAL FORCING
+  !================================================================================
+  ! Formerly in `cdr_frc.opt`. Require CDR_FORCING cpp key to take effect
+  !================================================================================
+  logical,parameter :: cdr_source  = .false.  ! on/off switch for CDR forcing
 
 
-  ! SET ONLY ONE OF THE FOLLOWING FORCING TYPES TO BE TRUE ***********************************
-  logical,public :: forcing_depth_profiles = .false.     ! T if this file contains depth profiles
-  logical,public :: forcing_3d             = .false.     ! T if this file contains 3d forcing
-  logical,public :: forcing_parameterized  = .true.      ! T if forcing with idealized Gaussian profiles
+  ! CDR forcing type
+  !-----------------
+  logical,public :: forcing_depth_profiles = .false. ! T if this file contains depth profiles
+  logical,public :: forcing_3d             = .false. ! T if this file contains 3d forcing
+  logical,public :: forcing_parameterized  = .true. ! T if forcing with idealized Gaussian profiles
 
-  ! INTERPOLATE FORCING IN TIME, OR NO?
-  logical :: time_interpolation = .false.   ! T if using time interpolation. If T, forcing is linearly
-  ! interpolated in time between consecutive records; otherwise,
-  ! forcing is held constant until the next record is reached
+  ! Linear time interpolation between records (T), or step changes (F)
+  logical,parameter :: time_interpolation = .false.
 
-  ! RELOCATE CDR FORCING TO NEAREST WET POINT?
-  logical :: relocate_to_wet_pts = .false.  ! If false, any depth profile or single-point parameterized
-  ! forcing that is centered on land will cause the model to
-  ! error out.  If true, the forcing will be relocated or
-  ! recentered to the nearest wet point.
+  ! Prevent errors by relocating single-point CDR forcing locations on land to water
+  logical,parameter :: relocate_to_wet_pts = .false.
 
-  ! PARAMETERIZED VERTICAL PROFILES ********************************
-  logical,parameter,public :: cdr_volume  = .false.  ! Set to .false. if you want a tracer flux but no added water.
-  ! If .true., read in volume flux and tracer concentration, and
-  ! multiply together to get tracer flux.
-  ! Set to false if you want to read in a vertical profile(s).
+  ! Flux type
+  !----------
+  ! Volume flux & tracer concentration (T) or tracer flux (F):
+  logical,parameter,public :: cdr_volume  = .false.
 
-  ! cdr_output.opt
-  logical,parameter :: wrt_cdr   = .false.
-  logical,parameter :: wrt_cdr_avg   = .false.  ! NOTE: For most applications .true. is recommended
-  logical,parameter :: cdr_monthly_averages = .false. ! This overrides output_period
+  !================================================================================
+  !                      CARBON DIOXIDE REMOVAL OUTPUT FILES
+  !================================================================================
+  ! Formerly in `cdr_output.opt` or `cstar_output.opt`
+  ! Require CDR_OUTPUT cpp key to take effect.
+  !================================================================================
+  logical,parameter :: do_cdr_output   = .false. ! on/off switch for CDR-specific output
+  logical,parameter :: wrt_cdr_avg   = .true. ! Write averages (T) or snapshots(F)
+  ! Write averages over calendar months:
+  logical,parameter :: cdr_monthly_averages = .false.
 
-  !diag.opt
-  logical, parameter :: code_check_mode =.true.
+  !================================================================================
+  !                               DIAGNOSTICS
+  !================================================================================
+  ! Formerly in `diag.opt` (stdout diags)  and `diagnostics.opt` (netcdf diags)
+  ! NetCDF diagnostics require DIAGNOSTICS cppkey to take effect
+  !================================================================================
+  logical, parameter         :: diag_avg      = .true.  ! averages (T) or snapshots (F)
+  logical, parameter, public :: diag_uv       = .false. ! Momentum diagnostics
+  logical, parameter, public :: diag_trc      = .false. ! Selected tracers diagnostics
 
-  !diagnostics.opt
-  logical, parameter         :: diag_avg      = .true.    ! compute history (=F) or averages (=T)
-  logical, parameter, public :: diag_uv       = .false.   ! Momentum diagnostics
-  logical, parameter, public :: diag_trc      = .false.   ! Selected tracers diagnostics
+  ! Change STDOUT diagnostics stream for model testing:
+  logical, parameter :: code_check_mode = .true.
 
-  !extract_data.opt
-  logical,parameter,public :: do_extract = .false.
+  !================================================================================
+  !                        NESTED BOUNDARY FILE GENERATION
+  !================================================================================
+  ! Formerly in `extract_data.opt`
+  !================================================================================
+  logical,parameter,public :: do_extract = .false. ! on/off switch for generation
 
-  !frc_output.opt
-  logical,public,parameter :: wrt_frc = .false.
-  logical,parameter        :: wrt_frc_avg   = .false.
+  !================================================================================
+  !                               FLUX FORCING
+  !================================================================================
+  ! Formerly in `flux_frc.opt`
+  !================================================================================
+  logical,parameter,public :: interp_flux_frc = .true. ! Interpolate from coarser grid
 
-  !nc_read_write.opt
-  logical,parameter  :: nccreate_shuffle=.true.  ! Shuffle on for extra conmpression
+  !================================================================================
+  !                           INCLUDE FORCING AS OUTPUT
+  !================================================================================
+  ! Formerly in `frc_output.opt`
+  !================================================================================
+  logical,public,parameter :: wrt_frc = .false.    ! forcing output on/off switch
+  logical,parameter        :: wrt_frc_avg = .false.! averages(T) or snapshots (F)
 
-  !ocean_vars.opt
-  logical,parameter :: wrt_file_rst      = .false.     ! t/f to write module history file
-  logical,parameter :: monthly_restarts = .false.      ! This overrides output_period
-  logical,parameter :: wrt_file_his      = .true.     ! t/f to write module history file
-  logical,parameter :: wrt_file_avg      = .false.     ! t/f to write module averages file
+  !================================================================================
+  !                           NETCDF READ/WRITE
+  !================================================================================
+  ! Formerly in `nc_read_write.opt`
+  !================================================================================
+  logical,parameter  :: nccreate_shuffle=.true. ! Shuffle on for extra conmpression
 
-  logical,parameter :: wrt_Z =.true., &
-                       wrt_Ub=.true., &
-                       wrt_Vb=.true., &
-                       wrt_U=.true., &
-                       wrt_V=.true., &
-                       wrt_R=.false., &
-                       wrt_O=.false., &
-                       wrt_W=.false., &
-                       wrt_Akv=.false., &
-                       wrt_Akt=.false., &
-                       wrt_Aks=.false., &
-                       wrt_Hbls=.false., &
-                       wrt_Hbbl=.false.
+  !================================================================================
+  !                        BASIC MODEL NETCDF OUTPUT CONTROLS
+  !================================================================================
+  ! Formerly in `ocean_vars.opt`
+  logical,parameter :: wrt_file_his = .true.   ! Write output as snapshots
+  logical,parameter :: wrt_file_avg = .false.  ! Write output as averages
+  logical,parameter :: wrt_file_rst = .false.  ! Write model restart files
 
-  logical,parameter :: wrt_avg_Z =.true., &
-                       wrt_avg_Ub=.true., &
-                       wrt_avg_Vb=.true., &
-                       wrt_avg_U=.true., &
-                       wrt_avg_V=.true., &
-                       wrt_avg_R=.true., &
-                       wrt_avg_O=.true., &
-                       wrt_avg_W=.true., &
-                       wrt_avg_Akv=.true., &
-                       wrt_avg_Akt=.true., &
-                       wrt_avg_Aks=.true., &
-                       wrt_avg_Hbls=.true., &
-                       wrt_avg_Hbbl=.true.
+  ! Write restarts at start of calendar month (overrides output_period_rst):
+  logical,parameter :: monthly_restarts = .false.   ! This overrides output_period
 
-  ! particles.opt
-  logical,parameter :: floats = .false.
-  logical :: full_seed = .true.           ! seed with constant density
+  ! Control output variables (snapshots/history file):
+  logical,parameter :: wrt_Z =.true.,    & ! Include `zeta`
+                       wrt_Ub=.true.,    & ! Include `ubar`
+                       wrt_Vb=.true.,    & ! Include `vbar`
+                       wrt_U=.true.,     & ! Include `u`
+                       wrt_V=.true.,     & ! Include `v`
+                       wrt_R=.false.,    & ! Include `rho`
+                       wrt_O=.false.,    & ! Include `omega`
+                       wrt_W=.false.,    & ! Include `w`
+                       wrt_Akv=.false.,  & ! Include `Akv`
+                       wrt_Akt=.false.,  & ! Include `Akt`
+                       wrt_Aks=.false.,  & ! Include `Aks`
+                       wrt_Hbls=.false., & ! Include `hbls`
+                       wrt_Hbbl=.false.    ! Include `hbbl`
 
-  !pipe_frc.opt
-  logical,parameter,public :: pipe_source  = .false.      ! use pipe forcing
-  logical,parameter        :: p_analytical = .false.      ! analytical forcing true
+  ! Control output variables (averages file):
+  logical,parameter :: wrt_avg_Z =.true.,   & ! Include `zeta`
+                       wrt_avg_Ub=.true.,   & ! Inlucde `ubar`
+                       wrt_avg_Vb=.true.,   & ! Include `vbar`
+                       wrt_avg_U=.true.,    & ! Include `u`
+                       wrt_avg_V=.true.,    & ! Include `v`
+                       wrt_avg_R=.true.,    & ! Include `rho`
+                       wrt_avg_O=.true.,    & ! Include `omega`
+                       wrt_avg_W=.true.,    & ! Include `w`
+                       wrt_avg_Akv=.true. , & ! Include `Akv`
+                       wrt_avg_Akt=.true.,  & ! Include `Akt`
+                       wrt_avg_Aks=.true.,  & ! Include `Aks`
+                       wrt_avg_Hbls=.true., & ! Include `hbls`
+                       wrt_avg_Hbbl=.true.    ! Include `hbbl`
 
-  !random_output.opt
-  logical,public,parameter :: do_random = .false.
+  !================================================================================
+  !                           LAGRANGIAN PARTICLES
+  !================================================================================
+  ! Formerly in `particles.opt`
+  !================================================================================
+  logical,parameter :: floats = .false.   ! on/off switch for particles
+  logical,parameter :: full_seed = .true. ! seed with constant density
 
-  !river_frc.opt
-  logical,parameter,public :: river_source = .false.   ! default should be false if not using rivers
-  logical,parameter        :: river_analytical = .false.   ! analytical forcing, if false then realistic
 
-  !sponge_tune.opt
-  logical,parameter  :: ub_tune = .false.
-  logical,parameter  :: spn_avg = .true.
-  logical,parameter  :: wrt_sponge=.true.     ! yes/no output sponge to file
+  !================================================================================
+  !                                PIPE INPUT
+  !================================================================================
+  ! Formerly in `pipe_frc.opt`
+  !================================================================================
+  logical,parameter,public :: pipe_source  = .false. ! on/off switch for pipe input
+  logical,parameter        :: p_analytical = .false. ! Specify inputs analytically
 
-  !surf_flux.opt
-  logical,parameter :: wrt_smflx = .false.              ! output surface momentum flux
-  logical,parameter :: wrt_stflx = .false.              ! output surface tracer flux
-  logical,parameter :: wrt_swflx = .false.              ! output surface water flux (P-E)
-  logical,parameter :: sflx_avg  = .false.              ! write averaged sflx data
+  !================================================================================
+  !                               CUSTOM OUTPUT
+  !================================================================================
+  ! Formerly in `random.opt`
+  !================================================================================
+  logical,public,parameter :: do_random = .false. ! on/off switch for custom output
 
-  !tides.opt
-  logical,parameter :: bry_tides=.false. ! Barotropic tides at the boundary from TPXO
+  !================================================================================
+  !                               RIVER INPUT
+  !================================================================================
+  ! Formerly in `river_frc.opt`
+  !================================================================================
+  logical,parameter,public :: river_source = .false. ! on/off switch for river input
+  logical,parameter    :: river_analytical = .false. ! Specify inputs analytically
+
+  !================================================================================
+  !                              SPONGE TUNING
+  !================================================================================
+  !Formerly in `sponge_tune.opt`
+  !================================================================================
+  logical,parameter  :: ub_tune = .false. ! on/off switch for sponge tuning
+  logical,parameter  :: wrt_sponge=.true. ! output sponge to file
+  logical,parameter  :: spn_avg = .true.  ! write as averages (T) or snapshots (F)
+
+  !================================================================================
+  !                             SURFACE FLUX OUTPUT
+  !================================================================================
+  ! Formerly in `surf_flx.opt`
+  !================================================================================
+  logical,parameter :: wrt_smflx = .false. ! output surface momentum flux
+  logical,parameter :: wrt_stflx = .false. ! output surface tracer flux
+  logical,parameter :: wrt_swflx = .false. ! output surface water flux (P-E)
+  logical,parameter :: sflx_avg  = .false. ! write averaged sflx data
+
+  !================================================================================
+  !                               TIDAL FORCING
+  !================================================================================
+  ! Formerly in `tides.opt`
+  !================================================================================
+  logical,parameter :: bry_tides=.false. ! Barotropic (TPXO) tides at the boundary
   logical,parameter :: pot_tides=.false. ! Surface tidal potential
-  logical,parameter :: ana_tides=.false. ! Surface tidal potential
+  logical,parameter :: ana_tides=.false. ! Specify tides analytically
+  !================================================================================
+  !                               TRACER OUTPUT
+  !================================================================================
+  ! Formerly in `tracers.opt`
+  !================================================================================
+  logical,parameter :: wrt_temp = .true.     ! Write temperature
+  logical,parameter :: wrt_salt = .true.     ! Write salinity
+  logical,parameter :: wrt_temp_dia = .true. ! Write temperature diagnostics
+  logical,parameter :: wrt_salt_dia = .true. ! Write salinity diagnostics
 
-  !upscale_output.opt
-  logical,parameter :: do_upscale = .false.
+  !================================================================================
+  !                                CDR UPSCALING
+  !================================================================================
+  ! Formerly in `upscale_output.opt`
+  !================================================================================
+  logical,parameter :: do_upscale = .false. ! on/off switch for upscaling
 
-  !zslice_output.opt
-  logical,parameter :: do_zslice  = .false.
-  logical,parameter :: zslice_avg = .false.
-  logical,parameter :: wrt_T_zsl  = .false., &  ! tracers
-                       wrt_U_zsl  = .true.,  &  ! u-velocity
-                       wrt_V_zsl  = .true.     ! v-velocity
+  !================================================================================
+  !                          OUTPUT ON Z LEVELS
+  !================================================================================
+  ! Formerly in `zslice_output.opt`
+  !================================================================================
+  logical,parameter :: do_zslice  = .false. ! on/off switch for sigma-z conversion
+  logical,parameter :: zslice_avg = .false. ! output averages (T) or snapshots (T)
+  logical,parameter :: wrt_T_zsl  = .false., &  ! Include tracers
+                       wrt_U_zsl  = .true.,  &  ! Include u-velocity
+                       wrt_V_zsl  = .true.      ! Include v-velocity
+
+
+  !================================================================================
+  !                           ERROR HANDLING
+  !================================================================================
+  ! GATHER_ERRORS_ON_MAIN_RANK ensures MPI synchronization before abort.
+  ! This can add runtime bottlenecks due to the use of MPI collectives,
+  ! But guarantees all ranks are able to report, and groups identical errors
+  ! spanning multiple ranks for more human-readable output:
+  logical,parameter :: gather_errors_on_main_rank = .false.
+
 
 
 end module compile_time_switches

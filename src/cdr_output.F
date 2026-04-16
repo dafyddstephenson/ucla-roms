@@ -7,6 +7,7 @@
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use compile_time_switches, only: cdr_source, forcing_3d,
      &     wrt_cdr_avg, cdr_monthly_averages
+      use namelist_mod, only: open_namelist_file
       use tracers, only: t_units
       use param, only: itemp, isalt
       use marbl_driver, only:
@@ -33,10 +34,13 @@
 
       private
 
-#include "cdr_output.opt"
+      real    :: output_period = 3600 ! in seconds
+      integer :: nrpf   = 4          ! number of frames per file
+      namelist /CDR_OUTPUT_SETTINGS/ output_period, nrpf
+
       character(len=10) :: module_name = "cdr_output"
       real    :: output_time = 0
-      integer :: record = nrpf ! to trigger the first file creation
+      integer :: record = 0 ! to trigger the first file creation
 
       integer,dimension(6) :: date
       character(len=15)  :: datestr
@@ -88,12 +92,31 @@
       type(CStarOutputVariable), allocatable, save :: cdr_varlist(:) ! TODO save? nah
 
       ! Public functions
-      public wrt_cdr_output,init_cdr_output
+      public :: wrt_cdr,init_cdr_output
 
 
 !----------------------------------------------------------------------
 
       contains
+
+      subroutine read_cdr_output_nml
+!     Read the "CDR_OUTPUT_SETTINGS" section of the namelist file
+
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_cdr_output_nml"
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      read (unit=namelist_unit, nml=CDR_OUTPUT_SETTINGS, iostat=ios)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context=module_name//'/'//sr_name, info=
+     &   'could not read CDR_OUTPUT_SETTINGS section of namelist file'
+     &     )
+      end if
+      close(namelist_unit)
+      record = nrpf
+      end subroutine read_cdr_output_nml
+
       subroutine add_cdr_output_variable(list, name, dimnames, dims,
      &                                     long_name, units)
         type(CStarOutputVariable), allocatable, intent(inout) :: list(:)
@@ -237,6 +260,8 @@
       logical,save :: done=.false.
       integer :: itot=0
       integer :: idx
+
+      call read_cdr_output_nml
 
       if (done) then
         return
@@ -704,10 +729,9 @@
       character(len=10) :: module_name = "cdr_output"
       private
 
-#include "cdr_output.opt"
 
       ! Public functions
-      public init_cdr_output, wrt_cdr_output
+      public init_cdr_output, wrt_cdr
 
       contains
 
@@ -736,11 +760,11 @@
         call error_log%abort_check()
       end subroutine init_cdr_output !]
 
-      subroutine wrt_cdr_output ![
+      subroutine wrt_cdr ![
 !     Allocate and initialize arrays.
       implicit none
 !     Nothing happening here!
-      end subroutine wrt_cdr_output !]
+      end subroutine wrt_cdr !]
 !----------------------------------------------------------------------
 
 #endif /* MARBL && MARBL_DIAGS && CDR_FORCING */

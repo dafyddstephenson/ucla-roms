@@ -4,6 +4,7 @@
 #include "cppdefs.opt"
 
       use param, only: mynode
+      use namelist_mod, only: open_namelist_file
       use dimensions, only: i0, i1, j0, j1, nz, eta_rho, eta_v, xi_rho, xi_u
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_xu, dn_yr, dn_yv,
@@ -19,10 +20,13 @@
 
       private
 
-#include "random_output.opt"
+      real    :: output_period = 3600 ! in seconds
+      integer :: nrpf   = 10          ! number of frames per file
+      namelist /RANDOM_OUTPUT_SETTINGS/ output_period, nrpf
+
       character(len=13) :: module_name = "random_output"
       real    :: output_time = 0
-      integer :: record = nrpf ! to trigger the first file creation
+      integer :: record = 0 ! to trigger the first file creation
 
       ! Public functions
       public wrt_random,init_random
@@ -30,6 +34,30 @@
       contains
 
 !----------------------------------------------------------------------
+      subroutine read_random_nml
+
+!     Read the "RANDOM_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_random_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=RANDOM_OUTPUT_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read RANDOM_OUTPUT_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+      record = nrpf
+      end subroutine read_random_nml
+
       subroutine init_random ![
       ! Allocate and initialize arrays.
       implicit none
@@ -42,9 +70,8 @@
       else
         done = .true.
       endif
-
+      call read_random_nml
       ! put the relevant part of your code here
-
 
       if (mynode==0) print *,'init random'
 

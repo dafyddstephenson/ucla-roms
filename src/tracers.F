@@ -18,7 +18,9 @@
       !]
 
 #include "cppdefs.opt"
-
+      use compile_time_switches, only:
+     &     wrt_temp, wrt_temp_dia,
+     &     wrt_salt, wrt_salt_dia
       use param, only: isalt, itemp, lm, mm, mynode, nt_passive
       use dimensions, only: i0, i1, j0, j1, nx, ny, eta_rho, xi_rho
       use surf_flux, only: stflx                          ! surface tracer flux should possibly live in this module rather?
@@ -67,7 +69,7 @@
       integer,public        :: n_t_avg                               ! number of tracer averages to output <= NT
 
 #if defined(BIOLOGY_BEC2) && !defined(MARBL)
-# include "bgc_tracers_indx.opt"
+# include "BEC_tracers_indx.h"
 #endif
 
       public set_surf_tracer_flx
@@ -295,17 +297,22 @@
       ! Core tracers - temp and salt:
       t_vname(itemp)='temp';        t_units(itemp)='Celsius'
       t_lname(itemp)='potential temperature'
-      iTandS = 1         ! if only temp, no salt.
+      if(wrt_temp) wrt_t(itemp) = .true.
+      if(wrt_temp_dia) wrt_t_dia(itemp) = .true.
+      iTandS = 1                ! if only temp, no salt.
 #ifdef SALINITY
       t_vname(isalt)='salt';        t_units(isalt)='PSU'
       t_lname(isalt)='salinity'
+      if(wrt_salt) wrt_t(isalt) = .true.
+      if(wrt_salt_dia) wrt_t_dia(isalt) = .true.
       iTandS = 2         ! if both temp and salt.
 #endif
       itot=iTandS        ! set up counting for additional tracers
 
       ! Additional passive tracers:
-#include "tracers.opt"
-
+#ifdef BIOLOGY_BEC2
+#include "BEC_tracers.h"
+#endif
 
 #ifdef MARBL
       call marbldrv_configure_tracers(

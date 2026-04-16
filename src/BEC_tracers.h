@@ -1,67 +1,3 @@
-! User notes:
-!   1) Specify tracer variable details here.
-!      (number of tracers (NT) still set in param.h for now)
-!
-!   2) tracer name in netcdf file for _bry.nc and _init.nc
-!   must have same name as trace variable. E.g. ptrace1 -> ptrace1
-!   However, in the surface flux forcing file, the name of the
-!   variable must be appended with _flx. E.g. ptrace1 -> ptrace1_flx
-!
-!   3) Make sure tracer surface flux units are correct!
-
-! USER INPUT 1:
-! - Interpolate forcing from coarser input grid (=1) or not (=0)
-      interp_t = 0 ! Factor 2 scaling only for now
-! - now complete USER INPUT 2 below.
-
-
-! USER INPUT 2:
-!
-! descriptions:
-!
-! wrt_t     = True/False whether to write tracer to output file
-! wrt_t_avg = True/False whether to write tracer avg to output file
-! t_vname   = Tracer short name
-! t_units   = Tracer units (for outputing tracer)
-! t_lname   = Tracer long name (for outputing tracer)
-! t_tname   = Name of time dimension that goes with tracer in forcing file.
-!             Not necessary for analytical model or no surface forcing for tracer.
-! t_ana_frc = Whether surf flux is read in (0), or analytical (1)
-!             Could be extended 2,3,... depending on different types of
-!             analytical forcing, e.g. time variant/invariant, and further
-!             specific for each variable using its 'itrace' index...
-! itot      = Counter to increment tracer indices without hard-coding indices,
-!             thus each new tracer index (e.g. itrcX) simply needs:
-!             itot=itot+1, then itot can populate arrays in correct position;
-! wrt_t_dia = Only with DIAGNOSTICS flag. Don't need otherwise.
-!             True/False to output tracer diagnostics.
-!             button switch to tracer diagnostics in diagnostics.opt
-
-! - TEMP & SALT:
-
-      wrt_t     (itemp)=.False.;    wrt_t_avg(itemp) =.True.    ! temp
-      wrt_t_dia (itemp)=.False.
-
-#ifdef SALINITY
-      wrt_t     (isalt)=.False.;    wrt_t_avg(isalt) =.True.    ! salinity
-      wrt_t_dia (isalt)=.False.
-#endif
-
-! - PASSIVE TRACERS:
-
-! - BGC TRACERS:
-
-! -- default bgc tracers
-
-!    For code-dev only, don't use bgc for physics only.
-!    Note, order of bgc tracers must match the indexing of tracers
-!    in bgc_ecosys_bec2.h.
-!    BGC tracers have corresponding index in bgc_tracers_indx.opt,
-!    since the indices are used in tracers.F and bgc.F, need to be public.
-
-#ifdef BIOLOGY_BEC2
-
-      ! itrc_bio=1+iTandS+n_passive ! Starting tracer index for bgc tracers. Set in tracers_defs.h
 
       itot=itot+1;                iPO4=itot
       wrt_t  (itot)=.True.;       wrt_t_avg(itot)=.True.
@@ -271,8 +207,3 @@
 #endif /* Ncycle_SY */
 
       ! total number of bgc tracers
-
-
-#endif /* BIOLOGY_BEC2 */
-
-

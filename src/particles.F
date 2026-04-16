@@ -5,6 +5,7 @@
 
 #include "cppdefs.opt"
       use compile_time_switches, only: full_seed
+      use namelist_mod, only: open_namelist_file
       use netcdf, only:
      &     nf90_double, nf90_global, nf90_nofill,
      &     nf90_put_att, nf90_set_fill, nf90_noerr, nf90_write,
@@ -25,7 +26,20 @@
       private
 
 
-#include "particles.opt"
+      integer :: np=50                   ! local number of particles
+      real    :: extra_space_fac = 1.5   ! buffer space to receive extra exchanged particles
+      real    :: exchange_facx = 0.1     ! maximum number of particles for transfer in NS
+      real    :: exchange_facy = 0.1     ! maximum number of particles for transfer in EW
+      real    :: exchange_facc = 0.01    ! maximum number of particles for transfer in corners
+
+      real    :: output_period = 400
+      integer :: nrpf = 100
+      real    :: ppm3 = 1e-6          ! target particles per cubic meter
+      integer :: pmin = 200 ! minimum of allocated space for particle array
+
+      namelist /PARTICLES_SETTINGS/ np, extra_space_fac, exchange_facx,
+     &     exchange_facy, exchange_facc, output_period, nrpf, ppm3, pmin
+
       character(len=9) :: module_name = "particles"
       logical :: terminal_vel= .false. ! terminal velocities on particles (not yet implemented)
 
@@ -95,6 +109,30 @@
 
       contains
 !-------------------------------------------------
+      subroutine read_particles_nml
+
+!     Read the "PARTICLES_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_particles_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=PARTICLES_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read PARTICLES_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_particles_nml
+
       subroutine do_particles![
       implicit none
 
@@ -136,7 +174,7 @@
       real    :: h_mn,dx_mn,dy_mn,est_np
       real    :: hvol
 
-
+      call read_particles_nml
       allocate(Wp(0:nx+1,0:ny+1,0:nz)) ! total vertical flux in m/s
       allocate(zw(0:nz));
 
@@ -390,8 +428,14 @@
       ! local
       integer :: ierr,diag, prev_fill_mode,ncid
       character(len=99),save  :: fname
-      integer,save            :: record=nrpf
+      integer,save            :: record=0
+      logical :: first_step
       integer,dimension(3) :: start
+
+      if (first_step) then
+         record = nrpf
+         first_step=.false.
+      end if
 
       if (record==nrpf) then
         call create_particles_file(fname)

@@ -12,7 +12,7 @@
 
 ! param needed for GLOBAL_2D_array to work. NT = number tracer from param
       use compile_time_switches, only: wrt_bgc_his, wrt_bgc_avg,
-     &     wrt_bgc_dia_his, wrt_bgc_dia_avg
+     &     wrt_bgc_dia_his, wrt_bgc_dia_avg, interp_bgc_frc
       use param, only: ieast, itemp, iwest, jnorth, jsouth
       use tracers, only: t_avg, wrt_t_avg, nt_2_t_avg, t_units
 #ifdef MARBL_DIAGS
@@ -34,7 +34,7 @@
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
      &     , nc_swrad_avg
 #endif
-     &     , bgc_idx, t_idx, interp_frc, lm, mm, itands,
+     &     , bgc_idx, t_idx, lm, mm, itands,
      &     mynode, nt_passive, output_period_avg, output_period_his,
      &     t_vname, wrt_t, t_lname
 #if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
@@ -69,10 +69,10 @@
       real    :: t_avg_dia_bgc=0
       integer,save :: navg_bgc = 0               ! number of samples in average
       integer,save :: navg_dia_bgc = 0           ! number of samples in average
-      integer :: record_avg = nrpf_avg           ! Triggers making of initial file
-      integer :: record_his = nrpf_his
-      integer :: record_dia_avg = nrpf_avg_dia   ! Triggers making of initial file
-      integer :: record_dia_his = nrpf_his_dia
+      integer :: record_avg = 0           ! Triggers making of initial file
+      integer :: record_his = 0
+      integer :: record_dia_avg = 0   ! Triggers making of initial file
+      integer :: record_dia_his = 0
       real,save :: output_time_his = 0
       real,save :: output_time_avg = 0
       real,save :: output_time_dia_his = 0
@@ -134,7 +134,6 @@
 
 
 #ifdef PCO2AIR_FORCING
-!     call set_frc_var_tile( istr, iend, jstr, jend, nc_pco2air, pco2air, interp_frc )
       call set_frc_data(nc_pco2air,pco2air,'r')
 #ifdef MARBL
       call set_frc_data(nc_pco2air_alt,pco2air_alt,'r')
@@ -151,7 +150,6 @@
       call error_log%abort_check()
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       ! Daily average Short wave radiation
-!     call set_frc_var_tile( istr, iend, jstr, jend, nc_swrad_avg, swrad_avg, interp_frc )
       call set_frc_data(nc_swrad_avg,swrad_avg,'r')
       call error_log%abort_check()
       do j=jstrR,jendR
@@ -219,6 +217,16 @@
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
       endif
+
+      if (first_step_his) then
+         record_his = nrpf_his
+         record_dia_his = nrpf_his_dia
+      end if
+      if (first_step_avg) then
+         record_avg = nrpf_avg
+         record_dia_avg = nrpf_avg_dia
+      end if
+
       call error_log%abort_check()
       if (avg) then
 
@@ -621,31 +629,31 @@
       implicit none
 
       allocate( nc_dust%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_dust%coarse = 1
+      if (interp_bgc_frc) nc_dust%coarse = 1
       allocate( nc_iron%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_iron%coarse = 1
+      if (interp_bgc_frc) nc_iron%coarse = 1
 
 #ifdef PCO2AIR_FORCING
       allocate( nc_pco2air%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_pco2air%coarse = 1
+      if (interp_bgc_frc) nc_pco2air%coarse = 1
 #ifdef MARBL
       allocate( nc_pco2air_alt%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_pco2air_alt%coarse = 1
+      if (interp_bgc_frc) nc_pco2air_alt%coarse = 1
 #endif
 #endif
 
 #ifdef NOX_FORCING
       allocate( nc_nox%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_nox%coarse = 1
+      if (interp_bgc_frc) nc_nox%coarse = 1
 #endif
 #ifdef NHY_FORCING
       allocate( nc_nhy%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_nhy%coarse = 1
+      if (interp_bgc_frc) nc_nhy%coarse = 1
 #endif
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       allocate( nc_swrad_avg%vdata( GLOBAL_2D_ARRAY,2) )
-      if (interp_frc==1) nc_swrad_avg%coarse = 1
+      if (interp_bgc_frc) nc_swrad_avg%coarse = 1
 #endif
 
       end subroutine  init_arrays_bgc_frc !]

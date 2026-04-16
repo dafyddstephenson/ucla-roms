@@ -8,6 +8,7 @@
 #include "cppdefs.opt"
       use compile_time_switches, only:
      &     wrt_smflx, wrt_stflx, wrt_swflx, sflx_avg
+      use namelist_mod, only: open_namelist_file
       use param, only: mynode, lm, mm
       use dimensions, only: i0, i1, j0, j1, eta_rho, eta_v, xi_rho, xi_u
       use roms_read_write, only:
@@ -18,12 +19,19 @@
      &     nf90_global, nf90_write, nf90_nofill,
      &     nf90_open, nf90_put_att, nf90_close, nf90_set_fill
       use scalars, only: dt, iic, tdays, time
-
+      use error_handling_mod, only: error_log
       implicit none
 
       private
+      character(len=9) :: module_name = "surf_flx"
+      ! edit variable name and time name to match input netcdf file if necessary:
+      type (ncforce) :: nc_sst  = ncforce(vname='sst',tname='sst_time' )       ! sea-surface temperature (SST) data
+      type (ncforce) :: nc_sss  = ncforce(vname='sss',tname='sss_time' )       ! sea-surface salinity (SSS) data
 
-#include "surf_flux.opt"
+      real           :: output_period = 120       ! output averaging period in seconds
+      integer        :: nrpf          = 10 ! total recs per file
+
+      namelist /SURF_FLX_SETTINGS/ output_period, nrpf
 
 #if defined SALINITY
       logical,parameter :: salinity=.true.
@@ -66,7 +74,7 @@
 
       ! Netcdf outputting:
       real    :: output_time = 0
-      integer :: record = nrpf     ! to trigger the first file creation
+      integer :: record = 0     ! to trigger the first file creation
       integer :: ncid = -1, prev_fill_mode
 
       ! Public functions
@@ -77,11 +85,37 @@
 
       contains
 
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_surf_flx_nml
+
+!     Read the "SURF_FLX_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_surf_flx_nml"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=SURF_FLX_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read SURF_FLX_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+      record = nrpf
+      end subroutine read_surf_flx_nml
+
       subroutine init_arrays_surf_flx ![
       use error_handling_mod, only: error_log
       use scalars, only: init, nt
       implicit none
+
+      call read_surf_flx_nml
 
       ! local
       allocate( uwnd  (GLOBAL_2D_ARRAY)     ); uwnd = 0

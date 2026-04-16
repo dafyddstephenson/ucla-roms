@@ -1,8 +1,0 @@
-
-      ! ****************************************************************
-      ! user inputs
-
-      integer,parameter        :: ntides=10         ! Number of tidal components to consider.
-
-      ! end user inputs
-      ! ****************************************************************
