@@ -6,7 +6,7 @@ declare -a tests=( "Flux_frc" "Pipes_ana" "Pipes_real" "Rivers_ana" "Rivers_real
 # ******** USER INPUT END   ************
 
 arg=$1
-
+failed=""
 case "$arg" in
     expanse|maya|laptop|github_gnu|github_ifx)
 	echo "running test for $arg"
@@ -42,7 +42,8 @@ do
 
   if [ $retval -ne 0 ]
   then
-    echo -e "  test failed! \n"
+      echo -e "  test failed! \n"
+      failed="${failed}, ${tests[i]}"
 #   break
   fi
 
@@ -54,7 +55,7 @@ then
     echo "ALL TESTS SUCCESSFUL!"
     exit 0
 else
-    echo "ERROR - A TEST FAILED!"
+    echo "THE FOLLOWING TESTS FAILED: ${failed}"
     exit 1
 fi
 

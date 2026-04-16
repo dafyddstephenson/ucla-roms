@@ -67,6 +67,7 @@
 
       public set_river_frc
       public init_river_frc
+      public read_nml_river
 
       contains
 
@@ -81,7 +82,6 @@
       implicit none
 
       if (.not. init_riv_done) then
-         call read_river_nml
          allocate(riv_vol(nriv));    riv_vol = 0.0
          allocate(riv_trc(nriv,nt)); riv_trc = 0.0
          allocate(nc_rvol%vdata(nriv,1 ,2))
@@ -105,11 +105,11 @@
       end subroutine set_river_frc  !]
 !     ----------------------------------------------------------------------
 
-      subroutine read_river_nml
+      subroutine read_nml_river
 !     Read the "RIVER_FRC_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
-      character(len=15) :: sr_name = "read_river_nml"
+      character(len=15) :: sr_name = "read_nml_river"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=RIVER_FRC_SETTINGS, iostat=ios)
@@ -122,7 +122,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_river_nml
+      end subroutine read_nml_river
 
       subroutine init_river_frc  ![
       ! Initialize river forcing:

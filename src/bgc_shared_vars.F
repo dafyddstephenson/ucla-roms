@@ -160,6 +160,8 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
 #endif /* BEC2_DIAG  || MARBL_DIAGS */
 
+      public bgc_precheck, read_nml_bgc
+
       contains
 
       subroutine bgc_precheck
@@ -256,11 +258,11 @@ c # TODO marbldrve_configure_diagnostics for pointers example
       end subroutine find_write_bgc_diag  !]
 #endif /* BEC2_DIAG || MARBL_DIAGS */
 
-      subroutine read_bgc_nml
+      subroutine read_nml_bgc
 
 !     Read the "BGC_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=13) :: sr_name = "read_bgc_nml"
+      character(len=13) :: sr_name = "read_nml_bgc"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -284,12 +286,12 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 #endif
       close(namelist_unit)
 
-      end subroutine read_bgc_nml
+      end subroutine read_nml_bgc
 
 
       subroutine init_arrays_bgc_shared_vars
       implicit none
-      call read_bgc_nml
+
 #if defined(BEC2_DIAG) || defined (MARBL_DIAGS)
       call find_write_bgc_diag
       call display_bgc_output_settings_to_terminal

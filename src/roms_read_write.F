@@ -29,7 +29,7 @@
      &   pio_i0c, pio_i1c, pio_j0c, pio_j1c, pio_initialize_coarse
 #endif
       use error_handling_mod, only: error_log ! Note, abort_check should be called by caller of set_frc_data
-      use instant_output, only: wrt_instant
+      use instant_output, only: wrt_instant, instant_root_name
       implicit none
       character(len=15) :: module_name="roms_read_write"
 
@@ -95,7 +95,6 @@
       integer, target :: test_var
       integer, parameter, public :: max_name_size=256
       character(len=max_name_size), public  :: output_root_name
-
       ! Dimension names for in and output in netcdf files
       ! All dimension names need to be strings of 7 characters
 !     character(len=7), public,parameter  :: xdim = 'xi_rho '
@@ -165,10 +164,19 @@
 !     &                              xi_u=xi_rho-1, eta_v=eta_rho-1
 #endif
 
-      character, public :: date_str*44, title*80
+      character, public :: date_str*44
+      character(len=80), public :: title = "my roms run"
 !     character(len=max_name_size), public :: ininame, grdname, frcfile(max_frc_files)
-      character(len=max_name_size), public :: ininame,frcfile(max_frc_files),frcfile_full(max_frc_files)
-
+      character(len=max_name_size), public :: ininame = ""
+      character(len=max_name_size), public ::
+     &     frcfile(max_frc_files) = ""
+      character(len=max_name_size), public ::
+     &     frcfile_full(max_frc_files) = ""
+      namelist /SIMULATION_NAME_SETTINGS/ output_root_name, title
+#ifndef ANA_INITIAL
+      namelist /INITIAL_CONDITIONS/ nrrec, ininame
+#endif
+      namelist /FORCING_FILES/ frcfile
 
       public :: insert_nodes
       public :: findstr,append_date_node
@@ -183,6 +191,7 @@
       public :: offset
       public :: sec2date
       public :: init_refdate
+      public :: read_nml_roms_read_write
 
       interface set_frc_data
         module procedure
@@ -195,7 +204,155 @@
 
       contains
 
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_nml_roms_read_write
+      use insert_node_mod, only: insert_node
+      use param, only: mynode, nsize
+      use error_handling_mod, only: error_log
+      use namelist_mod, only: open_namelist_file
+      use utils_mod, only: lenstr
+      integer ::  namelist_unit, ios, lstr, testunit
+      character(len=25) :: sr_name = "read_nml_roms_read_write"
+      character(len=512) :: msg = ""
+      character(len=max_name_size) :: fname
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+!     Read the "SIMULATION_NAME_SETTINGS", "INITIAL_CONDITIONS" section of the namelist file
+      read (unit=namelist_unit, nml=SIMULATION_NAME_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read SIMULATION_NAME_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      output_root_name=trim(output_root_name)
+      instant_root_name = output_root_name
+      mpi_master_only write(*,'(/1x,A)') trim(title)
+!==========================================================================================
+#ifndef ANA_INITIAL
+      read (unit=namelist_unit, nml=INITIAL_CONDITIONS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read INITIAL_CONDITIONS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+
+
+         lstr = lenstr(ininame)
+
+# if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
+         call insert_node(ininame, lstr, mynode, nsize)
+#endif
+# endif
+         open(newunit=testunit, file=trim(ininame), status='old',
+     &        iostat=ios)
+         if (ios /= 0) then
+            call error_log%raise_from_rank(
+     &           info="Cannot find input file '" // trim(ininame) // "'",
+     &           context=module_name)
+            return
+         end if
+         close(testunit)
+         ininame = trim(ininame)
+         mpi_master_only write(*,'(1x,A,I3,2x,3A)')
+     &        'initial condition :: rec =', nrrec,
+     &        'file = ''', trim(ininame), ''''
+
+#endif /*ANA_INITIAL*/
+!==========================================================================================
+      read (unit=namelist_unit, nml=FORCING_FILES, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read FORCING_FILES'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+!     Reset forcing storage.
+
+      force_files = ''
+      force_info  = ''
+      max_frc     = 0
+      lstr        = 1
+
+
+!  Read filenames until a blank line or max_frc_files reached.
+      do while (lstr > 0 .and. max_frc < max_frc_files)
+
+         fname = trim(frcfile(max_frc+1))
+         lstr = lenstr(trim(fname))
+
+         if (lstr > 0) then
+# if defined MPI && defined PARALLEL_FILES
+#ifndef PARALLEL_IO
+            call insert_node(fname, lstr, mynode, nsize)
+#endif
+# endif
+! Test file availability
+
+            open(newunit=testunit, file=fname,
+     &           status='old', iostat=ios)
+            if (ios /= 0) then
+               call error_log%raise_from_rank(
+     &         info="Cannot find input file '" // fname // "'",
+     &         context=module_name
+     &              )
+               return
+            end if
+            close(testunit)
+
+! Store file if within limit of allowed no. of forcing files
+
+            if (max_frc < max_frc_files) then
+
+               max_frc = max_frc + 1
+               frcfile(max_frc) = trim(fname)
+! Write file info to output stream
+# ifdef MPI_SILENT_MODE
+                if (mynode == 0) then
+# endif
+                  if (max_frc == 1) then
+                    write(*,'(1x,2A)') 'forcing data file(s): ',
+     &                                 trim(frcfile(max_frc))
+                  else
+                    write(*,'(23x,A)') trim(frcfile(max_frc))
+                 endif
+
+! Add to attributes
+# ifdef MPI_SILENT_MODE
+               end if
+# endif
+               call store_string_att(force_files,
+     &              frcfile(max_frc)(1:lstr))
+
+            else !(if max_frc < max_frc_files )
+               write(error_info,*)
+     &              'Too many forcing files are ',
+     &              'specified in input script.',  'Increase parameter ',
+     &              '''max_frc_files'' in ',
+     &              'roms_read_write and recompile.'
+               call error_log%raise_global(
+     &              info=error_info,
+     &              context=module_name//"/"//sr_name)
+            end if !(max_frc < max_frc_files)
+         end if   ! lstr > 0
+      end do      ! filename loop
+!================================================================================
+
+      close(namelist_unit)
+
+      end subroutine read_nml_roms_read_write
       subroutine init_output_indices  ![
       ! these indices also relate to reading input fields!
       !
@@ -302,8 +459,6 @@
       nyc_righ = ceiling(1.0*gnyc/np_eta) - floor(off_yc/2.0)
       ny_righ  = ceiling(1.0*gny/np_eta)  - floor(off_y/2.0)
       dfy  = max(ny_left - nyc_left*2, ny_righ-nyc_righ*2)
-!     print *, 'dfx: ', dfx
-!     print *, 'dfx: ', dfx
       cbf = max(ceiling(0.5*dfx)+1,2)
       cbf = max(ceiling(0.5*dfy)+1,cbf)
       cbf = cbf + 1
@@ -1266,27 +1421,23 @@
 
       ! local
       integer :: ierr,ncid,varid
-
       fname=trim(adjustl(output_root_name)) / / trim(ftype)
       if (present(nodate)) then
-        call append_date_node(fname,nodate)
+         call append_date_node(fname,nodate)
       else
-        call append_date_node(fname)
+         call append_date_node(fname)
       endif
-
       ierr=nf90_create(trim(fname),nf90_netcdf4,ncid)
       if (ierr/=nf90_noerr) then
          call error_log%check_netcdf_status(netcdf_status=ierr,
      &        context=module_name//"/"//sr_name,
      &        info="unable to create file "//trim(fname))
       end if
-
       if (.not.present(nodate)) then
         varid = nccreate(ncid,'ocean_time',(/dn_tm/),(/0/),nf90_double)
         ierr = nf90_put_att(ncid,varid,'long_name', refdatestr)
         ierr = nf90_put_att(ncid,varid,'units','second' )
       endif
-
       call put_global_atts(ncid, ierr)                     ! put global attributes in file
       if (ierr/=nf90_noerr) then
          call error_log%check_netcdf_status(netcdf_status=ierr,

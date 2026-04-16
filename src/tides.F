@@ -29,16 +29,16 @@
       real, dimension(:,:,:),allocatable :: ptide_r,ptide_i
       real, public,dimension(:,:),  allocatable :: ptide
 
-      public set_tides
+      public set_tides, read_nml_tides
 
       contains
 
 !-----------------------------------------------------------------------
-      subroutine read_tides_nml
+      subroutine read_nml_tides
 
 !     Read the "TIDES_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_tides_nml"
+      character(len=20) :: sr_name = "read_nml_tides"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -56,7 +56,7 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_tides_nml
+      end subroutine read_nml_tides
 
       subroutine init_tides  ![
       ! allocate tidal variables and read tidal data
@@ -67,7 +67,7 @@
       if (.not.pot_tides.and..not.bry_tides) then
          return
       endif
-      call read_tides_nml
+
       allocate(ftide(ntides))
 
       if (bry_tides) then

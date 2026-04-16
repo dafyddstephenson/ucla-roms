@@ -42,9 +42,9 @@ echo "  test running, ${BGC_MODEL} ..."
 echo "##############################"
 if [ "$1" = "expanse" ]
 then
-    srun --mpi=pmi2 -n 6 ./roms benchmark.in 2>&1 | tee -a test.log
+    srun --mpi=pmi2 -n 6 ./roms namelist.nml 2>&1 | tee -a test.log
 else
-    mpirun -n 6 ./roms benchmark.in 2>&1 | tee -a test.log
+    mpirun -n 6 ./roms namelist.nml 2>&1 | tee -a test.log
 fi
 
 # 2) Python - confirm values:

@@ -68,9 +68,9 @@
 
       ! Sea-surface temperature (SST) and salinity (SSS) data for restoring
       real,public,allocatable,dimension(:,:) :: sst
-      real,public :: dSSTdt
+      real,public :: dSSTdt = 0.
       real,public,allocatable,dimension(:,:) :: sss
-      real,public :: dSSSdt                                ! input units (cm/day)
+      real,public :: dSSSdt = 0.                           ! input units (cm/day)
 
       ! Netcdf outputting:
       real    :: output_time = 0
@@ -82,15 +82,16 @@
       public set_surf_field_corr
       public wrt_sflux
       public apply_surf_field_corr
+      public read_nml_surf_flx
 
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_surf_flx_nml
+      subroutine read_nml_surf_flx
 
 !     Read the "SURF_FLX_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_surf_flx_nml"
+      character(len=20) :: sr_name = "read_nml_surf_flx"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -106,16 +107,39 @@
      &        //trim(msg)
      &      )
       end if
+
+#if defined SFLX_CORR && defined SALINITY
+      read (unit=namelist_unit, nml=SSS_CORRECTION, iostat=ios, iomsg=msg)
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read SSS_CORRECTION'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+#endif
+
+#ifdef QCORRECTION
+      read (unit=namelist_unit, nml=SST_CORRECTION, iostat=ios, iomsg=msg)
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read SST_CORRECTION'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+#endif
+
+
       close(namelist_unit)
       record = nrpf
-      end subroutine read_surf_flx_nml
+      end subroutine read_nml_surf_flx
 
       subroutine init_arrays_surf_flx ![
       use error_handling_mod, only: error_log
       use scalars, only: init, nt
       implicit none
-
-      call read_surf_flx_nml
 
       ! local
       allocate( uwnd  (GLOBAL_2D_ARRAY)     ); uwnd = 0

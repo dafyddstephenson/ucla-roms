@@ -39,14 +39,15 @@
       public calc_pressure_flux
       public get_init_slow
       public wrt_rst_diag_slow
+      public read_nml_pflx
 
       contains
 !     ----------------------------------------------------------------------
-      subroutine read_pflx_nml
+      subroutine read_nml_pflx
 !     Read the "CALC_PFLX_SETTINGS" section of the namelist file
 
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_pflx_nml"
+      character(len=20) :: sr_name = "read_nml_pflx"
       ! Read namelist
       call open_namelist_file(namelist_unit)
       read (unit=namelist_unit, nml=CALC_PFLX_SETTINGS, iostat=ios)
@@ -58,13 +59,11 @@
       end if
       close(namelist_unit)
 
-      end subroutine read_pflx_nml
+      end subroutine read_nml_pflx
 
       subroutine init_pflx  ![
 
       implicit none
-
-      call read_pflx_nml
 
       if (calc_pflx) then
 

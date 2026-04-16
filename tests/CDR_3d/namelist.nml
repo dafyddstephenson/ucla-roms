@@ -1,10 +1,162 @@
 !================================================================================
-!                               BIOGEOCHEMISTRY
+!                             SIMULATION TITLE
 !================================================================================
-! Formerly in `bgc.opt`. Require MARBL or BIOLOGY_BEC2 cpp keys to take effect
+! Previously set in `roms.in`
 !================================================================================
-&BGC_SETTINGS
+&SIMULATION_NAME_SETTINGS                                      !roms_read_write.F
+!------------------------
+output_root_name = "roms"
+title = "roms_run"
+/
+
+!================================================================================
+!                               TIME STEPPING
+!================================================================================
+! Previously set in `roms.in`
+!================================================================================
+&TIME_STEPPING 							       !scalars.F
+!-------------
+ntimes = 10
+dt = 40
+ndtfast = 30
+ninfo = 1
+/
+
+!================================================================================
+!                              GRID AND INPUT FILES
+!================================================================================
+! Previously set in `roms.in`
+!================================================================================
+&GRID_SETTINGS	                                                    !dimensions.F
+!-------------
+grdname = "input_data/example_input_grid.nc"
+/
+
+&S_COORD                                                                !scoord.F
+!-------
+theta_s = 6.D0
+theta_b = 6.D0
+hc = 25.0D0
+/
+
+&INITIAL_CONDITIONS                                            !roms_read_write.F
+!------------------
+ininame = "input_data/example_input_bgc_initial_conditions.nc"
+nrrec = 1
+/
+
+&FORCING_FILES                                                 !roms_read_write.F
+!-------------
+frcfile =
+'input_data/example_input_bgc_surface_forcing_clim.nc',
+'input_data/example_input_bgc_boundary_forcing_clim.nc',
+'input_data/example_input_boundary_forcing.nc',
+'input_data/example_input_surface_forcing.nc',
+'input_data/example_input_tides.nc',
+'input_data/cdr_forcing_3d.nc'
+/
+
+!================================================================================
+!                            RIVER INPUT PARAMETERS
+!================================================================================
+! Previously set in `river_frc.opt`
+!================================================================================
+&RIVER_FRC_SETTINGS                                                  !river_frc.F
+nriv = 0
+/
+
+!================================================================================
+!                            TIDAL FORCING PARAMETERS
+!================================================================================
+! Previously set in `tides.opt`
+! Requires TIDES cppkey
+!================================================================================
+&TIDES_SETTINGS                                                          !tides.F
+ntides = 10
+/
+
+!================================================================================
+!                        BASIC MODEL NETCDF OUTPUT CONTROLS
+!================================================================================
+&BASIC_OUTPUT_SETTINGS                                            !basic_output.F
+!---------------------
+! Previously set in `ocean_vars.opt`
+!---------------------
+output_period_rst = 2000
+nrpf_rst = 2
 output_period_his = 400
+nrpf_his = 50
+output_period_avg = 100
+nrpf_avg = 10
+/
+
+&FRC_OUTPUT_SETTINGS                                                !frc_output.F
+!-------------------
+! Previously set in `frc_output.opt`
+!-------------------
+output_period = 0.
+nrpf = 0
+/
+
+!================================================================================
+!                               NESTED SIMULATIONS
+!================================================================================
+&EXTRACT_DATA_SETTINGS                                            !extract_data.F
+!---------------------
+! Previously set in `extract_data.opt`,
+! require EXTRACT_DATA cppkey
+!---------------------
+extract_period = 0.0
+extract_file = ""
+nrpf_extract = 0
+N_chd = 0
+theta_s_chd = 0
+theta_b_chd = 0
+hc_chd = 0
+/
+
+&SPONGE_TUNE_SETTINGS                                              !sponge_tune.F
+!--------------------
+! Previously set in `sponge_tune.opt`
+! Require SPONGE_TUNE cppkey
+!--------------------
+sp_timscale = 0
+nrpf = 0
+output_period = 0
+/
+
+&CALC_PFLX_SETTINGS                                              !calc_pflx_mod.F
+!---------------------
+! Previously set in `calc_pflx.opt`
+!---------------------
+timescale = 0
+/
+
+!================================================================================
+!                                OUTPUT ON Z LEVELS
+!================================================================================
+! Previously set in `zslice_output.opt`
+!================================================================================
+&ZSLICE_SETTINGS                                                 !zslice_output.F
+output_period = 0
+nrpf = 0
+ndep = 0
+vecdep = -0,0
+nt_z = 0
+trc2zsc = 0, 0
+/
+
+
+!================================================================================
+!                                BIOGEOCHEMISTRY
+!================================================================================
+! Requires MARBL or BIOLOGY_BEC2 cpp keys
+!================================================================================
+&BGC_SETTINGS                                                !bgc_shared_vars.opt
+!------------
+! Previously set in `bgc.opt`
+!------------
+output_period_his = 100
 nrpf_his = 10
 output_period_avg = 100
 nrpf_avg = 10
@@ -14,74 +166,168 @@ output_period_avg_dia = 100
 nrpf_avg_dia = 10
 /
 
-!================================================================================
-!                       PRESSURE FLUX CALCULATION
-!================================================================================
-! Formerly in `calc_pflx.opt`
-!================================================================================
-&CALC_PFLX_SETTINGS
-timescale = 86400
+&MARBL_BIOGEOCHEMISTRY_SETTINGS                                  !marbl_driver.F
+!------------------------------
+! Previously set in `roms.in`
+!------------------------------
+marbl_namelist_fname = "marbl_in"
+marbl_tracer_list_fname = "marbl_tracer_output_list"
+marbl_diag_list_fname = "marbl_diagnostics_output_list"
 /
 
 !================================================================================
-!                    CARBON DIOXIDE REMOVAL FORCING
+!                    CARBON DIOXIDE REMOVAL FORCING & OUTPUT
 !================================================================================
-! Formerly in `cdr_frc.opt`. Require CDR_FORCING cpp key to take effect
-!================================================================================
-&CDR_FRC_SETTINGS
-cdr_file = "input_data/cdr_forcing_dp.nc"  ! NetCDF forcing file
+&CDR_FRC_SETTINGS                                                      !cdr_frc.F
+!----------------
+! Previously set in `cdr_frc.opt`
+! Requires CDR_FORCING cppkey
+!----------------
+cdr_file = "cdr_forcing_3d.nc"  ! NetCDF forcing file
 ncdr_parm = 1  !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 nz_chd = 50
 /
 
-!================================================================================
-!                      CARBON DIOXIDE REMOVAL OUTPUT FILES
-!================================================================================
-! Formerly in `cdr_output.opt` or `cstar_output.opt`
-! Require CDR_OUTPUT cpp key to take effect.
-!================================================================================
-&CDR_OUTPUT_SETTINGS
-output_period = 3600
-nrpf = 4
+&CDR_OUTPUT_SETTINGS                                               !cdr_output.F
+!-------------------
+! Previously set in `cdr_output.opt`
+!-------------------
+output_period = 0
+nrpf = 0
+/
+
+&UPSCALE_SETTINGS                                              !upscale_output.F
+!----------------
+! Previously set in `upscale_output.opt`
+! Requires UPSCALING cppkey
+!----------------
+nrpf_uscl = 0
+output_period_uscl = 0
 /
 
 !================================================================================
-!                        NESTED BOUNDARY FILE GENERATION
+!                         OTHER MODEL PHYSICS SETTINGS
 !================================================================================
-! Formerly in `extract_data.opt`
+! Previously set in `roms.in`
 !================================================================================
-&EXTRACT_DATA_SETTINGS
-extract_period = 1800.0
-extract_file = "sample_edata.nc"
-nrpf_extract = 48
-N_chd = 90
-theta_s_chd = 5.0
-theta_b_chd = 2.0
-hc_chd = 250.0
+&LIN_RHO_EOS_SETTINGS                                                  !scalars.F
+!--------------------
+Tcoef = 0.
+T0 = 0.
+Scoef = 0.
+S0 = 0.
+/
+
+&RHO0_SETTINGS                                                         !scalars.F
+!-------------
+! Requires SOLVE3D cppkey
+!-------------
+rho0 = 1027.5
+/
+
+&GAMMA2_SETTINGS                                                       !scalars.F
+!---------------
+gamma2 = 1.0
+/
+
+&TRACER_DIFF2                                                          !scalars.F
+!------------
+! Requires SOLVE3D and TS_DIF2 cppkeys
+!------------
+tnu=0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+/
+
+&BOTTOM_DRAG_SETTINGS                                                  !scalars.F
+!--------------------
+rdrg = 0.e-4
+rdrg2 = 1.0e-3
+zob = 1.e-2
+/
+
+&VERTICAL_MIXING_SETTINGS                                              !scalars.F
+!------------------------
+!Requires SOLVE3D cppkey (and MY_BAK_MIXING cppkey for akq_bak)
+!------------------------
+akv_bak = 0.0
+akt_bak = 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+!akq_bak = 0. !(if MY_BAK_MIXING)
+/
+
+&LATERAL_VISC_SETTINGS                                                 !scalars.F
+!---------------------
+! Requires UV_VIS2 cppkey
+!---------------------
+visc2 = 0.
+/
+
+&UBIND_SETTINGS                                                        !scalars.F
+!--------------
+!Requires T_FRC_BRY, M2_FRC_BRY, Z_FRC_BRY, M3_FRC_BRY, or M2NUDGING cppkeys
+!--------------
+ubind = 0.1
+/
+
+&V_SPONGE_SETTINGS                                                     !scalars.F
+!-----------------
+!Requires SPONGE cppkey
+!-----------------
+v_sponge = 1.0
 /
 
 !================================================================================
-!                           INCLUDE FORCING AS OUTPUT
+!                               SURFACE RESTORING
 !================================================================================
-! Formerly in `frc_output.opt`
+! Previously set in `roms.in`
 !================================================================================
-&FRC_OUTPUT_SETTINGS
-output_period = 3600.
-nrpf = 4
+&SSS_CORRECTION                                                       !surf_flx.F
+!--------------
+! Requires SFLX_CORR and SALINITY cppkeys
+!--------------
+dSSSdt = 0.
+/
+
+&SST_CORRECTION                                                       !surf_flx.F
+!--------------
+! Requires QCORRECTION cppkey
+!--------------
+dSSTdt = 0.
 /
 
 !================================================================================
-!                        BASIC MODEL NETCDF OUTPUT CONTROLS
+!                           OTHER OUTPUT CONTROLS
 !================================================================================
-! Formerly in `ocean_vars.opt`
+&DIAGNOSTICS_SETTINGS
+!--------------------
+! Previously set in `diagnostics.opt`
+! Requires DIAGNOSTICS cppkey
+!--------------------
+output_period = 0.
+nrpf = 0
+/
+
+&RANDOM_OUTPUT_SETTINGS
+!----------------------
+! Previously set in `random.opt`
+!----------------------
+output_period = 0
+nrpf=0
+/
+
+&SURF_FLX_SETTINGS
+!-----------------
+! Previously set in `surf_flx.opt`
+!-----------------
+output_period = 0
+nrpf = 0
+/
+
 !================================================================================
-&BASIC_OUTPUT_SETTINGS
-output_period_rst = 2000
-nrpf_rst = 10
-output_period_his = 400
-nrpf_his = 20
-output_period_avg = 100
-nrpf_avg = 20
+!                            PIPE INPUT PARAMETERS
+!================================================================================
+! Formerly in `pipe_frc.opt`
+!================================================================================
+&PIPE_FRC_SETTINGS
+npip = 0
 /
 
 !================================================================================
@@ -90,96 +336,16 @@ nrpf_avg = 20
 ! Formerly in `particles.opt`
 !================================================================================
 &PARTICLES_SETTINGS
-np=50
-extra_space_fac = 1.5
-exchange_facx = 0.1
-exchange_facy = 0.1
-exchange_facc = 0.01
-output_period = 400
-nrpf = 100
-ppm3 = 1e-6
-pmin = 200
+np=0
+extra_space_fac = 0.
+exchange_facx = 0.
+exchange_facy = 0.
+exchange_facc = 0.
+output_period = 0
+nrpf = 0
+ppm3 = 0.
+pmin = 0
 /
 
-!================================================================================
-!                                PIPE INPUT
-!================================================================================
-! Formerly in `pipe_frc.opt`
-!================================================================================
-&PIPE_FRC_SETTINGS
-npip = 1
-/
 
-!================================================================================
-!                               CUSTOM OUTPUT
-!================================================================================
-! Formerly in `random.opt`
-!================================================================================
-&RANDOM_OUTPUT_SETTINGS
-output_period = 3600
-nrpf=10
-/
-
-!================================================================================
-!                               RIVER INPUT
-!================================================================================
-! Formerly in `river_frc.opt`
-!================================================================================
-&RIVER_FRC_SETTINGS
-nriv = 1
-/
-
-!================================================================================
-!                              SPONGE TUNING
-!================================================================================
-!Formerly in `sponge_tune.opt`
-!================================================================================
-&SPONGE_TUNE_SETTINGS
-sp_timscale = 86400
-nrpf = 7
-output_period = 86400
-/
-
-!================================================================================
-!                             SURFACE FLUX OUTPUT
-!================================================================================
-! Formerly in `surf_flx.opt`
-!================================================================================
-&SURF_FLX_SETTINGS
-output_period = 120
-nrpf = 10
-/
-
-!================================================================================
-!                               TIDAL FORCING
-!================================================================================
-! Formerly in `tides.opt`
-!================================================================================
-&TIDES_SETTINGS
-ntides = 10
-/
-
-!================================================================================
-!                                CDR UPSCALING
-!================================================================================
-! Formerly in `upscale_output.opt`
-!================================================================================
-&UPSCALE_SETTINGS
-nrpf_uscl = 48
-output_period_uscl = 100
-/
-
-!================================================================================
-!                          OUTPUT ON Z LEVELS
-!================================================================================
-! Formerly in `zslice_output.opt`
-!================================================================================
-&ZSLICE_SETTINGS
-output_period = 1200
-nrpf = 72
-ndep = 6
-vecdep = (/-2.0, -15.0, -30.0, -60.0, -120.0, -250.0/) ! depths slice
-nt_z = 2
-trc2zsc = (/1, 2/)
-/
 

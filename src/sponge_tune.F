@@ -67,15 +67,16 @@
       public init_orlanski_tune
       public wrt_rst_ub
       public get_init_ub
+      public read_nml_sponge_tune
 
       contains
 
 !     ----------------------------------------------------------------------
-      subroutine read_sponge_tune_nml
+      subroutine read_nml_sponge_tune
 
 !     Read the "SPONGE_TUNE_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_sponge_tune_nml"
+      character(len=20) :: sr_name = "read_nml_sponge_tun"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -95,7 +96,7 @@
 
       record = nrpf
 
-      end subroutine read_sponge_tune_nml
+      end subroutine read_nml_sponge_tune
 
       subroutine init_orlanski_tune ![
       ! Initialize sponge tuning
@@ -103,7 +104,6 @@
 
       ! local
       integer :: i
-      call read_sponge_tune_nml
 
       if (.not.calc_pflx.and.mynode==0) then
         print *,'For Orlanski tuning,'

@@ -74,6 +74,11 @@
      &                   'marbl_diagnostic_output_list'
 #endif
 
+      namelist /MARBL_BIOGEOCHEMISTRY_SETTINGS/ marbl_namelist_fname,
+     &     marbl_tracer_list_fname
+#ifdef MARBL_DIAGS
+     &     , marbl_diag_list_fname
+#endif
 
 !     Surface flux forcing variable indices (-1 means unused,default)
       integer,public ::    u10_sqr_ind=-1,       sss_ind=-1,      sst_ind=-1,
@@ -145,7 +150,40 @@
       public :: marbldrv_read_ss_vars_from_rst
       public :: marbldrv_column_physics
 
+      public :: read_nml_marbl
       contains
+
+      subroutine read_nml_marbl
+      use error_handling_mod, only: error_log
+      use namelist_mod, only: open_namelist_file
+!     Read the "MARBL_BIOGEOCHEMISTRY_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=21) :: sr_name = "read_nml_marbl"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=MARBL_BIOGEOCHEMISTRY_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read MARBL_BIOGEOCHEMISTRY_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      mpi_master_only write(*,'(1x,A,15x,A)')
+     &     'MARBL namelist file',trim(marbl_namelist_fname)
+      mpi_master_only write(*,'(1x,A,5x,A)')
+     &     'MARBL tracer output list file',trim(marbl_tracer_list_fname)
+      mpi_master_only write(*,'(1x,A,1x,A)')
+     &     'MARBL diagnostic output list file',trim(marbl_diag_list_fname)
+
+      close(namelist_unit)
+
+      end subroutine read_nml_marbl
 
       subroutine marbldrv_configure_tracers(
      &     itot,t_vname,t_lname,t_units,t_tname,wrt_t,wrt_t_avg,t_ana_frc)

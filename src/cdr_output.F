@@ -93,7 +93,7 @@
 
       ! Public functions
       public :: wrt_cdr,init_cdr_output
-
+      public :: read_cdr_output_nml
 
 !----------------------------------------------------------------------
 

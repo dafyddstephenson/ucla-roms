@@ -69,15 +69,15 @@
       integer,parameter :: prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
 
       ! Misc:
-      public :: init_frc_output, wrt_frc_output
+      public :: init_frc_output, wrt_frc_output, read_nml_frc_output
 
       contains
 !     ----------------------------------------------------------------------
-      subroutine read_frc_output_nml
+      subroutine read_nml_frc_output
 
 !     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
-      character(len=20) :: sr_name = "read_frc_output_nml"
+      character(len=20) :: sr_name = "read_nml_frc_output"
       character(len=512) :: msg = ""
       ! Read namelist
       call open_namelist_file(namelist_unit)
@@ -95,7 +95,7 @@
       end if
       close(namelist_unit)
       record = nrpf
-      end subroutine read_frc_output_nml
+      end subroutine read_nml_frc_output
 
       subroutine init_frc_output ![
       ! Allocate and initialize arrays.
@@ -105,7 +105,7 @@
       logical,save :: done=.false.
       integer :: itot=0
       integer :: idx
-      call read_frc_output_nml
+
       if (done) then
         return
       else

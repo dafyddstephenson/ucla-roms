@@ -1,17 +1,18 @@
       program main              ! Open MP version of ROMS driver
 #include "cppdefs.opt"
 #if !defined GRID_LEVEL || GRID_LEVEL == 1
-
+      use add_git_hash_mod, only: git_hash, print_jobid
       use param, only: mynode, ocean_grid_comm, nsize
+      use check_switches_mod, only: print_switches
 #ifdef NHMG
       use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
       use mpi_f08, only: mpi_wtime, mpi_comm_world
       use timers, only: tstart, tend
-      use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
       use init_scalars_mod, only: init_scalars
+      use namelist_read_mod, only: read_namelists
 #ifdef PARALLEL_IO
       use pio_roms, only: pio_initialize, pio_myRank, pio_ntasks
 #endif
@@ -34,7 +35,13 @@ C$    ierr=0
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
 
-      call read_inp
+      call read_namelists
+
+!     Git hash
+      mpi_master_only write(*,'(/1x,2A)') "Git hash: ", git_hash
+      call print_jobid
+      call print_switches
+
 
       call mpi_setup
 
@@ -50,7 +57,7 @@ C$    ierr=0
 # endif
       call init_scalars         ! Initialize global scalars,
       call init_tracers
-C$        call omp_set_dynamic(.false.)
+C     $        call omp_set_dynamic(.false.)
 C$OMP PARALLEL                           ! fast-time averaging weights
       call roms_thread          ! for barotropic mode, and
 C$OMP END PARALLEL                       ! launch the model in OpenMP
@@ -214,7 +221,6 @@ C$OMP BARRIER
 #endif
 
       call do_precheck
-
       call get_grid                  ! can be analytic or from netcdf
 
 
@@ -276,7 +282,6 @@ CR      write(*,*) ' -6' MYID
                                     ! either analytically or read
       if (nrrec > 0) then
 #endif
-
 
 #ifdef EXACT_RESTART
         call get_init(nrrec-1,2)
@@ -341,7 +346,7 @@ CR      write(*,*)  ' -2' MYID
 #endif
       ! The optional argument refers to
       ! blowup if true, and initial if false.
-      ! Come up with a better name!
+! Come up with a better name!
       call wrt_his_ocean_vars(.false.)
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc(.true.)
@@ -353,12 +358,10 @@ CR      write(*,*)  ' -2' MYID
       endif
       if (wrt_frc) call init_frc_output
 
-
         mpi_master_only write(*,'(/1x,A/)')
      &     'main :: initialization complete, started time-stepping.'
 
       call diag  ! log file output of global norms
-
       end subroutine roms_init
 
 
