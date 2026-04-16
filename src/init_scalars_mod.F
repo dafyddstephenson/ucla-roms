@@ -25,7 +25,6 @@
      &     max_frc_files, ncfrc,
      &     init_output_indices
       use dimensions, only: init_dimensions
-      use read_inp_mod, only: read_inp
 
       use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
       use, intrinsic :: iso_fortran_env, only: real32
@@ -83,7 +82,6 @@ c      write(*,*) 'kmp_stacksize =', size
       call init_dimensions                                 ! needs to come before init_output_indices
       call init_output_indices      ! retire this soon (the bfx, bfy thing)
 
-      call read_inp()
 #ifdef SOLVE3D
       call set_weights
 #endif
