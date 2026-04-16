@@ -1,5 +1,5 @@
       module add_git_hash_mod
-      #include "cppdefs.opt"
+#include "cppdefs.opt"
       implicit none
       private
 
