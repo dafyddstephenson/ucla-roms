@@ -1,15 +1,16 @@
       program main              ! Open MP version of ROMS driver
 #include "cppdefs.opt"
 #if !defined GRID_LEVEL || GRID_LEVEL == 1
-
+      use add_git_hash_mod, only: git_hash, print_jobid
       use param, only: mynode, ocean_grid_comm, nsize
+      use check_switches_mod, only: print_switches
 #ifdef NHMG
       use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
       use mpi_f08, only: mpi_wtime, mpi_comm_world
       use timers, only: tstart, tend
-      use read_inp_mod, only: read_inp
+!      use read_inp_mod, only: read_inp
       use roms_mpi, only: mpi_setup
       use init_scalars_mod, only: init_scalars
       use namelist_read_mod, only: read_namelists
@@ -36,7 +37,13 @@ C$    ierr=0
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
 
       call read_namelists
-      call read_inp
+!     call read_inp
+
+!     Git hash
+      mpi_master_only write(*,'(/1x,2A)') "Git hash: ", git_hash
+      call print_jobid
+      call print_switches
+
 
       call mpi_setup
 
