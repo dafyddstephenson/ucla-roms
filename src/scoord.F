@@ -1,7 +1,7 @@
       module scoord
 
 #include "cppdefs.opt"
-      use param, only: n, isw_corn, iwest, jsouth, jsw_corn
+      use param, only: n, isw_corn, iwest, jsouth, jsw_corn, mynode
       implicit none
       character(len=6) :: module_name = "scoord"
 
@@ -67,6 +67,16 @@
       end if
       close(namelist_unit)
 
+      mpi_master_only write(*,'(2(/4x,A,F10.7,2x,A))')
+     &     'theta_s =', theta_s, 'vertical S-coordinate surface',
+     &     'theta_b =', theta_b, 'and bottom stretching parameters'
+      if (hc < 1000.) then
+         mpi_master_only write(*,'(9x,A,F10.5,2x,2A)')
+     &        'hc =', hc, 'critical depth [m]'
+      else
+         mpi_master_only write(*,'(9x,A,ES14.5,2x,2A)')
+     &        'hc =', hc, 'critical depth [m]'
+      end if
       end subroutine read_nml_scoord
 
 #endif

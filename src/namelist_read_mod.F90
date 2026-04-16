@@ -20,6 +20,8 @@ module namelist_read_mod
 contains
 
   subroutine read_namelists
+
+      ! Set default input settings filename:
 #ifndef ANA_GRID
     use dimensions, only: read_nml_grid           !GRID_SETTINGS
 #endif
@@ -58,9 +60,12 @@ contains
 #ifdef MARBL
     use marbl_driver, only: read_nml_marbl         !MARBL_BIOGEOCHEMISTRY_SETTINGS
 #endif
-    use scalars, only: read_nml_scalars
+    use scalars, only: read_nml_scalars !GAMMA2_SETTINGS, TRACER_DIFF2, BOTTOM_DRAG_SETTINGS,
+    !                                    VERTICAL_MIXING_SETTINGS, LATERAL_VISC_SETTINGS,
+    !                                    TIME_STEPPING, UBIND_SETTINGS, V_SPONGE_SETTINGS,
+    !                                    RHO0_SETTINGS
 #ifdef SOLVE3D
-    use scoord, only: read_nml_scoord
+    use scoord, only: read_nml_scoord !SCOORD_SETTINGS
 #endif
     implicit none
 

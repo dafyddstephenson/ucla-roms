@@ -231,6 +231,7 @@
       end if
       output_root_name=trim(output_root_name)
       instant_root_name = output_root_name
+      mpi_master_only write(*,'(/1x,A)') trim(title)
 !==========================================================================================
 #ifndef ANA_INITIAL
       read (unit=namelist_unit, nml=INITIAL_CONDITIONS, iostat=ios, iomsg=msg)

@@ -165,11 +165,13 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
       contains
 
       subroutine read_nml_scalars
+      use param, only: itemp
       use error_handling_mod, only: error_log
       use namelist_mod, only: open_namelist_file
       implicit none
 !     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
-      integer ::  namelist_unit, ios
+      integer ::  namelist_unit, ios, itrc
+      character(len=10) :: mixing_type
       character(len=20) :: sr_name = "read_nml_scalars"
       character(len=512) :: msg = ""
       ! Read namelist
@@ -188,7 +190,10 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *, "SCALARS: set gamma2=",gamma2
+      mpi_master_only write(*,'(5x,A,ES10.3,2x,2A)')
+     &    'gamma2 =', gamma2,
+     &    'slipperiness parameter: ',
+     &    'free-slip = +1, or no-slip = -1.'
 #endif
 !================================================================================
 ! set `tnu2`
@@ -203,7 +208,22 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *, "SCALARS: set tnu=",tnu2
+      do itrc = 1, NT
+         if (itrc == itemp) then
+            mpi_master_only write(*,
+     & '(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
+     &    'tnu2(',itrc,') =', tnu2(itrc),
+     &    'horizontal Laplacian ',
+     &    'kinematic heat conductivity [m^2/s]'
+         else
+            mpi_master_only write(*,
+     & '(3x,A,I2,A,ES10.3,2x,2A,I2,A)')
+     &    'tnu2(',itrc,') =', tnu2(itrc),
+     &    'horizontal Laplacian ',
+     &    'diffusion for tracer ', itrc, ', [m^2/s]'
+         end if
+      end do
+
 #endif
 !================================================================================
 ! set rdrg, rdrg2
@@ -217,8 +237,16 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *,
-     &     "SCALARS: set rdrg = ",rdrg,", rdrg2=",rdrg2
+
+      mpi_master_only write(*,'(7x,A,ES10.3,2x,A)')
+     &    'rdrg =', rdrg,
+     &    'linear bottom drag coefficient [m/s]'
+
+      mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
+     &    'rdrg2 =', rdrg2,
+     &    'quadratic bottom drag coefficient, nondim'
+
+
 !================================================================================
 !Akv_bak, Akt_bak
 #ifdef SOLVE3D
@@ -233,8 +261,27 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *,
-     &     "SCALARS: set akv_bak = ",akv_bak,", akt_bak=",akt_bak
+#if !defined LMD_MIXING && !defined MY25_MIXING
+      mixing_type = "background"
+#else
+      mixing_type = "additional"
+#endif
+
+      mpi_master_only write(*,'(4x,A,ES10.3,2x,2A)')
+     &    'Akv_bak =', Akv_bak,
+     &    mixing_type, ' vertical viscosity [m^2/s]'
+
+      do itrc = 1, NT
+         mpi_master_only write(*,'(1x,A,I1,A,ES10.3,2x,2A,I0)')
+     &       'Akt_bak(', itrc, ') =', Akt_bak(itrc),
+     &       mixing_type,' vertical mixing [m^2/s] for tracer #',
+     &       itrc
+      end do
+#ifdef MY25_MIXING
+      mpi_master_only write(*,'(1x,A,ES10.3,1x,A)')
+     &    'Akq_bak =', Akq_bak,
+     &    'Background vertical mixing for TKE, [m^2/s]'
+#endif
 #endif
 !===============================================================================
 !visc2
@@ -250,7 +297,9 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *, "SCALARS: set visc2 = ", visc2
+      mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
+     &    'visc2 =', visc2,
+     &    'horizontal Laplacian kinematic viscosity [m^2/s]'
 #endif
 !===============================================================================
 !dt, dtfast, ndtfast, ntimes ninfo
@@ -265,9 +314,15 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &        )
       end if
+      mpi_master_only write(*,
+     &  '(5x,A,I10,3x,A/9x,A,F11.4,2x,A/4x,A,I10,3x,A/6x,A,I10,3x,2A)'
+     &    ) 'ntimes =',  ntimes, 'total number of 3D timesteps',
+     &          'dt =',     dt,  'time step [sec] for 3D equations',
+     &     'ndtfast =', ndtfast, 'mode-splitting ratio',
+     &       'ninfo =',   ninfo, 'number of steps between runtime ',
+     &                                              'diagnostics'
+
       dtfast = dt/dble(ndtfast)
-      if (mynode==0) print *, "SCALARS: set dt = ", dt, ", dtfast=",dtfast
-     &     ,", ndtfast = ",ndtfast, ", ntimes = ",ntimes,", ninfo =",ninfo
 !===============================================================================
 ! ubind
 #if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING || defined M3NUDGING  || defined WKB_FRC_BRY
@@ -282,7 +337,9 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *, "SCALARS: set ubind = ", ubind
+      mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
+     &    'ubind =', ubind,
+     &    'open boundary binding velcity [m/s]'
 #endif
 !===============================================================================
 !v_sponge
@@ -298,7 +355,10 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //trim(msg)
      &      )
       end if
-      if (mynode==0) print *, "SCALARS: set v_sponge = ", v_sponge
+      mpi_master_only write(*,'(3x,A,F10.2,2x,A)')
+     &      'v_sponge =', v_sponge,
+     &      'maximum viscosity in sponge layer [m^2/s]'
+
 #endif
 !===============================================================================
 ! rho0
@@ -312,7 +372,9 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &        //' section of namelist file: '
      &        //trim(msg)
      &        )
-      if (mynode==0) print *, "SCALARS: set rho0 = ", rho0
+      mpi_master_only write(*,'(7x,A,F10.4,2x,A)')  'rho0 =',
+     &     rho0, 'Boussinesq reference density [kg/m^3].'
+
       end if
 
 !===============================================================================

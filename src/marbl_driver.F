@@ -174,6 +174,12 @@
      &        //trim(msg)
      &      )
       end if
+      mpi_master_only write(*,'(1x,A,15x,A)')
+     &     'MARBL namelist file',trim(marbl_namelist_fname)
+      mpi_master_only write(*,'(1x,A,5x,A)')
+     &     'MARBL tracer output list file',trim(marbl_tracer_list_fname)
+      mpi_master_only write(*,'(1x,A,1x,A)')
+     &     'MARBL diagnostic output list file',trim(marbl_diag_list_fname)
 
       close(namelist_unit)
 
