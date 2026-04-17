@@ -21,8 +21,9 @@
       private
 
       real    :: output_period = 3600 ! in seconds
-      integer :: nrpf   = 10          ! number of frames per file
-      namelist /RANDOM_OUTPUT_SETTINGS/ output_period, nrpf
+      integer :: nrpf   = 10    ! number of frames per file
+      logical,public :: do_random
+      namelist /RANDOM_OUTPUT_SETTINGS/ output_period, nrpf, do_random
 
       character(len=13) :: module_name = "random_output"
       real    :: output_time = 0

@@ -1,7 +1,6 @@
       module tides
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: pot_tides, bry_tides, ana_tides
       use namelist_mod, only: open_namelist_file
       use dimensions, only: inode, jnode, x_,x0,x1,y_,y0,y1
       use param, only:
@@ -20,7 +19,8 @@
       character(len=5) :: module_name = "tides"
 
       integer :: ntides = 0
-      namelist /TIDES_SETTINGS/ ntides
+      logical, public :: pot_tides, bry_tides, ana_tides
+      namelist /TIDES_SETTINGS/ ntides, pot_tides, bry_tides, ana_tides
 
       real, dimension(:)    ,allocatable :: ftide
       real, dimension(:,:,:),allocatable :: ztide_r,ztide_i

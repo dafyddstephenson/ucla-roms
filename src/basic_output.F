@@ -4,13 +4,6 @@
       ! his, avg, and rst files
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: calc_pflx,
-     &     wrt_file_rst, wrt_file_avg, wrt_file_his, monthly_restarts,
-     &     wrt_Z, wrt_Ub, wrt_Vb, wrt_U, wrt_V, wrt_R, wrt_O, wrt_W,
-     &     wrt_Akv, wrt_Akt, wrt_aks, wrt_Hbls, wrt_Hbbl,
-     &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
-     &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
-     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl, ub_tune
       use namelist_mod, only: open_namelist_file
       use netcdf, only:
      &     nf90_double, nf90_int, nf90_global, nf90_write,
@@ -22,8 +15,8 @@
      &     max_name_size, dn_tm, dn_xr, dn_xu,
      &     dn_yr, dn_yv, dn_zr, dn_zw,
      &     avg_output, create_file, sec2date
-      use sponge_tune, only:  wrt_rst_ub
-      use calc_pflx_mod, only: wrt_rst_diag_slow
+      use sponge_tune, only:  wrt_rst_ub, ub_tune
+      use calc_pflx_mod, only: wrt_rst_diag_slow, calc_pflx
       use scalars, only:
      &     NT, iic, knew, nstp, time,
      &     N, dt, start_time, nnew, tdays
@@ -45,10 +38,25 @@
       real    :: output_period_avg = 100         ! output averaging period in seconds
       integer :: nrpf_avg          = 20          ! total recs per file
 
+      logical, public ::
+     &     wrt_file_rst, wrt_file_avg, wrt_file_his, monthly_restarts,
+     &     wrt_Z, wrt_Ub, wrt_Vb, wrt_U, wrt_V, wrt_R, wrt_O, wrt_W,
+     &     wrt_Akv, wrt_Akt, wrt_aks, wrt_Hbls, wrt_Hbbl,
+     &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
+     &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
+     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl
+
       namelist /BASIC_OUTPUT_SETTINGS/
      &     output_period_rst, nrpf_rst,
      &     output_period_his, nrpf_his,
-     &     output_period_avg, nrpf_avg
+     &     output_period_avg, nrpf_avg,
+     &     wrt_file_rst, wrt_file_avg, wrt_file_his, monthly_restarts,
+     &     wrt_Z, wrt_Ub, wrt_Vb, wrt_U, wrt_V, wrt_R, wrt_O, wrt_W,
+     &     wrt_Akv, wrt_Akt, wrt_aks, wrt_Hbls, wrt_Hbbl,
+     &     wrt_avg_Z, wrt_avg_Ub, wrt_avg_Vb, wrt_avg_U, wrt_avg_V,
+     &     wrt_avg_R, wrt_avg_O, wrt_avg_W, wrt_avg_Akv, wrt_avg_Akt,
+     &     wrt_avg_Aks, wrt_avg_Hbls, wrt_avg_Hbbl
+
 
       character(len=12) :: module_name = "basic_output"
 # ifdef SOLVE3D

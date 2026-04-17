@@ -56,6 +56,8 @@ frcfile = ''
 ! Previously set in `river_frc.opt`
 !================================================================================
 &RIVER_FRC_SETTINGS                                                  !river_frc.F
+river_source = .false.
+river_analytical = .false.
 nriv = 1
 /
 
@@ -66,6 +68,9 @@ nriv = 1
 ! Requires TIDES cppkey
 !================================================================================
 &TIDES_SETTINGS                                                          !tides.F
+bry_tides = .false.
+pot_tides = .false.
+ana_tides = .false.
 ntides = 10
 /
 
@@ -76,6 +81,37 @@ ntides = 10
 !---------------------
 ! Previously set in `ocean_vars.opt`
 !---------------------
+wrt_file_his = .false.
+wrt_file_avg = .false.
+wrt_file_rst = .false.
+monthly_restarts = .false.
+wrt_Z =.true. ! Include `zeta`
+wrt_Ub=.true. ! Include `ubar`
+wrt_Vb=.true.! Include `vbar`
+wrt_U=.true.! Include `u`
+wrt_V=.true.! Include `v`
+wrt_R=.true.! Include `rho`
+wrt_O=.true.! Include `omega`
+wrt_W=.true.! Include `w`
+wrt_Akv=.true.! Include `Akv`
+wrt_Akt=.true.! Include `Akt`
+wrt_Aks=.true.! Include `Aks`
+wrt_Hbls=.true.! Include `hbls`
+wrt_Hbbl=.true.! Include `hbbl`
+! Control output variables (averages file):
+wrt_avg_Z =.true.! Include `zeta`
+wrt_avg_Ub=.true. ! Inlucde `ubar`
+wrt_avg_Vb=.true.! Include `vbar`
+wrt_avg_U=.true.! Include `u`
+wrt_avg_V=.true.! Include `v`
+wrt_avg_R=.true.! Include `rho`
+wrt_avg_O=.true.! Include `omega`
+wrt_avg_W=.true.! Include `w`
+wrt_avg_Akv=.true.! Include `Akv`
+wrt_avg_Akt=.true.! Include `Akt`
+wrt_avg_Aks=.true. ! Include `Aks`
+wrt_avg_Hbls=.true.! Include `hbls`
+wrt_avg_Hbbl=.true.! Include `hbbl`
 output_period_rst = 2000
 nrpf_rst = 10
 output_period_his = 100
@@ -88,6 +124,8 @@ nrpf_avg = 20
 !-------------------
 ! Previously set in `frc_output.opt`
 !-------------------
+wrt_frc = .false.
+wrt_frc_avg = .false.
 output_period = 3600.
 nrpf = 4
 /
@@ -100,6 +138,7 @@ nrpf = 4
 ! Previously set in `extract_data.opt`,
 ! require EXTRACT_DATA cppkey
 !---------------------
+do_extract = .false.
 extract_period = 1800.0
 extract_file = "sample_edata.nc"
 nrpf_extract = 48
@@ -114,6 +153,9 @@ hc_chd = 250.0
 ! Previously set in `sponge_tune.opt`
 ! Require SPONGE_TUNE cppkey
 !--------------------
+ub_tune = .false.
+wrt_sponge = .true.
+spn_avg = .true.
 sp_timscale = 86400
 nrpf = 7
 output_period = 86400
@@ -123,6 +165,7 @@ output_period = 86400
 !---------------------
 ! Previously set in `calc_pflx.opt`
 !---------------------
+calc_pflx = .true.
 timescale = 86400
 /
 
@@ -132,6 +175,11 @@ timescale = 86400
 ! Previously set in `zslice_output.opt`
 !================================================================================
 &ZSLICE_SETTINGS                                                 !zslice_output.F
+do_zslice = .false.
+zslice_avg = .false.
+wrt_T_zsl = .false.
+wrt_U_zsl = .false.
+wrt_V_zsl = .false.
 output_period = 1200
 nrpf = 72
 ndep = 6
@@ -150,6 +198,10 @@ trc2zsc = 1, 2
 !------------
 ! Previously set in `bgc.opt`
 !------------
+wrt_bgc_his = .false.
+wrt_bgc_avg = .false.
+wrt_bgc_dia_his = .false.
+wrt_bgc_dia_avg = .false.
 output_period_his = 100
 nrpf_his = 10
 output_period_avg = 100
@@ -158,6 +210,7 @@ output_period_his_dia = 100
 nrpf_his_dia = 10
 output_period_avg_dia = 100
 nrpf_avg_dia = 10
+interp_bgc_frc = .false.
 /
 
 &MARBL_BIOGEOCHEMISTRY_SETTINGS                                  !marbl_driver.F
@@ -177,15 +230,25 @@ marbl_diag_list_fname = "marbl_diagnostics_output_list"
 ! Previously set in `cdr_frc.opt`
 ! Requires CDR_FORCING cppkey
 !----------------
+cdr_source = .false.
 cdr_file = "cdr_release.nc"  ! NetCDF forcing file
 ncdr_parm = 1  !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 nz_chd = 50
+forcing_depth_profiles = .false.
+forcing_3d = .false.
+forcing_parameterized = .false.
+time_interpolation = .false.
+relocate_to_wet_points = .false.
+cdr_volume = .false.
 /
 
 &CDR_OUTPUT_SETTINGS                                               !cdr_output.F
 !-------------------
 ! Previously set in `cdr_output.opt`
 !-------------------
+do_cdr_output = .false.
+wrt_cdr_avg = .true.
+cdr_monthly_averages = .false.
 output_period = 3600
 nrpf = 4
 /
@@ -195,6 +258,7 @@ nrpf = 4
 ! Previously set in `upscale_output.opt`
 ! Requires UPSCALING cppkey
 !----------------
+do_upscale = .false.
 nrpf_uscl = 48
 output_period_uscl = 100
 /
@@ -295,6 +359,10 @@ dSSTdt = 0.
 ! Previously set in `diagnostics.opt`
 ! Requires DIAGNOSTICS cppkey
 !--------------------
+diag_avg = .false.
+diag_uv = .false.
+diag_trc = .false.
+code_check_mode = .false.
 output_period = 3600
 nrpf = 4
 /
@@ -303,6 +371,7 @@ nrpf = 4
 !----------------------
 ! Previously set in `random.opt`
 !----------------------
+do_random = .false.
 output_period = 3600
 nrpf=10
 /
@@ -311,6 +380,10 @@ nrpf=10
 !-----------------
 ! Previously set in `surf_flx.opt`
 !-----------------
+wrt_smflx = .false.
+wrt_stflx = .false.
+wrt_swflx = .false.
+sflx_avg = .false.
 output_period = 120
 nrpf = 10
 /
@@ -321,6 +394,8 @@ nrpf = 10
 ! Formerly in `pipe_frc.opt`
 !================================================================================
 &PIPE_FRC_SETTINGS
+pipe_source = .false.
+p_analytical = .false.
 npip = 1
 /
 

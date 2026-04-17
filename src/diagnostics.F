@@ -4,7 +4,6 @@
       ! Define options in diagnostics.opt
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: diag_avg, diag_uv, diag_trc
       use namelist_mod, only : open_namelist_file
       use error_handling_mod, only: error_log
       use netcdf, only:
@@ -40,8 +39,9 @@
       character(len=11) :: module_name = "diagnostics"
       integer          :: output_period =  0       ! output period
       integer          :: nrpf          =  0        ! total recs per file
-
-      namelist /DIAGNOSTICS_SETTINGS/ output_period, nrpf
+      logical, public  :: diag_avg, diag_uv, diag_trc
+      namelist /DIAGNOSTICS_SETTINGS/ output_period, nrpf,
+     &     diag_avg, diag_uv, diag_trc
 
       integer, parameter         :: diag_prec     = nf90_double ! Precision of output variables (nf90_float/nf90_double)
 

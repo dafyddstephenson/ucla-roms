@@ -31,7 +31,8 @@
       integer :: nrpf_uscl = 48                  ! number of records per output file
       real    :: output_period_uscl = 100         ! output period in seconds
 
-      namelist /UPSCALE_SETTINGS/ nrpf_uscl, output_period_uscl
+      logical, public :: do_upscale
+      namelist /UPSCALE_SETTINGS/ nrpf_uscl, output_period_uscl, do_upscale
       integer :: uscl_prec = nf90_double  ! Precision of output variables (nf90_float/nf90_double)
       character(len=15) :: module_name = "upscale_output"
       integer                        :: record_uscl=0   ! record number in file
