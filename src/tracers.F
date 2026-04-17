@@ -18,9 +18,6 @@
       !]
 
 #include "cppdefs.opt"
-      use compile_time_switches, only:
-     &     wrt_temp, wrt_temp_dia,
-     &     wrt_salt, wrt_salt_dia
       use param, only: isalt, itemp, lm, mm, mynode, nt_passive
       use dimensions, only: i0, i1, j0, j1, nx, ny, eta_rho, xi_rho
       use surf_flux, only: stflx                          ! surface tracer flux should possibly live in this module rather?
@@ -68,6 +65,8 @@
       integer,dimension(NT),public :: NT_2_t_avg                     ! convert index from t(itrc) to t_avg(itavg) since averages array may be smaller
       integer,public        :: n_t_avg                               ! number of tracer averages to output <= NT
 
+      logical, public :: wrt_temp, wrt_salt, wrt_temp_dia, wrt_salt_dia
+      namelist /TS_OUTPUT_SETTINGS/ wrt_temp, wrt_salt, wrt_temp_dia, wrt_salt_dia
 #if defined(BIOLOGY_BEC2) && !defined(MARBL)
 # include "BEC_tracers_indx.h"
 #endif
@@ -80,10 +79,35 @@
       public def_avg_trc
       public wrt_avg_trc
       public set_avg_trc
-
+      public read_nml_tracers
       contains
 
-! ----------------------------------------------------------------------
+!     ----------------------------------------------------------------------
+      subroutine read_nml_tracers
+      use error_handling_mod, only: error_log
+      use namelist_mod, only: open_namelist_file
+!     Read the "TS_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_nml_tracers"
+      character(len=512) :: msg = ""
+      ! Read namelist
+      call open_namelist_file(namelist_unit)
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=TS_OUTPUT_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         call error_log%raise_global(
+     &   context = module_name//'/'//sr_name,
+     &   info='could not read TS_OUTPUT_SETTINGS'
+     &        //' section of namelist file: '
+     &        //trim(msg)
+     &      )
+      end if
+      close(namelist_unit)
+
+      end subroutine read_nml_tracers
+
       subroutine set_surf_tracer_flx ![
       ! set tracer flux at surface
       use error_handling_mod, only: error_log

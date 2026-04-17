@@ -4,7 +4,6 @@
       ! Particles live in index space: [0:nx]x[0:ny][0:nz]
 
 #include "cppdefs.opt"
-      use compile_time_switches, only: full_seed
       use namelist_mod, only: open_namelist_file
       use netcdf, only:
      &     nf90_double, nf90_global, nf90_nofill,
@@ -37,8 +36,10 @@
       real    :: ppm3 = 1e-6          ! target particles per cubic meter
       integer :: pmin = 200 ! minimum of allocated space for particle array
 
+      logical, public :: floats, full_seed
       namelist /PARTICLES_SETTINGS/ np, extra_space_fac, exchange_facx,
-     &     exchange_facy, exchange_facc, output_period, nrpf, ppm3, pmin
+     &     exchange_facy, exchange_facc, output_period, nrpf, ppm3, pmin,
+     &     floats, full_seed
 
       character(len=9) :: module_name = "particles"
       logical :: terminal_vel= .false. ! terminal velocities on particles (not yet implemented)

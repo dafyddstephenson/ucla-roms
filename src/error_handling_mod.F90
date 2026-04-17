@@ -62,7 +62,6 @@ module error_handling_mod
 
   use param, only: mynode, nnodes, ocean_grid_comm
   use utils_mod, only: replace_string
-  use compile_time_switches, only: gather_errors_on_main_rank
 #ifdef MPI
   use mpi_f08, only: MPI_Gather, MPI_Gatherv, MPI_INTEGER, MPI_CHARACTER, MPI_MAX, MPI_Allreduce, MPI_Barrier, MPI_Abort
 #endif
@@ -70,6 +69,11 @@ module error_handling_mod
   implicit none
   private
   save
+
+  !==============================
+  ! User settings
+  !==============================
+  logical,parameter :: gather_errors_on_main_rank = .false.
 
   !==============================
   ! Public symbols
@@ -155,6 +159,7 @@ module error_handling_mod
   type(error_log_type) :: error_log
 
 contains
+
   !=========================================================
   !    Public API (error_log_type)
   !=========================================================
@@ -345,9 +350,10 @@ contains
        if (this%abort_requested) then
           call group_error_log_entries(this, grouped_error_log_entries)
           call print_error_log_entry_groups(grouped_error_log_entries)
-          ! write(*,*) "WARNING: gather_errors_on_main_rank=.false. in error_handling_mod.F90. ", &
+          ! write(*,*) "WARNING: gather_errors_on_main_rank=.false. in error_handling_mod.F90.", &
           !      "Some ranks may fail to report errors before abort. ",&
-          !      "For a full error log, set to .true. and recompile."
+          !      "For a full error log, set to .true. and compile again ",&
+          !      "(performance will be impacted)"
           call MPI_Abort(ocean_grid_comm,1)
        end if !
     end if !gather_errors_on_main_rank

@@ -83,8 +83,9 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars, only: ntimes, iic, ntstart, diag_sync
       use timers, only: start_timers, stop_timers
       use error_handling_mod, only: error_log
+#ifdef UPSCALING
       use upscale_output, only: wrt_upscale, do_upscale
-
+#endif
       implicit none
 
 
@@ -99,10 +100,12 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
         end if
       enddo
 
-      ! This is where we might put a generic "final write" subroutine
+! This is where we might put a generic "final write" subroutine
+#ifdef UPSCALING
       if (do_upscale) then
         call wrt_upscale
       endif
+#endif
 
       call stop_timers()
       return
@@ -110,7 +113,6 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 #endif
 
       subroutine roms_init
-      use compile_time_switches, only: floats
      &
 #ifdef NHMG
       use nhmg, only: nhmg_matrices, nhmg_init, halo
@@ -122,10 +124,14 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
      &     diag_sync, dt, iic, iif, knew, kstp,
      &     nnew, nrhs, nstp, numthreads, priv_count, sec2day,
      &     start_time, synchro_flag, tdays, time, proc
-      use particles, only: init_particles
+      use particles, only: init_particles, floats
+#ifdef UPSCALING
       use upscale_output, only:  init_upscale, do_upscale
+#endif
       use random_output, only:  init_random, do_random
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use cdr_output, only:  init_cdr_output, do_cdr_output
+#endif
       use frc_output, only: init_frc_output, wrt_frc
       use analytical, only: ana_vmix
 #ifdef ANA_INITIAL
@@ -351,10 +357,14 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc(.true.)
 #endif
       if (do_random) call init_random
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       if (do_cdr_output)  call init_cdr_output
+#endif
+#ifdef UPSCALING
       if (do_upscale) then
         call init_upscale
       endif
+#endif
       if (wrt_frc) call init_frc_output
 
         mpi_master_only write(*,'(/1x,A/)')
@@ -374,7 +384,6 @@ CR      write(*,*)  ' -2' MYID
 
 
       subroutine roms_step
-      use compile_time_switches, only: floats
       use diag_mod, only: diag
       use extract_data, only:  do_extract_data, do_extract
       use scalars, only:
@@ -382,10 +391,12 @@ CR      write(*,*)  ' -2' MYID
      &     nstp, ntstart, sec2day, start_time, tdays, time
 
       use sponge_tune, only: adjust_orlanski, ub_tune
-      use particles, only: do_particles
+      use particles, only: do_particles, floats
       use surf_flux, only: wrt_sflux, wrt_smflx, wrt_stflx
       use random_output, only: wrt_random, do_random
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use cdr_output, only:  wrt_cdr, do_cdr_output
+#endif
       use frc_output, only:  wrt_frc_output, wrt_frc
       use zslice_output, only: wrt_zslice, do_zslice
       use basic_output, only:
