@@ -19,7 +19,7 @@
 
       integer, public :: gnx
       integer, public :: gny
-      integer,parameter, public ::  nz = N
+      integer, public :: nz
 
       integer, public :: npx
       integer, public :: npy
@@ -107,7 +107,8 @@ c$$$      character(len=256) :: fname
       ! need to do this here because Lm, Mm change in mpi_setup and are not known at compile time.
 
 c$$$      nx = Lm
-c$$$      ny = Mm
+c$$$  ny = Mm
+      nz = N
       Lm = nx
       Mm = ny
 

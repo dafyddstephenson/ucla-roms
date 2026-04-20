@@ -18,7 +18,8 @@
       integer, public :: NP_ETA = 1
       integer, public :: Lm, Mm
       integer, public :: LLm, MMm
-      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA, LLm, MMm
+      integer, public :: N
+      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA, LLm, MMm, N
 ! Array dimensions and bounds of the used portions of sub-arrays:
 
 #ifdef MPI
@@ -98,10 +99,6 @@
       Lm=(LLm+NP_XI-1)/NP_XI
       Mm=(MMm+NP_ETA-1)/NP_ETA
       if (mynode==0) then
-         print *, "OI NP_XI = ", np_xi
-         print *, "OI NP_ETA = ", np_eta
-         print *, "OI Lm = ", Lm
-         print *, "OI Mm = ", Mm
       end if
 #else
       Lm = LLm
