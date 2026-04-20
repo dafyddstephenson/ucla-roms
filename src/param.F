@@ -19,7 +19,8 @@
       integer, public :: Lm, Mm
       integer, public :: LLm, MMm
       integer, public :: N
-      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA, LLm, MMm, N
+      integer, public :: NSUB_E, NSUB_X
+      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA, NSUB_X, NSUB_E, LLm, MMm, N
 ! Array dimensions and bounds of the used portions of sub-arrays:
 
 #ifdef MPI

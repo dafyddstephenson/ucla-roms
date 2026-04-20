@@ -30,11 +30,11 @@ C$    call MPI_Init_thread(req_lev, level, ierr)
 C$ !!   write(*,*) 'MPI thread support levels =', req_lev,level
 C$    ierr=0
       call MPI_Init(ierr)
-      call read_nml_param
+
       ocean_grid_comm=MPI_COMM_WORLD
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
-
+      call read_nml_param
       call read_namelists
 
 !     Git hash
