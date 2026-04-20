@@ -38,20 +38,20 @@
       real,public,allocatable,dimension(:,:,:,:,:) :: t              ! array of tracers
 
                                                                      ! tracer netcdf variables (user input required in init_tracers)
-      character*42, dimension(nt), public :: t_vname                 ! short name
-      character*60, dimension(nt), public :: t_lname                 ! long name
-      character*42, dimension(nt), public :: t_units                 ! tracer units
-      character*47, dimension(nt), public :: t_tname                 ! tracer input time variable name
-      logical, dimension(nt), public      :: wrt_t                   ! t/f output tracer.
-      logical, dimension(nt), public      :: wrt_t_avg               ! t/f output avg tracer.
-      logical, dimension(nt), public      :: wrt_t_dia = .false.     ! t/f diagnostics tracer.
+      character*42, dimension(:), public, allocatable :: t_vname                 ! short name
+      character*60, dimension(:), public, allocatable :: t_lname                 ! long name
+      character*42, dimension(:), public, allocatable :: t_units                 ! tracer units
+      character*47, dimension(:), public, allocatable :: t_tname                 ! tracer input time variable name
+      logical, dimension(:), public, allocatable      :: wrt_t                   ! t/f output tracer.
+      logical, dimension(:), public, allocatable      :: wrt_t_avg               ! t/f output avg tracer.
+      logical, dimension(:), public, allocatable      :: wrt_t_dia      ! t/f diagnostics tracer.
 
-      integer, dimension(nt)              :: t_ana_frc               ! whether surface flux is read in (0), or analytical (1)
+      integer, dimension(:), allocatable              :: t_ana_frc               ! whether surface flux is read in (0), or analytical (1)
 
       !-- Tracer netcdf variables as arrays/matrices of 'NT' length:
       ! Final tracer concentrations live in 't' in ocean3d
       ! Surface tracer flux lives in 'stflx' in surf_flux.F module.
-      type (ncforce)    :: nc_t( NT )                                   ! array of ncvs for each tracer
+      type (ncforce), allocatable    :: nc_t( : )                                   ! array of ncvs for each tracer
       integer,public :: iTandS                                       ! combined index of temperature and salinity
                                                                      ! public as used in set_forces.F. Need to be parameter
 !     integer,public :: nt_passive=0                                 ! total number of passive tracers
@@ -62,7 +62,7 @@
       real, public, allocatable, dimension(:,:,:,:) :: t_avg         ! tracer averages. Memory only allocated for tracers of interest.
       integer,      allocatable, dimension(:)       :: t_avg_2_NT    ! convert index from t_avg(itavg) to t(itrc) since averages array may be smaller
 
-      integer,dimension(NT),public :: NT_2_t_avg                     ! convert index from t(itrc) to t_avg(itavg) since averages array may be smaller
+      integer,dimension(:),public, allocatable :: NT_2_t_avg                     ! convert index from t(itrc) to t_avg(itavg) since averages array may be smaller
       integer,public        :: n_t_avg                               ! number of tracer averages to output <= NT
 
       logical, public :: wrt_temp, wrt_salt, wrt_temp_dia, wrt_salt_dia
@@ -317,6 +317,17 @@
 
       ! local
       integer :: cnt=0, itrc
+      allocate(t_vname(nt))
+      allocate(t_lname(nt))
+      allocate(t_units(nt))
+      allocate(t_tname(nt))
+      allocate(wrt_t(nt))
+      allocate(wrt_t_avg(nt))
+      allocate(wrt_t_dia(nt))
+      allocate(t_ana_frc(nt))
+      allocate(nc_t(nt))
+      allocate(NT_2_t_avg(nt))
+      wrt_t_dia(:) = .false.
 
       ! Core tracers - temp and salt:
       t_vname(itemp)='temp';        t_units(itemp)='Celsius'

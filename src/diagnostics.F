@@ -101,7 +101,7 @@
       real,public,allocatable,dimension(:,:,:,:,:) :: Tdiag     ! tracer diagnostic terms
       real,allocatable,dimension(:,:,:,:,:) :: Tdiag_avg ! averages of tracer diagnostic terms
       integer                               :: ntdia     ! number of tracers for which to do diagnostics
-      integer,public,dimension(nt)          :: td = 0   ! inverse translation from itrc to idia
+      integer,public,dimension(:),allocatable          :: td    ! inverse translation from itrc to idia
 
 
       character (len=30),  allocatable, dimension(:) :: tdname
@@ -195,6 +195,9 @@
 
       ! local
       integer :: itrc,idx
+
+      if(.not. allocated(td)) allocate(td(nt))
+      td = 0
 
       if (diag_uv) then
         allocate(Udiag(nx,ny,nz,nmd) )

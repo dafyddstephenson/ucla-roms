@@ -292,7 +292,6 @@
 
          fname = trim(frcfile(max_frc+1))
          lstr = lenstr(trim(fname))
-
          if (lstr > 0) then
 # if defined MPI && defined PARALLEL_FILES
 #ifndef PARALLEL_IO

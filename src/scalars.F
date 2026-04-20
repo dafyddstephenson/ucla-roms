@@ -78,10 +78,11 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !     real :: xl,el
 
 #ifdef SOLVE3D
-      real rho0, tnu2(NT)
+      real rho0
+      real, allocatable :: tnu2(:)
 
       real :: Akv_bak = 0.
-      real :: Akt_bak(NT) = 0.
+      real, allocatable :: Akt_bak(:)
 
 # ifdef MY25_MIXING
       real :: Akq_bak = 0.
@@ -196,7 +197,8 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
      &    'free-slip = +1, or no-slip = -1.'
 #endif
 !================================================================================
-! set `tnu2`
+!     set `tnu2`
+      allocate(tnu2(NT))
 #if define SOLVE3D && defined TS_DIF2
       rewind(namelist_unit)
       read (unit=namelist_unit, nml=TRACER_DIFF2, iostat=ios, iomsg=msg)
@@ -250,6 +252,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !================================================================================
 !Akv_bak, Akt_bak
 #ifdef SOLVE3D
+      allocate(Akt_bak(NT))
       rewind(namelist_unit)
       read (unit=namelist_unit, nml=VERTICAL_MIXING_SETTINGS, iostat=ios, iomsg=msg)
 

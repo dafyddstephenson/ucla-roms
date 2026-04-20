@@ -13,14 +13,16 @@
 ! Need this here above param.opt for BGC to work:
       integer, parameter :: itemp=1,isalt=2
 
-#include "param.opt"
       integer, public :: NP_XI = 1
       integer, public :: NP_ETA = 1
       integer, public :: Lm, Mm
       integer, public :: LLm, MMm
       integer, public :: N
       integer, public :: NSUB_E, NSUB_X
-      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA, NSUB_X, NSUB_E, LLm, MMm, N
+      integer, public :: nt = 1
+      integer, public :: nt_passive = 0, ntrc_bio = 0
+      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA, NSUB_X, NSUB_E, LLm, MMm,
+     &     N, nt_passive, ntrc_bio
 ! Array dimensions and bounds of the used portions of sub-arrays:
 
 #ifdef MPI
@@ -104,6 +106,11 @@
 #else
       Lm = LLm
       Mm = MMm
+#endif
+
+      nt = nt_passive + ntrc_bio + 1
+#ifdef SALINITY
+     &     + 1
 #endif
 
 

@@ -82,25 +82,25 @@
 # ifdef SALINITY
      &                    , indxS=indxT+1
 # endif
-     &                    , indxAkv=indxT+NT,   indxAkt=indxAkv+1
+      integer, public :: indxAkv
+     &                    , indxAkt
 # ifdef SALINITY
-     &                    , indxAks=indxAkt+1
+     &                    , indxAks
 # endif
 # ifdef LMD_KPP
 #  ifdef SALINITY
-     &                    , indxHbls=indxAks+1
+     &                    , indxHbls
 #  else
-     &                    , indxHbls=indxAkt+1
+     &                    , indxHbls
 #  endif
 # ifdef LMD_BKPP
-     &                    , indxHbbl=indxHbls+1
+     &                    , indxHbbl
 # endif
 # else
 # ifdef LMD_BKPP
-     &                    , indxHbbl=indxAks+1
+     &                    , indxHbbl
 # endif
 # endif
-
 #endif
       !]
 
@@ -134,6 +134,32 @@
       integer ::  namelist_unit, ios
       character(len=20) :: sr_name = "read_nml_basic_output"
       character(len=512) :: msg = ""
+
+      ! initialize indxAkv
+      indxAkv = indxT + NT
+
+#ifdef SOLVE3D
+      indxAkv = indxT + NT
+      indxAkt = indxAkv + 1
+# ifdef SALINITY
+      indxAks = indxAkt + 1
+# endif
+# ifdef LMD_KPP
+#  ifdef SALINITY
+      indxHbls = indxAks + 1
+#  else
+      indxHbls = indxAkt + 1
+#  endif
+# ifdef LMD_BKPP
+      indxHbbl = indxHbls + 1
+# endif
+# else
+# ifdef LMD_BKPP
+      indxHbbl = indxAks + 1
+# endif
+# endif
+#endif
+
       ! Read namelist
       call open_namelist_file(namelist_unit)
       rewind(namelist_unit)
@@ -385,9 +411,7 @@
       if (wrt_file_his.or.blowup) then
 
          if (.not.present(special)) then
-c$$$            if (mynode==0) print *, "incrementing output_time_his by", dt
             output_time_his = output_time_his + dt
-c$$$            if (mynode==0) print *, "OUTPUT_TIME_HIS iii OI",output_time_his
         endif
 
 
