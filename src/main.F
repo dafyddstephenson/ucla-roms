@@ -2,7 +2,7 @@
 #include "cppdefs.opt"
 #if !defined GRID_LEVEL || GRID_LEVEL == 1
       use add_git_hash_mod, only: git_hash, print_jobid
-      use param, only: mynode, ocean_grid_comm, nsize
+      use param, only: mynode, ocean_grid_comm, nsize, read_nml_param
       use check_switches_mod, only: print_switches
 #ifdef NHMG
       use nhmg, only: nhmg_clean
@@ -30,7 +30,7 @@ C$    call MPI_Init_thread(req_lev, level, ierr)
 C$ !!   write(*,*) 'MPI thread support levels =', req_lev,level
 C$    ierr=0
       call MPI_Init(ierr)
-
+      call read_nml_param
       ocean_grid_comm=MPI_COMM_WORLD
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)

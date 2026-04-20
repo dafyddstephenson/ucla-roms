@@ -14,20 +14,18 @@
       integer, parameter :: itemp=1,isalt=2
 
 #include "param.opt"
-
+      integer, public :: NP_XI = 1
+      integer, public :: NP_ETA = 1
+      integer, public :: Lm, Mm
+      namelist /PARAM_SETTINGS/ NP_XI, NP_ETA
 ! Array dimensions and bounds of the used portions of sub-arrays:
 
 #ifdef MPI
       integer :: nnodes,nsize
 
-      integer ::
-     &    Lm=(LLm+NP_XI-1)/NP_XI, Mm=(MMm+NP_ETA-1)/NP_ETA
-
       integer mynode,  iSW_corn, jSW_corn,
      &     iwest, ieast, jsouth, jnorth
       type(mpi_comm) :: ocean_grid_comm
-#else
-      integer, parameter :: Lm=LLm, Mm=MMm
 #endif
 
 ! Derived dimension parameters, number of tracers and tracer
@@ -68,6 +66,49 @@
 # else
       logical,parameter :: obc_south=.false.
 # endif
+
+      contains
+
+      subroutine read_nml_param
+
+!     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios
+      character(len=20) :: sr_name = "read_nml_frc_output"
+      character(len=512) :: msg = ""
+      character(len=13) :: namelist_fname = "namelist.nml"
+! Read namelist
+
+      open (newunit=namelist_unit, file=namelist_fname, status="old",
+     &     action="read", iostat=ios)
+      if (ios/=0) then
+         write(*,*) "ERROR [param.F]: could not open namelist file"
+         error stop
+      end if
+      rewind(namelist_unit)
+
+      read (unit=namelist_unit, nml=PARAM_SETTINGS, iostat=ios, iomsg=msg)
+
+      if (ios /= 0) then
+         write(*,*) "ERROR [param.F]: could not read section ",
+     &        "PARAM_SETTINGS of namelist file"
+      end if
+      close(namelist_unit)
+#ifdef MPI
+      Lm=(LLm+NP_XI-1)/NP_XI
+      Mm=(MMm+NP_ETA-1)/NP_ETA
+      if (mynode==0) then
+         print *, "OI NP_XI = ", np_xi
+         print *, "OI NP_ETA = ", np_eta
+         print *, "OI Lm = ", Lm
+         print *, "OI Mm = ", Mm
+      end if
+#else
+      Lm = LLm
+      Mm = MMm
+#endif
+
+
+      end subroutine read_nml_param
 
 
       end module

@@ -21,8 +21,8 @@
       integer,parameter, public :: gny = MMm
       integer,parameter, public ::  nz = N
 
-      integer,parameter, public :: npx = np_xi
-      integer,parameter, public :: npy = np_eta
+      integer, public :: npx
+      integer, public :: npy
 
       integer,parameter, public ::  bf = 2 ! allocation buffer size
 
@@ -94,6 +94,9 @@ c$$$      character(len=256) :: fname
      &      'grid file: ', trim(grdname)
 
       close(namelist_unit)
+
+      npx = NP_XI
+      npy = NP_ETA
 
       end subroutine read_nml_grid
 
