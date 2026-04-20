@@ -17,8 +17,8 @@
 
 !#include "cppdefs.opt"
 
-      integer,parameter, public :: gnx = LLm
-      integer,parameter, public :: gny = MMm
+      integer, public :: gnx
+      integer, public :: gny
       integer,parameter, public ::  nz = N
 
       integer, public :: npx
@@ -97,6 +97,8 @@ c$$$      character(len=256) :: fname
 
       npx = NP_XI
       npy = NP_ETA
+      gnx = LLm
+      gny = MMm
 
       end subroutine read_nml_grid
 
