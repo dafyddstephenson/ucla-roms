@@ -8,7 +8,7 @@
       ! in the direction of the unmasked cell.
 
 #include "cppdefs.opt"
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use roms_read_write, only: ncforce, frcfile, set_frc_data
       use nc_read_write, only: nccreate, ncread, ncwrite
       use scalars, only: nt

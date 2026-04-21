@@ -41,7 +41,7 @@
 #include "cppdefs.opt"
       use basic_output, only: wrt_file_rst
       use calc_pflx_mod, only: calc_pflx
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use grid, only: angler, rmask, umask, vmask
       use dimensions, only: nx, ny, nz
       use nc_read_write, only: nccreate, ncread, ncwrite

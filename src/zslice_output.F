@@ -2,7 +2,7 @@
       ! Collection of zslice variables for output
 
 #include "cppdefs.opt"
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use grid, only: rmask
       use param, only: lm, mm, mynode
       use roms_mpi, only: exchange_xxx

@@ -6,7 +6,7 @@
 
 #if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
       use cdr_frc, only: cdr_source, forcing_3d
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use tracers, only: t_units
       use param, only: itemp, isalt
       use marbl_driver, only:

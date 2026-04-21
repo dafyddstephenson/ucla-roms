@@ -6,7 +6,7 @@
       ! Devin Dollery & Jeroen Molemaker (2020-2022)
 
 #include "cppdefs.opt"
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use param, only: mynode, lm, mm
       use dimensions, only: i0, i1, j0, j1, eta_rho, eta_v, xi_rho, xi_u
       use roms_read_write, only:

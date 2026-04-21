@@ -9,7 +9,7 @@
 #if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
 
       use param, only: jnorth, jsouth, ieast, iwest, nsub_e, nsub_x, np_xi, np_eta
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use error_handling_mod, only: error_log
       use tracers, only: t_units
       use dimensions, only: i0, i1, j0, j1, eta_rho,

@@ -1,7 +1,7 @@
       module tides
 
 #include "cppdefs.opt"
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use dimensions, only: inode, jnode, x_,x0,x1,y_,y0,y1
       use param, only:
      &     mynode, ieast, iwest, jnorth, jsouth, lm, mm, np_xi, np_eta

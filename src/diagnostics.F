@@ -4,7 +4,7 @@
       ! Define options in diagnostics.opt
 
 #include "cppdefs.opt"
-      use namelist_mod, only : open_namelist_file
+      use namelist_open_mod, only : open_namelist_file
       use error_handling_mod, only: error_log
       use netcdf, only:
      &     nf90_double, nf90_global, nf90_nofill,

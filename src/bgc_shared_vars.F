@@ -5,7 +5,7 @@ c # TODO marbldrve_configure_diagnostics for pointers example
 
 #include "cppdefs.opt"
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use error_handling_mod, only: error_log
       use param, only: mynode, nt_passive, ntrc_bio, lm, mm, n
       use roms_read_write, only: ncforce

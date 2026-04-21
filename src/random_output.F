@@ -4,7 +4,7 @@
 #include "cppdefs.opt"
 
       use param, only: mynode
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use dimensions, only: i0, i1, j0, j1, nz, eta_rho, eta_v, xi_rho, xi_u
       use roms_read_write, only:
      &     dn_tm, dn_xr, dn_xu, dn_yr, dn_yv,

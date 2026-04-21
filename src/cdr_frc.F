@@ -9,7 +9,7 @@
 #include "cppdefs.opt"
 
 #if defined MARBL && defined CDR_FORCING
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use roms_read_write, only:
      &     ncforce, ncforce3d, cdr_frc_opt,
      &     set_frc_data, store_string_att

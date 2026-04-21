@@ -46,7 +46,7 @@
 !     ----------------------------------------------------------------------
       subroutine read_nml_scoord
       use error_handling_mod, only: error_log
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       implicit none
 !     Read the "SCOORD_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios

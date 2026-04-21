@@ -51,7 +51,7 @@
       subroutine read_nml_grid
       use param, only: mynode, nsize
       use error_handling_mod, only: error_log
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use utils_mod, only: lenstr
 !     Read the "GRID_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios, lstr

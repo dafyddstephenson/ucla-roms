@@ -32,7 +32,7 @@ c--#define MAX_BY_VERT_CFL_ONLY
 
       subroutine read_nml_stdout_diag
       use error_handling_mod, only: error_log
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
 !     Read the "STDOUT_DIAG_SETTINGS" section of the namelist file
       integer ::  namelist_unit, ios
       character(len=20) :: sr_name = "read_nml_stdout_diag"

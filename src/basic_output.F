@@ -4,7 +4,7 @@
       ! his, avg, and rst files
 
 #include "cppdefs.opt"
-      use namelist_mod, only: open_namelist_file
+      use namelist_open_mod, only: open_namelist_file
       use netcdf, only:
      &     nf90_double, nf90_int, nf90_global, nf90_write,
      &     nf90_inq_varid, nf90_put_var, nf90_put_att, nf90_open, nf90_close,
