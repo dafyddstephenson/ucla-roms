@@ -75,29 +75,72 @@
       contains
 
       subroutine read_nml_param
+!-----------------------------------------------------------------------
+!     SUBROUTINE: read_nml_param
+!     DESCRIPTION:
+!     Read the `PARAM_SETTINGS` section of the namelist file
+!
+!     METHOD:
+!     - Gets the name of the namelist file from the first arg to ROMS
+!     - Opens the file and rewinds to the beginning
+!     - Reads the relevant section
+!     - Sets any variables owned by this module that depend on nml vars
+!     - Close the fle
+!
+!     NOTES:
+!     Unlike other `read_nml_` subroutines elsewhere in the code, this
+!     does not call helper functions (to avoid circular dependencies).
+!     The namelist opening code thus repeats `open_namelist_file` and
+!     `get_namelist_fname` from `namelist_open_mod.F90`.
+!-----------------------------------------------------------------------
 
+      use mpi_f08, only: MPI_BYTE, MPI_Bcast
 !     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
-      integer ::  namelist_unit, ios
+      integer ::  namelist_unit, ios, is, ierr
       character(len=20) :: sr_name = "read_nml_frc_output"
       character(len=512) :: msg = ""
-      character(len=13) :: namelist_fname = "namelist.nml"
-! Read namelist
+      character(len=256) :: nml_fname = ""
 
-      open (newunit=namelist_unit, file=namelist_fname, status="old",
+! Get the name of the namelist file
+#ifdef MPI
+      if (mynode == 0) then
+#endif
+         is=iargc() ; if (is == 1) call getarg(is,nml_fname)
+#ifdef MPI
+      endif
+      call MPI_Bcast(nml_fname,256,MPI_BYTE, 0, ocean_grid_comm, ierr)
+#endif
+
+! Open the namelist file
+      open (newunit=namelist_unit, file=nml_fname, status="old",
      &     action="read", iostat=ios)
       if (ios/=0) then
          write(*,*) "ERROR [param.F]: could not open namelist file"
+#ifdef MPI
+         call MPI_Abort()
+#else
          error stop
+#endif
       end if
+! Go back to the beginning and find PARAM_SETTINGS section
       rewind(namelist_unit)
-
       read (unit=namelist_unit, nml=PARAM_SETTINGS, iostat=ios, iomsg=msg)
 
+! Abort if not found
       if (ios /= 0) then
          write(*,*) "ERROR [param.F]: could not read section ",
      &        "PARAM_SETTINGS of namelist file"
+#ifdef MPI
+         call MPI_Abort()
+#else
+         error stop
+#endif
       end if
+
+! Close the namelist file
       close(namelist_unit)
+
+! Set relevant variables based on namelist values
 #ifdef MPI
       Lm=(LLm+NP_XI-1)/NP_XI
       Mm=(MMm+NP_ETA-1)/NP_ETA

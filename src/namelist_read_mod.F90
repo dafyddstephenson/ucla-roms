@@ -21,7 +21,7 @@ contains
 
   subroutine read_namelists
 
-      ! Set default input settings filename:
+    use param, only: read_nml_param
 #ifndef ANA_GRID
     use dimensions, only: read_nml_grid           !GRID_SETTINGS
 #endif
@@ -72,7 +72,7 @@ contains
 #endif
     use diag_mod, only: read_nml_stdout_diag
     implicit none
-
+    call read_nml_param
 #ifndef ANA_GRID
     call read_nml_grid
 #endif

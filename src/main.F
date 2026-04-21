@@ -34,15 +34,15 @@ C$    ierr=0
       ocean_grid_comm=MPI_COMM_WORLD
       call MPI_Comm_size(ocean_grid_comm, nsize,  ierr)
       call MPI_Comm_rank(ocean_grid_comm, mynode, ierr)
-      call read_nml_param
+#endif
       call read_namelists
 
-!     Git hash
-      mpi_master_only write(*,'(/1x,2A)') "Git hash: ", git_hash
       call print_jobid
       call print_switches
 
-
+#ifdef MPI
+!     Git hash
+      mpi_master_only write(*,'(/1x,2A)') "Git hash: ", git_hash
       call mpi_setup
 
 #ifdef PARALLEL_IO
