@@ -95,15 +95,12 @@ c$$$      character(len=256) :: fname
 
       close(namelist_unit)
 
-      npx = NP_XI
-      npy = NP_ETA
-      gnx = LLm
-      gny = MMm
 
       end subroutine read_nml_grid
 
       subroutine init_dimensions  ![
       implicit none
+
       ! need to do this here because Lm, Mm change in mpi_setup and are not known at compile time.
 
 c$$$      nx = Lm
