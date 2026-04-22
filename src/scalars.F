@@ -247,6 +247,11 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
       mpi_master_only write(*,'(6x,A,ES10.3,2x,A)')
      &    'rdrg2 =', rdrg2,
      &    'quadratic bottom drag coefficient, nondim'
+#ifdef SOLVE3D
+      mpi_master_only write(*,'(8x,A,ES10.3,2x,A)')
+     &    'Zob =', Zob,
+     &    'bottom roughness height [m]'
+#endif
 
 
 !================================================================================
