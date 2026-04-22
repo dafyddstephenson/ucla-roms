@@ -252,9 +252,9 @@ interp_bgc_frc = .true.   ! interpolate forcing from coarser grid
 !------------------------------
 ! Previously set in `roms.in`
 !------------------------------
-marbl_namelist_fname = "marbl_in"
-marbl_tracer_list_fname = "marbl_tracer_output_list"
-marbl_diag_list_fname = "marbl_diagnostics_output_list"
+marbl_config_file = ""
+marbl_tracers_to_write = ""
+marbl_diagnostics_to_write = ""
 /
 
 !================================================================================
