@@ -1,16 +1,4 @@
-&PARAM_SETTINGS
-NP_XI = 3
-NP_ETA = 2
-NSUB_X = 1
-NSUB_E = 1
-LLm = 100
-MMm = 100
-N = 10
-nt_passive = 0
-ntrc_bio = 0
-/
-
-  !================================================================================
+!================================================================================
 !                             SIMULATION TITLE
 !================================================================================
 ! Previously set in `roms.in`
@@ -40,25 +28,48 @@ ninfo = 1
 ! Previously set in `roms.in`
 !================================================================================
 &GRID_SETTINGS	                                                    !dimensions.F
-!-------------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 grdname = ""
 /
 
-&S_COORD                                                                !scoord.F
-!-------
+&S_COORD                                                                !scoord.
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 theta_s = 6.D0
 theta_b = 6.D0
 hc = 25.0D0
 /
 
+&PARAM_SETTINGS                                                          !param.F
+!------------------------------
+! Previously set in `param.opt`
+!------------------------------
+NP_XI = 3
+NP_ETA = 2
+NSUB_X = 1
+NSUB_E = 1
+LLm = 100
+MMm = 100
+N = 10
+nt_passive = 0
+ntrc_bio = 0
+/
+
 &INITIAL_CONDITIONS                                            !roms_read_write.F
-!------------------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 ininame = ""
 nrrec = 0
 /
 
 &FORCING_FILES                                                 !roms_read_write.F
-!-------------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 frcfile = ""
 /
 
@@ -453,4 +464,13 @@ output_period = 0
 nrpf = 0
 ppm3 = 0.
 pmin = 0
+/
+
+!================================================================================
+!                            ERROR HANDLING
+!================================================================================
+! Previously set in `error_handling_mod.F90`
+!================================================================================
+&ERROR_HANDLING_SETTINGS
+gather_errors_on_main_rank = .true.
 /

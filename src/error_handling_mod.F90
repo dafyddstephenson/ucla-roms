@@ -73,8 +73,8 @@ module error_handling_mod
   !==============================
   ! User settings
   !==============================
-  logical,parameter :: gather_errors_on_main_rank = .false.
-
+  logical :: gather_errors_on_main_rank = .false.
+  namelist /ERROR_HANDLING_SETTINGS/ gather_errors_on_main_rank
   !==============================
   ! Public symbols
   !==============================
@@ -976,6 +976,68 @@ contains
 
   end subroutine deserialize_log_entry
 
+
 #endif /* MPI */
+
+      subroutine read_nml_error_handling
+!-----------------------------------------------------------------------
+!     SUBROUTINE: read_nml_error_handling
+!     DESCRIPTION:
+!     Read the `ERROR_HANDLING_SETTINGS` section of the namelist file
+!
+!     METHOD:
+!     - Gets the name of the namelist file from the first arg to ROMS
+!     - Opens the file and rewinds to the beginning
+!     - Reads the relevant section
+!     - Sets any variables owned by this module that depend on nml vars
+!     - Close the fle
+!
+!     NOTES:
+!     Unlike other `read_nml_` subroutines elsewhere in the code, this
+!     does not call helper functions (to avoid circular dependencies).
+!     The namelist opening code thus repeats `open_namelist_file` and
+!     `get_namelist_fname` from `namelist_open_mod.F90`.
+!-----------------------------------------------------------------------
+
+      use mpi_f08, only: MPI_BYTE, MPI_Bcast
+!     Read the "FRC_OUTPUT_SETTINGS" section of the namelist file
+      integer ::  namelist_unit, ios, is, ierr
+      character(len=20) :: sr_name = "read_nml_frc_output"
+      character(len=512) :: msg = ""
+      character(len=256) :: nml_fname = ""
+
+! Get the name of the namelist file
+#ifdef MPI
+      if (mynode == 0) then
+#endif
+         is=iargc() ; if (is == 1) call getarg(is,nml_fname)
+#ifdef MPI
+      endif
+      call MPI_Bcast(nml_fname,256,MPI_BYTE, 0, ocean_grid_comm, ierr)
+#endif
+
+! Open the namelist file
+      open (newunit=namelist_unit, file=nml_fname, status="old", &
+           action="read", iostat=ios)
+      if (ios/=0) then
+         call error_log%raise_global(context="error_handling_mod/read_nml_error_handling", &
+              info="Could not open namelist file")
+      end if
+! Go back to the beginning and find PARAM_SETTINGS section
+      rewind(namelist_unit)
+      read (unit=namelist_unit, nml=ERROR_HANDLING_SETTINGS, iostat=ios, iomsg=msg)
+
+      ! Abort if not found
+      if (ios /= 0) then
+         call error_log%raise_global(&
+              context="error_handling_mod/read_nml_error_handling", &
+              info="Could not read ERROR_HANDLING_SETTINGS section "//&
+                     "of namelist file.")
+      end if
+! Close the namelist file
+      close(namelist_unit)
+
+    end subroutine read_nml_error_handling
+
 
 end module error_handling_mod
