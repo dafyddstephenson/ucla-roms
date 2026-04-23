@@ -1,0 +1,9 @@
+{
+  "name": "dev_gnu",
+    "image": "ghcr.io/cworthy-ocean/marbl_gnu_mpich:0.0",
+  "features": {
+    "ghcr.io/devcontainers/features/apt:1": {
+      "packages": "emacs"
+    }
+  }
+}
