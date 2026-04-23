@@ -18,7 +18,7 @@ title = "roms_run"        ! title used in output metadata
 !-------------
 ntimes = 20               ! Number of time steps in this run
 dt = 40                   ! Time step (seconds)
-ndtfast = 30              ! Number of slow time-steps per fast timestep
+ndtfast = 30              ! Number of fast time-steps per slow timestep
 ninfo = 1                 ! Number of steps between runtime diagnostics (STDOUT)
 /
 
@@ -197,8 +197,8 @@ output_period = 86400  ! Output frequency of sponge tuning file
 !---------------------
 ! Previously set in `calc_pflx.opt`
 !---------------------
-calc_pflx = .true.
-timescale = 86400
+calc_pflx = .true.     ! Enable baroclinic pressure flux calculation
+timescale = 86400      ! timescale for filtering pressure fluxes (s)
 /
 
 !================================================================================
@@ -337,7 +337,7 @@ tnu2=0.0 0.0 ! Horizontal Laplacian diffusion (m2/s) for each tracer
 !--------------------
 rdrg = 0.e-4   ! Linear bottom drag co-efficient (m/s)
 rdrg2 = 1.0e-3 ! Quadratic bottom drag co-efficient (dimensionless)
-zob = 1.e-2    ! Bottom roughness heigh (m)
+zob = 1.e-2    ! Bottom roughness height (m)
 /
 
 &VERTICAL_MIXING_SETTINGS                                              !scalars.F
@@ -443,7 +443,7 @@ npip = 1                  ! Number of pipe inputs
 ! Formerly in `particles.opt`
 !================================================================================
 &PARTICLES_SETTINGS
-floats = .false.         ! Releaes Lagrangian particles (T) or not (F)
+floats = .false.         ! Release Lagrangian particles (T) or not (F)
 np=50                    ! Local number of particles
 extra_space_fac = 1.5    ! Buffer space to receive extra exchanged particles
 exchange_facx = 0.1      ! Maximum number of particles for transfer in N-S
