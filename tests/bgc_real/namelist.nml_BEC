@@ -1,15 +1,3 @@
-&PARAM_SETTINGS
-NP_XI = 3
-NP_ETA = 2
-NSUB_X = 1
-NSUB_E = 1
-LLm = 199
-MMm = 99
-N = 50
-nt_passive = 0
-ntrc_bio = 26
-/
-
 !================================================================================
 !                             SIMULATION TITLE
 !================================================================================
@@ -37,28 +25,49 @@ ninfo = 1
 !================================================================================
 !                              GRID AND INPUT FILES
 !================================================================================
-! Previously set in `roms.in`
-!================================================================================
 &GRID_SETTINGS	                                                    !dimensions.F
-!-------------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 grdname = "input_data/example_input_grid.nc"
 /
 
 &S_COORD                                                                !scoord.F
-!-------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 theta_s = 6.D0
 theta_b = 6.D0
 hc = 25.0D0
 /
 
+&PARAM_SETTINGS                                                          !param.F
+!------------------------------
+! Previously set in `param.opt`
+!------------------------------
+NP_XI = 3
+NP_ETA = 2
+NSUB_X = 1
+NSUB_E = 1
+LLm = 199
+MMm = 99
+N = 50
+nt_passive = 0
+ntrc_bio = 26
+/
+
 &INITIAL_CONDITIONS                                            !roms_read_write.F
-!------------------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 ininame = "input_data/example_input_bgc_initial_conditions.nc"
 nrrec = 1
 /
 
 &FORCING_FILES                                                 !roms_read_write.F
-!-------------
+!---------------------------
+! Previously set in `roms.in`
+!---------------------------
 frcfile =
 'input_data/example_input_bgc_surface_forcing_clim.nc',
 'input_data/example_input_bgc_boundary_forcing_clim.nc',
@@ -458,4 +467,13 @@ output_period = 0
 nrpf = 0
 ppm3 = 0.
 pmin = 0
+/
+
+!================================================================================
+!                            ERROR HANDLING
+!================================================================================
+! Previously set in `error_handling_mod.F90`
+!================================================================================
+&ERROR_HANDLING_SETTINGS
+gather_errors_on_main_rank = .true.
 /
