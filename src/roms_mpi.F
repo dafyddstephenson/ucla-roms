@@ -205,18 +205,11 @@
         ! Check against original weird integer devision
       if (nx.ne.(gnx+npx-1)/npx ) then
 
-         print *, "OI nx = ", nx, ", mynode =",mynode
-         print *, "OI gnx = ", gnx, ", mynode = ",mynode
-         print *, "OI npx = ", npx, ", mynode = ",mynode
-
          call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info='integer division error in mpi_setup')
       end if
       if (ny.ne.(gny+npy-1)/npy ) then
-         print *, "OI ny = ",ny, ", mynode =",mynode
-         print *, "OI gny = ", gny, ", mynode = ",mynode
-         print *, "OI npy = ", npy, ", mynode =", mynode
          call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info='integer division error in mpi_setup')
