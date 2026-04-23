@@ -199,6 +199,7 @@ C$OMP THREADPRIVATE( iif, nstp, nnew, nrhs )
 !================================================================================
 !     set `tnu2`
       allocate(tnu2(NT))
+      tnu2(:) = 0.
 #if define SOLVE3D && defined TS_DIF2
       rewind(namelist_unit)
       read (unit=namelist_unit, nml=TRACER_DIFF2, iostat=ios, iomsg=msg)

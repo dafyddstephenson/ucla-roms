@@ -65,7 +65,7 @@
       integer                     :: nt_marbl       ! number of marbl tracers (according to MARBL)
       integer                     :: idx            ! Looping variable
 
-!     MARBL namelist file names:
+!     MARBL config:
       character(len=256), public :: marbl_config_file='marbl_in'
       character(len=32), public ::
      &     marbl_tracers_to_write(40) = ""
@@ -175,7 +175,7 @@
      &      )
       end if
       mpi_master_only write(*,'(1x,A,15x,A)')
-     &     'MARBL namelist file',trim(marbl_config_file)
+     &     'MARBL config file',trim(marbl_config_file)
 
       close(namelist_unit)
 
@@ -316,7 +316,7 @@
      &        ,' does not match no. expected by MARBL: '
      &        ,nt_marbl
      &        ,' set ntrc_bio = ',nt_marbl
-     &        ,' in param.opt and recompile'
+     &        ,' in namelist and re-run'
          call error_log%raise_global(
      &        context=module_name//"/"//sr_name,
      &        info=error_info)
