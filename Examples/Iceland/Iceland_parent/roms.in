@@ -2,7 +2,7 @@ title:
    Flux_frc module test.
 
 time_stepping: NTIMES   dt[sec]  NDTFAST  NINFO
-               5664        900       30       1
+               5586        900       30       1
 
 S-coord: THETA_S,   THETA_B,    hc (m)
           5.0D0        2.0D0     300.0D0
