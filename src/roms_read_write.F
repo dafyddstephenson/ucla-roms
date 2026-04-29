@@ -64,7 +64,7 @@
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
         logical                           :: ungridded = .false.
-        character(len=100)                :: ungridded_forcing_file=''
+        character(len=1024)                :: ungridded_forcing_file=''
         logical                           :: time_interpolation = .true.
       end type ncforce
 
@@ -78,7 +78,7 @@
         integer                           :: it1 = 1, it2 = 2              ! used to cycle between correct entries of 'data' above
         real,dimension(2)                 :: times = -99 ! [-99,-99]       ! stores 2 times that go with 'data' above
         logical                           :: ungridded = .false.
-        character(len=100)                :: ungridded_forcing_file=''
+        character(len=1024)                :: ungridded_forcing_file=''
         logical                           :: time_interpolation = .true.
       end type ncforce3d
 
