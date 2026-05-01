@@ -165,6 +165,17 @@ Controls setting specifying the output of the basic physical model state (not in
 | `nrpf_rst` | Records per restart file | `ocean_vars.opt: nrpf_rst` |
 
 
+### `TS_OUTPUT_SETTINGS`
+(read by module `tracers.F`)
+
+| Setting | Description | Previous location/name |
+|--------|-------------|------------------------|
+| `wrt_temp` | Include temperature in output fields if `.true.` | `tracers.opt: wrt_t(itemp)` |
+| `wrt_salt` | Include salinity in output fields if `.true.` | `tracers.opt: wrt_t(isalt)` |
+| `wrt_temp_dia` | Include temperature diagnostics in output fields if `.true.` | `tracers.opt: wrt_t_dia(itemp)` |
+| `wrt_salt_dia` | Include salinity diagnostics in output fields if `.true.` | `tracers.opt: wrt_t_dia(isalt)` |
+
+
 ### `FRC_OUTPUT_SETTINGS`
 (read by module `frc_output.F`)
 
@@ -407,6 +418,15 @@ Controls output of diagnostics concerning the physical ocean state.
 | `diag_trc` | Output tracer diagnostics | `diagnostics.opt: diag_trc` |
 | `output_period` | Output frequency (s) | `diagnostics.opt: output_period` |
 | `nrpf` | Number of records per output file | `diagnostics.opt: nrpf` |
+
+
+### `STDOUT_DIAG_SETTINGS`
+(read by module `diag_mod.F`)
+
+Controls output of diagnostics in model STDOUT
+
+| Setting | Description | Previous location/name |
+|--------|-------------|------------------------|
 | `code_check_mode` | Format standard output diagnostics for code testing | `diag.opt: code_check_mode` |
 
 ### `RANDOM_OUTPUT_SETTINGS`
