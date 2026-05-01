@@ -84,6 +84,20 @@ These settings specify the grid size, MPI decomposition, and number of tracers.
 |--------|-------------|------------------------|
 | `frcfile` | Comma-separated list of strings of forcing NetCDF file paths (boundary, surface, river, etc.) | `roms.in` |
 
+### `BULK_FRC_SETTINGS`
+(read by module `bulk_frc.F`)
+
+| Setting | Description | Previous location/name |
+|--------|-------------|------------------------|
+| `interp_bulk_frc` | Interpolate forcing from coarser input grid if .true. | `bulk_frc.opt: interp_frc` |
+| `check_bulk_frc_units` | Perform a check that input files have expected units if .true.  | `bulk_frc.opt: check_units` |
+
+### `FLUX_FRC_SETTINGS`
+(read by module `flux_frc.F`)
+
+| Setting | Description | Previous location/name |
+|--------|-------------|------------------------|
+| `interp_flux_frc` | Interpolate forcing from coarser input grid if .true. | `flux_frc.opt: interp_frc` |
 
 ### `RIVER_FRC_SETTINGS`
 (read by module `river_frc.F`)

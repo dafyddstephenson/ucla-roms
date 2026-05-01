@@ -74,6 +74,25 @@ frcfile =                            ! Comma-separated list of forcing files
 'input_data/example_input_surface_flux_forcing.nc',
 'input_data/example_input_river_forcing.nc'
 /
+
+!================================================================================
+!                             FORCING SETTINGS
+!================================================================================
+&BULK_FRC_SETTINGS
+!---------------------------------
+! Previously set in `bulk_frc.opt`
+!---------------------------------
+interp_bulk_frc = .true.       ! Interpolate forcing from coarser input grid if T
+check_bulk_frc_units = .false. ! Check units of input vars if T
+/
+
+&FLUX_FRC_SETTINGS
+!---------------------------------
+! Previously set in `flux_frc.opt`
+!---------------------------------
+interp_flux_frc = .true.       ! Interpolate forcing from coarser input grid if T
+/
+
 !================================================================================
 !                            RIVER INPUT PARAMETERS
 !================================================================================
