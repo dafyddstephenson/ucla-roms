@@ -3,30 +3,54 @@
       subroutine get_init(req_rec, tindx)    ! Reads initial conditions
                                              ! from netCDF file.
 
-      use param
+      use scalars, only:
+     &     day2sec, dt, forw_start, iic, ntstart,
+     &     sec2day, start_time
+      use hidden_mpi_vars, only: inode, jnode
       use tracers, only: t_vname, t, iTandS
-      use bgc_io ! get_init_bgc_diag
 #ifdef MARBL
       use marbl_driver, only: marbldrv_read_ss_vars_from_rst
 #endif
-      use coupling
-      use grid
-      use hidden_mpi_vars
-      use analytical
-      use mixing
-      use ocean_vars
-      use basic_output
-      use scalars
-      use netcdf
-      use bgc_shared_vars
-      use diagnostics
-      use sponge_tune
-      use nc_read_write, only: handle_ierr, ncread
-      use roms_read_write
-      use dimensions
-
+      use coupling, only:
+     &     du_avg1, dv_avg1, du_avg2, dv_avg2,
+     &     du_avg_bak, dv_avg_bak
+#ifdef LMD_BKPP
+      use mixing, only: hbbl
+#endif
+#ifdef LMD_KPP
+      use mixing, only: hbls
+#endif
+      use ocean_vars, only: zeta, ubar, vbar, u, v
+      use basic_output, only:
+     &     vname, iaux, indxtime,
+     &     indxu, indxv
+#ifdef LMD_BKPP
+     &     , indxhbbl,
+#endif
+#ifdef LMD_KPP
+     &     indxhbls
+#endif
+      use netcdf, only:
+     &     nf90_get_att, nf90_inquire_variable,
+     &     nf90_inquire_dimension, nf90_noerr, nf90_nowrite,
+     &     nf90_strerror, nf90_inq_varid, nf90_get_var, nf90_close,
+     &     nf90_open
+      use nc_read_write, only: ncread
+      use roms_read_write, only: ininame
+      use grid, only:
+     &     riv_umask, riv_vmask, rmask, umask, vmask
+      use dimensions, only: i0, i1, j0, j1, nz
+      use param, only:
+     &     ieast, iwest, jnorth, jsouth, mynode,
+     &     nsub_e, nsub_x, north_exchng, east_exchng,
+     &     west_exchng, south_exchng, nnodes, n, nt
+      use mpi_exchanges, only: exchange_xxx
+      use error_handling_mod, only: error_log
+      use calc_pflx_mod, only : calc_pflx, get_init_slow
+      use sponge_tune, only: ub_tune, get_init_ub
       implicit none
-
+      character(len=8) :: sr_name = "get_init"
+      character(len=1024) :: error_info
       integer :: req_rec, tindx, max_rec, record, ncid, varid, i, j, k,
      &           ierr,  start(4), count(2), ibuff(iaux),
      &           checkdims , itrc
@@ -37,9 +61,6 @@
      &                    , apprx_rst=3, exact_rst=4
       real time_bak
       logical :: exact_succes
-# ifdef NHMG
-!     integer i,j,k
-# endif
 #endif
 #define time illegal
 #define tdays illegal
@@ -51,9 +72,9 @@
 c--#define VERBOSE
 #ifdef VERBOSE
       write(*,'(3(2x,A,I3))') 'enter get_init: req_rec =', req_rec,
-     &            'tindx =', tindx, 'may_day_flag =', may_day_flag
+     &            'tindx =', tindx
 #endif
-      if (may_day_flag /= 0) return      !-->  EXIT
+
 
 ! Open conditions netCDF file for reading.  Check that all spatial
 ! dimensions in that file are consistent with the model, determine how
@@ -74,33 +95,39 @@ c--#define VERBOSE
 
       init_type=0
       ierr=nf90_open(ininame, nf90_nowrite, ncid)
-      if (ierr == nf90_noerr) then
-        ierr=checkdims (ncid, ininame, max_rec)
-        if (ierr == nf90_noerr) then
-          if (max_rec > 0) then
-            if (req_rec > 0) then
-              if (req_rec <= max_rec) then
-                record=req_rec
-              else
-                write(*,'(/1x,2A,I4,1x,A/12x,A,I4,1x,3A/)')
-     &              '### ERROR: get_init :: requested restart time ',
-     &              'record',req_rec, 'exceeds number', 'of records',
-     &                       max_rec,  'available in netCDF file ''',
-     &                                       trim(ininame), '''.'
-              endif
+      write(error_info, *)
+     &     'Cannot open netCDF file ''', trim(ininame), '''.'
+      call error_log%check_netcdf_status(
+     &     netcdf_status=ierr,
+     &     context=sr_name,
+     &     info=error_info)
+      call error_log%abort_check()
+
+      ierr=checkdims (ncid, ininame, max_rec)
+      call error_log%abort_check()
+
+      if (max_rec > 0) then
+         if (req_rec > 0) then
+            if (req_rec <= max_rec) then
+               record=req_rec
             else
-              record=max_rec
+               write(error_info, *)
+     &              'requested restart time ',
+     &              'record',req_rec,
+     &              'exceeds number', 'of records',
+     &              max_rec,  'available in netCDF file ''',
+     &              trim(ininame), '''.'
+               call error_log%raise_from_rank(
+     &              context=sr_name,
+     &              info=error_info)
             endif
-          else
-            record=1
-          endif
-        endif
-      else
-        write(*,'(/1x,4A/12x,A/)')  '### ERROR: get_init :: Cannot ',
-     &                'open netCDF file ''', trim(ininame), '''.',
-     &                                             nf90_strerror(ierr)
+         else                   !(if (req_rec > 0))
+            record=max_rec
+         endif
+      else                      !if (max_rec > 0)
+         record=1
       endif
-      if (ierr /= nf90_noerr) goto 99                     !--> ERROR
+      call error_log%abort_check()
 
 ! Read in evolving model variables:
 !----- -- -------- ----- ----------
@@ -175,23 +202,39 @@ c--#define VERBOSE
       if (ierr /= nf90_noerr) then
         ierr=nf90_inq_varid(ncid, 'scrum_time', varid)
       endif
-      if (ierr/=0) call handle_ierr(ierr,'get_init: time var not found')
-
+      if (ierr/=0) then
+         call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &        info="time var not found")
+      end if
       ierr=nf90_get_var(ncid, varid, start_time, start=(/record/) )
-      if (ierr/=0) call handle_ierr(ierr,'get_init: get time')
+      if (ierr/=0) then
+         call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &        info="unable to get time var")
+      end if
       ierr=nf90_get_att(ncid, varid, 'units', vname(3,indxTime))
-      if (ierr/=0) call handle_ierr(ierr,'get_init: get time units')
-
+      if (ierr/=0) then
+         call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &        info="unable to get time units")
+      end if
       if (vname(3,indxTime)(1:6) == 'second') then
         time_scale=1.D0
       elseif (vname(3,indxTime)(1:3) == 'day') then
         time_scale=day2sec
       else
-        write(*,'(/1x,4A/12x,3A/)')    '### ERROR: get_init :: ',
+        write(error_info, *)
      &  'unknown units for variable ''',trim(vname(1,indxTime)),
-     &         '''', 'in netCDF file ''', trim(ininame), '''.'
-        goto 99                                    !--> ERROR
+     &        '''', 'in netCDF file ''', trim(ininame), '''.'
+        call error_log%raise_global(
+     &       context=sr_name,
+     &       info=error_info)
       endif
+      call error_log%abort_check()
       start_time=start_time*time_scale
 !     start_time=start_time*time_scale + 288
 
@@ -223,10 +266,18 @@ c--#define VERBOSE
      &                          'with forward initial time step.'
               iic = 0 ! set back to zero if exact restart fails
             endif
-          else
-            write(*,2) trim(vname(1,indxTime)), record,
-     &                 trim(ininame), nf90_strerror(ierr)
-            goto 99
+         else
+            write(error_info,
+     &           '(/1x,3A,/12x,A,I5,1x,3A,/12x,A)')
+     &           'Cannot read variable ''',
+     &           trim(vname(1,indxTime)),
+     &           '''',
+     &           'rec =', record,
+     &           'file = ''', trim(ininame), '''',
+     &           nf90_strerror(ierr)
+            call error_log%raise_global(
+     &           context=sr_name,
+     &           info=error_info)
           endif
         else
            mpi_nonexit_warn write(*,'(1x,2A/10x,4A)')
@@ -238,8 +289,13 @@ c--#define VERBOSE
         forw_start=0
       endif
 #endif
-      if (ierr /= nf90_noerr)  goto 99                    !--> ERROR
-
+      if (ierr /= nf90_noerr) then
+         call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &        info="Cause of termination: netCDF input.")
+      endif
+      call error_log%abort_check()
 ! Check whether variable 'time_step' is present, which can be a
 ! structure of four to up to eight integer numbers storing time step
 ! number and the corresponding record numbers for output files.
@@ -250,24 +306,40 @@ c--#define VERBOSE
       ierr=nf90_inq_varid(ncid, 'time_step', varid)
       if (ierr == nf90_noerr) then
         ierr=nf90_inquire_variable(ncid, varid, dimids=ibuff)
-        if (ierr/=0)
-     &    call handle_ierr(ierr,'get_init: cannot get time_step dimids')
+        if (ierr/=0) then
+           call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &        info="Cannot get time_step dimids.")
+        end if
         ierr=nf90_inquire_dimension(ncid, ibuff(1), len=count(1))
-        if (ierr/=0)
-     &    call handle_ierr(ierr,'get_init: cannot get time dim size')
+        if (ierr/=0) then
+           call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &          info="Cannot get time dim size")
+        end if
         start(1)=1 ; start(2)=record ; count(2)=1
         ibuff(1:iaux)=0
         ierr=nf90_get_var(ncid, varid, ibuff, start, count)
-        if (ierr/=0)
-     &  call handle_ierr(ierr,'get_init: cannot read time_step')
+        if (ierr/=0) then
+           call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &          info="Cannot read time_step")
+        end if
         ntstart=ibuff(1)+1
 
 #ifdef EXACT_RESTART
         if (tindx == 2 .and. record < max_rec) then
           start(2)=record+1
           ierr=nf90_get_var(ncid, varid, ibuff, start, count)
-          if (ierr/=0)
-     &  call handle_ierr(ierr,'get_init: cannot read 2nd time_step')
+        if (ierr/=0) then
+           call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &          info="Cannot read second time_step")
+        end if
 # ifdef VERBOSE
           write(*,*) 'ibuff(1),ntstart =', ibuff(1), ntstart
 # endif
@@ -293,8 +365,14 @@ c--#define VERBOSE
 #else
         init_type=rst_run
 #endif
-        if (ierr /= nf90_noerr)  goto 99                  !--> ERROR
-      else
+        if (ierr/=0) then
+           call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &        context=sr_name,
+     &          info="Cause of termination: netCDF input.")
+        end if
+
+      else ! ierr==nf90_noerr on inq_varid time_step
         init_type=init_run
         ntstart=1               ! netCDF variable "time_step" not
 !        nrecrst=0               ! found: proceed with initializing
@@ -309,24 +387,46 @@ c--#define VERBOSE
       write(*,'(1x,2A,F12.4,1x,A,I4)')   'get_init: reading initial ',
      &   'fields for time =', start_time*sec2day, 'record =', record
 #endif
-
+      call error_log%abort_check()
 ! Read initial fields:
 !---------------------
-
-! Free-surface and barotropic 2D momentuma, XI- and ETA-components
+! River mask (needed for exact restarts)
 
       start=1; start(3)=record                                       ! 2D vars
+
+      ierr=nf90_inq_varid(ncid, 'riv_umask', varid)
+      if (ierr == nf90_noerr) then
+        call ncread(ncid,'riv_umask',riv_umask(1:i1,j0:j1),start)
+      else
+        if (mynode == 0) then
+        write(*,*) 'riv_umask not found in initial file. Initializing ',
+     & 'to zero.'
+        endif
+      endif
+      ierr=nf90_inq_varid(ncid, 'riv_vmask', varid)
+      if (ierr == nf90_noerr) then
+        call ncread(ncid,'riv_vmask',riv_vmask(i0:i1,1:j1),start)
+      else
+        if (mynode == 0) then
+        write(*,*) 'riv_vmask not found in initial file. Initializing ',
+     & 'to zero.'
+        endif
+      endif
+
+! Free-surface and barotropic 2D momentuma, XI- and ETA-components
 
       call ncread(ncid,'zeta',zeta(i0:i1,j0:j1,1),start)
       zeta(i0:i1,j0:j1,1)=zeta(i0:i1,j0:j1,1)*rmask(i0:i1,j0:j1)
       call exchange_xxx(zeta(:,:,1))
 
       call ncread(ncid,'ubar',ubar( 1:i1,j0:j1,1),start)
-      ubar(1:i1,j0:j1,1) = ubar(1:i1,j0:j1,1)*umask(1:i1,j0:j1)
+      ubar(1:i1,j0:j1,1) = ubar(1:i1,j0:j1,1)*
+     &  (umask(1:i1,j0:j1)+riv_umask(1:i1,j0:j1))
       call exchange_xxx(ubar(:,:,1))
 
       call ncread(ncid,'vbar',vbar(i0:i1, 1:j1,1),start)
-      vbar(i0:i1,1:j1,1) = vbar(i0:i1,1:j1,1)*vmask(i0:i1,1:j1)
+      vbar(i0:i1,1:j1,1) = vbar(i0:i1,1:j1,1)*
+     &  (vmask(i0:i1,1:j1)+riv_vmask(i0:i1,1:j1))
       call exchange_xxx(vbar(:,:,1))
 
 ! Two sets of fast-time-averaged barotropic fluxes needed for exact
@@ -373,7 +473,12 @@ c--#define VERBOSE
 
           call ncread(ncid,'rufrc_bak', rufrc_bak( 1:i1,j0:j1,tindx),start)    ! DevinD this update was untested
           call ncread(ncid,'rvfrc_bak', rvfrc_bak(i0:i1, 1:j1,tindx),start)
-          if (ierr /= nf90_noerr) goto 99                     !--> ERROR
+          if (ierr/=nf90_noerr) then
+             call error_log%check_netcdf_status(
+     &        netcdf_status=ierr,
+     &            context=sr_name,
+     &            info="Cause of termination: netCDF input.")
+          end if
 
         else
           forw_start=ntstart    !--> cancel exact restart
@@ -381,6 +486,7 @@ c--#define VERBOSE
       else
         forw_start=ntstart    !--> cancel exact restart
       endif
+      call error_log%abort_check()
 #  endif
 # endif /*EXACT_RESTART*/
 
@@ -390,33 +496,17 @@ c--#define VERBOSE
 
       call ncread(ncid,vname(1,indxU), u(1:i1,j0:j1,:,tindx),start)
       do k=1,nz
-        u(1:i1,j0:j1,k,tindx) = u(1:i1,j0:j1,k,tindx)*umask(1:i1,j0:j1)
+        u(1:i1,j0:j1,k,tindx) = u(1:i1,j0:j1,k,tindx)*
+     &  (umask(1:i1,j0:j1)+riv_umask(1:i1,j0:j1))
       enddo
       call exchange_xxx(u(:,:,:,tindx) )
 
       call ncread(ncid,vname(1,indxV), v(i0:i1, 1:j1,:,tindx),start)           ! v requires masking and
-       do k=1,nz
-         v(i0:i1,1:j1,k,tindx) = v(i0:i1,1:j1,k,tindx)*vmask(i0:i1,1:j1)
-       enddo
+      do k=1,nz
+        v(i0:i1,1:j1,k,tindx) = v(i0:i1,1:j1,k,tindx)*
+     &  (vmask(i0:i1,1:j1)+riv_vmask(i0:i1,1:j1))
+      enddo
       call exchange_xxx(v(:,:,:,tindx) )
-
-# if defined NHMG
-      ! since ncdf_read already does an exchange to fill buffers, we're
-      ! ready to initialy w using no-div
-!     do j=1,Lm
-!       do k=1,N
-!         do i=1,Mm
-!           DC(i,0)=pm(i,j)*pn(i,j)
-!           w(i,j,k,nnew)=w(i,j,k-1,nnew)
-!    &      - DC(i,0)*(
-!    &       +0.5*(Hz(i,j,k)+Hz(i+1,j,k))*dn_u(i+1,j)*u(i+1,j,k,nnew)
-!    &       -0.5*(Hz(i-1,j,k)+Hz(i,j,k))*dn_u(i,j)*u(i,j,k,nnew)
-!    &       +0.5*(Hz(i,j,k)+Hz(i,j+1,k))*dm_v(i,j+1)*v(i,j+1,k,nnew)
-!    &       -0.5*(Hz(i,j-1,k)+Hz(i,j,k))*dm_v(i,j)*v(i,j,k,nnew) )
-!         enddo
-!       enddo
-!     enddo
-# endif
 
 
 ! Tracer variables.
@@ -432,10 +522,20 @@ c--#define VERBOSE
           call exchange_xxx(t(:,:,:,tindx,itrc) )
         else
 
-          if (itrc <= iTandS) then ! temperature and salt(s) always require inital condition
-            write(*,1) trim(t_vname(itrc)), trim(ininame),
-     &                  nf90_strerror(ierr)
-            goto 99                                         !--> ERROR
+           if (itrc <= iTandS) then ! temperature and salt(s) always require inital condition
+              write(error_info,
+     &             '(/1x,3A,/12x,3A,/12x,A)')
+     &             'Cannot find variable ''',
+     &             trim(t_vname(itrc)),
+     &             '''',
+     &             'in netCDF file ''',
+     &             trim(ininame),
+     &             '''',
+     &             nf90_strerror(ierr)
+              call error_log%check_netcdf_status(
+     &             netcdf_status=ierr,
+     &             context=sr_name,
+     &             info=error_info)
           else
             t(:,:,:,tindx,itrc) = 0.0
             if(mynode==0) write(*,*) ' --- WARNING: '
@@ -446,7 +546,7 @@ c--#define VERBOSE
 
         endif
       enddo
-
+      call error_log%abort_check()
       start=1; start(3)=record                                       ! 2D vars
 # ifdef LMD_KPP
       ierr=nf90_inq_varid(ncid, vname(1,indxHbls), varid)
@@ -482,11 +582,8 @@ c--#define VERBOSE
 
 #endif /* SOLVE3D */
 
-
-#ifdef DIAGNOSTICS
-      if (diag_pflx) call get_init_slow(ncid,record,tindx)
+      if (calc_pflx) call get_init_slow(ncid,record,tindx)
       if (ub_tune)   call get_init_ub(ncid,record)
-#endif
 
 ! Close input NetCDF file and  write greeting message depending
 ! on the the type of initial/restart procedure performed above.
@@ -514,15 +611,16 @@ c--#define VERBOSE
      &          'get_init: Restarted from day =', start_time*sec2day,
      &     'rec =', record, '.'
 #endif
-         else
-           write(*,'(/1x,A/)') '### ERROR: get_init :: Unknown Error.'
-           goto 99
+        else
+              call error_log%raise_from_rank(
+     &             context=sr_name,
+     &             info="Unknown Error.")
          endif
        endif  !<-- tindex==1
 #ifdef MPI_SILENT_MODE
       endif
 #endif
-
+      call error_log%abort_check()
       ! Here we catch an initial file that does not have the boundary values of u/v
       ! set to zero, even though we prescribed a closed boundary. This is necessary
       ! for conservation tests.
@@ -572,10 +670,4 @@ c--#define VERBOSE
 # endif
 #endif
       return
-  99  may_day_flag=2
-      return
-  1   format(/1x,'### ERROR: get_init :: Cannot find variable ''', A,
-     &                 '''' /12x, 'in netCDF file ''', A, ''''/12x,A)
-  2   format(/1x,'### ERROR: get_init :: Cannot read variable ''', A,
-     &        '''' /12x, 'rec =', I5, 1x, 'file = ''', A, ''''/12x,A)
-      end
+      end subroutine get_init

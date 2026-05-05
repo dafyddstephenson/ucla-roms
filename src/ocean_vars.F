@@ -4,8 +4,8 @@
 
 #include "cppdefs.opt"
 
-      use param
-      use scalars
+      use param, only: lm, mm
+      use scalars, only: init, n
       implicit none
       private
 
@@ -45,8 +45,13 @@
       real,public,allocatable,dimension(:,:,:) :: wvl_avg
 
       real,public,allocatable,dimension(:,:,:) :: Hz      ! height of rho-cell
+      real,public,allocatable,dimension(:,:,:) :: Hz_u    ! height of cell at u-interface
+      real,public,allocatable,dimension(:,:,:) :: Hz_v    ! height of cell at v-interface
       real,public,allocatable,dimension(:,:,:) :: z_r     ! depth at rho-points
       real,public,allocatable,dimension(:,:,:) :: z_w     ! depth at   w-points
+      real,public,allocatable,dimension(:,:,:) :: Hz0     ! height of rho-cell with zero SSH
+      real,public,allocatable,dimension(:,:,:) :: z_r0    ! depth at rho-points with zero SSH
+      real,public,allocatable,dimension(:,:,:) :: z_w0     ! depth at w-points with zero SSH
 # if defined NHMG || defined NONTRAD_COR
       real,public,allocatable,dimension(:,:,:) :: dzdxi
       real,public,allocatable,dimension(:,:,:) :: dzdeta
@@ -96,8 +101,13 @@
       allocate( Wi(GLOBAL_2D_ARRAY,0:N) ) ; Wi=init        ! implicit
 
       allocate( Hz(GLOBAL_2D_ARRAY,N) )    ; Hz=init       ! height of rho-cell
+      allocate( Hz_u(GLOBAL_2D_ARRAY,N) )  ; Hz_u=init     ! height of cell at u-interface
+      allocate( Hz_v(GLOBAL_2D_ARRAY,N) )  ; Hz_v=init     ! height of cell at v-interface
       allocate( z_r(GLOBAL_2D_ARRAY,N) )   ; z_r=init      ! depth at rho-points
       allocate( z_w(GLOBAL_2D_ARRAY,0:N) ) ; z_w=init      ! depth at   w-points
+      allocate( Hz0(GLOBAL_2D_ARRAY,N) )   ; Hz0=init      ! height of rho-cell with zero SSH
+      allocate( z_r0(GLOBAL_2D_ARRAY,N) )  ; z_r0=init     ! depth at rho-points with zero SSH
+      allocate( z_w0(GLOBAL_2D_ARRAY,0:N) ); z_w0=init     ! depth at w-points with zero SSH
 # if defined NHMG || defined NONTRAD_COR
       allocate( dzdxi(GLOBAL_2D_ARRAY,1:N)  )
       allocate( dzdeta(GLOBAL_2D_ARRAY,1:N) )

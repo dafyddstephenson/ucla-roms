@@ -7,9 +7,9 @@
 ! stepping algorithm [Sec. 2.3 from SM2005 starting with Eq. (2.49)]
 ! and perform fast-time averaging to interact with baroclinic mode.
 
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a2d
 
       implicit none
       integer,save :: tile=0
@@ -25,21 +25,29 @@
      &                           rubar,rvbar, urhs,vrhs,  DUon,DVom,
      &                                       Drhs, UFx,UFe,VFx,VFe)
 
-      use param
-      use river_frc
-      use pipe_frc
-      use cdr_frc
-      use wec_frc
-      use tides
-      use coupling
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
-      use mpi_exchanges
+      use river_frc, only:
+     &     iriver, river_flux, river_source, riv_uflx,
+     &     riv_vol, riv_vflx
+      use pipe_frc, only: pipe_source, pipe_idx, pipe_flx
+#if defined(CDR_FORCING)
+      use cdr_frc, only:
+     &     cdr_prf, cdr_nprf, cdr_source, cdr_volume,
+     &     cdr_icdr, cdr_iloc, cdr_jloc, cdr_vol
+#endif
+      use coupling, only:
+     &     rhos, rhoa, weight, du_avg_bak, du_avg2,
+     &     du_avg1, dv_avg_bak, dv_avg2, dv_avg1, zt_avg1, rufrc, rvfrc
+      use grid, only: h, dn_u, dm_v, pn, pm, rmask, umask, vmask
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
+      use ocean_vars, only: zeta, ubar, vbar
+      use scalars, only: dtfast, g, iif, knew, kstp, nfast
+      use mpi_exchanges, only: exchange_xxx
+      use surf_flux, only: swflx
 
       implicit none
-      integer istr,iend,jstr,jend, i,j, kbak, kold
+      integer istr,iend,jstr,jend, i,j, kbak, kold, icdr, cidx
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY) :: zeta_new, Dnew,
      &                         rubar,rvbar,  urhs,vrhs,  DUon,DVom,
      &                                       Drhs, UFx,UFe,VFx,VFe
@@ -96,7 +104,6 @@
 ! divergence to advance free surface and for nonlinear advection terms
 ! for the barotropic momentum equations. DUon == H*dy*Ubar, DVom ==
 ! H*dx*Vbar, at u, and v positions respectively
-! In case of WEC, ust2d is added to Ubar (and vst2d added to Vbar)
 
       do j=jstrV-2,jend+1
         do i=istrU-2,iend+1
@@ -108,22 +115,14 @@
         do i=istrU-1,iend+1
           urhs(i,j)=fwd*ubar(i,j,kstp) +fwd1*ubar(i,j,kbak)
      &                                         +fwd2*ubar(i,j,kold)
-          DUon(i,j)=0.5*(Drhs(i,j)+Drhs(i-1,j))*dn_u(i,j)*( urhs(i,j)
-#  ifdef WEC
-     &                                                  + ust2d(i,j)
-#  endif
-     &                                                               )
+          DUon(i,j)=0.5*(Drhs(i,j)+Drhs(i-1,j))*dn_u(i,j)*( urhs(i,j))
         enddo
       enddo
       do j=jstrV-1,jend+1
         do i=istr-1,iend+1
           vrhs(i,j)=fwd*vbar(i,j,kstp) +fwd1*vbar(i,j,kbak)
      &                                         +fwd2*vbar(i,j,kold)
-          DVom(i,j)=0.5*(Drhs(i,j)+Drhs(i,j-1))*dm_v(i,j)*(vrhs(i,j)
-#  ifdef WEC
-     &                                                  + vst2d(i,j)
-#  endif
-     &                                                               )
+          DVom(i,j)=0.5*(Drhs(i,j)+Drhs(i,j-1))*dm_v(i,j)*(vrhs(i,j))
         enddo
       enddo
 
@@ -136,6 +135,7 @@
 #define rzeta  UFe
 #define rzeta2  VFe
 #define rzetaSA VFx
+#if defined CDR_FORCING && defined MARBL
       if (cdr_source.and.cdr_volume) then
         do cidx=1,cdr_nprf
           icdr = cdr_icdr(cidx)
@@ -143,13 +143,15 @@
           j = cdr_jloc(cidx)
 
           zeta(i,j,kstp)=zeta(i,j,kstp) + dtfast*pm(i,j)*pn(i,j)
-     &               *cdr_vol(icdr)*sum(cdr_prf(cidx,:))
+     &               *cdr_vol(icdr)*sum(cdr_prf(cidx,1,:))
         enddo
       endif
+#endif
       do j=jstrV-1,jend !! why are these from ...-1?
         do i=istrU-1,iend
           zeta_new(i,j)=zeta(i,j,kstp) + dtfast*pm(i,j)*pn(i,j)
      &            *(DUon(i,j)-DUon(i+1,j)+DVom(i,j)-DVom(i,j+1))
+     &            + dtfast*swflx(i,j)
           if (pipe_source) then          ! If pipe_source is false, the branch will
             if (pipe_idx(i,j) > 0.) then ! be eliminated by compile optimization
               zeta_new(i,j)=zeta_new(i,j) + dtfast*pm(i,j)*pn(i,j)*pipe_flx(i,j)
@@ -251,11 +253,6 @@
      &                        +0.333333333333*(rhoA(i-1,j)-rhoA(i,j))
      &                                     *(zwrk(i-1,j)-zwrk(i,j)) )
 #endif
-
-#ifdef WEC
-     &                  + ( h(i-1,j)+h(i,j)+rzeta(i-1,j)+rzeta(i,j) )
-     &                                       *( sup(i,j)-sup(i-1,j) )
-#endif
      &                                                              )
 !>
           rvbar(i,j)=cff*dm_v(i,j)*( (h(i,j-1)+h(i,j))*(rzeta(i,j-1)
@@ -265,11 +262,6 @@
      &              +(h(i,j-1)-h(i,j))*( rzetaSA(i,j-1)+rzetaSA(i,j)
      &                        +0.333333333333*(rhoA(i,j-1)-rhoA(i,j))
      &                                     *(zwrk(i,j-1)-zwrk(i,j)) )
-#endif
-
-#ifdef WEC
-     &                  + ( h(i,j-1)+h(i,j)+rzeta(i,j-1)+rzeta(i,j) )
-     &                                       *( sup(i,j)-sup(i,j-1) )
 #endif
      &                                                              )
         enddo
@@ -425,11 +417,7 @@ c<<     &     +cff*iA_u(i,j)
           ubar(i,j,knew)=DUnew/( Dnew(i,j)+Dnew(i-1,j)
      &                                                   )
 
-          DU_avg1(i,j)=DU_avg1(i,j)+cff1*dn_u(i,j)*( DUnew
-# ifdef WEC
-     &                 +(Dnew(i,j)+Dnew(i-1,j))*ust2d(i,j)
-# endif
-     &                                                   )
+          DU_avg1(i,j)=DU_avg1(i,j)+cff1*dn_u(i,j)*(DUnew)
 
         enddo
       enddo
@@ -446,11 +434,7 @@ c<<     &     +cff*iA_v(i,j)
           vbar(i,j,knew)=DVnew/( Dnew(i,j)+Dnew(i,j-1)
      &                                                   )
 
-          DV_avg1(i,j)=DV_avg1(i,j) +cff1*dm_v(i,j) * ( DVnew
-# ifdef WEC
-     &                 +(Dnew(i,j)+Dnew(i,j-1))*vst2d(i,j)
-# endif
-     &                                                   )
+          DV_avg1(i,j)=DV_avg1(i,j) +cff1*dm_v(i,j) * (DVnew)
         enddo
       enddo
 
@@ -494,18 +478,12 @@ c<<     &     +cff*iA_v(i,j)
           DU_avg1(istrU-1,j)=DU_avg1(istrU-1,j)+cff1*(Dnew(istrU-1,j)
 
      &         +Dnew(istrU-2,j))*( ubar(istrU-1,j,knew)
-# ifdef WEC
-     &                                             +ust2d(istrU-1,j)
-# endif
      &                                             )*dn_u(istrU-1,j)
         enddo
         do j=jstrV,jend
           DV_avg1(istr-1,j)=DV_avg1(istr-1,j) +cff1*(Dnew(istr-1,j)
 
      &       +Dnew(istr-1,j-1) )*( vbar(istr-1,j,knew)
-# ifdef WEC
-     &                                              +vst2d(istr-1,j)
-# endif
      &                                              )*dm_v(istr-1,j)
         enddo
       endif
@@ -513,17 +491,11 @@ c<<     &     +cff*iA_v(i,j)
         do j=jstrR,jendR
           DU_avg1(iend+1,j)=DU_avg1(iend+1,j) +cff1*( Dnew(iend+1,j)
      &            +Dnew(iend,j) )*( ubar(iend+1,j,knew)
-# ifdef WEC
-     &                                              +ust2d(iend+1,j)
-# endif
      &                                              )*dn_u(iend+1,j)
         enddo
         do j=jstrV,jend
           DV_avg1(iend+1,j)=DV_avg1(iend+1,j) +cff1*( Dnew(iend+1,j)
      &        +Dnew(iend+1,j-1) )*( vbar(iend+1,j,knew)
-# ifdef WEC
-     &                                              +vst2d(iend+1,j)
-# endif
      &                                              )*dm_v(iend+1,j)
        enddo
       endif
@@ -533,17 +505,11 @@ c<<     &     +cff*iA_v(i,j)
         do i=istrU,iend
           DU_avg1(i,jstr-1)=DU_avg1(i,jstr-1) +cff1*( Dnew(i,jstr-1)
      &        +Dnew(i-1,jstr-1) )*( ubar(i,jstr-1,knew)
-# ifdef WEC
-     &                                              +ust2d(i,jstr-1)
-# endif
      &                                              )*dn_u(i,jstr-1)
         enddo
         do i=istrR,iendR
           DV_avg1(i,jstrV-1)=DV_avg1(i,jstrV-1)+cff1*(Dnew(i,jstrV-1)
      &         +Dnew(i,jstrV-2))*( vbar(i,jstrV-1,knew)
-# ifdef WEC
-     &                                              +vst2d(i,jstrV-1)
-# endif
      &                                              )*dm_v(i,jstrV-1)
         enddo
       endif
@@ -551,17 +517,11 @@ c<<     &     +cff*iA_v(i,j)
         do i=istrU,iend
           DU_avg1(i,jend+1)=DU_avg1(i,jend+1) +cff1*( Dnew(i,jend+1)
      &        +Dnew(i-1,jend+1) )*( ubar(i,jend+1,knew)
-# ifdef WEC
-     &                                               +ust2d(i,jend+1)
-# endif
      &                                               )*dn_u(i,jend+1)
         enddo
         do i=istrR,iendR
           DV_avg1(i,jend+1)=DV_avg1(i,jend+1) +cff1*( Dnew(i,jend+1)
      &            +Dnew(i,jend) )*( vbar(i,jend+1,knew)
-# ifdef WEC
-     &                                               +vst2d(i,jend+1)
-# endif
      &                                               )*dm_v(i,jend+1)
         enddo
       endif

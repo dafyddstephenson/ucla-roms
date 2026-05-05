@@ -4,11 +4,12 @@
 
 ! Set boundary conditions for free surface zeta_new
 
-      use param
-      use boundary
-      use grid
-      use ocean_vars
-      use scalars
+      use param, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use grid, only:  h, pm, rmask, pn
+      use ocean_vars, only: zeta
+      use scalars, only: dtfast, g, kstp
 
       implicit none
       integer istr,iend,jstr,jend, i,j
@@ -58,14 +59,6 @@ c--#define OBC_Z2ORLANSKI
         enddo
 # endif
       endif
-
-c*******
-c*******
-# ifdef ISWAKE_XXX
-c--#  define OBC_Z2ORLANSKI
-# endif
-c*******
-c*******
 
       if (EASTERN_EDGE) then
 # if defined OBC_EAST && defined OBC_M2FLATHER

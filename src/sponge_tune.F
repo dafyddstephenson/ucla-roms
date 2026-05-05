@@ -5,18 +5,28 @@
 
 #include "cppdefs.opt"
 
-      use netcdf
-      use nc_read_write
-      use scalars
-      use dimensions
-      use diagnostics
-      use roms_read_write
-      use hidden_mpi_vars
-      use mixing
+
+      use netcdf, only:
+     &     nf90_noerr, nf90_write, nf90_inq_varid,
+     &     nf90_open, nf90_put_att, nf90_close
+      use nc_read_write, only: nccreate, ncread, ncwrite
+      use scalars, only: iic, tdays, time, dt
+      use dimensions, only: nx, ny
+      use calc_pflx_mod, only: up, vp, calc_pflx
+      use roms_read_write, only:
+     &     ncforce, bfx, bfy, dn_tm, dn_xr,
+     &     dn_yr, xi_rho, bc_options, create_file, set_frc_data,
+     &     store_string_att
+      use hidden_mpi_vars, only: inode, jnode
+      use param, only:
+     &     obc_east, obc_north, obc_south, obc_west,
+     &     east_exchng, north_exchng, south_exchng, west_exchng,
+     &     mynode, np_eta, np_xi
+      use error_handling_mod, only: error_log
 
       implicit none
       private
-
+      character(len=11) :: module_name = "sponge_tune"
 #include "sponge_tune.opt"
 
       logical   :: tune_init = .true.
@@ -54,7 +64,7 @@
       ! local
       integer :: i
 
-      if (.not.diag_pflx.and.mynode==0) then
+      if (.not.calc_pflx.and.mynode==0) then
         print *,'For Orlanski tuning,'
         print *,'pflx diagnostics must be turned on!'
         stop
@@ -130,8 +140,8 @@
       subroutine set_pflx ![
       ! Read parent grid baroclinic pressure fluxes from bry file
       ! and interpolate to the correct time
-
-      use grid
+      use error_handling_mod, only: error_log
+      use grid, only: rmask
 
       !local
       integer:: i,j,ierr
@@ -161,7 +171,7 @@
           if (abs(pflx_north(i))>100) pflx_north(i) = 0.
         enddo
       endif
-
+      call error_log%abort_check()
       end subroutine set_pflx !]
 ! ----------------------------------------------------------------------
       subroutine comp_cflx ![
@@ -248,7 +258,6 @@
       ! Update diagnostics averages
       ! The average is always scaled properly throughout
       ! reset navg_diag=0 after an output of the average
-      use param
       implicit none
 
       ! local
@@ -277,6 +286,7 @@
       subroutine write_sp_tune ![
       implicit none
 
+      character(len=13) :: sr_name = "write_sponge_tune"
       !local
       integer            :: ncid,ierr
       character(len=99)  :: fname
@@ -289,9 +299,12 @@
       record = record + 1
 
       ierr=nf90_open(fname, nf90_write, ncid)
-      if (ierr/=nf90_noerr)
-     &    call handle_ierr(ierr,'write sponge_tune: ',fname)
-
+      if (ierr/=nf90_noerr) then
+         call error_log%check_netcdf_status(netcdf_status=ierr,
+     &        info="error opening "//fname,
+     &        context=module_name//"/"//sr_name)
+      end if
+      call error_log%abort_check()
       call ncwrite(ncid,'ocean_time',(/time/),(/record/))
 
       ! fluxes and ub coefficients are defined as nx, ny sized arrays
@@ -318,8 +331,7 @@
          write(*,'(7x,A,1x,F11.4,2x,A,I7,1x,A,I4,A,I4,1x,A,I3)')      ! confirm work completed
      &    'orlanski_tune :: wrote output, tdays =', tdays,
      &    'step =', iic-1, 'rec =', record
-        endif
-
+      endif
 
       end subroutine write_sp_tune !]
 ! ----------------------------------------------------------------------

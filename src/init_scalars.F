@@ -1,26 +1,30 @@
 #include "cppdefs.opt"
 
-      subroutine init_scalars (ierr)
+      subroutine init_scalars()
 
 ! Set initial values for globally accessable (stored in common blocks)
 ! scalar variables.  Typically these are associated with time indices,
 ! global summation counters, model utility switches, i/o contlol, etc.
 ! Note that NONE of the model physical parameters is initialized here.
 
-      use param
-      use bec2_vars ! init_scalars_bec2
-      use boundary
-      use comm_vars
-      use mixing
-      use scalars
-      use roms_read_write
-      use dimensions
+      use comm_vars, only:
+     &     bc_count, bc_crss, cg_max, cg_min, cpu_all,
+     &     first_time, grdmax, grdmin, hmax, hmin, mcheck, rx0, rx1,
+     &     tile_count, trd_count, volume
+      use scalars, only:
+     &     barr_count, gamma2, iic, iif, init, knew,
+     &     kstp, nfast, nnew, nrhs, nstp, ntstart, start_time
+      use roms_read_write, only:
+     &     max_frc_files, ncfrc,
+     &     init_output_indices
+      use dimensions, only: init_dimensions
+      use read_inp_mod, only: read_inp
 
       use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
       use, intrinsic :: iso_fortran_env, only: real32
 
       implicit none
-      integer ierr, i
+      integer  i
 
       real :: nan  !real(real32) :: nan
       nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
@@ -41,7 +45,7 @@ c      write(*,*) 'kmp_stacksize =', size
       nrhs=1  ; nnew=1               ! of model fields.
 #endif
                                      ! Reset intra-thread
-      may_day_flag=0                 ! communication signal
+                                     ! communication signal
       trd_count=0                    ! variables and counters.
       cpu_all=0.   !<-- array
       barr_count=0 !<-- array
@@ -68,25 +72,13 @@ c      write(*,*) 'kmp_stacksize =', size
       do i=1,max_frc_files
         ncfrc(i)=-1
       enddo
-#ifndef ANA_BRY
-!      bry_id=-1
-#endif
 
       call init_dimensions                                 ! needs to come before init_output_indices
       call init_output_indices      ! retire this soon (the bfx, bfy thing)
 
-
-      ierr=0
-      call read_inp (ierr)
-      if (ierr==0) then
+      call read_inp()
 #ifdef SOLVE3D
         call set_weights
-#endif
-
-      endif
-
-#ifdef BIOLOGY_BEC2
-        call init_scalars_bec2
 #endif
 
       end

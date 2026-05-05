@@ -13,7 +13,7 @@
 ! twice, in predictor and corrector substeps for tracer variables.
 
 
-c---#define BIO_1ST_USTREAM_TEST
+!#define BIO_1ST_USTREAM_TEST
 #ifdef  BIO_1ST_USTREAM_TEST
         if (itrc>isalt) then       ! biological tracer components:
 !       if (itrc>0) then       ! biological tracer components:
@@ -112,6 +112,21 @@ c---#define BIO_1ST_USTREAM_TEST
 #endif
             enddo           !--> discard curv,grad, keep FX
           enddo
+!!!
+#if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
+          if (.not.west_exchng) then
+            do j=jstr,jend
+              FX(istr,j) = FX(istr,j) + 0.5*(t(istr-1,j,k,nrhs,itrc)-t(istr,j,k,nrhs,itrc))
+     &          * max(FlxU(istr,j,k),0.0)
+            enddo
+          endif
+          if (.not.east_exchng) then
+            do j=jstr,jend
+              FX(iend+1,j) = FX(iend+1,j) + 0.5*(t(iend+1,j,k,nrhs,itrc)-t(iend,j,k,nrhs,itrc))
+     &          * min(FlxU(iend+1,j,k),0.0)
+            enddo
+          endif
+#endif
 
 #ifndef NS_PERIODIC
           if (SOUTHERN_EDGE) then
@@ -172,10 +187,6 @@ c---#define BIO_1ST_USTREAM_TEST
      &                                                  *FlxV(i,j,k)
      &          -0.1666666666666666*( curv(i,j-1)*max(FlxV(i,j,k),0.)
      &                               +curv(i,j  )*min(FlxV(i,j,k),0.))
-# ifdef DIAGNOSTICS_TS
-              TruncFE(i,j)=0.04166666666666667*(curv(i,j)-curv(i-1,j))
-     &                                               *abs(FlxV(i,j,k))
-# endif
 #else
               FE(i,j)=0.5*( t(i,j,k,nrhs,itrc)+t(i,j-1,k,nrhs,itrc)
      &                   -0.3333333333333333*(grad(i,j)-grad(i,j-1))
@@ -183,6 +194,22 @@ c---#define BIO_1ST_USTREAM_TEST
 #endif
             enddo
           enddo             !--> discard curv,grad, keep FE
+!!!
+#if defined MARBL && defined MARBL_DIAGS && defined UPSCALING
+          if (.not.south_exchng) then
+            do i=istr,iend
+              FE(i,jstr) = FE(i,jstr) + 0.5*(t(i,jstr-1,k,nrhs,itrc)-t(i,jstr,k,nrhs,itrc))
+     &          * max(FlxV(i,jstr,k),0.0)
+            enddo
+          endif
+          if (.not.north_exchng) then
+            do i=istr,iend
+              FE(i,jend+1) = FE(i,jend+1) + 0.5*(t(i,jend+1,k,nrhs,itrc)-t(i,jend,k,nrhs,itrc))
+     &          * min(FlxV(i,jend+1,k),0.0)
+            enddo
+          endif
+#endif
+
 #ifdef BIO_1ST_USTREAM_TEST
         endif  !<-- itrc>isalt, bio-components only.
 #endif

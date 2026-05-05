@@ -3,9 +3,9 @@
 # define UPSTREAM_UV
 
       subroutine step3d_uv1(tile)
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a3d, a2d
       implicit none
       integer tile
 
@@ -28,25 +28,39 @@
 # endif
      &                                                              )
 
-      use param
 # ifdef NHMG
-      use nhmg
-      use mg_grids, mggrid => grid
-      use mg_tictoc, only : tic, toc
+      use ocean_vars, only:
+     &     nh_ubar, nh_vbar, nh_wcor, nhdu,
+     &     nhdv, nhdw, w
+      use nhmg, only:
+     &     nhmg_solve,  iprec1, iprec2, halo
+      use mg_namelist, only: surface_neumann
+      use mg_grids, only: mggrid => grid
 # endif
-# ifdef WEC
-      use wec_frc
-# endif
-      use diagnostics
-      use dimensions
+      use diagnostics, only: diag_uv, u_prev, v_prev, calc_diag, udiag,
+     &  vdiag, icori, dxdyi_u, dxdyi_v, idiss, ipgr, iadv, ivmix,
+     &     set_diags_u_4th_adv, set_diags_v_4th_adv
       use surf_flux, only: sustr, svstr
-      use coupling
-      use eos_vars
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
-
+      use coupling, only: r_d, rufrc, rvfrc
+      use grid, only:
+     &     nx,ny,nz, fomn, umask, vmask, pn, pm, dn_u,
+     &     dm_u, dn_v, dm_v, dn_r, dm_r, pn_u, pm_v
+#if (defined CURVGRID && defined UV_ADV)
+     &     , dmde,dndx
+#endif
+      use mixing, only: akv
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng, lm, mm,
+     &     padd_e, padd_x
+      use ocean_vars, only: u, v, hz, flxu, flxv, we, wi, z_w
+      use scalars, only: n, dt, nnew, nrhs, ntstart
+#ifdef EXCHANGE
+      use mpi_exchanges, only: exchange_xxx
+#endif
+# if defined ADV_ISONEUTRAL && defined EXCHANGE
+      use eos_vars, only: drde, drdx
+#endif
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY,N) :: ru,rv
@@ -65,13 +79,6 @@
       real  div,dmax
 !     integer :: ierr !,imx,jmx,kmx
 #endif
-
-! Taken from rhs3d35S.F for WEC, used in compute_horiz_rhs_uv_terms.h
-! but needs to be declared here in declarations section not in
-! the compute_horiz_rhs_uv_terms.h file else wont compile.
-# ifdef WEC
-      real cff1
-# endif
 
 # include "compute_auxiliary_bounds.h"
 
@@ -117,10 +124,6 @@
 # include "compute_horiz_rhs_uv_terms.h"
       enddo
 
-# ifdef WEC
-      call compute_wec_rhs_uv_terms(istr,iend,jstr,jend,ru,rv,wrk1,wrk2)
-# endif
-
 # ifdef DIAGNOSTICS
         if (diag_uv .and. calc_diag) then
           call set_diags_u_4th_adv
@@ -132,29 +135,14 @@
 
 # include "compute_vert_rhs_uv_terms.h"
 
-! Apply wave bottom streaming stress as a body force in the bottom-most
-! grid cells only (if !defined BODY_FRICTION)
-!! JM move this bit to inside compute_wec_rhs_uv_terms...
-# ifdef WECXXX
-#  if defined WAVE_FRICTION && !defined BODY_FRICTION
-        !! JM add this somehow like a bustr in a manner like below
-        !! or move into compute_wec_rhs_uv.
-        do i=istrU,iend
-          ru(i,j,1) =ru(i,j,1) + dm_u(i,j)*dn_u(i,j)*frc2dx(i,j)
-        enddo
-        do i=istr,iend
-          rv(i,j,1) =rv(i,j,1) + dm_v(i,j)*dn_v(i,j)*frc2de(i,j)
-        enddo
-#  endif
-# endif
-
 #define IMPLICIT_BOTTOM_DRAG
 # ifdef IMPLICIT_BOTTOM_DRAG
+#ifdef DIAGNOSTICS
         if (diag_uv) then
           u_prev = u(1:nx,j,:,nnew)
           v_prev = v(1:nx,j,:,nnew)
         endif
-
+#endif
         do i=istrU,iend
           DC(i,0)=dt*0.25*(pm(i,j)+pm(i-1,j))*(pn(i,j)+pn(i-1,j))
 
@@ -552,23 +540,32 @@
 ! above.  It does not affect any model results, other than signature in
 ! global attribute "CPPS" in output netCDF files.
 
-      use param
-      use strings
+      use param, only: mynode
+      use strings, only: cpps, max_opt_size
+      use error_handling_mod, only: error_log
 
       implicit none
       integer ierr, is,ie, lenstr
+      character(len=24) :: sr_name = "check_step_uv1_switches"
+      character(len=1024) :: error_info =""
+
+      write(error_info,*)
+     &  'Insufficient length of string "cpps" in file "strings".',
+     &        'Increase parameter "max_opt_size" and recompile.'
+
 
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+13
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='<step3d_uv1.F>'
 
 # include "track_advec_switches.h"
 
       return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
       ierr=ierr+1
       end
 

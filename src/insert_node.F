@@ -1,13 +1,11 @@
-c--#define TEST_INSERT  ! <-- self testing
-
 #ifdef TIME_INDEX
 # ifdef EXTRACT_INDEX
-      subroutine extract_time_index(name, lstr, indx, ierr)
+      subroutine extract_time_index(name, lstr, indx)
 # else
-      subroutine   insert_time_index(name, lstr, indx, ierr)
+      subroutine   insert_time_index(name, lstr, indx)
 # endif
 #else
-      subroutine insert_node(name, lstr, node, nnodes, ierr)
+      subroutine insert_node(name, lstr, node, nnodes)
 #endif
 
 ! Insert MPI-node number "node" into character string "name" and
@@ -30,18 +28,14 @@ c--#define TEST_INSERT  ! <-- self testing
 !                    in this code nnodes is used only to determine
 !                    how many digits are needed to accommodate all
 !                    possible MPI node numbers.
-!         ierr   input/output error counter incremented by 1 for each
-!                    error occurring here; if no errors it remains
-!                    untouched.  Note that "ierr" is ASSUMED TO BE
-!                    INITIALIZED FROM THE OUTSIDE, normally to 0.
 !
 ! output: name    modified string with node number inserted.
 !         lstr    length of the modified string
-!         ierr    same as at entry, if no errors; incremented, if any
 
+      use error_handling_mod, only: error_log
       implicit none
       character(len=*) name
-      integer lstr, ierr, i,j,k, lsffx, ndots, idot(3)
+      integer lstr, i,j,k, lsffx, ndots, idot(3)
 #ifdef TIME_INDEX
      &                                , indx
 #else
@@ -52,73 +46,48 @@ c--#define TEST_INSERT  ! <-- self testing
       character(len=16) sffx
 #endif
       integer, parameter :: digits=5
-      logical leading_dots
+      character(len=1), parameter :: filesep='/'
+      integer fname_start, last_dot, digit
 
-      ndots=0                              ! Determine how many dots
-      leading_dots=.true.                  ! are present in the string.
-      do i=1,lstr                          ! Do not allow more than 3
-        if (name(i:i) == '.') then         ! dots: signal about error,
-         if (.not.leading_dots) then       ! if it occurs, however, do
-            if (ndots < 3) then            ! not count leading dots,
-              ndots=ndots+1                ! so that that names like
-              idot(ndots)=i                ! "../grid.00.nc" are OK.
-            else
-              write(*,'(/1x,4A/)')
 #ifdef TIME_INDEX
 # ifdef EXTRACT_INDEX
-     &                         '### ERROR: extract_time_index :: ',
+      character(len=19) :: sr_name = "extract_time_index"
 # else
-     &                          '### ERROR: insert_time_index :: ',
+      character(len=18) :: sr_name = "insert_time_index"
 # endif
 #else
-     &                                '### ERROR: insert_node :: ',
+      character(len=12) :: sr_name = "insert_node"
 #endif
-     &         'too many dots in file name ''', name(1:lstr), '''.'
-              ierr=ierr+1
-              return
-            endif
-          endif
-        else                               ! Determine whether the
-          leading_dots=.false.             ! name has a suffix: the
-        endif                              ! last segment of the name
-      enddo                                ! is considered to be a
-                                           ! suffix if it has least one
-      lsffx=0                              ! character which is not a
-      if (ndots > 0) then                  ! digit or UNIX wildcard.
-        i=idot(ndots)+1
-   1    if ( (name(i:i) < '0' .or. name(i:i) > '9') .and.
-     &      name(i:i) /= '*' .and. name(i:i) /= '?' ) then
-          lsffx=lstr-idot(ndots)+1
-        elseif (i < lstr) then             ! If suffix is present, it
-          i=i+1                            ! will be saved and added
-          goto 1                           ! back to the name later.
+      character(len=1024) :: error_info = ""
+      ! Find the last filesep to isolate just the filename
+      fname_start = 1
+      do i = 1, lstr
+        if (name(i:i) == filesep) then
+          fname_start = i + 1
         endif
-      endif                                ! Inspect segments between
-                                           ! the dots. These segments
-      do j=1,ndots-1                       ! must contain only digits
-        i=idot(j)+1
-   2    if (name(i:i) < '0' .or. name(i:i) > '9') then
-          if (name(i:i) /= '*' .and. name(i:i) /= '?') then
-            write(*,'(/1x,2A/20x,3A/)')
-#ifdef TIME_INDEX
-# ifdef EXTRACT_INDEX
-     &                          '### ERROR: extract_time_index :: ',
-# else
-     &                           '### ERROR: insert_time_index :: ',
-# endif
-#else
-     &                                 '### ERROR: insert_node :: ',
-#endif
-     &                    'a non-digital character found in index ',
-     &                    'segment of name ''',  name(1:lstr), '''.'
-            ierr=ierr+1
-          endif                            ! or UNIX wild cards '*'
-        elseif (i < idot(j+1)-1) then      ! and '?'. These segments
-          i=i+1                            ! are used to store Time
-          goto 2                           ! Index or MPI-node number.
-        endif                              ! Set "ierr" signal the
-      enddo                                ! presence of an illegal
-      if (ierr /= 0) return                ! symbol in this area.
+      enddo
+
+      ! Find the last dot in the filename (potential extension)
+      last_dot = 0
+      do i = fname_start, lstr
+        if (name(i:i) == '.') then
+          last_dot = i
+        endif
+      enddo
+
+      ! Determine suffix (extension) if last dot exists
+      lsffx = 0
+      if (last_dot > 0) then
+        ! Check if characters after last dot are non-numeric (likely extension)
+        i = last_dot + 1
+        do while (i <= lstr)
+          if (name(i:i) < '0' .or. name(i:i) > '9') then
+            lsffx = lstr - last_dot + 1
+            exit
+          endif
+          i = i + 1
+        enddo
+      endif
 
 
 #ifdef EXTRACT_INDEX
@@ -171,44 +140,23 @@ c--#define TEST_INSERT  ! <-- self testing
 ! segment (if there is one, and there is no suffix); or both segment
 ! and suffix.
 
-      if (ndots == 0) then
-        i=lstr+1 ; j=lstr+1
-        name(i:i)='.'
+      ! Determine insertion point: before extension if it exists, otherwise at end
+      if (lsffx > 0) then
+        ! Insert before the extension (after last_dot, which is the dot)
+        ! The dot at last_dot stays, we insert digits after it, then append extension
+        i = last_dot  ! Start at the dot position (we'll write digits after it)
+        ! Save extension (without the dot) for later appending
+        if (last_dot < lstr) then
+          sffx(1:lstr-last_dot) = name(last_dot+1:lstr)
+          lsffx = lstr - last_dot  ! Length of extension without the dot
+        else
+          lsffx = 0
+        endif
       else
-# ifdef TIME_INDEX
-        i=idot(1)
-        if (ndots == 1) then
-          if (lsffx > 0 .or. lstr-idot(1) < digits) then
-            j=idot(1)
-          else
-            j=lstr+1
-          endif
-        elseif (ndots == 2 .and. idot(2)-idot(1) <= digits) then
-          j=idot(1)
-        else
-          j=idot(2)
-        endif
-# else
-        if (ndots == 1) then
-          i=idot(1)
-        elseif (ndots == 2) then
-          if (idot(2)-idot(1) <= digits) then
-            i=idot(1)
-          else
-            i=idot(2)
-          endif
-        else
-          i=idot(ndots-1)
-        endif
-        if (lsffx > 0) then
-          j=idot(ndots)
-        else
-          j=lstr+1
-        endif
-# endif
+        ! No extension, insert at end of filename
+        i = lstr + 1
+        name(i:i) = '.'
       endif
-      lsffx=lstr+1-j
-      if (lsffx > 0) sffx(1:lsffx)=name(j:lstr)
 
 ! Load Time Index or MPI-node (rank) into temporal variable "k".
 ! This variable will be written into digital segment. Also specify
@@ -225,32 +173,34 @@ c--#define TEST_INSERT  ! <-- self testing
         power=10*power                   ! the largest possible MPI-
       enddo                              ! node number (rank).
       if (power >= 10**digits) then
-        write(*,'(/1x,2A/6x,2A/6x,A/)')
-#ifdef TIME_INDEX
-# ifdef EXTRACT_INDEX
-     &                          '### ERROR: extract_time_index :: ',
-# else
-     &                            '### ERROR: insert_time_index :: ',
-# endif
-#else
-     &                                  '### ERROR: insert_node :: ',
-#endif
-     &   'Possible ambiguity between MPI-node segment',    'length ',
-     &   'and time index segment length. To fix: increase parameter',
-     &   '''digits'' in file "insert_node.F" and recompile.'
-        ierr=ierr+1
+         write(error_info,*)
+     &      'Possible ambiguity between MPI-node segment length ',
+     &        'and time index segment length. ',
+     &        'To fix: increase parameter',
+     &        '''digits'' in file "insert_node.F" and recompile.'
+         call error_log%raise_from_rank(
+     &     context=sr_name,
+     &     info=error_info)
         return
       endif
+      call error_log%abort_check()
 # endif
       do while(power > 9)              ! Insert time index or MPI node
-        power=power/10 ; j=k/power     ! number (rank) into the string,
-        i=i+1          ; k=k-j*power   ! then attach suffix, if needed.
-        name(i:i)=char(48+j)
+        power=power/10                 ! number (rank) into the string,
+        digit=k/power                  ! then attach suffix, if needed.
+        i=i+1
+        name(i:i)=char(48+digit)
+        k=k-digit*power
       enddo
-      if (lsffx > 0) name(i+1:i+lsffx)=sffx(1:lsffx)
-      lstr=i+lsffx
+      if (lsffx > 0) then
+        name(i+1:i+1) = '.'            ! Add dot before extension
+        name(i+2:i+1+lsffx) = sffx(1:lsffx)  ! Append extension
+        lstr = i + 1 + lsffx
+      else
+        lstr = i
+      endif
 #endif  /* EXTRACT_INDEX */
-      end
+      end subroutine
 
 #ifndef TIME_INDEX
 # define TIME_INDEX
@@ -259,51 +209,5 @@ c--#define TEST_INSERT  ! <-- self testing
 # ifndef EXTRACT_INDEX
 #  define EXTRACT_INDEX
 #  include "insert_node.F"
-# else
-#  ifdef TEST_INSERT
-      implicit none                       ! Self-testing program
-      character(len=64) fname             ! for the subroutines above
-      integer lstr, i,iout, nnodes, ierr
-      ierr=0
-      fname='his_00_*/.*'
-      fname='../dir/root_name.000.nc'
-      fname='../dir/root_name.*.*.nc'
-      fname='../dir/root_name.0'
-
-      fname='../dir/root_name.123.3459.nc'
-
-      nnodes=23
-
-      lstr=1
-      do while (lstr < 64 .and. fname(lstr:lstr) /= ' ')
-        lstr=lstr+1
-      enddo
-      if (fname(lstr:lstr) == ' ') lstr=lstr-1
-
-      write(*,'(/1x,A/1x,A)') 'Testing insert_node...',
-     &                        '------------------------'
-      do i=0,nnodes-1
-        call insert_node(fname, lstr, i, nnodes, ierr)
-        write(*,'(I4,1x,A,1x,A,I3)') i, fname(1:lstr), 'len =', lstr
-      enddo
-
-      write(*,'(/1x,A/1x,A)') 'Testing insert_time_index...',
-     &                        '------------------------------'
-      do i=0,1000,80
-        call insert_time_index (fname, lstr, i, ierr)
-        write(*,'(1x,A,I4,2x,3A,I3)') 'tindx =', i, 'fname = ''',
-     &                          fname(1:lstr), '''  len =', lstr
-      enddo
-
-      write(*,'(/1x,A/1x,A)') 'Testing extract_time_index...',
-     &                        '-------------------------------'
-      do i=0,1000,75
-        call insert_time_index(fname, lstr, i, ierr)
-        call extract_time_index(fname, lstr, iout, ierr)
-        write(*,'(1x,3A,I8)') 'fname = ''',fname(1:lstr),
-     &                              '''  tindx =', iout
-      enddo
-      end
-#  endif
 # endif
 #endif

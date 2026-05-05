@@ -5,10 +5,14 @@
 COMPILER ?=gnu
 # Set MPI wrapper (auto, mpifort, mpiifx, mpiifort)
 MPI_WRAPPER ?=auto
-# Configure FFLAGS by setting BUILD_MODE to "debug","strict","vtune",or "grof"
+# Configure FFLAGS by setting BUILD_MODE to "debug","strict", or "test"
 BUILD_MODE ?=regular
+# Include profiling in the compilation by setting PROFILER to "none","gprof","vtune", or "scorep"
+PROFILER?=none
 # Keep pre-processed source code or not:
 KEEP_PPSRC ?=false
+# Allow additional FFLAGS to defaults without overriding them:
+USER_FFLAGS ?=
 ##############################
 #       FILE EXTENSIONS      #
 
@@ -35,6 +39,7 @@ endif
 OS := $(shell uname -s)
 ifeq ($(OS),Darwin)
     PPF77_ext = .fpp
+    PPF90_ext = .pp.f90
 endif
 
 ## Setting MPI wrapper:
@@ -85,14 +90,16 @@ ifeq ($(findstring $(expected_fc),$(MPIVER)),)
 endif
 
 # Set compiler and linker to chosen wrapper
-CFT := $(MPI_WRAPPER)
-LDR := $(MPI_WRAPPER)
+ifeq ($(PROFILER),scorep)
+   CFT := scorep $(MPI_WRAPPER)
+   LDR := scorep $(MPI_WRAPPER)
+else
+   CFT := $(MPI_WRAPPER)
+   LDR := $(MPI_WRAPPER)
+endif
 
-
-# For BUILD_MODE = "vtune" or "grof" always keep source code:
-ifeq ($(BUILD_MODE),vtune)
-   KEEP_PPSRC=true
-else ifeq ($(BUILD_MODE),grof)
+# For BUILD_MODE = "debug", always keep source code
+ifeq ($(BUILD_MODE),debug)
    KEEP_PPSRC=true
 endif
 
@@ -114,7 +121,7 @@ ifeq ($(COMPILER),intel)
 	CPPFLAGS = -D__IFC -free -I${MPIHOME}/include -I${NETCDFHOME}/include
 else
         CPP = /usr/bin/cpp
-	CPPFLAGS =  -traditional -D__IFC -I${MPIHOME}/include -I${NETCDFHOME}/include
+	CPPFLAGS =  -traditional -D__IFC -Wno-invalid-pp-token -I${MPIHOME}/include -I${NETCDFHOME}/include
 endif
 
 #   Since we no longer keep preprocessed files after compilation, if you want to still
@@ -180,25 +187,33 @@ else ifeq ($(COMPILER),intel)
     FFLAGS = -O3      # Do NOT use -ip for ifx
 endif
 
-# Apply debug, strict, vtune, or grof settings for Intel compilers
+# Apply debug, strict, vtune, or gprof settings for Intel compilers
 ifeq ($(COMPILER),$(filter ifort intel, $(COMPILER)))
     ifeq ($(BUILD_MODE),debug)
         FFLAGS = -g -traceback -check all
+    else ifeq ($(BUILD_MODE),test)
+	FFLAGS = -O0
     else ifeq ($(BUILD_MODE),strict)
         FFLAGS += -fp-model strict
-    else ifeq ($(BUILD_MODE),vtune)
+    endif
+    ifeq ($(PROFILER),vtune)
         FFLAGS = -g -debug inline-debug-info -parallel-source-info=2
-    else ifeq ($(BUILD_MODE),grof)
-        FFLAGS += -pg
     endif
 endif
+
 
 # GNU compiler settings
 ifeq ($(COMPILER),gnu)
     FFLAGS = -O3 -fallow-argument-mismatch
     ifeq ($(BUILD_MODE),debug)
         FFLAGS = -fallow-argument-mismatch -g -fbacktrace -fcheck=all
+    else ifeq ($(BUILD_MODE),test)
+	FFLAGS = -fallow-argument-mismatch -O0
     endif
+endif
+
+ifeq ($(PROFILER),gprof)
+   FFLAGS += -pg
 endif
 
 # Options to link to libraries & modules (NetCDF, etc):
@@ -217,11 +232,18 @@ ifeq ($(USENHMG),true)
 	LCDF += $(NHMG_INC)
 endif
 
-
+FFLAGS+=$(USER_FFLAGS)
 # Compilation rules for file types:
 #   (used for every file until the final linking step)
 
-.SUFFIXES: $(OBJ_ext) $(PPF77_ext) $(UPF77_ext) $(PPF90_ext)
+.SUFFIXES: $(OBJ_ext) $(PPF77_ext) $(UPF77_ext) $(UPF90_ext) $(PPF90_ext)
+
+#Unprocessed F90 -> object file (typically .F90->.o)
+$(UPF90_ext)$(OBJ_ext):
+	$(CPP) -P $(CPPFLAGS) $*$(UPF90_ext)  > $*$(PPF90_ext)
+	$(CFT) -c $(FFLAGS) -o $*$(OBJ_ext) $*$(PPF90_ext) $(LCDF)
+	@if [ "$(KEEP_PPSRC)" = "false" ]; then rm -f $*$(PPF90_ext); fi
+
 # Unprocessed F77 -> object file (typically .F->.o)
 $(UPF77_ext)$(OBJ_ext):
 	@$(CPP) -P $(CPPFLAGS) $*$(UPF77_ext) | mpc > $*$(PPF77_ext)
@@ -238,6 +260,9 @@ $(PPF77_ext)$(OBJ_ext):
 	@if [ "$(KEEP_PPSRC)" = "false" ]; then \
 	   /bin/rm -f $*$(PPF77_ext); \
 	fi
+# Unprocessed F90 -> preprocessed F90
+$(UPF90_ext)$(PPF90_ext):
+	$(CPP) -P $(CPPFLAGS) $*$(UPF90_ext)  > $*$(PPF90_ext)
 # preprocessed F90 -> object file
 $(PPF90_ext)$(OBJ_ext):
 	$(CFT) -c $(FFLAGS) -o $*$(OBJ_ext) $*$(PPF90_ext) $(LCDF)

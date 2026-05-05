@@ -9,18 +9,23 @@
 
 #include "cppdefs.opt"
 
-      use dimensions
-      use roms_read_write
-      use nc_read_write
-      use scalars                                                    ! for FIRST_STEP
-      use grid
+      use roms_read_write, only: ncforce, frcfile, set_frc_data, xi_rho
+      use nc_read_write, only:
+     &     nccreate, ncread, ncwrite
+      use scalars, only: nt
+      use grid, only:
+     &     ana_grdname, dn_xr, dn_yr, eta_rho, xl,
+     &     grdname, pm, rmask, riv_umask, riv_vmask, xr
+      use dimensions, only: i0, i1, j0, j1, nx, ny
+      use param, only: lm, mm, mynode, ocean_grid_comm
+      use error_handling_mod, only: error_log
 
       implicit none
 
       private
 
 #include "river_frc.opt"
-
+      character(len=9) :: module_name = "river_frc"
       ! Variables used for equation system calculations
       real,public,allocatable,dimension(:,:) :: riv_uflx
       real,public,allocatable,dimension(:,:) :: riv_vflx
@@ -89,13 +94,19 @@
       ! done only once as river mouth position does not change.
       ! Or: .... if analytical, define the river fluxes in this
       ! subroutine
-      use netcdf
+      use netcdf, only:
+     &     nf90_double, nf90_noerr, nf90_nowrite,
+     &     nf90_write, nf90_open, nf90_put_att, nf90_close, nf90_inq_varid
+      use mpi_f08, only: mpi_double_precision, mpi_max
       implicit none
 
+      character(len=14) :: sr_name = "init_river_frc"
       ! local
       integer :: i,j
       integer :: ierr,ncid,varid
       real  :: riv_cells,riv_east,riv_west
+      real  :: local_maxval, global_maxval
+      character(len=1024) :: error_info
 
       allocate( riv_uflx(GLOBAL_2D_ARRAY) ); riv_uflx = 0.
       allocate( riv_vflx(GLOBAL_2D_ARRAY) ); riv_vflx = 0.
@@ -146,11 +157,32 @@
             call ncread(ncid, "river_index", ridx_real(i0:i1,j0:j1))
             call ncread(ncid, "river_fraction", rfrc(i0:i1,j0:j1))
             ierr = nf90_close(ncid)
+
+            ! Check if any river indices are greater than the chosen
+            ! value for nriv, in which case we could get a segfault
+            local_maxval = MAXVAL(ridx_real)
+
+            ! Find global maximum
+            call MPI_Reduce( local_maxval, global_maxval, 1, mpi_double_precision,
+     &      mpi_max, 0, ocean_grid_comm, ierr)
+
+            if (mynode == 0) then
+               if (global_maxval > nriv) then
+                  write(error_info,*) 'nriv=', nriv,
+     &                 'but index ', global_maxval,
+     &                 ' found in river input file.'
+                  call error_log%raise_global(
+     &                 context=module_name//"/"//sr_name,
+     &                 info=error_info)
+              endif
+            endif
 !     Check for non-integer values
             ridx(i0:i1, j0:j1) = int(ridx_real(i0:i1, j0:j1))
-            if (any(abs(ridx_real(i0:i1,j0:j1) - ridx(i0:i1,j0:j1)) > 1.0e-6)) then
-               write(*,*) 'ERROR: river_index contains non-integers!'
-               stop
+            if (any(abs(ridx_real(i0:i1,j0:j1) - ridx(i0:i1,j0:j1))
+     &           > 1.0e-6)) then
+               call error_log%raise_global(
+     &              context=module_name//"/"//sr_name,
+     &              info="river_index contains non-integers!")
             endif
          else ! if not in the forcing file, look for a single variable in the grid file
             ierr=nf90_close(ncid)
@@ -159,14 +191,17 @@
 
             if (ierr /= nf90_noerr) then ! if not in grid file
                ierr = nf90_close(ncid) ! close grid file
-               call handle_ierr(ierr, 'init_riv:: '//
+               write(error_info,*)
      &              'unable to find river index and fraction'//
      &              ' either as separate variables '//
      &              ' (river_index, river_fraction) in river '//
      &              ' forcing file ('// trim(frcfile(nc_rvol%ifile)) //
      &              ') or as a combined variable, '// trim(riv_flx_name) //
      &              ',  in grid (' // trim(grdname)//
-     &              ') file.')
+     &              ') file.'
+               call error_log%raise_from_rank(
+     &              context=module_name//"/"//sr_name,
+     &              info=error_info)
             else
                call ncread(ncid, riv_flx_name, rflx(i0:i1,j0:j1))
                ierr = nf90_close(ncid)
@@ -179,9 +214,10 @@
                end where
             end if ! found in grid file
          end if                 ! Separate variables found in forcing file
-      endif !analytical
 
-      call calc_river_flux                                           ! compute uflx,vflx from rflx
+      endif !analytical
+      call error_log%abort_check()
+      call calc_river_flux      ! compute uflx,vflx from rflx
 
       init_riv_done = .true.
 
@@ -194,10 +230,12 @@
       ! calculate the river flux contributions to each cell.
       ! river_flux = iriver + fraction of river's flux through grid point.
       ! e.g. River 3 is over 2 grid points (half flux through each point),
-      ! hence river_flux = 3 + 0.5 = 3.5
+! hence river_flux = 3 + 0.5 = 3.5
+      use param, only: N
       implicit none
 
-      ! local
+! local
+      character(len=15) :: sr_name = "calc_river_flux"
       integer :: i,j,faces
 
       ! compute uflx,vflx from rflx
@@ -212,19 +250,34 @@
 #ifdef MASKING
             faces =  rmask(i-1,j)+rmask(i+1,j)+rmask(i,j-1)+rmask(i,j+1) !! amount of unmasked cells around
             if ( faces == 0 .or. rmask(i,j)>0  ) then
-              error stop 'river grid position error'
+               call error_log%raise_from_point(
+     &              context=module_name//"/"//sr_name,
+     &              info='river grid position error',
+     &              i=i, j=j, k=N)
             endif
             ! 10*iriver needed because uflx/vflx can be positive or negative around
             ! the iriver number, and hence nearest integer is safest done with 10*.
-            if (rmask(i-1,j)>0 ) riv_uflx(i  ,j) =-(rfrc(i,j))/faces + 10*ridx(i,j)
-            if (rmask(i+1,j)>0 ) riv_uflx(i+1,j) = (rfrc(i,j))/faces + 10*ridx(i,j)
-            if (rmask(i,j-1)>0 ) riv_vflx(i,j  ) =-(rfrc(i,j))/faces + 10*ridx(i,j)
-            if (rmask(i,j+1)>0 ) riv_vflx(i,j+1) = (rfrc(i,j))/faces + 10*ridx(i,j)
+            if (rmask(i-1,j)>0 ) then
+              riv_uflx(i,j) =-(rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_umask(i,j) = 1.0
+            endif
+            if (rmask(i+1,j)>0 ) then
+              riv_uflx(i+1,j) = (rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_umask(i+1,j) = 1.0
+            endif
+            if (rmask(i,j-1)>0 ) then
+              riv_vflx(i,j) =-(rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_vmask(i,j) = 1.0
+            endif
+            if (rmask(i,j+1)>0 ) then
+              riv_vflx(i,j+1) = (rfrc(i,j))/faces + 10*ridx(i,j)
+              riv_vmask(i,j+1) = 1.0
+            endif
 #endif
-          endif
+         endif
         enddo
       enddo
-
+      call error_log%abort_check()
       end subroutine calc_river_flux  !]
 ! ----------------------------------------------------------------------
       subroutine set_ana_river_frc  ![

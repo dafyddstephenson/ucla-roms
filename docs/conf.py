@@ -36,6 +36,7 @@ author = "ROMS developers"
 extensions = [
     "myst_parser",
     "sphinxcontrib.bibtex",
+    "nbsphinx"
 ]
 
 templates_path = ["_templates"]

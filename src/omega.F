@@ -3,9 +3,9 @@
 
       subroutine omega
 
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a2d
 
       implicit none
       integer,save :: tile = 0
@@ -35,15 +35,26 @@
 ! below which vertical advection is fully explicit; "cu_max" is the
 ! maximum CN which the explicit component "We" is allowed to reach.
 
-      use param
-      use pipe_frc
-      use cdr_frc
-      use grid
-      use ocean_vars
-      use scalars
+      use param, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use dimensions, only: nx, ny, nz
+      use grid, only: pn, pm, dn_r, dm_r
+      use pipe_frc, only:
+     &     pidx, pipe_source, pipe_idx, pipe_prf,
+     &     pipe_flx
+#if defined(CDR_FORCING)
+      use cdr_frc, only:
+     &     cdr_nprf, cdr_source, cdr_volume, cdr_icdr,
+     &     cdr_iloc, cdr_prf, cdr_vol
+#endif
+      use mpi_exchanges, only: exchange_xxx
+      use ocean_vars, only: wi, flxv, flxu, z_w, we, hz
+      use scalars, only: n, dt, forw_start, iic, nrhs
+      use surf_flux, only: swflx
 
       implicit none
-      integer istr,iend,jstr,jend, i,j,k
+      integer istr,iend,jstr,jend, i,j,k, icdr, cidx
       real CX(PRIVATE_1D_SCRATCH_ARRAY,0:N),  dtau, c2d,dh, cw, cff,
      &    wrk(PRIVATE_1D_SCRATCH_ARRAY),      cw_min,cw_max,cw_max2
       real, parameter :: cu_min=0.6D0, cu_max=1.0D0,
@@ -63,6 +74,7 @@ c**     dtau=(1.-1./6.)*dt
 
       Wi(1:nx,1:ny,0)=0.
 
+#if defined CDR_FORCING && defined MARBL
       if (cdr_source.and.cdr_volume) then
         do cidx=1,cdr_nprf
           icdr = cdr_icdr(cidx)
@@ -70,10 +82,13 @@ c**     dtau=(1.-1./6.)*dt
           j = cdr_iloc(cidx)
           do k=1,nz
             Wi(i,j,k)=Wi(i,j,k-1)
-     &         + cdr_vol(icdr)*cdr_prf(cidx,k)
+               ! Here we will assume that the vertical distribution of the CDR volume flux
+               ! is the same as the vertical distribution of the heat flux.
+     &         + cdr_vol(icdr)*cdr_prf(cidx,1,k)
           enddo
         enddo
       endif
+#endif
 
       do j=jstr,jend
 
@@ -95,6 +110,10 @@ c**     dtau=(1.-1./6.)*dt
             CX(i,k)=max(FlxU(i+1,j,k),0.)-min(FlxU(i,j,k),0.)
      &             +max(FlxV(i,j+1,k),0.)-min(FlxV(i,j,k),0.)
           enddo
+        enddo
+        ! rain water
+        do i=1,nx
+          Wi(i,j,nz) = Wi(i,j,nz) + swflx(i,j)*dm_r(i,j)*dn_r(i,j)
         enddo
         do i=istr,iend
           wrk(i)=Wi(i,j,N)/(z_w(i,j,N)-z_w(i,j,0))

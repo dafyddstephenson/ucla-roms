@@ -3,9 +3,9 @@
 
       subroutine visc3d
 
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a2d
 
       implicit none
       integer,parameter :: tile=0
@@ -26,15 +26,18 @@
 !            the anisotropic stress tensor for use in models of
 !            the large-scale ocean circulation, JCP, 105, 333-338.
 
-      use dimensions
-      use param
-      use diagnostics
-      use coupling
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
-
+      use coupling, only: rufrc, rvfrc
+      use grid, only: pm, pn, dm_r, dn_r, pmask, dm_p, dn_p, nx,ny
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
+      use mixing, only: visc2_r, visc2_p
+      use ocean_vars, only: v, u, hz
+      use scalars, only: dt, n, nstp
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag,
+     &  dxdyi_u, dxdyi_v, ihmix
+#endif
       implicit none
       integer istr,iend,jstr,jend, i,j,k, indx
       real, dimension(PRIVATE_2D_SCRATCH_ARRAY) :: UFx,UFe,VFx,VFe
@@ -112,9 +115,6 @@
             v(i,j,k,indx)=v(i,j,k,indx) + dt*cff
           enddo
         enddo
-# if defined NHMG
-!   Do things
-# endif
 # ifdef DIAGNOSTICS
       if (diag_uv .and. calc_diag) then
         do j=1,ny

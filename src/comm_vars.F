@@ -2,7 +2,7 @@
 
 #include "cppdefs.opt"
 
-      use param
+      use param, only: nt
       implicit none
 
 ! The following common block contains a set of globally accessible
@@ -27,9 +27,6 @@
 ! cause violation of alignment.
 
       real*QUAD area, volume, bc_crss
-#ifdef OBC_VOLCONS
-      real*QUAD bc_flux, ubar_xs
-#endif
 #if defined BIOLOGY || defined BIOLOGY_NPZDOC || defined BIOLOGY_BEC \
                     || defined BIOLOGY_BEC2 || defined MARBL
       real*QUAD global_sum(0:2*NT+1), global_srf_sum(0:NT)

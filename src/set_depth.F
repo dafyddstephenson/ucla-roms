@@ -3,9 +3,8 @@
 
       subroutine set_depth(tile)
 
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
 
       implicit none
       integer tile
@@ -20,13 +19,19 @@
 ! of vertical grid boxes "Hz" from fast-time-averaged free surface,
 ! topography h(i,j), and vertical coordinate transformation formula.
 
-      use param
-      use wec_frc
-      use coupling
-      use grid
-      use ocean_vars
-      use scalars
-      use scoord
+      use coupling, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, du_avg1, dv_avg1
+      use grid, only: h, hinv, dn_u, dm_v, pn, pm
+      use param, only: ieast, jnorth, lm, mm
+      use mpi_exchanges, only: exchange_xxx
+      use ocean_vars, only:
+     &     ubar, zeta, vbar, z_w, z_r, hz, z_w0, z_r0, hz0
+# if defined NHMG || defined NONTRAD_COR
+     &     , dzdxi, dzdeta
+#endif
+      use scalars, only: iic, knew
+      use scoord, only: hc, iwest, jsouth, n, cs_w, cs_r
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -44,29 +49,16 @@
         do j=jstrR,jendR               ! all subsequent steps.
           do i=istr,iendR
             DU_avg1(i,j)=0.5*( h(i-1,j)+h(i,j)+zeta(i,j,1)
-     &            +zeta(i-1,j,1) )*dn_u(i,j)*( ubar(i,j,1)
-# ifdef WEC
-     &                                        + ust2d(i,j)
-# endif
-     &                                                   )
+     &            +zeta(i-1,j,1) )*dn_u(i,j)*( ubar(i,j,1))
           enddo
         enddo
 
         do j=jstr,jendR
           do i=istrR,iendR
             DV_avg1(i,j)=0.5*( h(i,j)+h(i,j-1)+zeta(i,j,1)
-     &            +zeta(i,j-1,1) )*dm_v(i,j)*( vbar(i,j,1)
-# ifdef WEC
-     &                                        + vst2d(i,j)
-# endif
-     &                                                   )
+     &            +zeta(i,j-1,1) )*dm_v(i,j)*( vbar(i,j,1))
           enddo
         enddo
-
-# ifdef OBC_CHECK
-        print *, 'set_depth_tile:'
-        print *, 'DU_avg1(istr,10)=',DU_avg1(istr,10)
-# endif
 
       endif  ! first time
 
@@ -96,9 +88,38 @@
           enddo
         enddo
       enddo
+
+      ! Only set these during initialization
+      if (iic == 0) then
+        do j=jstrR,jendR
+          do i=istrR,iendR
+            z_w0(i,j,0)=-h(i,j)
+          enddo
+
+          do k=1,N,+1   !--> irreversible because of recursion in Hz
+
+            cff_w=hc*ds* dble(k-N)
+            cff_r=hc*ds*(dble(k-N)-0.5)
+
+            cff1_w=Cs_w(k)
+            cff1_r=Cs_r(k)
+
+            do i=istrR,iendR
+
+              z_w0(i,j,k)= h(i,j)*(cff_w+cff1_w*h(i,j))*hinv(i,j)
+
+              z_r0(i,j,k)= h(i,j)*(cff_r+cff1_r*h(i,j))*hinv(i,j)
+
+              Hz0(i,j,k)= z_w0(i,j,k)-z_w0(i,j,k-1)
+            enddo
+          enddo
+        enddo
+      endif
+
 # ifdef EXCHANGE
       if (iic == 0) then
         call exchange_xxx(hinv)
+              call exchange_xxx(z_w0,z_r0,Hz0)
       endif
       call exchange_xxx(z_w,z_r,Hz)
 # endif
@@ -168,8 +189,8 @@
 
       subroutine set_HUV
 
-      use param
-      use hidden_mpi_vars
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
 
       implicit none
       integer,save:: tile=0
@@ -178,13 +199,13 @@
       end
 
       subroutine set_HUV_tile (istr,iend,jstr,jend)
-
-      use param
-      use wec_frc
-      use grid
-      use ocean_vars
-      use scalars
-
+      use param, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use grid, only: dn_u, dm_v
+      use mpi_exchanges, only: exchange_xxx
+      use ocean_vars, only: flxu, u, hz, flxv, v, hz_u, hz_v
+      use scalars, only: n, nrhs
       implicit none
       integer istr,iend,jstr,jend, i,j,k
 
@@ -195,30 +216,15 @@
           do i=istr,iendR
             FlxU(i,j,k)=0.5*(Hz(i,j,k)+Hz(i-1,j,k))*dn_u(i,j)
 
-     &                                       *( u(i,j,k,nrhs)
-# ifdef WEC
-     &                                            +ust(i,j,k)
-# endif
-     &                                                      )
-! JM make sure that ust,vst are properly masked in wec_frc and remove
-# if defined WEC && defined MASKING
-            FlxU(i,j,k)=FlxU(i,j,k)*umask(i,j)
-# endif
+     &                                       *( u(i,j,k,nrhs))
+            Hz_u(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i-1,j,k))
           enddo
         enddo
         do j=jstr,jendR
           do i=istrR,iendR
             FlxV(i,j,k)=0.5*(Hz(i,j,k)+Hz(i,j-1,k))*dm_v(i,j)
-! Daniel add/edit for WEC
-!     &                                         *v(i,j,k,nrhs)
-     &                                       *( v(i,j,k,nrhs)
-# ifdef WEC
-     &                                           + vst(i,j,k)
-# endif
-     &                                                      )
-# if defined WEC && defined MASKING
-            FlxV(i,j,k)=FlxV(i,j,k)*vmask(i,j)
-# endif
+     &                                       *( v(i,j,k,nrhs))
+            Hz_v(i,j,k) = 0.5*(Hz(i,j,k)+Hz(i,j-1,k))
           enddo
         enddo
       enddo
@@ -232,9 +238,9 @@
 
       subroutine set_HUV1(tile)
 
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth,  nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a2d
 
       implicit none
       integer tile
@@ -244,15 +250,19 @@
       end
 
       subroutine set_HUV1_tile (istr,iend,jstr,jend, DC,FC)
-
-      use param
-      use wec_frc
-      use coupling
-      use grid
-      use ocean_vars
-      use scalars
-      use dimensions
-      use diagnostics
+      use param, only:
+     &  east_exchng, north_exchng, south_exchng, west_exchng,
+     & ieast, iwest, jnorth, jsouth
+     &     , east_exchng
+      use coupling, only:
+     &     du_avg1, du_avg_bak, du_avg2, dv_avg1, dv_avg_bak,
+     &     dv_avg2
+      use grid, only:  dn_u, umask, dm_v,
+     &     vmask
+      use mpi_exchanges, only: exchange_xxx
+      use ocean_vars, only: u, v, hz, flxu, flxv
+      use scalars, only: n, forw_start, iic, nnew
+      use dimensions, only: nz
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -292,9 +302,6 @@
 #  endif
           do i=istr,iendR
             FC(i,0)=(FC(i,0)-DU_avg1(i,j))/DC(i,0)
-#  ifdef WEC
-     &                                 +ust2d(i,j)
-#  endif
           enddo
           !! JM: Very first time step only
 
@@ -334,27 +341,16 @@
 # else
         do i=istr,iendR
           FC(i,0)=(FC(i,0)-DU_avg2(i,j))/DC(i,0) ! FC(i,0) is mismatch in [m/s]
-#  ifdef WEC
-     &                               +ust2d(i,j)
-#  endif
         enddo
 # endif
 
         do k=1,N
           do i=istr,iendR
-!!JM make sure that ust, vst are masked in wec_frc and fix this!!
             u(i,j,k,nnew)=(u(i,j,k,nnew)-FC(i,0)) !! removing ubar mismatch from u
 # ifdef MASKING
      &                                *umask(i,j)
-#  ifdef WEC
-     &               +ust(i,j,k)*(umask(i,j)-1.0)
-#  endif
 # endif
-            FlxU(i,j,k)=DC(i,k)*( u(i,j,k,nnew)
-# ifdef WEC
-     &                                +ust(i,j,k)
-# endif
-     &                                          )
+            FlxU(i,j,k)=DC(i,k)*( u(i,j,k,nnew))
           enddo
         enddo
 
@@ -377,9 +373,6 @@
 #  endif
             do i=istrR,iendR
               FC(i,0)=(FC(i,0)-DV_avg1(i,j))/DC(i,0)
-#  ifdef WEC
-     &                                   +vst2d(i,j)
-#  endif
             enddo
 
 #  ifdef EXTRAP_BAR_FLUXES
@@ -397,10 +390,6 @@
      &                          +MID*DV_avg2(i,j)
      &                       -BAK*DV_avg_bak(i,j)
      &                 )/DC(i,0)
-! Daniel add --> not sure if WEC should be in here. DevinD also not sure but suspect so.
-#ifdef WEC
-     &                   +vst2d(i,j)
-#endif
 #   endif
             enddo
           endif
@@ -408,27 +397,15 @@
 # else
           do i=istrR,iendR
             FC(i,0)=(FC(i,0)-DV_avg2(i,j))/DC(i,0)
-#  ifdef WEC
-     &                                 +vst2d(i,j)
-#  endif
           enddo
 # endif
           do k=1,nz
             do i=istrR,iendR
-!! JM same thing as above for ust. (masking in wec_frc)
               v(i,j,k,nnew)=(v(i,j,k,nnew)-FC(i,0))
 # ifdef MASKING
      &                                  *vmask(i,j)
-#  ifdef WEC
-     &                 +vst(i,j,k)*(vmask(i,j)-1.0)
-#  endif
 # endif
-              FlxV(i,j,k)=DC(i,k)*( v(i,j,k,nnew)
-# ifdef WEC
-     &                                +vst(i,j,k)
-# endif
-     &                                          )
-
+              FlxV(i,j,k)=DC(i,k)*( v(i,j,k,nnew))
             enddo
           enddo
         endif
@@ -445,24 +422,32 @@
       end
 
 
-      subroutine check_set_HUV1_switches(ierr)
+      subroutine check_set_HUV1_switches
 
 ! This code must be placed here rather than in a separate file in order
 ! to be exposed to the relevant CPP-macros defined locally in this file
 ! above.  It does not affect any model results, other than signature in
 ! global attribute "CPPS" in output netCDF files.
 
-      use param
-      use strings
-
+      use param, only: mynode
+      use strings, only: cpps, max_opt_size
+      use error_handling_mod, only: error_log
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
 
       integer lstr
       character(len=16) tmpstr
+      character(len=24) :: sr_name = "check_set_HUV1_switches"
+      character(len=1024) :: error_info =""
+
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+12
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='<set_depth.F>'
 # ifdef NOW
       write(tmpstr,'(F16.12)') NOW ; lstr=lenstr(tmpstr)
@@ -470,7 +455,12 @@
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+3+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='NOW='/ /tmpstr(1:lstr)
 # endif
 # ifdef MID
@@ -479,7 +469,12 @@
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+3+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='MID='/ /tmpstr(1:lstr)
 # endif
 # ifdef BAK
@@ -488,7 +483,12 @@
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+3+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='BAK='/ /tmpstr(1:lstr)
 
 ! Note that the value of (NOW-MID+BAK-1.D0)/BAK should match
@@ -501,15 +501,15 @@
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+9+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='(N-M+B-1)/B='/ /tmpstr(1:lstr)
 # endif
-      return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
-      ierr=ierr+1
-      end
+      end subroutine check_set_HUV1_switches
 #else
       subroutine set_depth_empty
       end

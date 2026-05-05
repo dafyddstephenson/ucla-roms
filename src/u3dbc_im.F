@@ -6,13 +6,23 @@
 ! Set lateral boundary conditions for XI-component velocity
 ! u(:,:,:,nnew).
 
-      use param
-      use wec_frc
-      use boundary
-      use grid
-      use ocean_vars
-      use scalars
-      use sponge_tune
+      use param, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use boundary, only: u_west, u_east, u_south, u_north
+      use hidden_mpi_vars, only: inode
+      use ocean_vars, only: u, v
+      use scalars, only: dt, n, nnew, nrhs, nstp, gamma2
+#if  defined T_FRC_BRY || defined M2_FRC_BRY || defined TNUDGING \
+  || defined Z_FRC_BRY || defined M3_FRC_BRY || defined M2NUDGING \
+                                             || defined M3NUDGING
+     & , ubind
+#endif
+      use sponge_tune, only:
+     &     ub_tune, ub_west, ub_east, ub_south,
+     &     ub_north
+      use dimensions, only: ny, nz
+      use grid, only: pmask, pm, umask, pn
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -205,15 +215,7 @@
 #  else
         do k=1,N                                ! Eastern edge closed
           do j=jstr,jend                        ! ======= ==== ======
-#   ifdef WEC
-c            u(iend+1,j,k,nnew)=-ust(iend+1,j,k) ! no Lagrangian flux
-            u(iend+1,j,k,nnew)=u(iend,j,k,nnew)  ! gradient (default)
-#    ifdef MASKING
-     &                         *umask(iend+1,j)
-#    endif
-#   else
             u(iend+1,j,k,nnew)=0.               !  (no-flux: default)
-#   endif
           enddo
         enddo
 #  endif
@@ -413,21 +415,6 @@ c            u(iend+1,j,k,nnew)=-ust(iend+1,j,k) ! no Lagrangian flux
      &                                 +u(iend+1,jend,k,nnew))
         enddo
       endif
-# endif
-
-! Daniel add
-!====================================================================
-!       NO LAGRANGIAN FLUX CONDITION AT LAND-SEA INTERFACES
-!====================================================================
-# if defined WEC && defined MASKING
-      do i=istr,iendR
-        do j=jstrR,jendR
-          do k=1,N
-            u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
-     &                   +ust(i,j,k)*(umask(i,j)-1.0)
-          enddo
-        enddo
-      enddo
 # endif
 
       end

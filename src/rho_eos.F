@@ -4,9 +4,9 @@
 
 
       subroutine rho_eos(tidx)
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: nsub_e, nsub_x
       implicit none
       integer, intent(in) :: tidx
       integer,save :: tile=0
@@ -119,14 +119,31 @@
 ! interchangeable. >>
 !                                          John Wilkin, 29 July 92
 
-      use param
       use tracers, only: t
-      use coupling
-      use eos_vars
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
+      use coupling, only: rhos, rhoa
+#ifdef SPLIT_EOS
+      use eos_vars, only: qp2, rho1, qp1
+#else
+      use eos_vars, only: rho
+#endif
+#ifndef NONLIN_EOS
+      use eos_vars, only: T0, Tcoef
+#ifdef SALINITY
+     &     ,S0, Scoef
+#endif
+#endif
+
+      use grid, only: rmask
+      use param, only:
+     &     east_exchng, ieast, isalt, itemp, iwest,
+     &     jnorth, jsouth, north_exchng, south_exchng, west_exchng
+# if defined LMD_MIXING  || defined LMD_KPP \
+  || defined MY25_MIXING \
+  || defined LMD_BKPP
+      use mixing, only: bvf
+#endif
+      use ocean_vars, only: z_r, hz, z_w
+      use scalars, only: g, n, rho0
 
       implicit none
 
@@ -237,7 +254,7 @@
             rho(i,j,k)=rho(i,j,k)*rmask(i,j)
 #   endif
 #  endif
-#  if defined BVF_MIXING || defined LMD_MIXING  || defined LMD_KPP
+#  if defined LMD_MIXING  || defined LMD_KPP
 #   ifndef SPLIT_EOS
             dpth=-z_w(i,j,k)
             K_up(i,k)=K0+dpth*(K1+K2*dpth)
@@ -281,8 +298,8 @@ c**         dpth=z_w(i,j,N)-0.5*(z_r(i,j,k+1)+z_r(i,j,k))
 #  endif
           enddo
         enddo
-#  if defined BVF_MIXING || defined LMD_MIXING  || defined LMD_KPP \
-   || defined MY2_MIXING || defined MY25_MIXING || defined PP_MIXING
+#  if defined LMD_MIXING  || defined LMD_KPP \
+   || defined MY25_MIXING
         do i=istrR,iendR
           bvf(i,j,N)=bvf(i,j,N-1)
           bvf(i,j,0)=bvf(i,j,  1)
@@ -320,8 +337,8 @@ c**         dpth=z_w(i,j,N)-0.5*(z_r(i,j,k+1)+z_r(i,j,k))
 #  endif
           enddo
         enddo
-#  if defined BVF_MIXING || defined LMD_MIXING  || defined LMD_KPP \
-   || defined MY2_MIXING || defined MY25_MIXING || defined PP_MIXING
+#  if defined LMD_MIXING  || defined LMD_KPP \
+   || defined MY25_MIXING
         cff=g/rho0
         do k=1,N-1
           do i=istrR,iendR

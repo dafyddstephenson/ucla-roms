@@ -11,13 +11,34 @@
      &                                                   kbls, kmo,
      &                                                         tind)
 
-      use param
-      use wec_frc
-      use surf_flux ! bulk_frc-> only: sustr_r, svstr_r, stflx, srflx
-      use grid      ! flux_frc-> only: sustr, svstr, stflx, srflx
-      use mixing
-      use ocean_vars
-      use scalars
+      use surf_flux, only: stflx, srflx, svstr, sustr, svstr_r, sustr_r
+!     bulk_frc-> only: sustr_r, svstr_r, stflx, srflx, only:
+      use grid, only: f, rmask, umask, vmask
+!     flux_frc-> only: sustr, svstr, stflx, srflx
+      use mpi_exchanges, only: exchange_xxx
+      use param, only:
+     &     ieast, east_exchng, south_exchng, west_exchng,
+     &     north_exchng, itemp, iwest, jnorth, jsouth
+#ifdef SALINITY
+     &     , isalt
+#endif
+      use mixing, only: akt, akv
+# if defined LMD_MIXING  || defined LMD_KPP \
+  || defined MY25_MIXING\
+  || defined LMD_BKPP
+     & , bvf
+#endif
+#ifdef LMD_KPP
+     & , hbls, swr_frac
+#ifdef LMD_NONLOCAL
+     & , ghat
+#endif
+#endif
+#ifdef LMD_BKPP
+     &     , hbbl
+#endif
+      use ocean_vars, only: z_w, hz, v, u, z_r
+      use scalars, only: n, forw_start, g, iic, nstp, vonkar, zob
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -67,7 +88,6 @@
      &         ssgm, z_bl, cff,cff1, cff_up,cff_dn
 
       real Kv0, Kt0, Ks0, wmb,wsb, sgmb,amp
-
       !! When smoothing hbl, we try to not
       !! smooth over the mask and the domain
       !! boundaries
@@ -227,7 +247,7 @@
 
 c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
 
-            Vtsq=Vtc*ws*sqrt(max(0., bvf(i,j,k-1) ))  !<-- fix by Gokhan
+            Vtsq=1.8*Vtc*ws*sqrt(max(1.e-5, bvf(i,j,k-1) ))  !<-- fix by Jeroen
 
             Cr(i,k)=FC(i,k)+Vtsq
 
@@ -415,7 +435,7 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
 
 #  ifdef LMD_NONLOCAL
               if (Bfsfc < 0.) then
-                ghat(i,j,k)=Cg * ssgm*(1.-ssgm)**2
+                ghat(i,j,k)=-Cg * ssgm*(1.-ssgm)**2
               else
                 ghat(i,j,k)=0.
               endif
@@ -500,21 +520,6 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
                 Akt(i,j,k,isalt) = Ks(i,j,k)
 # endif
               enddo
-
-# ifdef WEC
-              do k=1,N      ! Apply wave effects
-                Akv(i,j,k)       =Akv(i,j,k)+Akb(i,j,k)
-                Akt(i,j,k,itemp) =Akt(i,j,k,itemp)+Akb(i,j,k)+Akw(i,j,k)
-#  ifdef SALINITY
-                Akt(i,j,k,isalt) =Akt(i,j,k,isalt)+Akb(i,j,k)+Akw(i,j,k)
-#  endif
-              enddo
-              Akv(i,j,0)       =2.*Akv(i,j,1)-Akv(i,j,2)
-              Akt(i,j,0,itemp) =2.*Akt(i,j,1,itemp)-Akt(i,j,2,itemp)
-#  ifdef SALINITY
-              Akt(i,j,0,isalt) =2.*Akt(i,j,1,isalt)-Akt(i,j,2,isalt)
-#  endif
-# endif
 
             endif  !<-- FIRST_TIME_STEP
 # ifdef MASKING
@@ -646,45 +651,64 @@ c--         Vtsq=Vtc*ws*sqrt(max(0., 0.5*(bvf(i,j,k)+bvf(i,j,k-1)) ))
       end
 
 
-      subroutine check_kpp_switches (ierr)
+      subroutine check_kpp_switches
 
 ! This routine is to keep track of the status of CPP-switches defined
 ! locally in this file above. It must be placed here rather than stored
 ! in a separate file in order to be exposed to relevant CPP-settings.
 ! This routine does not affect model results, other than signature in
 ! global attribute "CPPS" in output netCDF files.
-
-      use param
-      use strings
+      use strings, only: cpps, max_opt_size
+      use param, only: mynode
+      use error_handling_mod, only: error_log
 
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
+      character(len=19) :: sr_name = "check_kpp_switches"
+      character(len=1024) :: error_info = ""
 
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+10
-      if (ie > max_opt_size) goto 99
+
+      write(error_info,*)
+     &  'Insufficient length of string "cpps" in file "strings".',
+     &        'Increase parameter "max_opt_size" it and recompile.'
+
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='<lmd_kpp.F>'
 # ifdef INT_AT_RHO_POINTS
       is=ie+2 ; ie=is+16
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='INT_AT_RHO_POINTS'
 # endif
 # ifdef SMOOTH_HBL
       is=ie+2 ; ie=is+9
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='SMOOTH_HBL'
 # endif
 # ifdef MERGE_OVERLAP
       is=ie+2 ; ie=is+13
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='MERGE_OVERLAP'
 # endif
-      return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
-      ierr=ierr+1
-      end
+      call error_log%abort_check()
+      end subroutine check_kpp_switches
 #else
       subroutine lmd_kpp_empty
       end

@@ -28,21 +28,38 @@
 ! Bottom drag is computed using either Styles and Glenn(1996) bottom
 ! boundary layer formulation, or linear/quadratic friction law..
 !
-      use param
-      use bulk_frc
-      use flux_frc
+      use param, only:
+     &     ieast, iwest, jnorth, jsouth, nsub_e, nsub_x, itemp
+#ifdef SALINITY
+     &     , isalt
+#endif
+      use flux_frc, only: set_flux_frc
       use surf_flux, only: set_surf_field_corr, set_carbonate_sensitivity
-      use tracers,   only: set_surf_tracer_flx, iTandS
-      use river_frc
-      use pipe_frc
-      use cdr_frc
-      use tides
-      use wec_frc
-      use bgc_io ! , only: set_bgc_surf_frc
-      use hidden_mpi_vars
-      use scalars
-      use analytical
-      use boundary
+      use tracers, only: set_surf_tracer_flx, iTandS
+      use river_frc, only: river_source, set_river_frc
+      use pipe_frc, only: pipe_source, set_pipe_frc
+      use cdr_frc, only: cdr_source
+#if defined(BIOLOGY_BEC2) || defined(MARBL)
+      use bgc_io, only: set_bgc_surf_frc
+#endif
+      use hidden_mpi_vars, only: jnode, inode
+      use boundary, only: frctype
+      use scalars, only: nt
+#if defined(CDR_FORCING)
+      use cdr_frc, only: set_cdr_frc
+#endif
+# ifdef BULK_FRC
+      use bulk_frc, only: set_bulk_frc
+#endif
+#ifdef ANA_SRFLUX
+      use analytical, only: ana_srflux_tile
+#endif
+#ifdef ANA_STFLUX
+      use analytical, only: ana_stflux_tile
+#endif
+#ifdef ANA_SMFLUX
+      use analytical, only: ana_smflux_tile
+#endif
 
       implicit none
 
@@ -64,16 +81,6 @@ c***              no code here
 # else
 !     call set_bry_all_tile(istr,iend,jstr,jend, ierr)
 !     call set_bry_all
-# endif
-#endif
-
-!--> Climatological data
-
-#if defined M2NUDGING && !defined M2_FRC_BRY
-# ifdef ANA_SSH
-      call ana_ssh_tile(istr,iend,jstr,jend)
-# else
-      call set_ssh_tile(istr,iend,jstr,jend, ierr)
 # endif
 #endif
 
@@ -145,33 +152,10 @@ c***              no code here
       endif
 
       if (pipe_source) call set_pipe_frc
-
+#if defined(CDR_FORCING)
       if (cdr_source) call set_cdr_frc
-
-# ifdef WEC
-      call set_wec_frc_tile(istr,iend,jstr,jend,ierr)
-      call wec_forces
-# endif
+#endif
 
 #endif  /* SOLVE3D */
 
-
-!--> Bottom boundary fluxes [Styles and Glenn (1996) bottom
-!    boundary layer formulation.  Not implemented in this code]
-
-#if defined ANA_BMFLUX
-      call ana_bmflux ILLEGAL
-#elif defined SG_BBL96
-# ifdef ANA_WWAVE
-      call ana_wwave ILLEGAL
-# else
-      call set_wwave_tile(istr,iend,jstr,jend)
-# endif
-      call sg_bbl96 ILLEGAL
-#endif
-
-c>>>      if (ierr /= 0) may_day_flag=2
-#ifdef ANA_PSOURCE
-      if (ZEROTH_TILE) call ana_psource
-#endif
       end

@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
 
       subroutine prsgrd
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a3d, a2d
       implicit none
       integer,save:: tile=0
 
@@ -31,18 +31,30 @@
 # endif
      &                                      dR,dZ, FC,dZx,rx,dRx)
 
-      use param
-#ifdef WEC
-      use wec_frc, cff1 => cff_ext, cff2 => cff_ext2
+      use grid, only: f, pm, pn, umask, dn_u, vmask, dm_v
+      use tides, only: pot_tides, ptide
+      use param, only:
+     &     east_exchng, north_exchng, south_exchng,
+     &     west_exchng, ieast, iwest, jnorth, jsouth
+      use ocean_vars, only: z_r, z_w, hz
+#ifdef NHMG
+     &     , dzdeta, dzdxi
 #endif
-      use dimensions
-      use tides
-      use diagnostics
-      use coupling
-      use ocean_vars
-      use eos_vars
-      use grid
-      use scalars
+#ifdef SPLIT_EOS
+      use eos_vars, only: qp1, rho1, qp2
+#else
+      use eos_vars, only: rho
+#endif
+#ifdef ADV_ISONEUTRAL
+      use eos_vars, only: drdx,drde
+#endif
+      use dimensions, only:  nx, ny, nz
+      use scalars, only: n, g, rho0, nrhs
+#ifdef DIAGNOSTICS
+      use diagnostics, only: calc_diag, diag_uv, udiag,
+     &  vdiag, ipgr, dxdyi_u, dxdyi_v
+#endif
+      use calc_pflx_mod, only: calc_pflx, calc_pressure_flux
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k, imin,imax,jmin,jmax
@@ -212,20 +224,6 @@ c**         dpth=z_w(i,j,N)-z_r(i,j,k)
           enddo
         enddo
       enddo   !<-- j
-
-#ifdef DIAGNOSTICS
-      if (CORR_STAGE) then
-        if (allocated(rho_d)) then
-          rho_d = rho(1:nx,1:ny,:)
-        endif
-        if (allocated(p_int)) then
-          p_int = 0
-          do k=1,nz
-           p_int = p_int + p(1:nx,1:ny,k)*Hz(1:nx,1:ny,k)
-          enddo
-        endif
-      endif
-#endif
 
 ! Compute XI-component of pressure gradient term:
 !-------- ------------ -- -------- -------- -----
@@ -465,8 +463,8 @@ c    &            -0.75*rx(i,j)-0.125*(rx(i,j-1)+rx(i,j+1))
             Vdiag(:,:,k,ipgr) = rv(1:nx,1:ny,k)*dxdyi_v*vmask(1:nx,1:ny)
           enddo
         endif
-        if (diag_pflx) then
-          call calc_diag_pflux(p)
+        if (calc_pflx) then
+          call calc_pressure_flux(p)
         endif
       endif
 # endif
@@ -508,58 +506,6 @@ c    &            -0.75*rx(i,j)-0.125*(rx(i,j-1)+rx(i,j+1))
       endif
 #  endif
 # endif /* NHMG */
-
-
-#ifdef WEC
-! ------------------------------------
-!add in wave effect using POM-Jacobian
-! ------------------------------------
-#  define DC rx
-      !! FC contains the vertical vortex force K (eq(5) from uchiyama2010)
-      !! which behaves like a hydrostatic pressure
-      !! JM We should be able to add these term directly to the
-      !! hydrostatic pressure above
-      !! In addition, instead of K, we should compute  ust.u_z in place
-      do k=N,1,-1           !--> irreversible
-        if (k.eq.N) then
-          do j=jstrV-1,jend
-            do i=istrU-1,iend
-              FC(i,j)=-(z_w(i,j,N)-z_r(i,j,N))
-     &                          *(1.5*kvf(i,j,N)-0.5*kvf(i,j,N-1))
-     &          *(z_w(i,j,N)-z_r(i,j,N))/(z_r(i,j,N)-z_r(i,j,N-1))
-              DC(i,j)=-g*sup(i,j)-calP(i,j)+Kapsrf(i,j)  !! additional surface pressure gradient
-            enddo
-          enddo
-        else
-          do j=jstrV-1,jend
-            do i=istrU-1,iend
-              FC(i,j)=FC(i,j)-0.5*(kvf(i,j,k+1)+kvf(i,j,k))
-     &                           *(z_r(i,j,k+1)-z_r(i,j,k))
-            enddo
-          enddo
-        endif
-
-        do j=jstr,jend
-          do i=istrU,iend
-            cff  = 0.5*(Hz(i,j,k)+Hz(i-1,j,k))*dn_u(i,j)
-            cff1 = cff*( FC(i-1,j)-FC(i,j) +0.5*( kvf(i,j,k)
-     &           +kvf(i-1,j,k) )*(z_r(i,j,k)-z_r(i-1,j,k)) )
-            cff2 = cff*(DC(i-1,j)-DC(i,j))
-            ru(i,j,k)=ru(i,j,k) + cff1 + cff2
-          enddo
-        enddo
-        do j=jstrV,jend
-          do i=istr,iend
-            cff  = 0.5*(Hz(i,j,k)+Hz(i,j-1,k))*dm_v(i,j)
-            cff1 = cff*( FC(i,j-1)-FC(i,j) +0.5*( kvf(i,j,k)
-     &           +kvf(i,j-1,k) )*(z_r(i,j,k)-z_r(i,j-1,k)) )
-            cff2 = cff*(DC(i,j-1)-DC(i,j))
-            rv(i,j,k)=rv(i,j,k) + cff1 + cff2
-          enddo
-        enddo
-      enddo   !<-- k
-#  undef DC
-#endif /* WEC */
 
       end
 

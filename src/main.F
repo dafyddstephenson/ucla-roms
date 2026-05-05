@@ -3,55 +3,45 @@
 
 !!    program main               ! Open MP version of ROMS driver
 
-      use param
+      use param, only: mynode, ocean_grid_comm
 #ifdef NHMG
-      use nhmg
+      use nhmg, only: nhmg_clean
 #endif
       use tracers, only: init_tracers
-      use mpi
-      use sponge_tune
-
+      use mpi_f08, only: mpi_wtime
+      use timers, only: tstart, tend
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.
 # ifdef MPI
-      real*8 tstart, tend
+c$$$      real*8 tstart, tend
 C$    integer level,req_lev
 
 c**   call system('uname -nmr')
-      ierr=1
+
 C$    req_lev=MPI_THREAD_MULTIPLE
 C$    call MPI_Init_thread(req_lev, level, ierr)
 C$ !!   write(*,*) 'MPI thread support levels =', req_lev,level
 C$    ierr=0
-      if (ierr == 1) call MPI_Init(ierr)
+      call MPI_Init(ierr)
 
-      call mpi_setup(ierr)
+      call mpi_setup
       tstart=MPI_Wtime()
-      if (ierr == 0) then
+
 # endif
-#ifdef BIOLOGY_BEC2
-!     When using BEC, BGC tracer indices are set in init_tracers
-!     then used in init_scalars, so this order must be maintained
-         call init_tracers
-         call init_scalars(ierr)
-#else
-        call init_scalars(ierr)          ! Initialize global scalars,
-                                         ! model tunable parameters,
-        call init_tracers
-#endif
-        if (ierr == 0) then
+      call init_scalars         ! Initialize global scalars,
+      call init_tracers
 C$        call omp_set_dynamic(.false.)
 C$OMP PARALLEL                           ! fast-time averaging weights
-          call roms_thread               ! for barotropic mode, and
+      call roms_thread          ! for barotropic mode, and
 C$OMP END PARALLEL                       ! launch the model in OpenMP
-        endif                            ! parallel regime.
+                                         ! parallel regime.
 #ifdef NHMG
       ! write nhmg statistics to fort.10
       call nhmg_clean()
 #endif
 # ifdef MPI
-      endif
+
       call MPI_Barrier(ocean_grid_comm, ierr)
       tend=MPI_Wtime()
       mpi_master_only write(*,*) 'MPI_run_time =', tend-tstart
@@ -63,62 +53,83 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
 
 
       subroutine roms_thread
-      use param
-      use scalars
-      use ocean_vars
-      use basic_output
+      use basic_output, only: wrt_his_ocean_vars
+      use scalars, only: ntimes, iic, ntstart, diag_sync
+      use timers, only: start_timers, stop_timers
+      use error_handling_mod, only: error_log
+      use upscale_output, only: do_upscale, wrt_upscale
 
       implicit none
 
-                                         ! Note: Because there is
-      call start_timers()                ! a possibility of I/O error
-      call roms_init                     ! occurring on some MPI nodes,
-      if (may_day_flag /= 0) goto 99     ! but not simultaneously on
-      do iic=ntstart,ntstart+ntimes-1    ! all, exiting is deferred
-        diag_sync=.false.                ! until "may_day_flag" is
+
+      call start_timers()
+      call roms_init
+
+      do iic=ntstart,ntstart+ntimes-1
+        diag_sync=.false.
         call roms_step
-        if (diag_sync .and. may_day_flag /= 0) goto 99
+        if (diag_sync .and. error_log%abort_requested) then
+           exit ! break out of loop and wind down
+        end if
       enddo
-  99  call stop_timers()                 ! summarized among all nodes
-      if (may_day_flag /=0)
-     &  call wrt_his_ocean_vars(.true.)  ! Emergency history file output
-C$OMP BARRIER                            ! and broadcasted by "diag"
-C$OMP MASTER                             ! [which sets diag_sync=T to
-      call closecdf                      ! signal that "may_day_flag"
-C$OMP END MASTER                         ! is in uniform state]. This
-      return                             ! is THE ONLY route to exit
-      end                                ! if something goes wrong.
+
+      ! This is where we might put a generic "final write" subroutine
+      if (do_upscale) then
+        call wrt_upscale
+      endif
+
+      call stop_timers()
+      return
+      end subroutine roms_thread
 #endif
 
       subroutine roms_init
-      use param
 #ifdef NHMG
-      use nhmg
+      use nhmg, only: nhmg_matrices, nhmg_init, halo
+      use ocean_vars, only: dzdeta, dzdxi, hz
 #endif
-      use dimensions
-      use grid
-      use ocean_vars
-      use basic_output
-      use scalars
-      use analytical
-      use sponge_tune
-      use diagnostics
-      use boundary
-      use particles
-      use cstar_output
-      use random_output
-      use cstar_output
-      use cdr_frc
+      use basic_output, only: init_restarts, wrt_his_ocean_vars
+      use scalars, only:
+     &     diag_sync, dt, iic, iif, knew, kstp,
+     &     nnew, nrhs, nstp, numthreads, priv_count, sec2day,
+     &     start_time, synchro_flag, tdays, time, proc
+      use sponge_tune, only: ub_tune
+      use particles, only: floats, init_particles
+      use upscale_output, only: do_upscale, init_upscale
+      use random_output, only: do_random, init_random
+      use cdr_output, only: do_cdr, init_cdr_output
+      use frc_output, only: do_frc, init_frc
+      use analytical, only: ana_vmix
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,init_diagnostics
+#endif
+#ifdef ANA_INITIAL
+     &     , ana_init
+#endif
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
-      use bec2_params
-      use bgc_io
+      use bgc_io, only: wrt_bgc
 # endif
+# if defined(BIOLOGY_BEC2)
+      use bec2_params, only: ecosys2_init
+#endif
+      use grid, only: get_grid, dm_r, dn_r
+      use roms_read_write, only: nrrec, frc_time
+      use param, only:
+     &     mynode, nsub_e, nsub_x, lm, mm,
+     &     N, np_eta, np_xi, padd_e, padd_x
+#ifdef SPONGE_TUNE
+      use sponge_tune, only: init_orlanski_tune
+#endif
+      use precheck, only: do_precheck
+      use error_handling_mod, only: error_log
+      use calc_pflx_mod, only: init_pflx
 
       implicit none
 
       integer trd, tile, my_first, my_last, range
+      character(len=1024) :: error_info = ""
+      character(len=9) :: sr_name ="roms_init"
 C$    integer omp_get_thread_num, omp_get_num_threads
-      integer ierr
 
       numthreads=1 ; trd=0
 C$    numthreads=omp_get_num_threads()
@@ -127,15 +138,17 @@ C$    trd=omp_get_thread_num()
 
       if (mod(NSUB_X*NSUB_E,numthreads) /= 0) then
 C$OMP MASTER
-        mpi_master_only write(*,'(/3(1x,A,I3),A/)')
-     &    '### ERROR: Wrong choice of numthreads =', numthreads,
-c        endif
-     &         'while NSUB_X =', NSUB_X, 'NSUB_E =', NSUB_E,'.'
-        may_day_flag=8
+         write(error_info,*)
+     &    'Wrong choice of numthreads =', numthreads,
+     &        'while NSUB_X =', NSUB_X, 'NSUB_E =', NSUB_E,'.'
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
 C$OMP END MASTER
 C$OMP BARRIER
-        goto 99 !-->  EXIT
+
       endif
+      call error_log%abort_check()
                                        ! NOTE: This code is written
       iic=0  ; kstp=1 ; knew=1         ! under an assumption that all
 #ifdef SOLVE3D
@@ -161,8 +174,9 @@ C$OMP MASTER                           ! Setup vertical stretching
       call set_scoord                  ! functions for S-coordinate
 C$OMP END MASTER                       ! system
 C$OMP BARRIER
-      if (may_day_flag /= 0) goto 99
 #endif
+
+      call do_precheck
 
       call get_grid                  ! can be analytic or from netcdf
 
@@ -177,13 +191,13 @@ C$OMP BARRIER
 #ifdef SPONGE_TUNE
       if (ub_tune) call init_orlanski_tune
 #endif
+      call init_pflx
 
 c--#define CR
 CR      write(*,*) '-11' MYID
 
 
 
-      if (may_day_flag /= 0) goto 99 !-->  EXIT
 
       do tile=my_tile_range            ! Compute various metric terms
         call setup_grid1(tile)         ! and their combinations.
@@ -214,16 +228,12 @@ CR      write(*,*) ' -6' MYID
 #endif
 
 # if defined(BIOLOGY_BEC2)
-!     pH is initialized to 0 in ecosys_init
-!     FIXME: if using MARBL with diagnostics then this call is skipped and diagnostics arrays are not initialised to 0
       call ecosys2_init
 # endif /*BIOLOGY_BEC2*/
 
-      ! we should have a grid and z_r by now
-      if (cdr_source) call init_cdr_frc
-
 #ifdef ANA_INITIAL
-                                    ! Set initial conditions for
+
+      frc_time='1/2 fwd'            ! Set initial conditions for
       call set_forces               ! model prognostic variables,
       call ana_init                 ! may require surface forcing
                                     ! either analytically or read
@@ -246,13 +256,15 @@ CR      write(*,*) ' -6' MYID
 #ifdef ANA_VMIX
       call ana_vmix
 #endif
-      if (may_day_flag /= 0) goto 99      !--> ERROR
 
                                   ! Set initial model clock: at this
       time=start_time             ! moment "start_time" (global scalar)
-      tdays=time*sec2day          ! is set by get_init or analytically
+                                  ! is set by get_init or analytically
                                   ! copy it into threadprivate "time"
+      frc_time='current'
+      tdays = time*sec2day
       call set_forces
+
       call set_depth(0)
 
 !----------------------------------------------------------------------
@@ -281,6 +293,8 @@ CR      write(*,*)  ' -2' MYID
         call init_particles
       endif
 
+      ! we should have a grid and z_r by now
+
 #if defined SPONGE
       call set_nudgcof(0)
 #endif
@@ -292,17 +306,19 @@ CR      write(*,*)  ' -2' MYID
       call wrt_bgc(.true.)
 #endif
       if (do_random) call init_random
-      if (do_cstar)  call init_cstar
+      if (do_cdr)  call init_cdr_output
+      if (do_upscale) then
+        call init_upscale
+      endif
+      if (do_frc) call init_frc
 
-      if (may_day_flag /=0 ) goto 99     !-->  EXIT
 
         mpi_master_only write(*,'(/1x,A/)')
      &     'main :: initialization complete, started time-stepping.'
 
       call diag  ! log file output of global norms
 
-  99  return
-      end
+      end subroutine roms_init
 
 
 !      *****    *********    ******   *******    *********
@@ -316,27 +332,33 @@ CR      write(*,*)  ' -2' MYID
 
       subroutine roms_step
 
-      use param
-      use ocean_vars
-      use extract_data
-      use diagnostics
-      use scalars
-      use sponge_tune
-      use particles
-      use surf_flux
-      use random_output
-      use cstar_output
-      use zslice_output
-      use basic_output
-      use boundary
-      use analytical
-      use bgc_io
-      use tides
-      use mixing
+      use extract_data, only: do_extract, do_extract_data
+      use scalars, only:
+     &     dt, iic, iif, knew, kstp, nfast, nnew, nrhs,
+     &     nstp, ntstart, sec2day, start_time, tdays, time
+      use sponge_tune, only: ub_tune, adjust_orlanski
+      use particles, only: floats, do_particles
+      use surf_flux, only: wrt_smflx, wrt_stflx, wrt_sflux
+      use random_output, only: do_random, wrt_random
+      use cdr_output, only: do_cdr, wrt_cdr
+      use frc_output, only: do_frc, wrt_frc
+      use zslice_output, only: do_zslice, wrt_zslice
+      use basic_output, only:
+     &     calc_avg_ocean_vars, wrt_avg_ocean_vars,
+     &     wrt_his_ocean_vars, wrt_rst_ocean_vars
+      use boundary, only: set_bry_all
+      use tides, only: set_tides
+# if defined(BIOLOGY_BEC2) || defined(MARBL)
+      use bgc_io, only: wrt_bgc
+#endif
+      use tides, only: bry_tides, pot_tides
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv,diag_trc,do_diagnostics
+#endif
+      use roms_read_write, only: frc_time
 
       implicit none
 
-      integer :: ierr
 
 ! Increment time-step index and set model clock. Note that "time" set
 ! below corresponds to step "n" (denoted here as "nstp"), while counter
@@ -360,12 +382,13 @@ CR      write(*,*)  ' -2' MYID
       ! set_tides on the other hand work wit time, not adding 0.5*dt
       ! use time at n for surface forcing values
 
-      tdays = (time-0.5*dt)*sec2day
+      frc_time='current'
       call set_forces
       ! use time at n+1/2 for boundary values
       ! we use these values at the end of pre_step, and during step2d
 
-      tdays = (time-0.0*dt)*sec2day
+      tdays = time*sec2day
+      frc_time = '1/2 fwd'
       call set_bry_all
 
       if (bry_tides.or.pot_tides) call set_tides(0)
@@ -406,13 +429,14 @@ CR      write(*,*)  ' -2' MYID
       call omega
       call rho_eos(nrhs)  !!! use the right time index
 
-      tdays = (time-0.0*dt)*sec2day
+!      tdays = (time-0.0*dt)*sec2day
       call set_forces   ! get for time n+1/2
 # if defined LMD_MIXING
       call lmd_vmix(nrhs)
 # endif
 
       tdays = (time+0.5*dt)*sec2day
+      frc_time = 'forward'
       call set_bry_all  ! get for time n+1
       if (bry_tides.or.pot_tides) call set_tides(0)
 
@@ -470,21 +494,24 @@ CR      write(*,*)  ' -2' MYID
       call wrt_avg_ocean_vars
       if (do_extract) call do_extract_data
 
+#ifdef SPONGE_TUNE
       if (ub_tune)    call adjust_orlanski
+#endif
 
       if (floats)     call do_particles
 
       if (wrt_smflx.or.wrt_stflx) call wrt_sflux
 
 #ifdef DIAGNOSTICS
-      if (diag_uv.or.diag_trc.or.diag_pflx) call do_diagnostics
+      if (diag_uv.or.diag_trc) call do_diagnostics
 #endif
 
       if (do_random) call wrt_random
-#if defined MARBL && defined MARBL_DIAGS
-      if (do_cstar)  call wrt_cstar
+#if defined MARBL && defined MARBL_DIAGS && defined CDR_FORCING
+      if (do_cdr)  call wrt_cdr
 #endif
       if (do_zslice) call wrt_zslice
+      if (do_frc)    call wrt_frc
 
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc

@@ -1,11 +1,12 @@
+
 #include "cppdefs.opt"
 
 #ifdef SOLVE3D
 
       subroutine step3d_uv2(tile)
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a2d
       implicit none
       integer tile
 
@@ -16,18 +17,47 @@
 
       subroutine step3d_uv2_tile(istr,iend,jstr,jend, WC,FC,CF,DC)
 
-      use param
-      use river_frc
-      use wec_frc      ! , only: ust2d, vst2d, ust, vst
-      use dimensions
-      use diagnostics
-      use coupling
-      use eos_vars
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
-      use surf_flux
+      use river_frc, only:
+     &     iriver, riv_depth, riv_uvel, riv_vvel,
+     &     river_source, riv_uflx, riv_vol, riv_vflx
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng
+
+#ifdef ADV_ISONEUTRAL
+      use eos_vars, only: drdx, drde, idrz
+#endif
+
+#ifdef SPLIT_EOS
+      use eos_vars, only: qp2, qp1, rho1
+#else
+      use eos_vars, only: rho
+#endif
+
+      use coupling, only: du_avg1, dv_avg1, du_avg2, dv_avg2
+      use grid, only:
+     &     nx,ny,nz, dn_u, umask, dm_v, vmask, dm_u, dn_v, f,
+     &     dm_r, pn, pm
+      use ocean_vars, only: z_r, wi
+#ifdef NHMG
+     &     , w
+#endif
+      use mixing, only: akv
+#ifdef ADV_ISONEUTRAL
+     &     , diff3u, diff3v
+#endif
+#ifdef LMD_KPP
+     &     , hbls
+#endif
+#ifdef LMD_BKPP
+     &     , hbbl
+#endif
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icoup
+#endif
+      use ocean_vars, only: u, ubar, v, vbar, hz, flxu, flxv, z_w
+      use scalars, only: n, knew, nnew, nstp, g, rho0, dt
+      use mpi_exchanges, only: exchange_xxx
 
       implicit none
       integer istr,iend,jstr,jend, i,j,k
@@ -433,19 +463,6 @@
 
 # endif /* NHMG */
 
-
-# ifdef DIAGNOSTICS
-!     if (diag_uv .and. calc_diag) then
-!       Udiag(:,j,:,ivmix) = ( u(1:nx,j,:,nnew)*
-!    &    0.5*( Hz(0:nx-1,j,:)+Hz(1:nx,j,:) )-u_prev ) / dt
-!       Vdiag(:,j,:,ivmix) = ( v(1:nx,j,:,nnew)*
-!    &    0.5*( Hz(1:nx,j-1,:)+Hz(1:nx,j,:) )-v_prev ) / dt
-
-!       Udiag(:,j,nz,ivmix) = Udiag(:,j,nz,ivmix)+sustr(1:nx,j)
-!       Vdiag(:,j,nz,ivmix) = Vdiag(:,j,nz,ivmix)+svstr(1:nx,j)
-!     endif
-# endif
-
       enddo      ! <-- j
 
 ! Set PHYSICAL lateral boundary conditions.
@@ -518,19 +535,8 @@
         do i=IU_RANGE
           DC(i,0)=1./DC(i,0)  !!1/H
           ubar(i,j,knew)=DC(i,0)*DU_avg1(i,j)  !! avg1 is at n+1?
-# ifdef WEC
-     &                   -ust2d(i,j)
-! JM mask thing we do understand. Fix by properly masking in wec_frc
-#   ifdef MASKING
-           ubar(i,j,knew)=ubar(i,j,knew)*umask(i,j)
-     &                +ust2d(i,j)*(umask(i,j)-1.0)
-#   endif
-# endif
 
           FC(i,0)=DC(i,0)*(FC(i,0)-DU_avg1(i,j)) !! FC(0) is now correction velocity
-# ifdef WEC
-     &                               +ust2d(i,j)
-# endif
 !>
           CF(i,0)=0.   !<-- initialize vertical integral
         enddo          !--> keep DC(:,0) for later
@@ -540,25 +546,7 @@
             u(i,j,k,nnew)=(u(i,j,k,nnew)-FC(i,0))
 # ifdef MASKING
      &                                  *umask(i,j)
-#  ifdef WEC
-            ! again, weird mask - 1.0 thing --> waiting to hear back
-            ! from Yusuke
-            u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
-     &                +ust(i,j,k)*(umask(i,j)-1.0)
-#  endif
 # endif
-c--# define TR
-# ifdef TR
-! Daniel add, can proably clean this up with & +ust(i,j,k) instead of
-! double repeated line, but wait for testing
-            ! DC_ik = dz*dy -> is the flux
-#  ifdef WEC
-            CF(i,k)=DC(i,k)*( 0.5*(u(i,j,k,nstp)+u(i,j,k,nnew))
-     &                                            +ust(i,j,k) )
-#  else
-            CF(i,k)=0.5*DC(i,k)*(u(i,j,k,nstp)+u(i,j,k,nnew))
-#  endif
-# else
 c--#define EPSIL 0.125
 c--#define DELTA 0.75
 
@@ -569,12 +557,7 @@ c>># define EPSIL 0.2105
 c>># define DELTA 0.5790
 
             CF(i,k)=DELTA*FlxU(i,j,k) + EPSIL*DC(i,k)
-     &                         *(u(i,j,k,nstp)+u(i,j,k,nnew)
-#  ifdef WEC
-     &                                  + 2. * ust(i,j,k)
-#  endif
-     &                                                        )
-# endif
+     &                         *(u(i,j,k,nstp)+u(i,j,k,nnew))
             CF(i,0)=CF(i,0)+CF(i,k)    !<-- vertical integration
           enddo
         enddo
@@ -585,11 +568,6 @@ c>># define DELTA 0.5790
         do k=1,N,+1
           do i=IU_RANGE
             FlxU(i,j,k)=CF(i,k)-DC(i,k)*CF(i,0)   !<-- correction
-! Daniel add, again why WEC and MASKING ???
-! JM Good question, fix in wec_frc and investigate
-#if defined WEC && defined MASKING
-            FlxU(i,j,k)=FlxU(i,j,k)*umask(i,j)
-#endif
 
 # ifdef ADV_ISONEUTRAL
             diff3u(i,j,k)=sqrt(GAMMA*abs(u(i,j,k,nnew))*dm_u(i,j))
@@ -614,21 +592,8 @@ c>># define DELTA 0.5790
           do i=IV_RANGE
             DC(i,0)=1./DC(i,0)
             vbar(i,j,knew)=DC(i,0)*DV_avg1(i,j)
-!Daniel add, again weird mask -1
-# ifdef WEC
-     &                             -vst2d(i,j)
-#  ifdef MASKING
-            vbar(i,j,knew)=vbar(i,j,knew)*vmask(i,j)
-     &                  +vst2d(i,j)*(vmask(i,j)-1.0)
-
-#  endif
-# endif
 
             FC(i,0)=DC(i,0)*(FC(i,0)-DV_avg1(i,j))
-# ifdef WEC
-     &                             +vst2d(i,j)
-# endif
-!>
             CF(i,0)=0.
           enddo        !--> keep DC(:,0) for later
           do k=N,1,-1
@@ -637,27 +602,8 @@ c>># define DELTA 0.5790
 # ifdef MASKING
      &                                    *vmask(i,j)
 
-! Daniel add, mask-1  again, remember to check with Yusuke
-#   ifdef WEC
-              v(i,j,k,nnew)=v(i,j,k,nnew)*vmask(i,j)
-     &                  +vst(i,j,k)*(vmask(i,j)-1.0)
-#   endif
-# endif
-# ifdef TR
-#  ifdef WEC
-              CF(i,k)=DC(i,k)*( 0.5*(v(i,j,k,nstp)+v(i,j,k,nnew))
-     &                                              +vst(i,j,k) )
-#  else
-              CF(i,k)=0.5*DC(i,k)*(v(i,j,k,nstp)+v(i,j,k,nnew))
-#  endif
-# else
               CF(i,k)=DELTA*FlxV(i,j,k) + EPSIL*DC(i,k)
-     &                           *(v(i,j,k,nstp)+v(i,j,k,nnew)
-#  ifdef WEC
-     &                                  +2.*vst(i,j,k)
-#  endif
-     &                                                        )
-# endif
+     &                           *(v(i,j,k,nstp)+v(i,j,k,nnew))
               CF(i,0)=CF(i,0)+CF(i,k)
             enddo
           enddo
@@ -667,9 +613,6 @@ c>># define DELTA 0.5790
           do k=1,N,+1
             do i=IV_RANGE
               FlxV(i,j,k)=CF(i,k)-DC(i,k)*CF(i,0)
-# if defined WEC && defined MASKING
-             FlxV(i,j,k)=FlxV(i,j,k)*vmask(i,j)
-# endif
 # ifdef ADV_ISONEUTRAL
               diff3v(i,j,k)=sqrt(GAMMA*abs(v(i,j,k,nnew))*dn_v(i,j))
      &                                                   *dn_v(i,j)
@@ -850,17 +793,30 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
 ! above.  It does not affect any model results, other than signature in
 ! global attribute "CPPS" in output netCDF files.
 
-      use param
-      use strings
+      use param, only: mynode
+      use strings, only: cpps, max_opt_size
+      use error_handling_mod, only: error_log
 
       implicit none
       integer ierr, is,ie, lenstr
 
       integer lstr
       character(len=32) tmpstr
+      character(len=24) :: sr_name = "check_step_uv2_switches"
+      character(len=1024) :: error_info =""
+
+      write(error_info,*)
+     &  'Insufficient length of string "cpps" in file "strings".',
+     &        'Increase parameter "max_opt_size" and recompile.'
+
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+13
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='<step3d_uv2.F>'
 # ifdef DELTA
       write(tmpstr,*) DELTA ;  lstr=lenstr(tmpstr)
@@ -868,7 +824,12 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+5+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='DELTA='/ /tmpstr(1:lstr)
 # endif
 # ifdef EPSIL
@@ -877,7 +838,12 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+5+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='EPSIL='/ /tmpstr(1:lstr)
 # endif
 # ifdef GAMMA
@@ -886,7 +852,12 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+5+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='GAMMA='/ /tmpstr(1:lstr)
 # endif
 # ifdef ALPHA_MAX
@@ -896,13 +867,15 @@ c             idRz(i,j,k)=ALPHA_MAX/max(ALPHA_MAX*dRz,dRx_max,epsil)
         lstr=lstr-1
       enddo
       is=ie+2 ; ie=is+9+lstr
-      if (ie > max_opt_size) goto 99
+      if (ie > max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
+
       cpps(is:ie)='ALPHA_MAX='/ /tmpstr(1:lstr)
 # endif
       return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
       ierr=ierr+1
       end
 #else

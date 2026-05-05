@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/dafyddstephenson/roms_gfortran_build_env:1.0
+      image: ghcr.io/cworthy-ocean/marbl_gnu_mpich:0.0
     strategy:
       fail-fast: false
       matrix:
@@ -22,6 +22,9 @@ jobs:
           - example: "Pipes_ana"
           - example: "Flux_frc"
           - example: "Filament"
+          - example: "CDR_3d"
+          - example: "CDR_dp"
+          - example: "CDR_parameterized"
           - example: "bgc_real"
             bgc_mode: "BEC"
           - example: "bgc_real"
@@ -42,62 +45,52 @@ jobs:
       shell: bash
       run: |
         micromamba run -n roms-ci bash -c '
-        #Copy GNU-compatible makefiles
         cd Work/
-        make nhmg COMPILER=gnu
         cd ${ROMS_ROOT}/Tools-Roms/
-        make COMPILER=gnu
+        make partit COMPILER=gnu
         '
     - name: Cache input_data
       id: cache-input
       uses: actions/cache@v4
       with:
-        path: Examples/input_data
-        key: roms-input-${{ hashFiles('ci/get_input_files.sh') }}
+        path: tests/input_data
+        key: roms-input-${{ hashFiles('tests/input_data/get_input_files.sh') }}
 
     - name: Get input data (if not cached)
       if: steps.cache-input.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        cp ${ROMS_ROOT}/ci/get_input_files.sh ${ROMS_ROOT}/Examples/input_data/
-        cd ${ROMS_ROOT}/Examples/input_data/
+        micromamba run -n roms-ci bash -c '
+        cd ${ROMS_ROOT}/tests/input_data/
         ./get_input_files.sh
+        '
     - name: Update COMPILER arg in make commands
       shell: bash
       run: |
-        sed -i -e "s/make /make COMPILER=gnu /g" $ROMS_ROOT/Examples/code_check/do_test_roms.sh
-        sed -i -e "s/make /make COMPILER=gnu /g" $ROMS_ROOT/Examples/bgc_real/code_check/do_test_roms.sh
+        sed -i -e "s/make /make COMPILER=gnu USER_FFLAGS=-Werror PROFILER=scorep /g" $ROMS_ROOT/tests/scripts/do_test_roms.sh
+        sed -i -e "s/make /make COMPILER=gnu USER_FFLAGS=-Werror PROFILER=scorep /g" $ROMS_ROOT/tests/bgc_real/do_test_roms.sh
     - name: Run Test for ${{ matrix.example }}
       shell: bash
       run: |
         micromamba run -n roms-ci bash -c '
-        cd ${ROMS_ROOT}/Examples/${{ matrix.example}}/code_check/
+        cd ${ROMS_ROOT}/tests/${{ matrix.example}}/
         if [[ "${{ matrix.example }}" == "bgc_real" ]];then
         ./do_test_roms.sh github_gnu ${{ matrix.bgc_mode }}
         else
         ./do_test_roms.sh github_gnu
         fi
         '
-    - name: Print compilation logs (in case of failure)
-      if: failure()
+    - name: Print profiling report
       shell: bash
-      run: |
+      run : |
         micromamba run -n roms-ci bash -c '
-        cd ci
-        ./print_compilation_logs.sh
-        '
-    - name: Print logs (in case of failure)
-      if: failure()
-      shell: bash
-      run: |
-        micromamba run -n roms-ci bash -c '
-        echo "--------------------------------------------------------------------------------"
-        echo "This step will print the test_old.log files from each case run by"
-        echo "Examples/code_check/do_test_all.sh"
-        echo "If the tests failed but you are confident in your changes,"
-        echo "overwrite the benchmark.result_github files for each case with"
-        echo "the contents of these log files"
-        echo "--------------------------------------------------------------------------------"
-        cd ci
-        ./print_output_logs.sh
+        cd ${ROMS_ROOT}/tests/${{ matrix.example}}/
+        scorep-score -r scorep-*/profile.cubex > scorep.out
+        python3 - <<"EOF"
+        s=open("scorep.out").read().rstrip("\n").split("\n\n")
+        k=lambda L: sorted(L, key=lambda x: float(x.split()[4]), reverse=True)
+        print(s[0]); print()
+        print("\n".join([s[1].splitlines()[0]] + k(s[1].splitlines()[1:]))); print("-"*74)
+        print("\n".join(k(s[2].splitlines())))
+        EOF
         '

@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
                                     ! Note that arrays A2d(1,1:4) in
       subroutine pre_step3d (tile)  ! the call just below are repeated
-      use param
-      use hidden_mpi_vars
-      use private_scratch
+      use param, only: ieast, iwest, jnorth, jsouth, nsub_e, nsub_x
+      use hidden_mpi_vars, only: inode, jnode
+      use private_scratch, only: a3d, a2d
       implicit none                 ! within the list of agruments to
       integer tile                  ! use the same memory for vertical
                                     ! and horizontal scratch arrays.
@@ -28,23 +28,41 @@
 # endif
      &                                                              )
 
-      use dimensions
-      use param
-      use river_frc
-      use wec_frc
+      use river_frc, only:
+     &     iriver, riv_depth, riv_uvel, riv_vvel,
+     &     river_source, riv_uflx, riv_vol, riv_trc, riv_vflx
 #ifdef NHMG
-      use nhmg
-      use mg_grids, mggrid => grid
-      use mg_tictoc
+      use ocean_vars, only:
+     &     nhdu, nhdv, nhdw,
+     &     nh_ubar, nh_vbar, nh_wcor, w
+      use nhmg, only: iprec1, iprec2, halo, nhmg_solve
+      use mg_grids, only: mggrid => grid
 #endif
       use surf_flux, only: sustr, svstr
-      use tracers,   only: iTandS, t
-      use diagnostics                     ! needed for compute_horiz_uv_terms.h below
-      use coupling
-      use grid
-      use mixing
-      use ocean_vars
-      use scalars
+      use tracers, only: iTandS, t
+      use coupling, only: r_d
+      use mpi_exchanges, only: exchange_xxx
+      use grid, only: nx,ny,
+     &     pn, pm, umask, vmask, fomn, dn_u, dm_v, pn_u, pm_v
+#if (defined CURVGRID && defined UV_ADV)
+     &     ,dmde, dndx
+#endif
+      use mixing, only: akt, akv
+      use param, only:
+     &     east_exchng, ieast, iwest, jnorth, jsouth,
+     &     north_exchng, south_exchng, west_exchng, lm, mm,
+     &     padd_e, padd_x
+#ifdef NHMG
+      use mg_namelist, only: surface_neumann
+#endif
+      use ocean_vars, only: wi, we, flxv, flxu, hz, z_w, u, v
+      use scalars, only:
+     &     n, dt, forw_start, iic, nnew, nrhs, nstp, nt,
+     &     rdrg, vonkar, zob, ntstart
+#ifdef DIAGNOSTICS
+      use diagnostics, only: diag_uv, calc_diag, udiag, vdiag, icori,
+     &  dxdyi_u, dxdyi_v
+#endif
 
       implicit none
       integer istr,iend,jstr,jend, imin,imax,jmin,jmax, i,j,k
@@ -68,13 +86,6 @@
      &                 , gamma=0.3333333333333333 !! gamma=0.25
 # endif
       integer indx, itrc, iAkt
-
-! Taken from rhs3d35S.F for WEC, used in compute_horiz_rhs_uv_terms.h
-! but needs to be declared here in declarations section not in
-! the compute_horiz_rhs_uv_terms.h file else wont compile.
-# ifdef WEC
-      real cff1
-# endif
 
 # include "compute_auxiliary_bounds.h"
 
@@ -168,10 +179,6 @@
 
       enddo !<-- k
 
-#ifdef WEC
-      call compute_wec_rhs_uv_terms(istr,iend,jstr,jend,ru,rv,wrk1,wrk2)
-#endif
-
 
 ! Compute dynamic bottom drag coefficient.  Note that "rd" must be
 ! aliased to a horizontal array beyond #4 to avoid overlap with one
@@ -197,14 +204,6 @@
             do i=istr,iend   !! t(..) is Hz*T
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
      &            -dtau*pm(i,j)*pn(i,j)*(FC(i,k)-FC(i,k-1))
-# ifdef PIPE_SOURCEXXX /*only add this during the corrector step */
-              if (pipe_idx(i,j)>0) then
-                pidx = pipe_idx(i,j)
-                t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
-     &            +dtau*pm(i,j)*pn(i,j)*
-     &              pipe_flx(i,j)*pipe_prf(pidx,k)*pipe_trc(pidx,itrc)
-              endif
-# endif
 
 # ifdef CONST_TRACERS
               t(i,j,k,nnew,itrc)=t(i,j,k,nstp,itrc)
@@ -275,17 +274,6 @@
 !                      ! ru,rv, and rw are volume integrated and [m4/s2]
 
 # include "compute_vert_rhs_uv_terms.h"
-
-# ifdef WEC
-#  if defined WAVE_FRICTION && !defined BODY_FRICTION
-        do i=istrU,iend
-          ru(i,j,1) =ru(i,j,1) + dm_u(i,j)*dn_u(i,j)*frc2dx(i,j)
-        enddo
-        do i=istr,iend
-          rv(i,j,1) =rv(i,j,1) + dm_v(i,j)*dn_v(i,j)*frc2de(i,j)
-        enddo
-#  endif
-# endif   /* WEC */
 
 # ifdef NHMG
 
@@ -399,11 +387,7 @@
           CF(i,N-1)=cff*(  FC(i,N-1)+max(WC(i,N-1),0.) )
 
           DC(i,N)=cff*( DC(i,N)
-     &                                  +dtau*sustr(i,j)
-#    if defined WEC && defined SURFACE_BREAK
-     &                            + dtau*brk2dx(i,j)
-#    endif
-     &                                                 )
+     &                                  +dtau*sustr(i,j))
         enddo
         do k=N-1,2,-1      !--> forward elimination
           do i=istrU,iend
@@ -466,11 +450,7 @@
             CF(i,N-1)=cff*(  FC(i,N-1)+max(WC(i,N-1),0.) )
 
             DC(i,N)=cff*( DC(i,N)
-     &                                    +dtau*svstr(i,j)
-#    if defined WEC && defined SURFACE_BREAK
-     &                            + dtau*brk2de(i,j)
-#    endif
-     &                                                   )
+     &                                    +dtau*svstr(i,j))
           enddo
           do k=N-1,2,-1      !--> forward elimination
             do i=istr,iend
@@ -759,16 +739,10 @@
 
 # endif /* NHMG */
 
-# ifdef OBC_CHECK
-      print *, 'nnew=', nnew
-      print *, '   u(istr  ,10,10,nnew)=', u(istr,10,10,nnew)
-      print *, '   u(iend+1,10,10,nnew)=', u(iend+1,10,10,nnew)
-# endif
-
       end
 
 !------------------------------------------------------------------------------------------
-      subroutine check_pre_step_switches (ierr)
+      subroutine check_pre_step_switches
 
 ! This routine keeps track of the status of local CPP-settings in
 ! "pre_step3d4S.F".  It must be placed here rather than a separate
@@ -776,25 +750,30 @@
 ! not affect any model results, other than "CPPS" signature saved
 ! as a global attribute in output netCDF files.
 
-      use param
-      use strings
+      use param, only: mynode
+      use strings, only: cpps, max_opt_size
+      use error_handling_mod, only: error_log
       implicit none
-      integer ierr, is,ie, lenstr
+      integer is,ie, lenstr
+      character(len=24) :: sr_name = "check_pre_step_switches"
+      character(len=1024) :: error_info =""
+
+      write(error_info,*)
+     &  'Insufficient length of string "cpps" in file "strings".',
+     &        'Increase parameter "max_opt_size" and recompile.'
 
       ie=lenstr(cpps)
       is=ie+2 ; ie=is+15
-      if (ie>max_opt_size) goto 99
+      if (ie>max_opt_size) then
+         call error_log%raise_global(
+     &        info=error_info,
+     &        context=sr_name)
+      end if
       cpps(is:ie)='<pre_step3d4S.F>'
 
 # include "track_advec_switches.h"
-
-      return
-  99  mpi_master_only write(*,'(/1x,2A/12x,A/)')      '### ERROR: ',
-     &  'Insufficient length of string "cpps" in file "strings".',
-     &        'Increase parameter "max_opt_size" it and recompile.'
-      ierr=ierr+1
-      return
-      end
+      call error_log%abort_check()
+      end subroutine check_pre_step_switches
 
 #else
       subroutine pre_step3d_empty
