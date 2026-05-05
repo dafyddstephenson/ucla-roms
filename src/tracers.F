@@ -22,13 +22,14 @@
       use param, only: isalt, itemp, lm, mm, mynode, nt_passive
       use dimensions, only: i0, i1, j0, j1, nx, ny
       use surf_flux, only: stflx                          ! surface tracer flux should possibly live in this module rather?
-      use scalars, only: n, nstp, nnew, forw_start, iic, nt
+      use scalars, only: n, nstp, nnew, forw_start, iic, nt, nrhs
 ! for 'FIRST_TIME_STEP' and nstp, only:
       use nc_read_write, only: nccreate, ncwrite
       use roms_read_write, only:
      &     ncforce, dn_tm, dn_xr, dn_yr, dn_zr,
      &     eta_rho, xi_rho, set_frc_data
       use netcdf, only: nf90_put_att
+      use error_handling_mod, only: error_log
 #ifdef MARBL
       use marbl_driver, only: marbldrv_configure_tracers
 #endif
@@ -52,7 +53,11 @@
       !-- Tracer netcdf variables as arrays/matrices of 'NT' length:
       ! Final tracer concentrations live in 't' in ocean3d
       ! Surface tracer flux lives in 'stflx' in surf_flux.F module.
-      type (ncforce)    :: nc_t( NT )                                   ! array of ncvs for each tracer
+      type (ncforce)    :: nc_t( NT ) ! array of ncvs for each tracer
+      ! edit variable name and time name to match input netcdf file if necessary:
+      type (ncforce) :: nc_sst  = ncforce(vname='sst',tname='sst_time' )       ! sea-surface temperature (SST) data
+      type (ncforce) :: nc_sss  = ncforce(vname='sss',tname='sss_time' )       ! sea-surface salinity (SSS) data
+
       integer,public :: iTandS                                       ! combined index of temperature and salinity
                                                                      ! public as used in set_forces.F. Need to be parameter
 !     integer,public :: nt_passive=0                                 ! total number of passive tracers
@@ -70,7 +75,15 @@
 # include "bgc_tracers_indx.opt"
 #endif
 
+      ! Sea-surface temperature (SST) and salinity (SSS) data for restoring
+      real,public,allocatable,dimension(:,:) :: sst
+      real,public :: dSSTdt
+      real,public,allocatable,dimension(:,:) :: sss
+      real,public :: dSSSdt                                ! input units (cm/day)
+
       public set_surf_tracer_flx
+      public set_surf_field_corr
+      public apply_surf_field_corr
       public init_tracers
       public def_his_trc
       public wrt_his_trc
@@ -84,7 +97,6 @@
 ! ----------------------------------------------------------------------
       subroutine set_surf_tracer_flx ![
       ! set tracer flux at surface
-      use error_handling_mod, only: error_log
       implicit none
       character(len=20) :: sr_name = "set_surf_tracer_flx"
       ! local
@@ -152,7 +164,59 @@
 !        enddo
 !     endif
 
-      end subroutine set_ana_surf_tracer_flx  !]
+      end subroutine set_ana_surf_tracer_flx !]
+      subroutine set_surf_field_corr ![
+      ! Set surface fields that will be restored towards
+
+      implicit none
+#if defined(QCORRECTION) && !defined(ANA_SST)
+      ! Sea-surface temperature (SST) data
+      call set_frc_data(nc_sst,sst,'r')
+      call error_log%abort_check()
+#endif
+
+#if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
+      ! Sea-surface salinity (SSS) data
+      call set_frc_data(nc_sss,sss,'r')
+      call error_log%abort_check()
+#endif
+
+      end subroutine set_surf_field_corr  !]
+! ----------------------------------------------------------------------
+      subroutine apply_surf_field_corr  ![
+      ! apply surface heat flux correction: stflx(itemp)
+      ! apply surface salinity  correction: stflx(isalt)
+
+      implicit none
+
+      ! local
+      integer i,j
+
+#if defined(QCORRECTION) && !defined(ANA_SST)
+! Add relaxation of sst back to climatological value to avoid long-
+! term drift. dSSTdt below is "piston velocity" expressed in [m/s].
+      do j=j0,j1
+        do i=i0,i1
+          stflx(i,j,itemp)=
+     &       -dSSTdt*(t(i,j,nz,nrhs,itemp)-sst(i,j))
+        enddo
+      enddo
+#endif
+
+# if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
+! Add relaxation of surface salinity back to climatological value to
+! avoid long-term drift.  Note that dSSSdt below is "piston velocity"
+! expressed in [m/s].
+      do j=j0,j1
+        do i=i0,i1
+          stflx(i,j,isalt)=stflx(i,j,isalt)-dSSSdt*
+     &         ( t(i,j,N,nrhs,isalt)-sss(i,j) )
+        enddo
+      enddo
+#endif
+
+      end subroutine apply_surf_field_corr  !]
+
 ! ----------------------------------------------------------------------
       subroutine def_his_trc( ncid )  ![
       ! Define history file variables in def_his.F
@@ -365,6 +429,15 @@
 
         endif
       enddo
+#if defined(Q_CORRECTION) && !defined(ANA_SST)
+      allocate( sst(GLOBAL_2D_ARRAY)        ); sst=0.
+      allocate(nc_sst%vdata(GLOBAL_2D_ARRAY,2) )
+#endif
+
+#if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
+      allocate( sss(GLOBAL_2D_ARRAY)        ); sss=0.
+      allocate(nc_sss%vdata(GLOBAL_2D_ARRAY,2) )
+#endif
 
       end subroutine init_tracers  !]
 ! ----------------------------------------------------------------------

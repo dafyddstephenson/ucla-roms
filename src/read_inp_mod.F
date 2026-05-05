@@ -756,6 +756,8 @@
 
 #if defined SFLX_CORR && defined SALINITY
       subroutine kwread_SSS_correction(unit)
+      use tracers, only: dSSSdt
+      use scalars, only: day2sec
       implicit none
 
       integer, intent(in)    :: unit
@@ -780,6 +782,8 @@
 
 # ifdef QCORRECTION
       subroutine kwread_SST_correction(unit)
+      use tracers, only: dSSTdt
+      use scalars, only: day2sec
       implicit none
 
       integer, intent(in)    :: unit

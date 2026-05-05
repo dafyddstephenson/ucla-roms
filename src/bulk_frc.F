@@ -185,8 +185,8 @@
       ! ----------------
       use surf_flux, only:
      &     srflx, vwnd, uwnd, stflx, sustr_r, svstr_r,
-     &     sustr, svstr, apply_surf_field_corr, swflx
-      use tracers, only: t
+     &     sustr, svstr, swflx
+      use tracers, only: t, apply_surf_field_corr
       use grid, only: rmask, umask, vmask
       use mixing, only:
      &     east_exchng, ieast, isalt, itemp, iwest,

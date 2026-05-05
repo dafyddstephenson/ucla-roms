@@ -34,8 +34,7 @@
      &     , isalt
 #endif
       use flux_frc, only: set_flux_frc
-      use surf_flux, only: set_surf_field_corr
-      use tracers, only: set_surf_tracer_flx, iTandS
+      use tracers, only: set_surf_tracer_flx, iTandS, set_surf_field_corr
       use river_frc, only: river_source, set_river_frc
       use pipe_frc, only: pipe_source, set_pipe_frc
       use cdr_frc, only: cdr_source

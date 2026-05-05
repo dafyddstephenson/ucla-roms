@@ -57,12 +57,6 @@
       real,allocatable,dimension(:,:,:):: stflx_avg     ! surf tracer flux average
       real,allocatable,dimension(:,:)  :: swflx_avg ! surf srw flux average
 
-      ! Sea-surface temperature (SST) and salinity (SSS) data for restoring
-      real,public,allocatable,dimension(:,:) :: sst
-      real,public :: dSSTdt
-      real,public,allocatable,dimension(:,:) :: sss
-      real,public :: dSSSdt                                ! input units (cm/day)
-
       ! Netcdf outputting:
       real    :: output_time = 0
       integer :: record = nrpf     ! to trigger the first file creation
@@ -70,9 +64,7 @@
 
       ! Public functions
       public init_arrays_surf_flx
-      public set_surf_field_corr
       public wrt_sflux
-      public apply_surf_field_corr
 
       contains
 
@@ -92,15 +84,6 @@
       allocate( stflx  (GLOBAL_2D_ARRAY,nt) ); stflx=init
       allocate( srflx  (GLOBAL_2D_ARRAY)    ); srflx=init
       allocate( swflx  (GLOBAL_2D_ARRAY)    ); swflx = 0
-#if defined(Q_CORRECTION) && !defined(ANA_SST)
-      allocate( sst(GLOBAL_2D_ARRAY)        ); sst=init
-      allocate(nc_sst%vdata(GLOBAL_2D_ARRAY,2) )
-#endif
-
-#if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
-      allocate( sss(GLOBAL_2D_ARRAY)        ); sss=init
-      allocate(nc_sss%vdata(GLOBAL_2D_ARRAY,2) )
-#endif
 
       if (sflx_avg) then
         allocate(sustr_avg(1:i1,j0:j1))
@@ -110,58 +93,6 @@
       endif
 
       end subroutine init_arrays_surf_flx  !]
-! ----------------------------------------------------------------------
-      subroutine set_surf_field_corr ![
-      ! Set surface fields that will be restored towards
-
-      implicit none
-#if defined(QCORRECTION) && !defined(ANA_SST)
-      ! Sea-surface temperature (SST) data
-      call set_frc_data(nc_sst,sst,'r')
-      call error_log%abort_check()
-#endif
-
-#if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
-      ! Sea-surface salinity (SSS) data
-      call set_frc_data(nc_sss,sss,'r')
-      call error_log%abort_check()
-#endif
-
-      end subroutine set_surf_field_corr  !]
-! ----------------------------------------------------------------------
-      subroutine apply_surf_field_corr  ![
-      ! apply surface heat flux correction: stflx(itemp)
-      ! apply surface salinity  correction: stflx(isalt)
-
-      implicit none
-
-      ! local
-      integer i,j
-
-#if defined(QCORRECTION) && !defined(ANA_SST)
-! Add relaxation of sst back to climatological value to avoid long-
-! term drift. dSSTdt below is "piston velocity" expressed in [m/s].
-      do j=j0,j1
-        do i=i0,i1
-          stflx(i,j,itemp)=
-     &       -dSSTdt*(t(i,j,nz,nrhs,itemp)-sst(i,j))
-        enddo
-      enddo
-#endif
-
-# if defined SFLX_CORR && defined SALINITY && !defined ANA_SSFLUX
-! Add relaxation of surface salinity back to climatological value to
-! avoid long-term drift.  Note that dSSSdt below is "piston velocity"
-! expressed in [m/s].
-      do j=j0,j1
-        do i=i0,i1
-          stflx(i,j,isalt)=stflx(i,j,isalt)-dSSSdt*
-     &         ( t(i,j,N,nrhs,isalt)-sss(i,j) )
-        enddo
-      enddo
-#endif
-
-      end subroutine apply_surf_field_corr  !]
 ! ----------------------------------------------------------------------
       subroutine calc_sflx_avg  ![
       implicit none

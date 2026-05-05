@@ -8,9 +8,9 @@
 #include "cppdefs.opt"
 
       ! Modules needed:
-      use tracers, only: t
-      use surf_flux, only: sustr, svstr, stflx, srflx, sss, sst,
-     &       apply_surf_field_corr, swflx
+      use tracers, only: t, apply_surf_field_corr, sss, sst
+      use surf_flux, only: sustr, svstr, stflx, srflx,
+     &     swflx
       use scalars, only: cp, rho0, day2sec, n, nrhs, cmday2ms
       use roms_read_write, only: ncforce, flux_frc_opt, set_frc_data,
      &     store_string_att
