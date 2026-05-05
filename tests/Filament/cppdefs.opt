@@ -1,3 +1,4 @@
+#define FILAMENT_IDEAL
 !#define DIAGNOSTICS
 !#define ANA_BRY
 

@@ -1,3 +1,4 @@
+# define ANA_RIVER_USWC
 # define ANA_GRID
 # define ANA_INITIAL
 # define ANA_SMFLUX

@@ -1,3 +1,4 @@
+# define ANA_PIPES
 # define ANA_GRID
 # define ANA_INITIAL
 # define ANA_SMFLUX
